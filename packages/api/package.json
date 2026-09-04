@@ -1,0 +1,51 @@
+{
+  "name": "@luma/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "echo \"(sin eslint configurado)\"",
+    "seed:demo": "tsx src/scripts/seed-demo-project.ts",
+    "create:user": "tsx src/scripts/create-user.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "@luma/shared": "workspace:*",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.8.4",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "resend": "^4.0.0",
+    "xlsx": "^0.18.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/compression": "^1.8.1",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.2",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.4"
+  }
+}

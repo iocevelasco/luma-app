@@ -1,0 +1,45 @@
+{
+  "name": "@luma/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules/.vite",
+    "test": "vitest run",
+    "lint": "echo \"(sin eslint configurado)\""
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "@luma/shared": "workspace:*",
+    "@tanstack/react-query": "^5.62.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.462.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.0",
+    "react-router-dom": "^6.28.0",
+    "sonner": "^1.7.1",
+    "tailwind-merge": "^2.5.5",
+    "zod": "^3.25.76",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0",
+    "vitest": "^3.2.4"
+  }
+}
