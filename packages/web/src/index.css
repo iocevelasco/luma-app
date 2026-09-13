@@ -3,120 +3,217 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* `.light` además de `:root` para poder forzar el tema claro en un área
-   concreta sin cambiar el default de la app, que es oscuro.
-   Ver hooks/use-scoped-theme.ts. */
+/*
+  Tokens del panel. La fuente de verdad es DESIGN.md en la raíz del repo; este
+  bloque es su implementación para Tailwind v4.
+
+  Los nombres describen el ROL, no el color. Un token llamado `orange` no dice
+  sobre qué fondo es legible; `primary` y `primary-foreground` sí, y cambian de
+  hex según el tema sin que el componente se entere.
+
+  `.light` además de `:root` para poder forzar el tema claro en un área concreta
+  sin cambiar el default de la app. Ver hooks/use-scoped-theme.ts.
+*/
 :root,
 .light {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.12 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.12 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.12 0 0);
-  --primary: #EF233C;
-  --primary-foreground: #FFFFFF;
-  --secondary: #272B30;
-  --secondary-foreground: #FFFFFF;
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: #D90429;
-  --destructive-foreground: #FFFFFF;
-  /* Verde y ámbar de aviso. El rojo de marca ya está en --destructive; estos
-     dos existían sólo como clases sueltas y no había forma de tematizarlos. */
-  --success: #157F3D;
-  --success-foreground: #FFFFFF;
-  --warning: #A15C07;
-  --warning-foreground: #FFFFFF;
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: #EF233C;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 1rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #EF233C;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  /* Colores semánticos de estado (activo / por vencer / vencido / neutro).
-     Información, no decoración: son independientes del rojo de marca, que se
-     reserva para las acciones. */
-  --status-active: #07C58A;
-  --status-warning: #FF9A3C;
-  --status-danger: #FF5C5C;
-  --status-neutral: #969696;
-  --status-info: #6EA8FF;
+  --background: #ffffff;
+  --foreground: #1f1f1f;
+  --card: #ffffff;
+  --card-foreground: #1f1f1f;
+  --popover: #ffffff;
+  --popover-foreground: #1f1f1f;
+
+  /*
+    El naranja se parte en dos y no es un capricho: #fa520f con texto blanco
+    encima da 3.34:1 y no pasa AA. Es el valor de marca, y tomado literal como
+    relleno deja cada CTA del producto por debajo del mínimo legible.
+
+      --brand        #fa520f  tinta sobre oscuro, ícono, borde, acento
+      --primary      #cc3a05  RELLENO, con blanco encima — 5.03:1
+
+    La identidad no cambia: el naranja saturado sigue siendo el que se ve en
+    bordes, íconos y estados activos. Lo que cambia es que el botón deja de
+    fallar contraste.
+  */
+  --brand: #fa520f;
+  --primary: #cc3a05;
+  --primary-foreground: #ffffff;
+  --primary-pressed: #a82f04;
+
+  --secondary: #fff8e0;
+  --secondary-foreground: #1f1f1f;
+
+  /* Superficies crema — paneles de formulario, cards destacadas, bandas. */
+  --cream: #fff8e0;
+  --cream-soft: #fffaeb;
+  --cream-deep: #fff0c2;
+  --beige: #e6d5a8;
+
+  /* Sol: existen para el gradiente de la banda de cierre y para nada más.
+     No son una paleta de acentos. */
+  --sunshine-300: #ffd06a;
+  --sunshine-500: #ffb83e;
+  --sunshine-700: #ffa110;
+  --yellow: #ffd900;
+
+  --muted: #fafafa;
+  --muted-foreground: #6a6a6a;
+  --accent: #fff8e0;
+  --accent-foreground: #1f1f1f;
+
+  /*
+    Ahora que la marca es naranja, el rojo quedó libre para significar peligro
+    de verdad. Antes el CTA y el error eran el mismo color, que es exactamente
+    lo que un sistema de diseño tiene que evitar.
+  */
+  --destructive: #c81e32;
+  --destructive-foreground: #ffffff;
+  --success: #157f3d;
+  --success-foreground: #ffffff;
+  --warning: #a15c07;
+  --warning-foreground: #ffffff;
+
+  --border: #ededed;
+  --border-strong: #c7c7c7;
+  --input: #c7c7c7;
+  --ring: #fa520f;
+
+  --chart-1: #fa520f;
+  --chart-2: #ffa110;
+  --chart-3: #ffd06a;
+  --chart-4: #6a6a6a;
+  --chart-5: #c81e32;
+
+  --radius: 0.75rem; /* 12px — el radio de una superficie (card) */
+
+  --sidebar: #fffaeb;
+  --sidebar-foreground: #1f1f1f;
+  --sidebar-primary: #cc3a05;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fff8e0;
+  --sidebar-accent-foreground: #1f1f1f;
+  --sidebar-border: #ededed;
+  --sidebar-ring: #fa520f;
+
+  /* Estado (activo / por vencer / vencido / neutro). Información, no
+     decoración: son independientes del naranja de marca, que se reserva para
+     las acciones. */
+  --status-active: #157f3d;
+  --status-warning: #a15c07;
+  --status-danger: #c81e32;
+  --status-neutral: #8a8a8a;
+  --status-info: #4a4a4a;
 }
 
+/*
+  La referencia de la que sale este sistema no tiene tema oscuro publicado.
+  Este está derivado acá, con dos decisiones propias:
+
+  1. El fondo es charcoal CÁLIDO, no el azulado de antes. Un gris frío debajo
+     de un naranja lo ensucia.
+  2. El botón primario invierte: sobre oscuro el relleno es --brand (#fa520f)
+     y el texto encima es ink, no blanco. Negro sobre ese naranja da 4.93:1,
+     blanco da 3.34:1. La misma superficie cambia el color del texto según el
+     tema, y queda resuelto acá para que ningún componente lo decida.
+  3. No hay superficies crema: la crema es un tema claro. Su rol —"esta
+     superficie es cálida y distinta"— lo cumple --card sobre --background.
+*/
 .dark {
-  --background: #101116;
-  --foreground: #FFFFFF;
-  --card: #15162a;
-  --card-foreground: #FFFFFF;
-  --popover: #15162a;
-  --popover-foreground: #FFFFFF;
-  --primary: #EF233C;
-  --primary-foreground: #FFFFFF;
-  --secondary: #272B30;
-  --secondary-foreground: #FFFFFF;
-  --muted: #272B30;
-  --muted-foreground: #A9AAAC;
-  --accent: #272B30;
-  --accent-foreground: #FFFFFF;
-  --destructive: #D90429;
-  --destructive-foreground: #FFFFFF;
-  /* Sobre fondo oscuro el mismo verde queda apagado: se sube la luminosidad
-     para que el contraste con el texto blanco siga siendo legible. */
-  --success: #1FA855;
-  --success-foreground: #06170D;
-  --warning: #D8952B;
-  --warning-foreground: #241703;
-  --border: #272B30;
-  --input: #272B30;
-  --ring: #EF233C;
-  --chart-1: #EF233C;
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: #15162a;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #EF233C;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #272B30;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #272B30;
-  --sidebar-ring: #EF233C;
-  --status-active: #07C58A;
-  --status-warning: #FF9A3C;
-  --status-danger: #FF5C5C;
-  --status-neutral: #969696;
-  --status-info: #6EA8FF;
+  --background: #16130e;
+  --foreground: #fff7ec;
+  --card: #1f1b14;
+  --card-foreground: #fff7ec;
+  --popover: #1f1b14;
+  --popover-foreground: #fff7ec;
+
+  --brand: #fa520f;
+  --primary: #fa520f;
+  --primary-foreground: #1f1f1f;
+  --primary-pressed: #cc3a05;
+
+  --secondary: #2a251c;
+  --secondary-foreground: #fff7ec;
+
+  --cream: #2a251c;
+  --cream-soft: #221e17;
+  --cream-deep: #332c21;
+  --beige: #3d3427;
+
+  --sunshine-300: #ffd06a;
+  --sunshine-500: #ffb83e;
+  --sunshine-700: #ffa110;
+  --yellow: #ffd900;
+
+  --muted: #2a251c;
+  --muted-foreground: #948a79; /* 5.44:1 sobre --background — es el piso */
+  --accent: #2a251c;
+  --accent-foreground: #fff7ec;
+
+  --destructive: #e8455a;
+  --destructive-foreground: #1f1f1f;
+  --success: #3dbd69;
+  --success-foreground: #16130e;
+  --warning: #e0a63a;
+  --warning-foreground: #16130e;
+
+  --border: #2a251c;
+  --border-strong: #3d3427;
+  --input: #3d3427;
+  --ring: #fa520f;
+
+  --chart-1: #fa520f;
+  --chart-2: #ffa110;
+  --chart-3: #ffd06a;
+  --chart-4: #c4baa8;
+  --chart-5: #e8455a;
+
+  --sidebar: #1f1b14;
+  --sidebar-foreground: #fff7ec;
+  --sidebar-primary: #fa520f;
+  --sidebar-primary-foreground: #1f1f1f;
+  --sidebar-accent: #2a251c;
+  --sidebar-accent-foreground: #fff7ec;
+  --sidebar-border: #2a251c;
+  --sidebar-ring: #fa520f;
+
+  --status-active: #3dbd69;
+  --status-warning: #e0a63a;
+  --status-danger: #e8455a;
+  --status-neutral: #948a79;
+  --status-info: #c4baa8;
 }
 
 @theme inline {
-  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Noto Serif', Georgia, 'Times New Roman', serif;
-  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  /*
+    Display: la referencia usa PP Editorial Old, que es comercial y no se puede
+    empaquetar. Instrument Serif es el near-serif libre más cercano: misma
+    tensión clásica, mismo comportamiento en tamaños grandes. Si algún día se
+    compra la licencia, se cambia esta línea y nada más.
+  */
+  --font-serif: 'Instrument Serif', 'Times New Roman', Georgia, serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-brand: var(--brand);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-pressed: var(--primary-pressed);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-cream: var(--cream);
+  --color-cream-soft: var(--cream-soft);
+  --color-cream-deep: var(--cream-deep);
+  --color-beige: var(--beige);
+  --color-sunshine-300: var(--sunshine-300);
+  --color-sunshine-500: var(--sunshine-500);
+  --color-sunshine-700: var(--sunshine-700);
+  --color-yellow: var(--yellow);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
@@ -128,6 +225,7 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -135,34 +233,33 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   /*
-    Escala de radios — un solo origen: `--radius`, el radio de una superficie.
-    Todo lo demás se deriva de ahí, así que el redondeo de la app entera se
-    mueve cambiando un número.
+    Escala de radio — sobria y editorial.
 
-    Regla de anidado: el hijo va un escalón abajo del padre. Un radio interno
-    MAYOR que el del contenedor deja una luz visible en la esquina — era lo que
-    pasaba con filas `rounded-xl` adentro de cards `rounded-md`.
+      rounded-xs  →  4px   chips micro, indicadores
+      rounded-sm  →  6px   controles compactos
+      rounded-md  →  8px   BOTONES, input, select, code block
+      rounded-lg  → 12px   CARD, dialog, popover, panel  ← el radio dominante
+      rounded-xl  → 16px   panel grande que envuelve cards
+      rounded-2xl → 20px   card destacada, bottom sheet
 
-      rounded-xs  →  6px   micro: swatches, indicadores
-      rounded-sm  → 10px   controles chicos
-      rounded-md  → 12px   input, select, fila adentro de una card
-      rounded-lg  → 16px   card, dialog, sheet, popover  ← superficie
-      rounded-xl  → 20px   contenedor que envuelve cards
-      rounded-2xl → 24px
-      rounded-3xl → 32px
+    `rounded-full` queda SÓLO para badges, avatares, switch, slider y progress:
+    lo que es un estado, no una acción. El botón NO es píldora — la geometría de
+    este sistema es de documento, no de juguete.
 
-    Los controles con forma de píldora (button, chip, tab, badge) usan
-    `rounded-full` a propósito: la forma es la que distingue "esto se toca" de
-    "esto es una superficie", y no depende de la escala.
+    Regla de anidado: el hijo va un escalón abajo del padre. Un input
+    `rounded-md` dentro de una card `rounded-lg`. Un radio interno mayor que el
+    del contenedor deja una luz visible en la esquina.
   */
-  --radius-xs: calc(var(--radius) - 10px);
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 4px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 16px);
+  --radius-xs: calc(var(--radius) - 8px); /*  4px */
+  --radius-sm: calc(var(--radius) - 6px); /*  6px */
+  --radius-md: calc(var(--radius) - 4px); /*  8px */
+  --radius-lg: var(--radius); /* 12px */
+  --radius-xl: calc(var(--radius) + 4px); /* 16px */
+  --radius-2xl: calc(var(--radius) + 8px); /* 20px */
+  --radius-3xl: calc(var(--radius) + 16px); /* 28px */
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -178,21 +275,25 @@
   --color-status-info: var(--status-info);
 
   /*
-    Sombras: tres roles, no siete niveles.
+    Sombras: dos roles, no siete niveles.
 
-    Con una escalera completa de sombras (xs…2xl) y ninguna regla sobre cuál va
-    dónde, la misma card sale con una altura distinta según quién la escribió.
-    La profundidad la dan el filete de 1px y el salto de superficie, así que
-    quedan sólo estas tres alturas.
+    El sistema es plano. La profundidad la dan el filete de 1px y el salto de
+    superficie; con una escalera completa y ninguna regla sobre cuál va dónde,
+    la misma card sale con una altura distinta según quién la escribió.
 
-      surface  una card apoyada en la página
-      overlay  algo que flota por encima: diálogo, menú, barra fija, FAB
-      glow     acento de marca, que NO es profundidad: no lo uses para elevar
+      surface  card de producto destacada
+      overlay  algo que flota: diálogo, menú, barra fija
 
+    No hay `glow`. Un resplandor de marca no es profundidad, y era la forma más
+    fácil de elevar algo que no debía estar elevado.
   */
-  --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 12px rgb(0 0 0 / 0.08);
-  --shadow-overlay: 0 4px 12px rgb(0 0 0 / 0.14), 0 16px 40px rgb(0 0 0 / 0.22);
-  --shadow-glow: 0 0 24px rgb(239 35 60 / 0.35);
+  --shadow-surface: 0 4px 12px rgb(0 0 0 / 0.04);
+  --shadow-overlay: 0 16px 48px -8px rgb(0 0 0 / 0.12);
+
+  /* Tokens de sección: no caen en la escalera numérica de Tailwind. */
+  --spacing-section: 64px;
+  --spacing-section-lg: 96px;
+  --spacing-hero: 120px;
 
   /*
     El escalón más chico de la escala tipográfica: 11px.
@@ -212,10 +313,35 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  h1, h2, h3, h4, h5, h6 {
+  /*
+    El serif de display se aplica acá: no hace falta repetirlo en cada heading
+    del JSX. El contraste serif/sans ES la voz del sistema — un heading en sans
+    no es este sistema.
+
+    `text-wrap: balance` evita la línea huérfana de una palabra en títulos
+    cortos, que es donde más se nota en un display de 52px.
+  */
+  /* Sólo el h1 es serif. De h2 para abajo la escala es Inter — ver DESIGN.md:
+     el serif es la voz del DISPLAY, no de todo encabezado. Un h4 de 22px en
+     serif no se lee editorial, se lee inconsistente. */
+  h1 {
     @apply font-serif;
+    font-weight: 400;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
   }
 }
 
@@ -232,4 +358,3 @@
 .animate-shimmer {
   animation: shimmer 2s infinite;
 }
-

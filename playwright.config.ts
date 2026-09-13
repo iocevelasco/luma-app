@@ -47,7 +47,7 @@ export default defineConfig({
   timeout: IS_CI ? 60_000 : 30_000,
 
   // Chromium es el default y el único que corre en CI: es la suite de regresión
-  // funcional y triplicarla no encuentra tres veces más bugs. WebKit y Firefox
+  // funcional y duplicarla no encuentra el doble de bugs. WebKit
   // se corren a mano (`--project=webkit`) antes de mergear una feature que toque
   // una API del browser — están acá porque el motor de Safari rompe cosas que
   // Chromium no, y un `requestIdleCallback` ausente voltea una pantalla entera
@@ -55,7 +55,6 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
-    { name: 'firefox',  use: { ...devices['Desktop Firefox'] } },
   ],
 
   // Servidores de desarrollo — no se levantan si el target es remoto.

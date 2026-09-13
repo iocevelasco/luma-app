@@ -6,9 +6,9 @@ export function Nav() {
   const current = i18n.language.startsWith('pt') ? 'pt' : 'es';
 
   return (
-    <header className="sticky top-0 z-50 border-b border-hairline bg-canvas-light/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
-        <a href="#top" className="font-serif text-lg font-bold text-ink-on-light">
+        <a href="#top" className="font-serif text-lg font-bold text-foreground">
           {t('brand')}
           <span className="hanko" aria-hidden="true" />
         </a>
@@ -22,7 +22,7 @@ export function Nav() {
                 onClick={() => i18n.changeLanguage(lng)}
                 aria-pressed={current === lng}
                 className={`nav-label px-2 py-1 text-xs ${
-                  current === lng ? 'text-ink-on-light' : 'text-body-on-light'
+                  current === lng ? 'text-foreground' : 'text-muted-foreground'
                 }`}
               >
                 {lng.toUpperCase()}
@@ -32,7 +32,7 @@ export function Nav() {
 
           <a
             href={LOGIN_URL}
-            className="cta-label rounded-edge bg-red-ink px-4 py-2 text-xs text-white transition-colors hover:bg-red-deep"
+            className="cta-label rounded-md bg-primary px-4 py-2 text-xs text-primary-foreground transition-colors hover:bg-primary-pressed"
           >
             {t('nav.login')}
           </a>

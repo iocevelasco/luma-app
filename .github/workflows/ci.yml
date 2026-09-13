@@ -43,8 +43,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Sólo chromium: es la suite de regresión funcional, y correrla en los tres
-      # motores no encuentra tres veces más bugs. WebKit y Firefox se corren a
+      # Sólo chromium: es la suite de regresión funcional, y correrla en los dos
+      # motores no encuentra el doble de bugs. WebKit se corre a
       # mano (`pnpm test:e2e:cross`) antes de mergear algo que toque una API del
       # browser.
       - run: pnpm exec playwright install --with-deps chromium

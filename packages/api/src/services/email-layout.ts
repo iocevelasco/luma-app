@@ -9,7 +9,15 @@
 /** Ancho estándar de un mail: más que esto se corta en clientes de escritorio. */
 const MAX_WIDTH_PX = 600;
 
-const PLATFORM_COLOR = '#EF233C';
+/**
+ * Naranja de marca, versión RELLENO. Es `--primary` del sistema (ver DESIGN.md),
+ * no `--brand`: acá el color va de fondo con texto blanco encima, y el naranja
+ * saturado #fa520f en esa combinación da 3.34:1 — no pasa AA. Este da 5.03:1.
+ *
+ * En un mail no hay tema oscuro que lo corrija después: el cliente lo pinta y
+ * listo.
+ */
+const PLATFORM_COLOR = '#cc3a05';
 
 export interface EmailBrand {
   /** Nombre de la organización. Si falta, se usa el de la plataforma. */

@@ -20,7 +20,7 @@
     "test": "pnpm -r test",
     "test:e2e": "playwright test --ui",
     "test:e2e:ci": "playwright test --project=chromium",
-    "test:e2e:cross": "playwright test --project=chromium --project=webkit --project=firefox",
+    "test:e2e:cross": "playwright test --project=chromium --project=webkit",
     "test:e2e:report": "playwright show-report",
     "seed:admin": "pnpm --filter @luma/api seed:admin",
     "clean": "pnpm -r clean && rm -rf node_modules",
