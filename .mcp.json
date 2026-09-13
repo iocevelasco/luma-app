@@ -6,6 +6,14 @@
       "env": {
         "MDB_MCP_CONNECTION_STRING": "${MONGODB_URI}"
       }
+    },
+    "coolify": {
+      "command": "npx",
+      "args": ["-y", "-p", "coolify-mcp-server", "mcp-coolify-server"],
+      "env": {
+        "COOLIFY_BASE_URL": "${COOLIFY_URL}",
+        "COOLIFY_TOKEN": "${COOLIFY_TOKEN}"
+      }
     }
   }
 }

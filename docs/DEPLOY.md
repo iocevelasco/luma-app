@@ -85,3 +85,43 @@ curl https://<DOMINIO>/health      # {"status":"ok","database":"connected"}
 curl -I https://<DOMINIO>/         # 301 → /home
 curl -I https://<DOMINIO>/app/     # 200, la SPA
 ```
+
+## Coolify desde Claude (MCP)
+
+`.mcp.json` configura el servidor MCP de Coolify con **lectura y escritura**:
+111 herramientas que cubren la API v4 completa — servidores, proyectos,
+aplicaciones, bases, servicios, variables de entorno, backups, logs y deploys.
+
+### Las dos variables que hay que exportar
+
+El token **nunca va al repo**. `.mcp.json` sólo referencia el entorno:
+
+```bash
+# en ~/.zshrc
+export COOLIFY_URL=https://coolify.<DOMINIO>
+export COOLIFY_TOKEN=$(cat ~/.coolify_token)
+```
+
+`COOLIFY_URL` es la misma variable que ya usa `scripts/coolify-deploy.sh`, y
+`~/.coolify_token` el mismo archivo: un solo token, un solo lugar. El token se
+crea en Coolify → **Keys & Tokens → API tokens**, con permiso de escritura.
+
+Sin esas variables el servidor arranca igual pero toda llamada falla con 401.
+
+### Qué puede hacer y qué conviene saber
+
+De las 111 herramientas, **24 son destructivas e irreversibles**:
+`delete_server`, `delete_project`, `delete_database`, `delete_application`,
+`delete_private_key` y compañía. Borrar una base en Coolify borra los datos; no
+hay baja lógica como en el modelo de la app.
+
+Ninguna herramienta del MCP está en la lista `allow` de
+`.claude/settings.json`, así que **todas piden aprobación en el momento**. Eso
+es deliberado: la capacidad de escritura está habilitada, pero cada acción se
+confirma. Si alguna se usa muy seguido y molesta el prompt, se agrega
+explícitamente al `allow` — y conviene que sean sólo las de lectura
+(`list_*`, `get_*`, `health_check`).
+
+Ojo con la asimetría: el MCP puede desplegar y cambiar variables de entorno sin
+pasar por git. Las reglas que impiden pushear a main o correr `pnpm deploy` no
+lo alcanzan, porque habla con la API de Coolify directo.

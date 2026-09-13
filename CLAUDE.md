@@ -242,7 +242,7 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 | `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e, y cross-browser cuando corresponde |
 | `.claude/commands/feature.md` | `/feature <qué>` — implementa respetando el orden shared → api → capa 1 → capa 2 → UI → i18n |
 | `.claude/agents/criterio.md` | Agente de producto: afila un pedido vago en un encargo implementable y lo critica antes de que se escriba código |
-| `.mcp.json` | MongoDB en modo lectura, tomando `MONGODB_URI` del entorno |
+| `.mcp.json` | MongoDB en modo lectura (`MONGODB_URI`) y Coolify con lectura y escritura (`COOLIFY_URL`, `COOLIFY_TOKEN`) — 111 herramientas, 24 destructivas; ninguna en `allow`, así que todas piden aprobación. Ver `docs/DEPLOY.md` |
 
 Si agregás una regla nueva a este archivo y se puede verificar con un grep,
 agregala también al hook. Una regla que sólo vive en prosa se cumple al principio
