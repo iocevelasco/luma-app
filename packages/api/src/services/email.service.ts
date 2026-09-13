@@ -1,169 +1,195 @@
-import { EMAIL_CONFIG, EMAIL_ENABLED } from '../config/app.config.js';
+import { EMAIL_CONFIG } from '../config/app.config.js';
+import { appUrl } from '../utils/app-url.js';
+import { escapeHtml, renderEmailLayout, type EmailLayoutOptions } from './email-layout.js';
 
 /**
- * Envío de emails.
+ * Envío de mails transaccionales vía Resend.
  *
- * Sin `RESEND_API_KEY` no falla: loguea. Así el entorno de desarrollo no
- * necesita credenciales y el flujo de verificación se puede probar copiando el
- * link de la consola.
- *
- * El SDK se importa de forma perezosa para no pagar su carga cuando el email
- * está deshabilitado.
+ * El cliente se carga de forma perezosa y, si no hay API key o el paquete no
+ * está, cada método devuelve sin hacer nada. Es deliberado: en desarrollo se
+ * trabaja sin credenciales de mail y el flujo de registro tiene que seguir
+ * andando. Ningún método lanza — un fallo de mail no puede tumbar un login.
  */
-type ResendClient = { emails: { send: (opts: Record<string, unknown>) => Promise<unknown> } };
-let resend: ResendClient | null = null;
 
-async function getClient(): Promise<ResendClient | null> {
-  if (!EMAIL_ENABLED) return null;
-  if (resend) return resend;
-  const { Resend } = await import('resend');
-  resend = new Resend(EMAIL_CONFIG.RESEND_API_KEY) as unknown as ResendClient;
-  return resend;
-}
-
-function layout(title: string, bodyHtml: string, cta?: { label: string; url: string }): string {
-  return `<!doctype html>
-<html lang="es"><body style="margin:0;background:#f5f5f4;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1c1917">
-  <div style="max-width:560px;margin:0 auto;padding:32px 20px">
-    <div style="background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:28px">
-      <p style="margin:0 0 4px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#a8a29e">${EMAIL_CONFIG.APP_NAME}</p>
-      <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3">${title}</h1>
-      <div style="font-size:15px;line-height:1.6;color:#44403c">${bodyHtml}</div>
-      ${
-        cta
-          ? `<p style="margin:24px 0 0"><a href="${cta.url}" style="display:inline-block;background:#1c1917;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-size:15px">${cta.label}</a></p>`
-          : ''
-      }
-    </div>
-    <p style="margin:16px 4px 0;font-size:12px;color:#a8a29e">Este mensaje se generó automáticamente desde ${EMAIL_CONFIG.APP_NAME}.</p>
-  </div>
-</body></html>`;
-}
-
-async function send(to: string, subject: string, html: string): Promise<void> {
-  const client = await getClient();
-  if (!client) {
-    console.log(`📧 [EMAIL:consola] Para: ${to} — ${subject}`);
-    const link = html.match(/href="([^"]+)"/)?.[1];
-    if (link) console.log(`   ↳ ${link}`);
-    return;
-  }
-  try {
-    await client.emails.send({ from: EMAIL_CONFIG.FROM_EMAIL, to, subject, html });
-  } catch (error) {
-    // Un email que no sale no puede tumbar la operación que lo disparó: el
-    // imprevisto ya se aprobó, la notificación in-app ya está.
-    console.error(`❌ [EMAIL] No se pudo enviar a ${to}:`, error);
-  }
-}
-
-const appUrl = () => EMAIL_CONFIG.APP_URL.replace(/\/$/, '');
-
-export const EmailService = {
-  async sendVerification(to: string, token: string, name?: string) {
-    const url = `${appUrl()}/verify-email?token=${token}`;
-    await send(
-      to,
-      `Confirmá tu email en ${EMAIL_CONFIG.APP_NAME}`,
-      layout(
-        `Hola${name ? ` ${name}` : ''}`,
-        '<p>Confirmá tu dirección de email para empezar a usar la plataforma.</p>',
-        { label: 'Confirmar email', url },
-      ),
-    );
-  },
-
-  async sendPasswordReset(to: string, token: string) {
-    const url = `${appUrl()}/reset-password?token=${token}`;
-    await send(
-      to,
-      'Restablecer tu contraseña',
-      layout(
-        'Restablecer contraseña',
-        '<p>Pediste cambiar tu contraseña. El link vence en 1 hora.</p><p>Si no fuiste vos, ignorá este mensaje: tu contraseña sigue igual.</p>',
-        { label: 'Elegir nueva contraseña', url },
-      ),
-    );
-  },
-
-  async sendInvitation(to: string, token: string, projectName: string, inviterName: string) {
-    const url = `${appUrl()}/activate?token=${token}`;
-    await send(
-      to,
-      `${inviterName} te invitó a ${projectName}`,
-      layout(
-        `Te invitaron a ${projectName}`,
-        `<p><strong>${inviterName}</strong> te sumó al proyecto <strong>${projectName}</strong> en ${EMAIL_CONFIG.APP_NAME}.</p><p>Elegí una contraseña para entrar.</p>`,
-        { label: 'Activar mi cuenta', url },
-      ),
-    );
-  },
-
-  async sendProjectAdded(to: string, projectName: string, inviterName: string) {
-    await send(
-      to,
-      `Te sumaron a ${projectName}`,
-      layout(
-        `Te sumaron a ${projectName}`,
-        `<p><strong>${inviterName}</strong> te dio acceso al proyecto <strong>${projectName}</strong>.</p>`,
-        { label: 'Ver el proyecto', url: `${appUrl()}/` },
-      ),
-    );
-  },
-
-  /**
-   * Comunicación de imprevisto al cliente (RF-08 paso 3, RF-09).
-   *
-   * El sobrecosto NUNCA va como cifra aislada: siempre contra el total y el
-   * margen restante. Es una regla de diseño del documento, no una decisión de
-   * maquetado.
-   */
-  async sendContingencyToClient(
-    to: string,
-    params: {
-      projectName: string;
-      code: string;
-      what: string;
-      why: string;
-      impactCost: string;
-      impactDays: number;
-      budgetTotal: string;
-      remaining: string;
-      link: string;
-      options: Array<{ description: string; cost: string }>;
-    },
-  ) {
-    const options = params.options.length
-      ? `<p style="margin-top:16px"><strong>Alternativas</strong></p><ul>${params.options
-          .map((o) => `<li>${o.description} — ${o.cost}</li>`)
-          .join('')}</ul>`
-      : '';
-
-    await send(
-      to,
-      `${params.projectName}: hay una decisión esperándote (${params.code})`,
-      layout(
-        `Una novedad en ${params.projectName}`,
-        `<p><strong>Qué pasó.</strong> ${params.what}</p>
-         <p><strong>Por qué.</strong> ${params.why}</p>
-         <p><strong>Qué implica.</strong> ${params.impactCost}${
-           params.impactDays ? ` y ${params.impactDays} día(s) de plazo` : ''
-         }.</p>
-         <p style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:12px;padding:12px 14px">
-           Sobre un presupuesto total de <strong>${params.budgetTotal}</strong>, después de esto quedarían
-           <strong>${params.remaining}</strong> disponibles.
-         </p>
-         ${options}`,
-        { label: 'Ver y decidir', url: params.link },
-      ),
-    );
-  },
-
-  async sendWeeklySummary(to: string, projectName: string, html: string, link: string) {
-    await send(
-      to,
-      `Resumen semanal — ${projectName}`,
-      layout(`Cómo viene ${projectName}`, html, { label: 'Ver el detalle', url: link }),
-    );
-  },
+type ResendEmail = {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
 };
+
+type ResendClient = {
+  emails: { send: (options: ResendEmail) => Promise<unknown> };
+};
+
+let resendClient: ResendClient | null = null;
+let resendInitialized = false;
+
+async function getResendClient(): Promise<ResendClient | null> {
+  if (resendInitialized) return resendClient;
+  resendInitialized = true;
+
+  if (!EMAIL_CONFIG.RESEND_API_KEY) {
+    console.warn('⚠️  [EMAIL] Sin RESEND_API_KEY: los mails quedan deshabilitados.');
+    return null;
+  }
+
+  try {
+    const { Resend } = await import('resend');
+    resendClient = new Resend(EMAIL_CONFIG.RESEND_API_KEY) as unknown as ResendClient;
+    console.log('✅ [EMAIL] Cliente de Resend inicializado');
+    return resendClient;
+  } catch {
+    console.warn('⚠️  [EMAIL] El paquete `resend` no está disponible.');
+    return null;
+  }
+}
+
+const FROM_EMAIL = EMAIL_CONFIG.FROM;
+const APP_NAME = EMAIL_CONFIG.APP_NAME;
+
+const layout = (o: Omit<EmailLayoutOptions, 'appName'>) =>
+  renderEmailLayout({ ...o, appName: APP_NAME });
+
+async function send(email: ResendEmail, label: string): Promise<void> {
+  const resend = await getResendClient();
+  if (!resend) return;
+
+  try {
+    await resend.emails.send(email);
+    console.log(`✅ [EMAIL] ${label} enviado a: ${email.to}`);
+  } catch (error) {
+    console.error(`❌ [EMAIL] Falló el envío de ${label}:`, error);
+  }
+}
+
+export class EmailService {
+  /**
+   * Activación: la persona fue dada de alta por un admin y todavía no tiene
+   * contraseña. No es el mail de verificación — ese asume que ya la eligió.
+   */
+  static async sendAccountActivationEmail(
+    email: string,
+    activationToken: string,
+    userName?: string,
+  ): Promise<void> {
+    const url = appUrl(`/activate?token=${activationToken}`);
+    const name = userName || email.split('@')[0];
+
+    await send(
+      {
+        from: FROM_EMAIL,
+        to: email,
+        subject: `Activá tu cuenta en ${APP_NAME}`,
+        html: layout({
+          heading: 'Activá tu cuenta',
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Te dieron de alta en <strong>${escapeHtml(APP_NAME)}</strong>. Elegí tu
+               contraseña para entrar a tu cuenta.</p>
+            <p>O copiá y pegá este enlace en tu navegador:</p>
+            <p style="word-break: break-all;">${url}</p>
+            <p><strong>El enlace vence en 72 horas.</strong></p>
+            <p>Si no esperabas este correo, podés ignorarlo.</p>`,
+          cta: { label: 'Elegir mi contraseña', url },
+        }),
+        text: `Activá tu cuenta - ${APP_NAME}\n\nHola ${name},\n\nElegí tu contraseña acá:\n${url}\n\nEl enlace vence en 72 horas.`,
+      },
+      'mail de activación',
+    );
+  }
+
+  /** Verificación de email (doble opt-in) después del registro. */
+  static async sendEmailVerificationEmail(
+    email: string,
+    verificationToken: string,
+    userName?: string,
+  ): Promise<void> {
+    const url = appUrl(`/verify-email?token=${verificationToken}`);
+    const name = userName || email.split('@')[0];
+
+    await send(
+      {
+        from: FROM_EMAIL,
+        to: email,
+        subject: `Confirmá tu cuenta en ${APP_NAME}`,
+        html: layout({
+          heading: 'Confirmá tu cuenta',
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Gracias por registrarte en <strong>${escapeHtml(APP_NAME)}</strong>. Para
+               activar tu cuenta, confirmá tu dirección de correo.</p>
+            <p>O copiá y pegá este enlace en tu navegador:</p>
+            <p style="word-break: break-all;">${url}</p>
+            <p><strong>El enlace vence en 24 horas.</strong></p>
+            <p>Si no creaste esta cuenta, podés ignorar este correo.</p>`,
+          cta: { label: 'Confirmar mi cuenta', url },
+        }),
+        text: `Confirmá tu cuenta - ${APP_NAME}\n\nHola ${name},\n\n${url}\n\nEl enlace vence en 24 horas.`,
+      },
+      'mail de verificación',
+    );
+  }
+
+  static async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+    const url = appUrl(`/reset-password?token=${resetToken}`);
+
+    await send(
+      {
+        from: FROM_EMAIL,
+        to: email,
+        subject: `Restablecer contraseña - ${APP_NAME}`,
+        html: layout({
+          heading: 'Restablecer contraseña',
+          bodyHtml: `
+            <p>Hola,</p>
+            <p>Recibimos un pedido para restablecer la contraseña de tu cuenta en
+               ${escapeHtml(APP_NAME)}.</p>
+            <p>O copiá y pegá este enlace en tu navegador:</p>
+            <p style="word-break: break-all;">${url}</p>
+            <p><strong>El enlace vence en 1 hora.</strong></p>
+            <p>Si no pediste este cambio, podés ignorar este correo.</p>`,
+          cta: { label: 'Restablecer contraseña', url },
+        }),
+        text: `Restablecer contraseña - ${APP_NAME}\n\n${url}\n\nEl enlace vence en 1 hora.`,
+      },
+      'mail de reset',
+    );
+  }
+
+  /** Confirmación de cambio de email: se manda a la dirección NUEVA. */
+  static async sendEmailChangeConfirmationEmail(
+    newEmail: string,
+    token: string,
+    userName?: string,
+  ): Promise<void> {
+    const url = appUrl(`/confirm-email-change?token=${token}`);
+    const name = userName || newEmail.split('@')[0];
+
+    await send(
+      {
+        from: FROM_EMAIL,
+        to: newEmail,
+        subject: `Confirmá tu nuevo correo en ${APP_NAME}`,
+        html: layout({
+          heading: 'Confirmá tu nuevo correo',
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Pediste cambiar el correo de tu cuenta en ${escapeHtml(APP_NAME)} a esta
+               dirección. Confirmalo para completar el cambio.</p>
+            <p>O copiá y pegá este enlace en tu navegador:</p>
+            <p style="word-break: break-all;">${url}</p>
+            <p><strong>El enlace vence en 24 horas.</strong></p>
+            <p>Si no pediste este cambio, ignorá este correo: tu cuenta sigue con el
+               correo anterior.</p>`,
+          cta: { label: 'Confirmar mi correo', url },
+        }),
+        text: `Confirmá tu nuevo correo - ${APP_NAME}\n\n${url}\n\nEl enlace vence en 24 horas.`,
+      },
+      'mail de cambio de correo',
+    );
+  }
+}
+
+export default EmailService;

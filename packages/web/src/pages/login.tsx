@@ -1,92 +1,82 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { loginSchema } from '@luma/shared';
-import { authApi } from '@/api';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginCredentialsSchema } from '@luma/shared';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import type { z } from 'zod';
+import { AuthLayout } from '@/components/auth/auth-layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useLogin } from '@/hooks/auth/use-auth-queries';
 import { ROUTES } from '@/lib/routes';
-import { useSessionStore } from '@/stores/session-store';
-import { Button, Card, CardContent, Field, Input, Spinner } from '@/components/ui';
-import { AuthLayout } from './auth-layout';
+
+type LoginForm = z.infer<typeof loginCredentialsSchema>;
 
 export function LoginPage() {
-  const navigate = useNavigate();
-  const setSession = useSessionStore((s) => s.setSession);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+  const login = useLogin();
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError(null);
-
-    // Se valida con el MISMO schema que usa el backend: si el email está mal
-    // escrito, no hace falta un round-trip para decirlo.
-    const parsed = loginSchema.safeParse({ email, password });
-    if (!parsed.success) {
-      setError(parsed.error.errors[0].message);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const session = await authApi.login(parsed.data);
-      setSession(session.user, session.accessToken);
-      navigate(session.user.project_role === 'client' ? ROUTES.CLIENT_HOME : ROUTES.HOME);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No pudimos iniciar sesión');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({ resolver: zodResolver(loginCredentialsSchema) });
 
   return (
-    <AuthLayout title="Entrar" subtitle="Gestión y ejecución de obras">
+    <AuthLayout>
       <Card>
-        <CardContent className="pt-5">
-          <form onSubmit={submit} className="flex flex-col gap-4">
-            <Field label="Email">
+        <CardHeader>
+          <CardTitle>{t('auth.login.title')}</CardTitle>
+          <CardDescription>{t('auth.login.subtitle')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={handleSubmit((values) => login.mutate(values))}
+          >
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">{t('common.email')}</Label>
+              <Input id="email" type="email" autoComplete="email" {...register('email')} />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">{t('common.password')}</Label>
               <Input
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="vos@ejemplo.com"
-              />
-            </Field>
-            <Field label="Contraseña">
-              <Input
+                id="password"
                 type="password"
                 autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register('password')}
               />
-            </Field>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
+            </div>
 
-            {error && (
-              <p role="alert" className="text-sm text-danger">
-                {error}
-              </p>
-            )}
-
-            <Button type="submit" disabled={loading}>
-              {loading ? <Spinner /> : 'Entrar'}
+            <Button type="submit" disabled={login.isPending}>
+              {login.isPending ? t('common.loading') : t('auth.login.submit')}
             </Button>
-          </form>
 
-          <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4 text-sm">
-            <Link to={ROUTES.FORGOT_PASSWORD} className="text-primary hover:underline">
-              Olvidé mi contraseña
-            </Link>
-            <p className="text-muted-foreground">
-              ¿No tenés cuenta?{' '}
-              <Link to={ROUTES.REGISTER} className="text-primary hover:underline">
-                Creá una
+            <div className="flex flex-col items-center gap-2 text-sm">
+              <Link className="text-muted-foreground hover:underline" to={ROUTES.FORGOT_PASSWORD}>
+                {t('auth.login.forgot')}
               </Link>
-            </p>
-          </div>
+              <p className="text-muted-foreground">
+                {t('auth.login.noAccount')}{' '}
+                <Link className="text-primary hover:underline" to={ROUTES.REGISTER}>
+                  {t('auth.login.register')}
+                </Link>
+              </p>
+            </div>
+          </form>
         </CardContent>
       </Card>
     </AuthLayout>
   );
 }
+
+export default LoginPage;

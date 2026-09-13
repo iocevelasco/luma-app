@@ -1,0 +1,111 @@
+{
+  "common": {
+    "appName": "Luma",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "continue": "Continuar",
+    "back": "Voltar",
+    "loading": "Carregando…",
+    "retry": "Tentar de novo",
+    "email": "E-mail",
+    "password": "Senha",
+    "name": "Nome",
+    "language": "Idioma",
+    "errorTitle": "Algo deu errado",
+    "notFoundTitle": "Página não encontrada",
+    "notFoundBody": "O endereço que você abriu não existe ou mudou.",
+    "goHome": "Ir para o início"
+  },
+  "layout": {
+    "home": "Início",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "emptyHomeTitle": "Ainda não há nada aqui",
+    "emptyHomeBody": "Esta é a base da aplicação. Quando você definir o produto, a primeira tela dele vai neste lugar."
+  },
+  "userMenu": {
+    "account": "Minha conta",
+    "settings": "Configurações",
+    "theme": "Tema",
+    "logout": "Sair"
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar",
+      "subtitle": "Entre com seu e-mail e senha.",
+      "submit": "Entrar",
+      "forgot": "Esqueceu sua senha?",
+      "noAccount": "Não tem conta?",
+      "register": "Crie uma"
+    },
+    "register": {
+      "title": "Criar conta",
+      "subtitle": "Preencha seus dados para começar.",
+      "submit": "Criar conta",
+      "hasAccount": "Já tem conta?",
+      "login": "Entre"
+    },
+    "forgotPassword": {
+      "title": "Recuperar senha",
+      "subtitle": "Enviamos um link para você escolher uma nova.",
+      "submit": "Enviar link",
+      "sent": "Se existir uma conta com esse e-mail, enviamos as instruções.",
+      "backToLogin": "Voltar para entrar"
+    },
+    "resetPassword": {
+      "title": "Nova senha",
+      "subtitle": "Escolha uma senha nova para sua conta.",
+      "newPassword": "Nova senha",
+      "confirmPassword": "Repetir senha",
+      "submit": "Salvar senha",
+      "done": "Senha atualizada. Já pode entrar.",
+      "mismatch": "As senhas não coincidem.",
+      "missingToken": "O link é inválido ou expirou."
+    },
+    "activate": {
+      "title": "Ative sua conta",
+      "subtitle": "Escolha sua senha para terminar.",
+      "submit": "Ativar conta"
+    },
+    "checkEmail": {
+      "title": "Confira seu e-mail",
+      "subtitle": "Enviamos um link para confirmar sua conta.",
+      "resend": "Reenviar e-mail",
+      "resent": "Reenviamos o e-mail."
+    },
+    "verifyEmail": {
+      "verifying": "Confirmando sua conta…",
+      "success": "Conta confirmada!",
+      "error": "Não conseguimos confirmar sua conta. O link pode ter expirado.",
+      "goToLogin": "Ir para entrar"
+    },
+    "confirmEmailChange": {
+      "verifying": "Confirmando seu novo e-mail…",
+      "success": "E-mail atualizado.",
+      "error": "Não conseguimos confirmar a troca. O link pode ter expirado."
+    },
+    "account": {
+      "title": "Minha conta",
+      "changePassword": "Trocar senha",
+      "currentPassword": "Senha atual",
+      "newPassword": "Nova senha",
+      "passwordChanged": "Senha atualizada.",
+      "changeEmail": "Trocar e-mail",
+      "newEmail": "Novo e-mail",
+      "emailChangeSent": "Enviamos um e-mail para o novo endereço."
+    },
+    "errors": {
+      "login": "Não conseguimos entrar. Verifique seu e-mail e senha.",
+      "register": "Não conseguimos criar a conta.",
+      "generic": "Algo deu errado. Tente de novo."
+    }
+  },
+  "routeError": {
+    "title": "Algo quebrou",
+    "description": "A tela não pôde carregar. Você pode tentar de novo ou voltar ao início.",
+    "unknown": "Erro desconhecido",
+    "retry": "Tentar de novo",
+    "goHome": "Ir para o início",
+    "signOut": "Sair e começar do zero"
+  }
+}

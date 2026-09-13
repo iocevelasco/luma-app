@@ -1,78 +1,112 @@
 @import 'tailwindcss';
-
-/*
-  Configuración CSS-first de Tailwind v4 — no hay tailwind.config.js.
-  Mismo enfoque que Pantera Negra: los tokens semánticos viven acá y los
-  componentes usan `bg-background`, `text-muted-foreground`, etc., nunca un
-  color crudo. Cambiar la marca es cambiar este bloque.
-*/
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
-  /* Obra: gris cálido de fondo, azul de acción, ámbar y rojo para el semáforo
-     presupuestal. El azul se reserva para acciones; los estados tienen sus
-     propios colores para que nunca compitan con la marca. */
-  --background: #fafaf9;
-  --foreground: #1c1917;
-  --card: #ffffff;
-  --card-foreground: #1c1917;
-  --popover: #ffffff;
-  --popover-foreground: #1c1917;
-  --primary: #1d4ed8;
-  --primary-foreground: #ffffff;
-  --secondary: #f5f5f4;
-  --secondary-foreground: #1c1917;
-  --muted: #f5f5f4;
-  --muted-foreground: #78716c;
-  --accent: #eef2ff;
-  --accent-foreground: #1e3a8a;
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
-  --border: #e7e5e4;
-  --input: #e7e5e4;
-  --ring: #1d4ed8;
-
-  /* Semáforo presupuestal y estados de actividad (RF-05, RF-04). */
-  --status-healthy: #059669;
-  --status-warning: #d97706;
-  --status-danger: #dc2626;
-  --status-neutral: #a8a29e;
-  --status-info: #2563eb;
-
-  /* Escala única de redondeo. El hijo va un escalón abajo del padre. */
-  --radius: 0.875rem;
+/* `.light` además de `:root` para poder forzar el tema claro en un área
+   concreta sin cambiar el default de la app, que es oscuro.
+   Ver hooks/use-scoped-theme.ts. */
+:root,
+.light {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.12 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.12 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.12 0 0);
+  --primary: #EF233C;
+  --primary-foreground: #FFFFFF;
+  --secondary: #272B30;
+  --secondary-foreground: #FFFFFF;
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: #D90429;
+  --destructive-foreground: #FFFFFF;
+  /* Verde y ámbar de aviso. El rojo de marca ya está en --destructive; estos
+     dos existían sólo como clases sueltas y no había forma de tematizarlos. */
+  --success: #157F3D;
+  --success-foreground: #FFFFFF;
+  --warning: #A15C07;
+  --warning-foreground: #FFFFFF;
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: #EF233C;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 1rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #EF233C;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  /* Colores semánticos de estado (activo / por vencer / vencido / neutro).
+     Información, no decoración: son independientes del rojo de marca, que se
+     reserva para las acciones. */
+  --status-active: #07C58A;
+  --status-warning: #FF9A3C;
+  --status-danger: #FF5C5C;
+  --status-neutral: #969696;
+  --status-info: #6EA8FF;
 }
 
 .dark {
-  --background: #0c0a09;
-  --foreground: #fafaf9;
-  --card: #1c1917;
-  --card-foreground: #fafaf9;
-  --popover: #1c1917;
-  --popover-foreground: #fafaf9;
-  --primary: #3b82f6;
-  --primary-foreground: #0c0a09;
-  --secondary: #292524;
-  --secondary-foreground: #fafaf9;
-  --muted: #292524;
-  --muted-foreground: #a8a29e;
-  --accent: #1e293b;
-  --accent-foreground: #dbeafe;
-  --destructive: #ef4444;
-  --destructive-foreground: #0c0a09;
-  --border: #292524;
-  --input: #292524;
-  --ring: #3b82f6;
-
-  --status-healthy: #10b981;
-  --status-warning: #f59e0b;
-  --status-danger: #f87171;
-  --status-neutral: #78716c;
-  --status-info: #60a5fa;
+  --background: #101116;
+  --foreground: #FFFFFF;
+  --card: #15162a;
+  --card-foreground: #FFFFFF;
+  --popover: #15162a;
+  --popover-foreground: #FFFFFF;
+  --primary: #EF233C;
+  --primary-foreground: #FFFFFF;
+  --secondary: #272B30;
+  --secondary-foreground: #FFFFFF;
+  --muted: #272B30;
+  --muted-foreground: #A9AAAC;
+  --accent: #272B30;
+  --accent-foreground: #FFFFFF;
+  --destructive: #D90429;
+  --destructive-foreground: #FFFFFF;
+  /* Sobre fondo oscuro el mismo verde queda apagado: se sube la luminosidad
+     para que el contraste con el texto blanco siga siendo legible. */
+  --success: #1FA855;
+  --success-foreground: #06170D;
+  --warning: #D8952B;
+  --warning-foreground: #241703;
+  --border: #272B30;
+  --input: #272B30;
+  --ring: #EF233C;
+  --chart-1: #EF233C;
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: #15162a;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #EF233C;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #272B30;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #272B30;
+  --sidebar-ring: #EF233C;
+  --status-active: #07C58A;
+  --status-warning: #FF9A3C;
+  --status-danger: #FF5C5C;
+  --status-neutral: #969696;
+  --status-info: #6EA8FF;
 }
 
 @theme inline {
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -89,49 +123,113 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  /*
+    Escala de radios — un solo origen: `--radius`, el radio de una superficie.
+    Todo lo demás se deriva de ahí, así que el redondeo de la app entera se
+    mueve cambiando un número.
 
-  --color-healthy: var(--status-healthy);
-  --color-warning: var(--status-warning);
-  --color-danger: var(--status-danger);
-  --color-neutral: var(--status-neutral);
-  --color-info: var(--status-info);
+    Regla de anidado: el hijo va un escalón abajo del padre. Un radio interno
+    MAYOR que el del contenedor deja una luz visible en la esquina — era lo que
+    pasaba con filas `rounded-xl` adentro de cards `rounded-md`.
 
-  --radius-lg: var(--radius);
+      rounded-xs  →  6px   micro: swatches, indicadores
+      rounded-sm  → 10px   controles chicos
+      rounded-md  → 12px   input, select, fila adentro de una card
+      rounded-lg  → 16px   card, dialog, sheet, popover  ← superficie
+      rounded-xl  → 20px   contenedor que envuelve cards
+      rounded-2xl → 24px
+      rounded-3xl → 32px
+
+    Los controles con forma de píldora (button, chip, tab, badge) usan
+    `rounded-full` a propósito: la forma es la que distingue "esto se toca" de
+    "esto es una superficie", y no depende de la escala.
+  */
+  --radius-xs: calc(var(--radius) - 10px);
+  --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 4px);
-  --radius-sm: calc(var(--radius) - 8px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-status-active: var(--status-active);
+  --color-status-warning: var(--status-warning);
+  --color-status-danger: var(--status-danger);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-info: var(--status-info);
+
+  /*
+    Sombras: tres roles, no siete niveles.
+
+    Con una escalera completa de sombras (xs…2xl) y ninguna regla sobre cuál va
+    dónde, la misma card sale con una altura distinta según quién la escribió.
+    La profundidad la dan el filete de 1px y el salto de superficie, así que
+    quedan sólo estas tres alturas.
+
+      surface  una card apoyada en la página
+      overlay  algo que flota por encima: diálogo, menú, barra fija, FAB
+      glow     acento de marca, que NO es profundidad: no lo uses para elevar
+
+  */
+  --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 12px rgb(0 0 0 / 0.08);
+  --shadow-overlay: 0 4px 12px rgb(0 0 0 / 0.14), 0 16px 40px rgb(0 0 0 / 0.22);
+  --shadow-glow: 0 0 24px rgb(239 35 60 / 0.35);
+
+  /*
+    El escalón más chico de la escala tipográfica: 11px.
+
+    Escrito en px, un `text-[10px]` suelto no sigue el tamaño de texto del
+    sistema: quien agranda la tipografía del teléfono no ve ningún cambio, justo
+    en los rótulos más chicos, que son los que más lo necesitan.
+
+    En rem, escalan. Es el piso: no agregues nada por debajo.
+  */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.35;
 }
 
-* {
-  border-color: var(--border);
-}
-
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  /* La operación diaria es en el celular, con el teléfono en una mano. */
-  overscroll-behavior-y: none;
-}
-
-/* Área segura del notch: la barra inferior no puede quedar bajo el gesto de
-   home del iPhone, que es exactamente donde vive el botón de check-in. */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-.pt-safe {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
   }
 }
+
+/* Animación shimmer para notificación de actualización */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+

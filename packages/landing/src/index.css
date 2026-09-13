@@ -1,0 +1,193 @@
+@import 'tailwindcss';
+
+/*
+  Tokens de la landing. La fuente de verdad del sistema es DESIGN.md en la raíz
+  del repo; este bloque es su implementación para Tailwind v4.
+
+  Los nombres describen el ROL, no el color: `canvas` y `ink` cambian de hex
+  según la banda, y son las bandas las que alternan. Un token llamado `gray`
+  no dice sobre qué fondo es legible; `muted` y `body-on-light` sí.
+*/
+@theme {
+  /* ─────────────── Voltaje de marca ───────────────
+     El rojo es la única voz cromática y aparece en cuatro lugares: la marca,
+     el CTA, la numeración de features y el punto hanko.
+
+     Hay dos rojos porque ninguno solo sirve para las dos cosas. `red` con
+     blanco encima da 4.22:1 y no pasa AA, pero como tinta sobre `canvas` da
+     4.69:1 y sí. Entonces: `red` es tinta sobre oscuro, `red-ink` es relleno.
+     La identidad no cambia — el CTA deja de fallar. */
+  --color-red:        #EF233C;  /* tinta sobre oscuro · marca · hanko        */
+  --color-red-ink:    #C81E32;  /* relleno de CTA — blanco encima 5.69:1     */
+  --color-red-deep:   #A81829;  /* hover del CTA                             */
+  --color-red-press:  #8E1422;  /* active                                    */
+
+  /* ─────────────── Canvas ─────────────── */
+  --color-canvas:         #0A0A0A;  /* banda oscura                          */
+  --color-canvas-soft:    #F7F7F5;  /* banda clara                           */
+  --color-canvas-light:   #FFFFFF;  /* celdas de feature                     */
+  --color-surface:        #1A1A1A;  /* marco del preview                     */
+  --color-surface-sunken: #111111;  /* barra de URL del preview              */
+
+  /* ─────────────── Tinta ───────────────
+     Dos grises, scopeados por canvas. `body-on-light` (#6B7280) pasa sobre
+     claro (4.51:1) y FALLA sobre oscuro (4.10:1). Para texto chico sobre
+     `canvas` va `muted` (5.31:1). */
+  --color-ink:           #FFFFFF;  /* sobre canvas          — 19.60:1        */
+  --color-ink-on-light:  #0A0A0A;  /* sobre canvas-soft     — 18.46:1        */
+  --color-body:          #9CA3AF;  /* párrafo sobre canvas  —  7.80:1        */
+  --color-muted:         #7C8593;  /* label sobre canvas    —  5.31:1        */
+  --color-body-on-light: #6B7280;  /* sobre canvas-soft     —  4.51:1        */
+
+  /* ─────────────── Filetes ───────────────
+     La profundidad de la landing la dan estas dos líneas y el salto de canvas,
+     no una escalera de sombras. */
+  --color-hairline:      #E5E5E3;
+  --color-hairline-dark: #2A2A2A;
+
+  /* ─────────────── Tipografía ─────────────── */
+  --font-serif: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  --font-sans:  'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono:  'DM Mono', 'Courier New', monospace;
+
+  /* ─────────────── Espaciado ───────────────
+     No hay tokens de espaciado propios a propósito. La escalera numérica de
+     Tailwind ya es la misma escalera de 8px, y declarar `--spacing-md` pisa las
+     tallas t-shirt: `max-w-md` deja de ser 28rem y pasa a 32px. La escalera
+     canónica vive en DESIGN.md como mapa a utilidades numéricas:
+       4px=1 · 8px=2 · 16px=4 · 24px=6 · 32px=8 · 48px=12 · 64px=16 · 96px=24 · 128px=32 */
+  --spacing-section:    96px;
+  --spacing-section-sm: 64px;
+
+  /* ─────────────── Radio — el lenguaje de cero ───────────────
+     La landing es un afiche: nada se toca salvo el CTA. Los 2px de `edge` no
+     son un compromiso — alcanzan para que no se lea como error de render y no
+     alcanzan para leerse como píldora.
+
+     `sm/md/lg` quedan pisados en 2px a propósito: si alguien escribe
+     `rounded-lg` por costumbre, sigue saliendo plano. */
+  --radius-none:  0px;
+  --radius-edge:  2px;
+  --radius-frame: 6px;
+  --radius-sm:    2px;
+  --radius-md:    2px;
+  --radius-lg:    2px;
+}
+
+/* Reglas de elemento. */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-ink-on-light);
+    background-color: var(--color-canvas-light);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* El serif ya se aplica acá: no hace falta repetir `style={{ fontFamily }}`
+     en cada heading del JSX. */
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    text-wrap: pretty;
+  }
+}
+
+/*
+  Clases de la casa. Van en `components` a propósito: así una utilidad de
+  Tailwind las puede pisar. Sin capa, `.section-label` le ganaría a
+  `text-muted` y el rótulo quedaría ilegible sobre las bandas oscuras.
+*/
+@layer components {
+  /* Filete horizontal — el separador de la casa. */
+  .rule {
+    display: block;
+    width: 100%;
+    height: 1px;
+    background-color: var(--color-hairline);
+  }
+
+  .rule-dark {
+    background-color: var(--color-hairline-dark);
+  }
+
+  /* Punto rojo — motivo del sello hanko. */
+  .hanko {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: var(--color-red);
+    border-radius: 50%;
+    margin-left: 2px;
+    vertical-align: middle;
+  }
+
+  /* Rótulo de sección. El color por defecto es el de banda clara, que es el caso
+     mayoritario; sobre `canvas` hay que agregar `text-muted` — con
+     `body-on-light` sobre oscuro el contraste queda en 4.10:1 y no pasa AA. */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;   /* 11px */
+    letter-spacing: 0.15em; /* 1.65px */
+    text-transform: uppercase;
+    color: var(--color-body-on-light);
+  }
+
+  /* Numeración de features: 01, 02, 03. */
+  .feature-num {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-red-ink);
+    letter-spacing: 0.05em;
+  }
+
+  /* ─────────────── Spec cell ───────────────
+     Cifra enorme en serif, rótulo diminuto en mono debajo. La tensión entre 80px
+     y 11px es lo que produce el efecto: achicar la cifra o agrandar el rótulo lo
+     mata. Sirve para el trial, las métricas y los pasos numerados. */
+  .spec-number {
+    font-family: var(--font-serif);
+    font-size: 5rem;        /* 80px */
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -2.4px;
+  }
+
+  .spec-label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;   /* 11px */
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 639px) {
+    .spec-number {
+      font-size: 3rem;      /* 48px */
+      letter-spacing: -1.4px;
+    }
+  }
+
+  /* ─────────────── Etiqueta de control ───────────────
+     Mayúsculas con tracking en CTAs y nav. Es lo que separa una landing atlética
+     de una landing blanda, y no cambia el layout. */
+  .cta-label {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+
+  .nav-label {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+}

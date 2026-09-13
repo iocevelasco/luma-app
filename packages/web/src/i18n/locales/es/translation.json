@@ -1,0 +1,111 @@
+{
+  "common": {
+    "appName": "Luma",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "continue": "Continuar",
+    "back": "Volver",
+    "loading": "Cargando…",
+    "retry": "Reintentar",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "name": "Nombre",
+    "language": "Idioma",
+    "errorTitle": "Algo salió mal",
+    "notFoundTitle": "Página no encontrada",
+    "notFoundBody": "La dirección que abriste no existe o cambió.",
+    "goHome": "Ir al inicio"
+  },
+  "layout": {
+    "home": "Inicio",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "emptyHomeTitle": "Todavía no hay nada acá",
+    "emptyHomeBody": "Esta es la base de la aplicación. Cuando definas el producto, su primera pantalla va en este lugar."
+  },
+  "userMenu": {
+    "account": "Mi cuenta",
+    "settings": "Configuración",
+    "theme": "Tema",
+    "logout": "Cerrar sesión"
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar",
+      "subtitle": "Ingresá con tu correo y contraseña.",
+      "submit": "Entrar",
+      "forgot": "¿Olvidaste tu contraseña?",
+      "noAccount": "¿No tenés cuenta?",
+      "register": "Creá una"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "subtitle": "Completá tus datos para empezar.",
+      "submit": "Crear cuenta",
+      "hasAccount": "¿Ya tenés cuenta?",
+      "login": "Entrá"
+    },
+    "forgotPassword": {
+      "title": "Recuperar contraseña",
+      "subtitle": "Te enviamos un enlace para elegir una nueva.",
+      "submit": "Enviar enlace",
+      "sent": "Si existe una cuenta con ese correo, te enviamos las instrucciones.",
+      "backToLogin": "Volver a entrar"
+    },
+    "resetPassword": {
+      "title": "Nueva contraseña",
+      "subtitle": "Elegí una contraseña nueva para tu cuenta.",
+      "newPassword": "Nueva contraseña",
+      "confirmPassword": "Repetir contraseña",
+      "submit": "Guardar contraseña",
+      "done": "Contraseña actualizada. Ya podés entrar.",
+      "mismatch": "Las contraseñas no coinciden.",
+      "missingToken": "El enlace es inválido o venció."
+    },
+    "activate": {
+      "title": "Activá tu cuenta",
+      "subtitle": "Elegí tu contraseña para terminar.",
+      "submit": "Activar cuenta"
+    },
+    "checkEmail": {
+      "title": "Revisá tu correo",
+      "subtitle": "Te enviamos un enlace para confirmar tu cuenta.",
+      "resend": "Reenviar correo",
+      "resent": "Te reenviamos el correo."
+    },
+    "verifyEmail": {
+      "verifying": "Confirmando tu cuenta…",
+      "success": "¡Cuenta confirmada!",
+      "error": "No pudimos confirmar tu cuenta. El enlace puede haber vencido.",
+      "goToLogin": "Ir a entrar"
+    },
+    "confirmEmailChange": {
+      "verifying": "Confirmando tu nuevo correo…",
+      "success": "Correo actualizado.",
+      "error": "No pudimos confirmar el cambio. El enlace puede haber vencido."
+    },
+    "account": {
+      "title": "Mi cuenta",
+      "changePassword": "Cambiar contraseña",
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "passwordChanged": "Contraseña actualizada.",
+      "changeEmail": "Cambiar correo",
+      "newEmail": "Nuevo correo",
+      "emailChangeSent": "Te enviamos un correo a la nueva dirección."
+    },
+    "errors": {
+      "login": "No pudimos entrar. Revisá tu correo y contraseña.",
+      "register": "No pudimos crear la cuenta.",
+      "generic": "Algo salió mal. Probá de nuevo."
+    }
+  },
+  "routeError": {
+    "title": "Algo se rompió",
+    "description": "La pantalla no pudo cargar. Podés reintentar o volver al inicio.",
+    "unknown": "Error desconocido",
+    "retry": "Reintentar",
+    "goHome": "Ir al inicio",
+    "signOut": "Cerrar sesión y empezar de cero"
+  }
+}

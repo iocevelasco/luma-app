@@ -1,90 +1,81 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { registerSchema } from '@luma/shared';
-import { authApi } from '@/api';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registerCredentialsSchema } from '@luma/shared';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import type { z } from 'zod';
+import { AuthLayout } from '@/components/auth/auth-layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useRegister } from '@/hooks/auth/use-auth-queries';
 import { ROUTES } from '@/lib/routes';
-import { useSessionStore } from '@/stores/session-store';
-import { Button, Card, CardContent, Field, Input, Spinner } from '@/components/ui';
-import { AuthLayout } from './auth-layout';
+
+type RegisterForm = z.infer<typeof registerCredentialsSchema>;
 
 export function RegisterPage() {
-  const navigate = useNavigate();
-  const setSession = useSessionStore((s) => s.setSession);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+  const registerUser = useRegister();
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError(null);
-
-    const parsed = registerSchema.safeParse(form);
-    if (!parsed.success) {
-      setError(parsed.error.errors[0].message);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const session = await authApi.register(parsed.data);
-      setSession(session.user, session.accessToken);
-      navigate(ROUTES.NEW_PROJECT);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No pudimos crear la cuenta');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterForm>({ resolver: zodResolver(registerCredentialsSchema) });
 
   return (
-    <AuthLayout title="Crear cuenta" subtitle="Gestión y ejecución de obras">
+    <AuthLayout>
       <Card>
-        <CardContent className="pt-5">
-          <form onSubmit={submit} className="flex flex-col gap-4">
-            <Field label="Nombre">
+        <CardHeader>
+          <CardTitle>{t('auth.register.title')}</CardTitle>
+          <CardDescription>{t('auth.register.subtitle')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={handleSubmit((values) => registerUser.mutate(values))}
+          >
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="name">{t('common.name')}</Label>
+              <Input id="name" autoComplete="name" {...register('name')} />
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">{t('common.email')}</Label>
+              <Input id="email" type="email" autoComplete="email" {...register('email')} />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">{t('common.password')}</Label>
               <Input
-                autoComplete="name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </Field>
-            <Field label="Email">
-              <Input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </Field>
-            <Field label="Contraseña" hint="Mínimo 8 caracteres, con al menos una letra y un número">
-              <Input
+                id="password"
                 type="password"
                 autoComplete="new-password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                {...register('password')}
               />
-            </Field>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
+            </div>
 
-            {error && (
-              <p role="alert" className="text-sm text-danger">
-                {error}
-              </p>
-            )}
-
-            <Button type="submit" disabled={loading}>
-              {loading ? <Spinner /> : 'Crear cuenta'}
+            <Button type="submit" disabled={registerUser.isPending}>
+              {registerUser.isPending ? t('common.loading') : t('auth.register.submit')}
             </Button>
-          </form>
 
-          <p className="mt-5 border-t border-border pt-4 text-sm text-muted-foreground">
-            ¿Ya tenés cuenta?{' '}
-            <Link to={ROUTES.LOGIN} className="text-primary hover:underline">
-              Entrá
-            </Link>
-          </p>
+            <p className="text-center text-sm text-muted-foreground">
+              {t('auth.register.hasAccount')}{' '}
+              <Link className="text-primary hover:underline" to={ROUTES.LOGIN}>
+                {t('auth.register.login')}
+              </Link>
+            </p>
+          </form>
         </CardContent>
       </Card>
     </AuthLayout>
   );
 }
+
+export default RegisterPage;

@@ -6,16 +6,26 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "echo \"(sin eslint configurado)\""
+    "test:watch": "vitest"
   },
-  "dependencies": { "zod": "^3.25.76" },
-  "devDependencies": { "@types/node": "^22.10.2", "typescript": "^5.6.3", "vitest": "^3.2.4" }
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  }
 }

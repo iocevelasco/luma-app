@@ -1,6 +1,10 @@
 node_modules
 **/node_modules
+**/.git
 **/dist
-.git
-.env
-*.log
+**/*.log
+
+# Never bake local env vars into the production image
+**/.env
+**/.env.local
+**/.env.*.local

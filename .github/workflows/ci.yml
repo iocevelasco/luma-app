@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,9 +20,45 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
 
-      # shared se buildea primero: api y web importan su dist.
-      - run: pnpm --filter @luma/shared build
       - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
       - run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.6.12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Sólo chromium: es la suite de regresión funcional, y correrla en los tres
+      # motores no encuentra tres veces más bugs. WebKit y Firefox se corren a
+      # mano (`pnpm test:e2e:cross`) antes de mergear algo que toque una API del
+      # browser.
+      - run: pnpm exec playwright install --with-deps chromium
+
+      # Sin backend levantado corren los tests que no necesitan sesión; el
+      # globalSetup lo detecta y no tira.
+      - run: pnpm test:e2e:ci
+        env:
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

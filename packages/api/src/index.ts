@@ -1,72 +1,98 @@
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
-import compression from 'compression';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
-
-import { connectDatabase, isDatabaseConnected } from './config/database.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import {
+  CORS_CONFIG,
   SERVER_CONFIG,
-  FEATURE_FLAGS,
+  isDevelopment,
   isProduction,
   validateConfig,
 } from './config/app.config.js';
-import { SchedulerService } from './services/scheduler.service.js';
-
+import { connectDatabase, isDatabaseConnected } from './config/database.js';
+import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './routes/auth.js';
-import { projectsRouter } from './routes/projects.js';
-import { activitiesRouter } from './routes/activities.js';
-import { materialsRouter } from './routes/materials.js';
-import { personnelRouter } from './routes/personnel.js';
-import { budgetRouter } from './routes/budget.js';
-import { contingenciesRouter } from './routes/contingencies.js';
-import { dashboardRouter } from './routes/dashboard.js';
-import { clientRouter } from './routes/client.js';
-import { notificationsRouter } from './routes/notifications.js';
-import { assistantRouter } from './routes/assistant.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
+// Antes de crear la app: es preferible no arrancar a arrancar mal configurado.
 validateConfig();
 
 const app = express();
+const PORT = SERVER_CONFIG.PORT;
 
-// Detrás del balanceador de Fly.io. Se confía en UN solo proxy, no en todos:
-// confiar en la cadena entera deja que cualquiera falsee su IP y se saltee el
-// rate limit.
+// Detrás de un proxy (Traefik en Coolify) hace falta para que el rate limiting
+// vea la IP real del cliente y no la del proxy. Confiamos SÓLO en el primero de
+// la cadena: confiar en todos permitiría falsear la IP con un X-Forwarded-For.
 app.set('trust proxy', 1);
 
-// ─── CORS ────────────────────────────────────────────────────────────────────
+function isOriginAllowed(origin: string | undefined): boolean {
+  if (!origin) return true; // requests sin Origin (curl, server-to-server)
 
-const ALLOWED_HEADERS = ['Content-Type', 'Authorization', 'X-Project-Id'];
+  // En desarrollo, cualquier puerto de la máquina local. `127.0.0.1` entra
+  // además de `localhost`: no son intercambiables para el navegador —son
+  // orígenes distintos— y varias herramientas (Playwright, algunos proxies)
+  // usan la IP. Sin esto el preflight sale 403 sin `Allow-Credentials` y el
+  // browser reporta un error de CORS que parece un bug de la app.
+  if (!isProduction && /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]):\d+$/.test(origin)) {
+    return true;
+  }
 
-function isOriginAllowed(origin?: string): boolean {
-  if (!origin) return true;
-  if (!isProduction && origin.startsWith('http://localhost:')) return true;
-  if (isProduction && origin.endsWith('.fly.dev')) return true;
-  return [SERVER_CONFIG.FRONTEND_URL, SERVER_CONFIG.APP_URL].filter(Boolean).includes(origin);
+  // Whitelist: ALLOWED_ORIGINS (env) + FRONTEND_URL, que siempre entra.
+  // La barra final se normaliza porque el navegador nunca la manda en Origin.
+  const allowedOrigins = [...CORS_CONFIG.ALLOWED_ORIGINS, SERVER_CONFIG.FRONTEND_URL]
+    .filter(Boolean)
+    .map((o) => o.replace(/\/$/, ''));
+
+  return allowedOrigins.includes(origin.replace(/\/$/, ''));
 }
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (isOriginAllowed(origin ?? undefined)) return callback(null, true);
-      if (!isProduction) return callback(null, true);
-      console.warn(`⚠️  [CORS] Origen bloqueado: ${origin}`);
-      callback(new Error('Origen no permitido'));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ALLOWED_HEADERS,
-    maxAge: 86400,
-  }),
-);
+/**
+ * Headers que el navegador puede mandar. Una sola lista, a propósito.
+ *
+ * El handler de preflight de abajo corta con `return res.sendStatus(200)` antes
+ * de que corra `cors()`, así que agregar un header sólo en `cors()` no tiene
+ * ningún efecto: el navegador sigue bloqueando el request y el servidor ni se
+ * entera. Con una constante compartida ese desfasaje no puede ocurrir.
+ */
+const ALLOWED_HEADERS = ['Content-Type', 'Authorization', 'Idempotency-Key'];
+const ALLOWED_HEADERS_HEADER = ALLOWED_HEADERS.join(', ');
 
-// ─── Middleware base ─────────────────────────────────────────────────────────
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+
+  res.header('Access-Control-Allow-Origin', origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', ALLOWED_HEADERS_HEADER);
+
+  if (isOriginAllowed(origin)) {
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400');
+    return res.sendStatus(200);
+  }
+
+  if (isDevelopment) {
+    console.warn(`⚠️  [CORS] Preflight rechazado desde: ${origin}`);
+  }
+  return res.status(403).json({ error: 'CORS: Origin not allowed' });
+});
+
+// www → apex (301), sólo en producción.
+if (isProduction) {
+  app.use((req, res, next) => {
+    const host = req.headers.host ?? '';
+    if (host.startsWith('www.')) {
+      return res.redirect(301, `https://${host.replace(/^www\./, '')}${req.url}`);
+    }
+    next();
+  });
+}
 
 app.use(
   helmet({
@@ -75,11 +101,12 @@ app.use(
       ? {
           directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'"],
+            scriptSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-            imgSrc: ["'self'", 'data:', 'blob:'],
-            connectSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com'],
+            frameSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
+            connectSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             formAction: ["'self'"],
@@ -88,12 +115,33 @@ app.use(
       : false,
   }),
 );
+
 app.use(compression());
-app.use(express.json({ limit: '2mb' }));
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      console.warn(`⚠️  [CORS] Origen bloqueado: ${origin}`);
+      if (!isProduction) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ALLOWED_HEADERS,
+    maxAge: 86400,
+    preflightContinue: false,
+    optionsSuccessStatus: 200,
+  }),
+);
+
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
-// ─── Health ──────────────────────────────────────────────────────────────────
 
 app.get('/health', (_req, res) => {
   res.json({
@@ -103,74 +151,130 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// ─── Rutas ───────────────────────────────────────────────────────────────────
-
 app.use('/api/auth', authRouter);
-app.use('/api/projects', projectsRouter);
-app.use('/api/activities', activitiesRouter);
-app.use('/api/materials', materialsRouter);
-app.use('/api/personnel', personnelRouter);
-app.use('/api/budget', budgetRouter);
-app.use('/api/contingencies', contingenciesRouter);
-app.use('/api/dashboard', dashboardRouter);
-app.use('/api/client', clientRouter);
-app.use('/api/notifications', notificationsRouter);
-app.use('/api/assistant', assistantRouter);
-
-// ─── SPA en producción ───────────────────────────────────────────────────────
 
 if (isProduction) {
-  const candidates = [
+  // Proxy /home/* → la landing, un servicio aparte en la red interna de Docker.
+  // Express saca el prefijo /home antes de pasar al middleware, así que el
+  // pathRewrite lo repone: '' → '/home', '/assets/x' → '/home/assets/x'.
+  app.use(
+    '/home',
+    createProxyMiddleware({
+      target: SERVER_CONFIG.LANDING_URL,
+      changeOrigin: true,
+      pathRewrite: { '^': '/home' },
+    }),
+  );
+
+  app.get('/', (_req, res) => res.redirect(301, '/home'));
+
+  // El `public/` puede quedar en distintos lugares según desde dónde se arranque.
+  const possiblePublicPaths = [
     join(__dirname, 'public'),
     join(__dirname, '..', 'public'),
     join(process.cwd(), 'public'),
     join(process.cwd(), 'packages', 'api', 'public'),
   ];
-  const publicPath = candidates.find((p) => existsSync(p));
+
+  const publicPath = possiblePublicPaths.find((candidate) => {
+    try {
+      return existsSync(candidate);
+    } catch {
+      return false;
+    }
+  });
 
   if (publicPath) {
-    app.use(express.static(publicPath));
-    console.log(`📦 Sirviendo el SPA desde ${publicPath}`);
+    app.use('/app', express.static(publicPath));
+    console.log(`📦 Sirviendo estáticos desde: ${publicPath}`);
 
-    // Fallback del router del cliente. Va DESPUÉS de las rutas de API para no
-    // devolver el index.html en lugar de un 404 de API.
-    app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api/')) return next();
-      const index = join(publicPath, 'index.html');
-      return existsSync(index) ? res.sendFile(index) : next();
+    app.get('/app/*', (_req, res, next) => {
+      const indexPath = join(publicPath, 'index.html');
+      if (existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        next();
+      }
     });
+
+    app.get('/login', (_req, res) => res.redirect(301, '/app/login'));
+
+    /**
+     * Rutas de React Router pedidas en la raíz.
+     *
+     * En producción el SPA se compila con `base: '/app/'` y el router usa ese
+     * `basename`, así que una URL como `/reset-password` queda FUERA de su
+     * alcance: servirle el index.html devuelve 200, carga el bundle y no
+     * renderiza nada. Página en blanco, sin error en consola ni en el servidor.
+     *
+     * Por eso redirige al punto de montaje real, que sale de APP_URL —la misma
+     * fuente que usa `appUrl()` para armar los enlaces de los mails—, así un
+     * enlace viejo con el path equivocado sigue funcionando.
+     *
+     * `/home` queda afuera a propósito: lo atiende el proxy a la landing.
+     */
+    const rootSpaRoutes = [
+      '/register',
+      '/check-email',
+      '/verify-email',
+      '/activate',
+      '/forgot-password',
+      '/reset-password',
+      '/confirm-email-change',
+      '/admin',
+    ];
+
+    let spaMount = '';
+    try {
+      spaMount = new URL(SERVER_CONFIG.APP_URL).pathname.replace(/\/$/, '');
+    } catch {
+      spaMount = '';
+    }
+
+    for (const route of rootSpaRoutes) {
+      app.get([route, `${route}/*`], (req, res, next) => {
+        if (spaMount) {
+          return res.redirect(302, `${spaMount}${req.originalUrl}`);
+        }
+        const indexPath = join(publicPath, 'index.html');
+        if (existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          next();
+        }
+      });
+    }
   } else {
-    console.warn('⚠️  No se encontró el build del frontend. Sólo se sirve la API.');
+    console.warn('⚠️  No se encontró el directorio public/. La SPA no se va a servir.');
   }
 }
 
+// Siempre al final: si va antes, los errores de los handlers de abajo no pasan por acá.
 app.use(errorHandler);
 
-// ─── Arranque ────────────────────────────────────────────────────────────────
-
-async function start() {
-  // El servidor levanta ANTES de conectar a la base: así el health check
-  // responde y la plataforma no mata la máquina mientras Mongo tarda.
-  app.listen(SERVER_CONFIG.PORT, SERVER_CONFIG.HOST, () => {
-    console.log(`🚀 Luma API en http://${SERVER_CONFIG.HOST}:${SERVER_CONFIG.PORT}`);
+async function startServer() {
+  // Escuchar primero y conectar a Mongo después: si la base tarda o está caída,
+  // el health check tiene que responder igual para que el proxy no mate el
+  // contenedor antes de que Mongo levante.
+  app.listen(PORT, SERVER_CONFIG.HOST, () => {
+    console.log(`🚀 Servidor en http://${SERVER_CONFIG.HOST}:${PORT}`);
+    console.log(`📊 Health check: http://${SERVER_CONFIG.HOST}:${PORT}/health`);
   });
 
   const connected = await connectDatabase();
   if (!connected) {
-    console.warn('⚠️  El servidor está arriba pero sin base de datos.');
-    return;
+    console.warn('⚠️  El servidor arrancó sin conexión a MongoDB.');
   }
-
-  if (FEATURE_FLAGS.ENABLE_SCHEDULERS) SchedulerService.start();
-  else console.log('⏸️  Tareas programadas deshabilitadas');
 }
 
-for (const signal of ['SIGTERM', 'SIGINT'] as const) {
-  process.on(signal, () => {
-    console.log(`${signal} recibido, cerrando…`);
-    SchedulerService.stop();
-    process.exit(0);
-  });
-}
+process.on('SIGTERM', () => {
+  console.log('SIGTERM recibido, cerrando...');
+  process.exit(0);
+});
 
-void start();
+process.on('SIGINT', () => {
+  console.log('SIGINT recibido, cerrando...');
+  process.exit(0);
+});
+
+startServer();

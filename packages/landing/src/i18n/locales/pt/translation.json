@@ -1,0 +1,37 @@
+{
+  "brand": "Luma",
+  "nav": {
+    "login": "Entrar",
+    "language": "Idioma"
+  },
+  "hero": {
+    "label": "Estrutura base",
+    "title": "Aqui vai a promessa do produto.",
+    "subtitle": "Este é o esqueleto da landing: faixas, tipografia e chamadas para ação já resolvidos. O conteúdo se define quando o produto se define.",
+    "cta": "Criar conta",
+    "secondary": "Ver mais"
+  },
+  "features": {
+    "label": "O que oferece",
+    "title": "Três blocos, prontos para preencher.",
+    "items": [
+      {
+        "title": "Primeiro bloco",
+        "body": "Placeholder. Substituir pelo primeiro benefício real quando estiver definido."
+      },
+      {
+        "title": "Segundo bloco",
+        "body": "Placeholder. Substituir pelo segundo benefício real quando estiver definido."
+      },
+      {
+        "title": "Terceiro bloco",
+        "body": "Placeholder. Substituir pelo terceiro benefício real quando estiver definido."
+      }
+    ]
+  },
+  "finalCta": {
+    "title": "Fechamento da página.",
+    "subtitle": "O último empurrão antes da ação. Aqui vai o argumento que fica ressoando.",
+    "cta": "Começar"
+  }
+}

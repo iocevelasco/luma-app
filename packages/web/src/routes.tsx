@@ -1,74 +1,90 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { ROUTES } from '@/lib/routes';
-import { RequireAuth, RequireClientRole, RequireTeamRole } from '@/components/route-guards';
-import { AppShell, ClientShell } from '@/components/layout/app-shell';
-import { LoginPage } from '@/pages/login';
-import { RegisterPage } from '@/pages/register';
-import { ForgotPasswordPage, SetPasswordPage } from '@/pages/password';
-import { DashboardPage } from '@/pages/dashboard';
-import { PlanningPage } from '@/pages/planning';
-import { MaterialsPage } from '@/pages/materials';
-import { PersonnelPage } from '@/pages/personnel';
-import { BudgetPage } from '@/pages/budget';
+import { DashboardLayout } from './components/dashboard-layout';
 import {
-  ContingenciesPage,
-  ContingencyDetailPage,
-  NewContingencyPage,
-} from '@/pages/contingencies';
-import { AssistantPage } from '@/pages/assistant';
-import { ClientViewPage } from '@/pages/client-view';
-import { NewProjectPage, ProjectsPage } from '@/pages/projects';
-import { TeamPage } from '@/pages/team';
+  AdminLayout,
+  AuthenticatedLayout,
+  PublicOnlyLayout,
+} from './components/route-layouts';
+import { RouteLoading } from './components/routes/route-loading';
+import { ROUTES } from './lib/routes';
 
-/**
- * Composición de rutas.
- *
- *   RequireAuth              — sólo decide si hay sesión
- *   └── RequireTeamRole      — separa gestión de cliente
- *       └── AppShell         — chrome y navegación, UNA vez
- *           └── las páginas
- *
- * El shell vive en la capa de layout y no en cada página: así el estado de la
- * navegación y las queries del encabezado no se remontan en cada cambio de
- * ruta.
- */
+// Todas las páginas en lazy: la pantalla de login no tiene por qué bajar el
+// bundle del panel, ni al revés.
+const LoginPage = lazy(() => import('./pages/login').then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() =>
+  import('./pages/register').then((m) => ({ default: m.RegisterPage })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import('./pages/forgot-password').then((m) => ({ default: m.ForgotPasswordPage })),
+);
+const ResetPasswordPage = lazy(() =>
+  import('./pages/reset-password').then((m) => ({ default: m.ResetPasswordPage })),
+);
+const ActivatePage = lazy(() =>
+  import('./pages/activate').then((m) => ({ default: m.ActivatePage })),
+);
+const CheckEmailPage = lazy(() =>
+  import('./pages/check-email').then((m) => ({ default: m.CheckEmailPage })),
+);
+const VerifyEmailPage = lazy(() =>
+  import('./pages/verify-email').then((m) => ({ default: m.VerifyEmailPage })),
+);
+const ConfirmEmailChangePage = lazy(() =>
+  import('./pages/confirm-email-change').then((m) => ({ default: m.ConfirmEmailChangePage })),
+);
+const AdminHomePage = lazy(() =>
+  import('./pages/admin-home').then((m) => ({ default: m.AdminHomePage })),
+);
+const AccountSettingsPage = lazy(() =>
+  import('./pages/account-settings').then((m) => ({ default: m.AccountSettingsPage })),
+);
+const NotFoundPage = lazy(() =>
+  import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
+);
+
+function LazyRoute({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<RouteLoading />}>{children}</Suspense>;
+}
+
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-      <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-      <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
-      <Route path={ROUTES.RESET_PASSWORD} element={<SetPasswordPage mode="reset" />} />
-      <Route path={ROUTES.ACTIVATE} element={<SetPasswordPage mode="activate" />} />
+      {/* Públicas que además echan a quien ya tiene sesión. */}
+      <Route element={<PublicOnlyLayout />}>
+        <Route path={ROUTES.LOGIN} element={<LazyRoute><LoginPage /></LazyRoute>} />
+        <Route path={ROUTES.REGISTER} element={<LazyRoute><RegisterPage /></LazyRoute>} />
+        <Route
+          path={ROUTES.FORGOT_PASSWORD}
+          element={<LazyRoute><ForgotPasswordPage /></LazyRoute>}
+        />
+      </Route>
 
-      <Route element={<RequireAuth />}>
-        <Route path={ROUTES.PROJECTS} element={<ProjectsPage />} />
-        <Route path={ROUTES.NEW_PROJECT} element={<NewProjectPage />} />
+      {/* Públicas que valen con sesión o sin ella: las abre un enlace de un mail. */}
+      <Route path={ROUTES.RESET_PASSWORD} element={<LazyRoute><ResetPasswordPage /></LazyRoute>} />
+      <Route path={ROUTES.ACTIVATE} element={<LazyRoute><ActivatePage /></LazyRoute>} />
+      <Route path={ROUTES.CHECK_EMAIL} element={<LazyRoute><CheckEmailPage /></LazyRoute>} />
+      <Route path={ROUTES.VERIFY_EMAIL} element={<LazyRoute><VerifyEmailPage /></LazyRoute>} />
+      <Route
+        path={ROUTES.CONFIRM_EMAIL_CHANGE}
+        element={<LazyRoute><ConfirmEmailChangePage /></LazyRoute>}
+      />
 
-        <Route element={<RequireTeamRole />}>
-          <Route element={<AppShell />}>
-            <Route path={ROUTES.HOME} element={<DashboardPage />} />
-            <Route path={ROUTES.PLANNING} element={<PlanningPage />} />
-            <Route path={ROUTES.MATERIALS} element={<MaterialsPage />} />
-            <Route path={ROUTES.PERSONNEL} element={<PersonnelPage />} />
-            <Route path={ROUTES.BUDGET} element={<BudgetPage />} />
-            <Route path={ROUTES.CONTINGENCIES} element={<ContingenciesPage />} />
-            <Route path={ROUTES.CONTINGENCY_NEW} element={<NewContingencyPage />} />
-            <Route path={ROUTES.CONTINGENCY_DETAIL} element={<ContingencyDetailPage />} />
-            <Route path={ROUTES.ASSISTANT} element={<AssistantPage />} />
-            <Route path={ROUTES.TEAM} element={<TeamPage />} />
-          </Route>
-        </Route>
-
-        <Route element={<RequireClientRole />}>
-          <Route element={<ClientShell />}>
-            <Route path={ROUTES.CLIENT_HOME} element={<ClientViewPage />} />
-            <Route path={ROUTES.CLIENT_DECISION} element={<ClientViewPage />} />
+      {/* Panel. El chrome se monta una sola vez, arriba del Outlet. */}
+      <Route element={<AuthenticatedLayout />}>
+        <Route element={<AdminLayout />}>
+          <Route element={<DashboardLayout />}>
+            <Route path={ROUTES.ADMIN} element={<LazyRoute><AdminHomePage /></LazyRoute>} />
+            <Route
+              path={ROUTES.ACCOUNT_SETTINGS}
+              element={<LazyRoute><AccountSettingsPage /></LazyRoute>}
+            />
           </Route>
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+      <Route path="/" element={<Navigate to={ROUTES.ADMIN} replace />} />
+      <Route path={ROUTES.NOT_FOUND} element={<LazyRoute><NotFoundPage /></LazyRoute>} />
     </Routes>
   );
 }

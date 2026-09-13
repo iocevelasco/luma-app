@@ -1,114 +1,59 @@
-import type { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
+import type { NextFunction, Request, Response } from 'express';
+import type { JWTPayload, UserRole } from '@luma/shared';
 import { JWTService } from '../services/jwt.service.js';
-import { ProjectMemberModel } from '../models/ProjectMember.js';
-import { hasPermission, type JWTPayload, type Permission, type ProjectRole } from '@luma/shared';
-import { forbidden, unauthorized } from '../utils/errors.js';
+import { getUserRoles, hasRole, isAdmin as checkIsAdmin } from '../utils/roles.js';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: JWTPayload;
-      /** Proyecto sobre el que opera el request. Es el scope de tenant. */
-      projectId?: string;
-      /** Rol del usuario DENTRO de ese proyecto. */
-      projectRole?: ProjectRole;
     }
   }
 }
 
-function parseBearer(header?: string): string | null {
-  if (!header) return null;
-  const [scheme, token] = header.split(' ');
-  return scheme === 'Bearer' && token ? token : null;
+export function parseBearerToken(authHeader?: string): string | null {
+  if (!authHeader) return null;
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
+  return parts[1];
 }
 
-export function isAuthenticated(req: Request, _res: Response, next: NextFunction) {
-  const token = parseBearer(req.headers.authorization);
-  if (!token) return next(unauthorized('Falta el token de acceso'));
+export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
   try {
+    const token = parseBearerToken(req.headers.authorization);
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
     req.user = JWTService.verifyAccessToken(token);
     next();
   } catch (error) {
-    next(unauthorized(error instanceof Error ? error.message : 'Token inválido'));
+    const message = error instanceof Error ? error.message : 'Invalid token';
+    return res.status(401).json({ success: false, error: message });
   }
 }
 
-/**
- * Resuelve el proyecto del request y valida la membresía CONTRA LA BASE.
- *
- * El rol viaja en el token, pero no se confía en él para autorizar: si a
- * alguien lo sacan del proyecto o le bajan el rol, su token sigue siendo
- * válido hasta que expire. Una lectura por request es barata comparada con un
- * ex-integrante que sigue viendo el presupuesto una semana.
- *
- * El proyecto sale del header `X-Project-Id`, del parámetro `:projectId` de la
- * ruta o, si no hay ninguno, del token.
- */
-export async function withProject(req: Request, _res: Response, next: NextFunction) {
-  if (!req.user) return next(unauthorized());
-
-  const candidate =
-    (req.params.projectId as string | undefined) ||
-    (req.headers['x-project-id'] as string | undefined) ||
-    (req.query.project_id as string | undefined) ||
-    req.user.project_id;
-
-  if (!candidate) return next(forbidden('El request no indica proyecto', 'NO_PROJECT'));
-  if (!mongoose.Types.ObjectId.isValid(candidate)) {
-    return next(forbidden('Proyecto inválido', 'INVALID_PROJECT'));
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'Authentication required' });
   }
-
-  try {
-    const membership = await ProjectMemberModel.findOne({
-      project_id: new mongoose.Types.ObjectId(candidate),
-      user_id: new mongoose.Types.ObjectId(req.user.sub),
-      status: 'active',
-    }).lean();
-
-    if (!membership) {
-      // 404 y no 403 a propósito: al que no pertenece al proyecto no se le
-      // confirma siquiera que el proyecto existe.
-      return next(forbidden('No tenés acceso a este proyecto', 'NOT_A_MEMBER'));
-    }
-
-    req.projectId = candidate;
-    req.projectRole = membership.role;
-    next();
-  } catch (error) {
-    next(error as Error);
+  if (!checkIsAdmin(getUserRoles(req.user))) {
+    return res.status(403).json({ success: false, error: 'Admin access required' });
   }
-}
-
-/**
- * Autorización por permiso, leída de la matriz del §2.5.
- *
- * Se pide el PERMISO, nunca el rol. Cuando la matriz cambie —y va a cambiar,
- * §13 tiene siete preguntas abiertas— se toca `ROLE_PERMISSIONS` en shared y
- * ninguna ruta se entera.
- */
-export function requirePermission(permission: Permission) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    if (!req.user) return next(unauthorized());
-    if (!req.projectRole) return next(forbidden('El request no indica proyecto', 'NO_PROJECT'));
-    if (!hasPermission(req.projectRole, permission)) {
-      return next(forbidden('Tu rol no permite esta acción', 'FORBIDDEN_ROLE'));
-    }
-    next();
-  };
-}
-
-export function requireProjectRole(...roles: ProjectRole[]) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    if (!req.projectRole || !roles.includes(req.projectRole)) {
-      return next(forbidden('Tu rol no permite esta acción', 'FORBIDDEN_ROLE'));
-    }
-    next();
-  };
-}
-
-export function requireVerifiedEmail(req: Request, _res: Response, next: NextFunction) {
-  if (!req.user) return next(unauthorized());
   next();
+}
+
+export function requireRole(role: UserRole | UserRole[]) {
+  const requiredRoles = Array.isArray(role) ? role : [role];
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    if (!hasRole(getUserRoles(req.user), requiredRoles)) {
+      return res
+        .status(403)
+        .json({ success: false, error: `Required role: ${requiredRoles.join(' or ')}` });
+    }
+    next();
+  };
 }

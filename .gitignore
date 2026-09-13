@@ -9,3 +9,6 @@ coverage/
 *.tsbuildinfo
 .vite/
 packages/api/public/
+.auth/
+playwright-report/
+test-results/

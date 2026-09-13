@@ -2,27 +2,46 @@
   "name": "luma-monorepo",
   "version": "0.1.0",
   "private": true,
-  "description": "Luma — plataforma de gestión y ejecución de obras y remodelaciones",
+  "type": "module",
+  "description": "Base de aplicaci\u00f3n: API (Express + Mongo), SPA (Vite + React) y landing est\u00e1tica",
   "scripts": {
-    "dev": "pnpm --filter @luma/shared build && (pnpm --filter @luma/web dev & pnpm --filter @luma/api dev)",
+    "dev": "pnpm --filter @luma/shared build && pnpm --filter @luma/web dev & pnpm --filter @luma/api dev",
     "dev:web": "pnpm --filter @luma/shared build && pnpm --filter @luma/web dev",
     "dev:api": "pnpm --filter @luma/shared build && pnpm --filter @luma/api dev",
+    "dev:landing": "pnpm --filter @luma/landing dev",
     "build": "pnpm --filter @luma/shared build && pnpm --filter @luma/api build && pnpm --filter @luma/web build",
     "build:web": "pnpm --filter @luma/shared build && pnpm --filter @luma/web build",
     "build:api": "pnpm --filter @luma/shared build && pnpm --filter @luma/api build",
+    "build:landing": "pnpm --filter @luma/landing build",
     "start": "pnpm --filter @luma/api start",
-    "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
+    "test:e2e": "playwright test --ui",
+    "test:e2e:ci": "playwright test --project=chromium",
+    "test:e2e:cross": "playwright test --project=chromium --project=webkit --project=firefox",
+    "test:e2e:report": "playwright show-report",
+    "seed:admin": "pnpm --filter @luma/api seed:admin",
     "clean": "pnpm -r clean && rm -rf node_modules",
-    "seed:demo": "pnpm --filter @luma/api seed:demo",
-    "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "docker:build": "docker build -t luma-app .",
+    "docker:build:landing": "docker build -f packages/landing/Dockerfile -t luma-landing .",
+    "docker:run": "docker run -p 8080:8080 --env-file .env luma-app",
+    "deploy": "bash scripts/coolify-deploy.sh"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^22",
+    "eslint": "^9.17.0",
     "prettier": "^3.3.3",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.18.0"
   },
-  "engines": { "node": ">=18.0.0", "pnpm": ">=8.0.0" },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
   "packageManager": "pnpm@8.6.12"
 }

@@ -1,15 +1,19 @@
+import { Toaster } from '@/components/ui/sonner';
+import { RouteErrorBoundary } from '@/components/error-boundary';
+import { UpdateNotification } from '@/components/update-notification';
 import { AppProvider } from '@/providers/app-provider';
 import { AppRoutes } from '@/routes';
-import { ErrorBoundary } from '@/components/error-boundary';
 
-export default function App() {
+export function App() {
   return (
     <AppProvider>
-      {/* Última red: sin esto, una excepción de render desmonta la app y deja
-          el fondo del body a la vista, sin mensaje ni forma de volver. */}
-      <ErrorBoundary>
+      <RouteErrorBoundary>
         <AppRoutes />
-      </ErrorBoundary>
+      </RouteErrorBoundary>
+      <Toaster />
+      <UpdateNotification />
     </AppProvider>
   );
 }
+
+export default App;
