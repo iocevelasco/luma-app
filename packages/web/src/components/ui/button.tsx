@@ -5,14 +5,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
-        // Primary CTA is the inverted high-contrast color (white on the dark
-        // theme), not brand red — red reads as a warning. Brand red stays for
-        // accents/badges via the `primary` token.
-        default: "bg-foreground text-background hover:bg-foreground/90",
+        // El CTA primario es el naranja de marca. `--primary` ya resuelve el
+        // contraste por tema: en claro es el naranja profundo con texto blanco
+        // (5.03:1), en oscuro es el naranja saturado con texto tinta (4.93:1).
+        // Ver DESIGN.md — el componente no decide el color del texto.
+        default: "bg-primary text-primary-foreground hover:bg-primary-pressed",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm install --frozen-lockfile)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm lint:fix)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test:e2e:ci)",
+      "Bash(pnpm test:e2e:cross)",
+      "Bash(pnpm test:e2e:report)",
+      "Bash(pnpm build)",
+      "Bash(pnpm build:web)",
+      "Bash(pnpm build:api)",
+      "Bash(pnpm build:landing)",
+      "Bash(pnpm format)",
+      "Bash(pnpm --filter @luma/shared build)",
+      "Bash(pnpm --filter @luma/api test:*)",
+      "Bash(pnpm --filter @luma/web test:*)",
+      "Bash(pnpm --filter @luma/shared test:*)",
+      "Bash(pnpm -r typecheck)",
+      "Bash(pnpm -r lint)",
+      "Bash(pnpm -r test)",
+      "Bash(pnpm exec playwright install:*)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(pnpm exec vitest run:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git stash list)",
+      "Bash(git ls-files:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(sed -n:*)",
+      "Bash(tree:*)",
+      "Bash(node --version)",
+      "Bash(pnpm --version)"
+    ],
+    "deny": [
+      "Bash(pnpm deploy:*)",
+      "Bash(bash scripts/coolify-deploy.sh:*)",
+      "Bash(bash scripts/mongo-backup.sh:*)",
+      "Bash(git push:*)",
+      "Bash(pnpm seed:admin)",
+      "Read(./.env)",
+      "Read(./.auth/**)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-check.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

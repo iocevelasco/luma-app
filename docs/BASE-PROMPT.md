@@ -68,7 +68,7 @@ placeholder), `scripts/mongo-backup.sh`, `.github/workflows/e2e.yml`, y un
   hay `tsc` y el build falla. El stage final copia `packages/web/dist` a
   `packages/api/public`.
 - `playwright.config.ts` levanta `dev:web` (5173) y `dev:landing` (5174); CI corre
-  **sólo chromium**, `test:e2e:cross` corre los tres motores a mano.
+  **sólo chromium**, `test:e2e:cross` corre chromium + webkit a mano. Firefox no se testea.
 
 **Crear lo que en Pantera falta:** `eslint.config.js` (Pantera declara scripts `lint`
 pero no tiene config), `.env.example` raíz completo, `.nvmrc`.
@@ -320,7 +320,7 @@ pnpm build        # shared → api → web → landing
 4. Borrando `auth_token` de localStorage pero dejando la cookie, una recarga produce
    **un solo** `POST /api/auth/refresh` seguido del reintento de la request original.
 5. `curl localhost:8080/health` responde `{ status, timestamp, database }`.
-6. La landing carga sin errores de consola en chromium, webkit y firefox.
+6. La landing carga sin errores de consola en chromium y webkit.
 7. `docker build` de los dos Dockerfiles compila.
 8. No queda ninguna referencia a dojo, member, rank, attendance, membership, payment,
    mercadopago, whatsapp ni billing en todo el repo.

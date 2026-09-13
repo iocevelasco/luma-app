@@ -83,35 +83,69 @@ Rutas públicas que nunca deben recibir un redirect por 401: `/login`, `/registe
 
 ## Estilos
 
+**La fuente de verdad es `DESIGN.md` en la raíz.** Este bloque es el resumen
+operativo; ante cualquier duda o contradicción, manda `DESIGN.md`.
+
+Hay **un solo** sistema de diseño. El rojo `#EF233C` del panel y el "lenguaje de
+cero" de la landing fueron reemplazados por uno editorial —naranja, crema,
+serif de display— que rige los dos paquetes con el mismo vocabulario de tokens.
+
 - **Tailwind v4**: no hay `tailwind.config.js`. Los tokens viven en
-  `packages/web/src/index.css` dentro de `@theme`.
+  `packages/web/src/index.css` y `packages/landing/src/index.css`, dentro de
+  `@theme`.
 - **Composición de clases**: siempre `cn()` de `@/lib/utils`.
-- **shadcn/ui**: los componentes de `components/ui/` no se editan. Se extienden por
-  `className` o se envuelven.
+- **shadcn/ui**: los componentes de `components/ui/` no se editan. Se extienden
+  por `className` o se envuelven. La única excepción es un cambio del sistema que
+  *tiene* que vivir en el componente — el radio o el color del `Button`.
 - **Tokens semánticos, no colores crudos**: `bg-background`, `text-muted-foreground`,
-  `bg-primary`. Un `bg-[#EF233C]` saltea el tema.
+  `bg-primary`, `bg-cream`. Un `bg-[#fa520f]` saltea el tema.
 
-### Radio — una sola escala
+### El naranja va partido en dos
 
-Todo el redondeo sale de `--radius` (16px) en `index.css`. **No agregues valores
-nuevos ni radios arbitrarios.**
+`#fa520f` con texto blanco encima da **3.34:1 y no pasa AA**. Es el valor de
+marca de la referencia, y tomado literal como relleno deja cada CTA por debajo
+del mínimo legible.
+
+| Token | Para qué |
+|---|---|
+| `brand` | Tinta, ícono, borde, acento. **Nunca como relleno con texto encima.** |
+| `primary` | Relleno de CTA. Ya resuelve el contraste por tema: en claro es naranja profundo con texto blanco (5.03:1), en oscuro es naranja saturado con texto tinta (4.93:1). |
+
+El componente no decide el color del texto sobre el primario — lo resuelve el
+token. Usá `bg-primary text-primary-foreground` y funciona en los dos temas.
+
+El rojo ahora significa **peligro**, no marca: antes el CTA y el error eran el
+mismo color.
+
+### Radio — escala editorial
 
 | Clase | Valor | Se usa en |
 |---|---|---|
-| `rounded-full` | píldora | **Todo control**: Button, Badge, chips, tabs, avatares |
-| `rounded-lg` | 16px | **Superficie**: Card, Dialog, Popover, Dropdown, Toast |
-| `rounded-md` | 12px | **Anidado**: Input, Select, Textarea, filas dentro de una Card |
-| `rounded-xl` | 20px | Contenedor que envuelve superficies |
-| `rounded-2xl` | 24px | Bottom sheet |
-| `rounded-sm` / `rounded-xs` | 10 / 6px | Ítems de menú, indicadores |
+| `rounded-md` | **8px** | **Botones**, Input, Select, Textarea, code blocks |
+| `rounded-lg` | **12px** | **Card**, Dialog, Popover, Dropdown, panel — el dominante |
+| `rounded-xl` | 16px | Contenedor que envuelve cards |
+| `rounded-2xl` | 20px | Card destacada, bottom sheet |
+| `rounded-sm` / `rounded-xs` | 6 / 4px | Ítems de menú, chips micro, indicadores |
+| `rounded-full` | píldora | **Sólo**: Badge, Avatar, Switch, Slider, Progress |
 
 Dos reglas:
 
-1. **La forma dice qué es.** Píldora = se toca. Radio de la escala = es una
-   superficie. Un botón nunca lleva `rounded-*` propio: `Button` ya es píldora.
-2. **El hijo va un escalón abajo del padre.** Una fila `rounded-md` dentro de una
+1. **No hay botones píldora.** La píldora dejó de significar "esto se toca" y
+   pasa a significar "esto es un estado". Un botón de 8px y una card de 12px se
+   leen como documento; todo píldora se lee como juguete.
+2. **El hijo va un escalón abajo del padre.** Un Input `rounded-md` dentro de una
    Card `rounded-lg`. Un radio interno mayor que el del contenedor deja una luz
    visible en la esquina.
+
+### Tipografía
+
+Serif de display (`Instrument Serif`) para h1–h6, `Inter` para todo lo demás,
+`JetBrains Mono` para código. **El contraste serif/sans es la voz del sistema**:
+un heading en sans no es este sistema. El serif ya se aplica en `@layer base`,
+no hace falta repetirlo en el JSX.
+
+Piso de tamaño: 11px (`text-2xs`), y siempre en `rem`. Un `text-[10px]` en px no
+responde al tamaño de texto del sistema operativo.
 
 ## i18n — obligatorio
 
@@ -130,9 +164,14 @@ const { t } = useTranslation();
 
 ## Cross-browsing — obligatorio
 
-Toda feature se desarrolla pensando en Safari, Chrome y Firefox. Chrome es donde
+Toda feature se desarrolla pensando en Chrome y en Safari. Chrome es donde
 escribimos el código, no donde vive el usuario: en un iPhone *todo* browser corre
 sobre WebKit, y una API que falta ahí no degrada la pantalla, la voltea entera.
+
+**Firefox no se testea.** No es un olvido: Gecko casi nunca rompe algo que
+Chromium y WebKit pasan los dos, y una tercera suite cuesta tiempo de CI y de
+persona sin encontrar bugs proporcionales. Si algún día aparece un reporte real
+de Firefox, se revisa la decisión.
 
 ### La regla que más rompe: nunca leas un global del browser como identificador suelto
 
@@ -151,8 +190,8 @@ optional chaining. TypeScript no avisa — sus tipos de `lib.dom` declaran la AP
 si siempre estuviera.
 
 Antes de usar una API del browser: verificá el soporte en Safari (incluido iOS), y
-si falta en alguno de los tres escribí el fallback **en el mismo commit**. Detectá
-con `typeof window.X === 'function'`, nunca con user-agent sniffing.
+si falta escribí el fallback **en el mismo commit**. Detectá con
+`typeof window.X === 'function'`, nunca con user-agent sniffing.
 
 **Fechas**: Safari es estricto parseando. `new Date('2026-08-13 10:00')` da
 `Invalid Date` en Safari y funciona en Chrome. Usá siempre ISO 8601 con `T`.
@@ -162,17 +201,51 @@ con `typeof window.X === 'function'`, nunca con user-agent sniffing.
 ### Verificación
 
 ```bash
-pnpm exec playwright install webkit firefox   # una sola vez
-pnpm test:e2e:ci                              # chromium — lo que corre CI
-pnpm test:e2e:cross                           # los tres motores
+pnpm exec playwright install webkit   # una sola vez
+pnpm test:e2e:ci                      # chromium — lo que corre CI
+pnpm test:e2e:cross                   # chromium + webkit
 ```
 
-CI corre **sólo chromium**: es la suite de regresión funcional y triplicarla no
-encuentra tres veces más bugs. `test:e2e:cross` se corre a mano antes de mergear
-una feature que toque una API del browser.
+CI corre **sólo chromium**: es la suite de regresión funcional y duplicarla no
+encuentra el doble de bugs. `test:e2e:cross` se corre a mano antes de mergear una
+feature que toque una API del browser.
 
-Una feature nueva no está terminada hasta que carga sin errores de consola en los
-tres motores.
+Una feature nueva no está terminada hasta que carga sin errores de consola en
+chromium y en webkit.
+
+## Tests
+
+| Tipo | Dónde | Corre con |
+|---|---|---|
+| Unit | Al lado del archivo: `src/lib/utils.spec.ts` | `pnpm test` (vitest) |
+| Paridad i18n | `packages/web/src/i18n/i18n-parity.spec.ts` | `pnpm test` |
+| E2E | `/e2e` en la raíz, no dentro de los paquetes | `pnpm test:e2e:ci` |
+
+- `e2e/global-setup.ts` levanta la sesión y **detecta si no hay backend**: sin API
+  corren igual los specs que no necesitan sesión, no revienta la suite.
+- Los helpers de login viven en `e2e/helpers/auth.ts`. No escribas un login a mano
+  en un spec nuevo.
+- **`landing` no tiene script de `test`.** `pnpm -r test` lo saltea en silencio: un
+  cambio en la landing no está cubierto por unit tests, sólo por E2E.
+- E2E se agrega por **flujo que una persona recorre**, no por endpoint. Un endpoint
+  nuevo se cubre con unit en la API.
+
+## Cómo está configurado Claude acá
+
+Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
+
+| Pieza | Qué hace |
+|---|---|
+| `.claude/settings.json` | Permisos (los scripts del repo y los comandos de lectura no piden aprobación; deploy, `git push` y el seed están denegados) y el hook de post-edición |
+| `.claude/hooks/post-edit-check.sh` | Corre después de cada Edit/Write: paridad i18n, colores crudos, radios fuera de escala, strings inline, `components/ui/` editado, `shared` sin rebuildear |
+| `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e, y cross-browser cuando corresponde |
+| `.claude/commands/feature.md` | `/feature <qué>` — implementa respetando el orden shared → api → capa 1 → capa 2 → UI → i18n |
+| `.claude/agents/criterio.md` | Agente de producto: afila un pedido vago en un encargo implementable y lo critica antes de que se escriba código |
+| `.mcp.json` | MongoDB en modo lectura, tomando `MONGODB_URI` del entorno |
+
+Si agregás una regla nueva a este archivo y se puede verificar con un grep,
+agregala también al hook. Una regla que sólo vive en prosa se cumple al principio
+de la sesión y se afloja después.
 
 ## Deploy
 
