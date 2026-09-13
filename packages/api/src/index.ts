@@ -17,6 +17,8 @@ import {
 import { connectDatabase, isDatabaseConnected } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './routes/auth.js';
+import { organizationRouter } from './routes/organization.js';
+import { projectRouter } from './routes/project.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -152,6 +154,8 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/projects', projectRouter);
+app.use('/api/organizations', organizationRouter);
 
 if (isProduction) {
   // Proxy /home/* → la landing, un servicio aparte en la red interna de Docker.

@@ -32,7 +32,7 @@ export function toDayKey(date: Date): string {
 }
 
 /** Un `YYYY-MM-DD` de vuelta a Date local, para el calendario. */
-function fromDayKey(day: string): Date {
+export function fromDayKey(day: string): Date {
   const [y, m, d] = day.split('-').map(Number);
   return new Date(y, m - 1, d);
 }

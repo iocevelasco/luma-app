@@ -28,7 +28,8 @@ export function appUrl(path: string): string {
   return `${base}${path}`;
 }
 
-async function loginWith(page: Page, email: string, password: string) {
+/** Login genérico, para specs que registran su propia cuenta en vez de usar una fija. */
+export async function loginWith(page: Page, email: string, password: string) {
   await page.goto(appUrl('/login'));
   await page.locator('#email').fill(email);
   await page.locator('#password').fill(password);
@@ -42,4 +43,14 @@ export async function loginAsAdmin(page: Page) {
 
 export async function loginAsUser(page: Page) {
   await loginWith(page, requireEnv('E2E_USER_EMAIL'), requireEnv('E2E_USER_PASSWORD'));
+}
+
+/** Autoservicio: crea una cuenta nueva desde `/register`. Deja a la persona en /check-email. */
+export async function registerWith(page: Page, name: string, email: string, password: string) {
+  await page.goto(appUrl('/register'));
+  await page.locator('#name').fill(name);
+  await page.locator('#email').fill(email);
+  await page.locator('#password').fill(password);
+  await page.getByRole('button', { name: /crear cuenta/i }).click();
+  await page.waitForURL((url) => url.pathname.includes('/check-email'), { timeout: 15_000 });
 }

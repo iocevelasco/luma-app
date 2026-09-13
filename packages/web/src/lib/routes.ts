@@ -15,14 +15,15 @@ export const ROUTES = {
 
   ADMIN: '/admin',
   ACCOUNT_SETTINGS: '/admin/settings/account',
+  PROJECT_NEW: '/admin/proyectos/nuevo',
+  PROJECT_DETAIL: '/admin/proyectos/:projectId',
 
   NOT_FOUND: '*',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
 
-/** Adónde va cada rol después de entrar. */
-export const HOME_BY_ROLE = {
-  admin: ROUTES.ADMIN,
-  user: ROUTES.ADMIN,
-} as const;
+/** `ROUTES.PROJECT_DETAIL` con el `:projectId` resuelto, para armar links. */
+export function projectDetailPath(projectId: string): string {
+  return ROUTES.PROJECT_DETAIL.replace(':projectId', projectId);
+}

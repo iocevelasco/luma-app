@@ -1,4 +1,4 @@
-import { Home, type LucideIcon } from 'lucide-react';
+import { HardHat, type LucideIcon } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 
 /**
@@ -21,9 +21,9 @@ export interface DashboardDestination {
 
 export const DASHBOARD_DESTINATIONS: DashboardDestination[] = [
   {
-    labelKey: 'home',
+    labelKey: 'projects',
     to: ROUTES.ADMIN,
-    icon: Home,
+    icon: HardHat,
     testId: 'nav-home',
   },
 ];

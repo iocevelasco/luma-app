@@ -7,4 +7,7 @@
 export enum QueryKeys {
   currentUser = 'current-user',
   emailVerification = 'email-verification',
+  projects = 'projects',
+  project = 'project',
+  organization = 'organization',
 }

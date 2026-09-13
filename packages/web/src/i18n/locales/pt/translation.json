@@ -17,17 +17,64 @@
     "goHome": "Ir para o início"
   },
   "layout": {
-    "home": "Início",
+    "projects": "Obras",
     "openMenu": "Abrir menu",
-    "closeMenu": "Fechar menu",
-    "emptyHomeTitle": "Ainda não há nada aqui",
-    "emptyHomeBody": "Esta é a base da aplicação. Quando você definir o produto, a primeira tela dele vai neste lugar."
+    "closeMenu": "Fechar menu"
   },
   "userMenu": {
     "account": "Minha conta",
     "settings": "Configurações",
     "theme": "Tema",
     "logout": "Sair"
+  },
+  "project": {
+    "list": {
+      "new": "Nova obra",
+      "emptyTitle": "Você ainda não tem obras",
+      "emptyBody": "Crie sua primeira obra para começar a gerenciá-la.",
+      "emptyCta": "Criar sua primeira obra",
+      "columns": {
+        "name": "Obra",
+        "location": "Localização",
+        "dates": "Datas",
+        "budgetType": "Orçamento"
+      }
+    },
+    "new": {
+      "title": "Nova obra",
+      "submit": "Criar obra",
+      "created": "Obra criada"
+    },
+    "fields": {
+      "name": "Nome",
+      "description": "Descrição",
+      "location": "Localização",
+      "size": "Metragem ou dimensão (opcional)",
+      "startDate": "Início estimado",
+      "endDate": "Entrega estimada",
+      "currency": "Moeda",
+      "currencyPlaceholder": "Escolha uma moeda",
+      "budgetType": "Tipo de orçamento",
+      "budgetTypePlaceholder": "Escolha um tipo"
+    },
+    "budgetType": {
+      "cerrado": "Fechado",
+      "abierto": "Aberto",
+      "con_margen": "Com margem de variação"
+    },
+    "detail": {
+      "clients": "Clientes com acesso",
+      "invite": "Convidar cliente",
+      "inviteTitle": "Convidar quem paga a obra",
+      "inviteEmail": "E-mail",
+      "inviteSubmit": "Convidar",
+      "clientInvited": "Convite enviado",
+      "noClients": "Você ainda não convidou ninguém."
+    },
+    "errors": {
+      "create": "Não conseguimos criar a obra.",
+      "invite": "Não conseguimos convidar essa pessoa."
+    }
   },
   "auth": {
     "login": {
