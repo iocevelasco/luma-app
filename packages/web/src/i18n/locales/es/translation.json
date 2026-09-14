@@ -154,5 +154,98 @@
     "retry": "Reintentar",
     "goHome": "Ir al inicio",
     "signOut": "Cerrar sesión y empezar de cero"
+  },
+  "activity": {
+    "list": {
+      "new": "Nueva actividad",
+      "navLink": "Planificación semanal",
+      "newTitle": "Nueva actividad",
+      "newSubmit": "Crear actividad",
+      "created": "Actividad creada",
+      "updated": "Actividad actualizada",
+      "deleted": "Actividad eliminada",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "currentWeek": "Semana actual",
+      "overdue": "Atrasada",
+      "missingMaterials": "Le faltan materiales"
+    },
+    "new": {
+      "title": "Nueva actividad"
+    },
+    "fields": {
+      "name": "Nombre",
+      "area": "Área",
+      "startDate": "Inicio",
+      "endDate": "Fin",
+      "responsible": "Responsable",
+      "status": "Estado",
+      "notes": "Notas (opcional)"
+    },
+    "status": {
+      "pendiente": "Pendiente",
+      "en_curso": "En curso",
+      "completada": "Completada",
+      "cancelada": "Cancelada"
+    },
+    "emptyState": {
+      "title": "No hay actividades planificadas para esta semana."
+    },
+    "errors": {
+      "create": "No pudimos crear la actividad.",
+      "update": "No pudimos actualizar la actividad.",
+      "delete": "No pudimos eliminar la actividad."
+    }
+  },
+  "material": {
+    "list": {
+      "navLink": "Materiales",
+      "title": "Materiales",
+      "newTitle": "Agregar material",
+      "newSubmit": "Agregar",
+      "created": "Material agregado",
+      "updated": "Material actualizado",
+      "deleted": "Material eliminado",
+      "empty": "Todavía no cargaste materiales.",
+      "withoutActivity": "Sin actividad asociada",
+      "copyList": "Copiar lista",
+      "share": "Compartir",
+      "copied": "Lista copiada al portapapeles",
+      "confirmStatusTitle": "Confirmar cambio de estado",
+      "confirmStatusBody": "Vas a cambiar el estado a \"{{status}}\"."
+    },
+    "fields": {
+      "name": "Nombre",
+      "quantity": "Cantidad",
+      "unit": "Unidad",
+      "unitPlaceholder": "Elegí una unidad",
+      "activity": "Actividad (opcional)",
+      "activityPlaceholder": "Sin actividad asociada",
+      "estimatedCost": "Costo estimado (opcional)",
+      "supplier": "Proveedor (opcional)"
+    },
+    "status": {
+      "pendiente": "Pendiente",
+      "solicitado": "Solicitado",
+      "comprado": "Comprado",
+      "en_obra": "En obra"
+    },
+    "unit": {
+      "un": "Unidad",
+      "m": "Metro",
+      "m2": "Metro cuadrado",
+      "m3": "Metro cúbico",
+      "kg": "Kilogramo",
+      "l": "Litro",
+      "bolsa": "Bolsa",
+      "rollo": "Rollo",
+      "global": "Global"
+    },
+    "errors": {
+      "create": "No pudimos agregar el material.",
+      "update": "No pudimos actualizar el material.",
+      "delete": "No pudimos eliminar el material.",
+      "copy": "No pudimos copiar la lista."
+    }
   }
 }

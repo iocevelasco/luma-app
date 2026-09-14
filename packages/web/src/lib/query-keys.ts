@@ -10,4 +10,6 @@ export enum QueryKeys {
   projects = 'projects',
   project = 'project',
   organization = 'organization',
+  activities = 'activities',
+  materials = 'materials',
 }

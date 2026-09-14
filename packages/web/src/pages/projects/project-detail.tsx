@@ -5,7 +5,7 @@ import { inviteClientSchema, type InviteClientInput } from '@luma/shared';
 import { UserPlus } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { fromDayKey } from '@/components/common/date-range-filter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useInviteClient, useProject } from '@/hooks/projects/use-project-queries';
+import { projectActivitiesPath, projectMaterialsPath } from '@/lib/routes';
 
 function InviteClientDialog({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
@@ -93,6 +94,15 @@ export function ProjectDetailPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 md:p-6">
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" asChild>
+          <Link to={projectActivitiesPath(project.id)}>{t('activity.list.navLink')}</Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link to={projectMaterialsPath(project.id)}>{t('material.list.navLink')}</Link>
+        </Button>
+      </div>
+
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div>

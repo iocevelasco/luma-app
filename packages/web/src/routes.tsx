@@ -41,6 +41,14 @@ const ProjectNewPage = lazy(() =>
 const ProjectDetailPage = lazy(() =>
   import('./pages/projects/project-detail').then((m) => ({ default: m.ProjectDetailPage })),
 );
+const ProjectActivitiesPage = lazy(() =>
+  import('./pages/projects/project-activities').then((m) => ({
+    default: m.ProjectActivitiesPage,
+  })),
+);
+const ProjectMaterialsPage = lazy(() =>
+  import('./pages/projects/project-materials').then((m) => ({ default: m.ProjectMaterialsPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -89,6 +97,14 @@ export function AppRoutes() {
           <Route
             path={ROUTES.PROJECT_DETAIL}
             element={<LazyRoute><ProjectDetailPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_ACTIVITIES}
+            element={<LazyRoute><ProjectActivitiesPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_MATERIALS}
+            element={<LazyRoute><ProjectMaterialsPage /></LazyRoute>}
           />
         </Route>
       </Route>
