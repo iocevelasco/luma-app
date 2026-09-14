@@ -1,4 +1,10 @@
 {
+  "dateRange": {
+    "thisMonth": "Este mês",
+    "lastMonth": "Mês passado",
+    "last30": "Últimos 30 dias",
+    "thisYear": "Este ano"
+  },
   "common": {
     "appName": "Luma",
     "save": "Salvar",
@@ -62,7 +68,13 @@
       "abierto": "Aberto",
       "con_margen": "Com margem de variação"
     },
+    "nav": {
+      "detail": "Detalhe",
+      "gantt": "Cronograma",
+      "materials": "Materiais"
+    },
     "detail": {
+      "gantt": "Cronograma de atividades",
       "clients": "Clientes com acesso",
       "invite": "Convidar cliente",
       "inviteTitle": "Convidar quem paga a obra",
@@ -195,6 +207,13 @@
       "create": "Não conseguimos criar a atividade.",
       "update": "Não conseguimos atualizar a atividade.",
       "delete": "Não conseguimos excluir a atividade."
+    },
+    "gantt": {
+      "emptyState": "Não há atividades planejadas neste período."
+    },
+    "detail": {
+      "title": "Detalhe da atividade",
+      "back": "Voltar"
     }
   },
   "material": {

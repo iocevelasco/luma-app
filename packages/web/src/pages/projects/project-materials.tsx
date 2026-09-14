@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ProjectNav } from '@/components/projects/project-nav';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -158,8 +159,13 @@ function NewMaterialForm({ projectId }: { projectId: string }) {
               <Input
                 id="material-cost"
                 inputMode="decimal"
-                {...register('estimatedCost', { valueAsNumber: true })}
+                {...register('estimatedCost', {
+                  setValueAs: (value) => (value === '' ? undefined : Number(value)),
+                })}
               />
+              {errors.estimatedCost && (
+                <p className="text-sm text-destructive">{errors.estimatedCost.message}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -315,6 +321,8 @@ export function ProjectMaterialsPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 md:p-6">
+      <ProjectNav projectId={projectId!} projectName={projectData?.project.name} />
+
       {isOwner && <NewMaterialForm projectId={projectId!} />}
 
       <Card>

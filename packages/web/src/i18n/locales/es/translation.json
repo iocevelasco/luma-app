@@ -1,4 +1,10 @@
 {
+  "dateRange": {
+    "thisMonth": "Este mes",
+    "lastMonth": "Mes pasado",
+    "last30": "Últimos 30 días",
+    "thisYear": "Este año"
+  },
   "common": {
     "appName": "Luma",
     "save": "Guardar",
@@ -62,6 +68,11 @@
       "abierto": "Abierto",
       "con_margen": "Con margen de variación"
     },
+    "nav": {
+      "detail": "Detalle",
+      "gantt": "Cronograma",
+      "materials": "Materiales"
+    },
     "detail": {
       "clients": "Clientes con acceso",
       "invite": "Invitar cliente",
@@ -69,7 +80,8 @@
       "inviteEmail": "Email",
       "inviteSubmit": "Invitar",
       "clientInvited": "Invitación enviada",
-      "noClients": "Todavía no invitaste a nadie."
+      "noClients": "Todavía no invitaste a nadie.",
+      "gantt": "Cronograma de actividades"
     },
     "errors": {
       "create": "No pudimos crear la obra.",
@@ -195,6 +207,13 @@
       "create": "No pudimos crear la actividad.",
       "update": "No pudimos actualizar la actividad.",
       "delete": "No pudimos eliminar la actividad."
+    },
+    "gantt": {
+      "emptyState": "No hay actividades planificadas en este rango de fechas."
+    },
+    "detail": {
+      "title": "Detalle de la actividad",
+      "back": "Atrás"
     }
   },
   "material": {
