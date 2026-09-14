@@ -318,6 +318,7 @@ export function ProjectActivitiesPage() {
               activities={activitiesData.activities}
               range={range}
               onSelectActivity={setSelectedActivityId}
+              missingMaterialActivityIds={activitiesWithAlert}
             />
           )}
         </CardContent>

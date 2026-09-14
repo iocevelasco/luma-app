@@ -59,7 +59,7 @@ test.describe('planificación semanal y materiales', () => {
     await expect(page.getByRole('dialog')).toBeHidden();
 
     // Aparece como fila del gantt del rango actual (este mes).
-    const activityRow = page.getByRole('button', { name: ACTIVITY_NAME });
+    const activityRow = page.getByRole('gridcell', { name: ACTIVITY_NAME });
     await expect(activityRow).toBeVisible();
 
     // Abre el detalle en el modal de pantalla completa y vuelve sin cambiar la URL.
