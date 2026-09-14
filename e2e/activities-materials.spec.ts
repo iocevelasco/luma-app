@@ -42,7 +42,7 @@ test.describe('planificación semanal y materiales', () => {
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /planificación semanal/i }).click();
+    await page.getByRole('link', { name: /^cronograma$/i }).click();
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();

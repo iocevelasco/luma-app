@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ActivityGantt } from '@/components/activities/activity-gantt';
 import { DateRangeFilter, fromDayKey, presetRange } from '@/components/common/date-range-filter';
+import { ProjectNav } from '@/components/projects/project-nav';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -300,6 +301,8 @@ export function ProjectActivitiesPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 md:p-6">
+      <ProjectNav projectId={projectId!} projectName={projectData?.project.name} />
+
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
           <CardTitle className="text-base">{t('project.detail.gantt')}</CardTitle>

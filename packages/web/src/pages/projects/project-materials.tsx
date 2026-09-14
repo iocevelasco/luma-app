@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ProjectNav } from '@/components/projects/project-nav';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -320,6 +321,8 @@ export function ProjectMaterialsPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 md:p-6">
+      <ProjectNav projectId={projectId!} projectName={projectData?.project.name} />
+
       {isOwner && <NewMaterialForm projectId={projectId!} />}
 
       <Card>

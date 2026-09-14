@@ -68,6 +68,11 @@
       "abierto": "Aberto",
       "con_margen": "Com margem de variação"
     },
+    "nav": {
+      "detail": "Detalhe",
+      "gantt": "Cronograma",
+      "materials": "Materiais"
+    },
     "detail": {
       "gantt": "Cronograma de atividades",
       "clients": "Clientes com acesso",

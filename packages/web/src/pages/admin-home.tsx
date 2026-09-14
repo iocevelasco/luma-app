@@ -18,7 +18,7 @@ import {
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useMyOrganization, useRenameOrganization } from '@/hooks/organizations/use-organization-queries';
 import { useProjects } from '@/hooks/projects/use-project-queries';
-import { ROUTES, projectDetailPath } from '@/lib/routes';
+import { ROUTES, projectActivitiesPath } from '@/lib/routes';
 
 /** Nombre de la empresa, editable inline. Única superficie de UI de Empresa en v1. */
 function OrganizationName() {
@@ -125,7 +125,7 @@ export function AdminHomePage() {
                 <TableCell>
                   <Link
                     className="font-medium hover:underline"
-                    to={projectDetailPath(project.id)}
+                    to={projectActivitiesPath(project.id)}
                   >
                     {project.name}
                   </Link>
