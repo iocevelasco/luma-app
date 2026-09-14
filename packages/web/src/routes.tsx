@@ -1,11 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { DashboardLayout } from './components/dashboard-layout';
-import {
-  AdminLayout,
-  AuthenticatedLayout,
-  PublicOnlyLayout,
-} from './components/route-layouts';
+import { AuthenticatedLayout, PublicOnlyLayout } from './components/route-layouts';
 import { RouteLoading } from './components/routes/route-loading';
 import { ROUTES } from './lib/routes';
 
@@ -39,6 +35,20 @@ const AdminHomePage = lazy(() =>
 const AccountSettingsPage = lazy(() =>
   import('./pages/account-settings').then((m) => ({ default: m.AccountSettingsPage })),
 );
+const ProjectNewPage = lazy(() =>
+  import('./pages/projects/project-new').then((m) => ({ default: m.ProjectNewPage })),
+);
+const ProjectDetailPage = lazy(() =>
+  import('./pages/projects/project-detail').then((m) => ({ default: m.ProjectDetailPage })),
+);
+const ProjectActivitiesPage = lazy(() =>
+  import('./pages/projects/project-activities').then((m) => ({
+    default: m.ProjectActivitiesPage,
+  })),
+);
+const ProjectMaterialsPage = lazy(() =>
+  import('./pages/projects/project-materials').then((m) => ({ default: m.ProjectMaterialsPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -70,16 +80,32 @@ export function AppRoutes() {
         element={<LazyRoute><ConfirmEmailChangePage /></LazyRoute>}
       />
 
-      {/* Panel. El chrome se monta una sola vez, arriba del Outlet. */}
+      {/*
+        Panel. El chrome se monta una sola vez, arriba del Outlet. Cualquier
+        autenticado entra acá — no hay gate de admin: `role: 'admin'` es un
+        concepto de plataforma sin ninguna pantalla propia todavía, no el
+        rol de quien gestiona sus obras.
+      */}
       <Route element={<AuthenticatedLayout />}>
-        <Route element={<AdminLayout />}>
-          <Route element={<DashboardLayout />}>
-            <Route path={ROUTES.ADMIN} element={<LazyRoute><AdminHomePage /></LazyRoute>} />
-            <Route
-              path={ROUTES.ACCOUNT_SETTINGS}
-              element={<LazyRoute><AccountSettingsPage /></LazyRoute>}
-            />
-          </Route>
+        <Route element={<DashboardLayout />}>
+          <Route path={ROUTES.ADMIN} element={<LazyRoute><AdminHomePage /></LazyRoute>} />
+          <Route
+            path={ROUTES.ACCOUNT_SETTINGS}
+            element={<LazyRoute><AccountSettingsPage /></LazyRoute>}
+          />
+          <Route path={ROUTES.PROJECT_NEW} element={<LazyRoute><ProjectNewPage /></LazyRoute>} />
+          <Route
+            path={ROUTES.PROJECT_DETAIL}
+            element={<LazyRoute><ProjectDetailPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_ACTIVITIES}
+            element={<LazyRoute><ProjectActivitiesPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_MATERIALS}
+            element={<LazyRoute><ProjectMaterialsPage /></LazyRoute>}
+          />
         </Route>
       </Route>
 

@@ -71,3 +71,7 @@ export type ForgotPasswordRequestInput = z.infer<typeof forgotPasswordRequestSch
 export type ResetPasswordRequestInput = z.infer<typeof resetPasswordRequestSchema>;
 export type ChangePasswordRequestInput = z.infer<typeof changePasswordRequestSchema>;
 export type ChangeEmailRequestInput = z.infer<typeof changeEmailRequestSchema>;
+
+export * from './project.js';
+export * from './activity.js';
+export * from './material.js';

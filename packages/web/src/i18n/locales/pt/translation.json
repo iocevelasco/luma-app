@@ -17,17 +17,64 @@
     "goHome": "Ir para o início"
   },
   "layout": {
-    "home": "Início",
+    "projects": "Obras",
     "openMenu": "Abrir menu",
-    "closeMenu": "Fechar menu",
-    "emptyHomeTitle": "Ainda não há nada aqui",
-    "emptyHomeBody": "Esta é a base da aplicação. Quando você definir o produto, a primeira tela dele vai neste lugar."
+    "closeMenu": "Fechar menu"
   },
   "userMenu": {
     "account": "Minha conta",
     "settings": "Configurações",
     "theme": "Tema",
     "logout": "Sair"
+  },
+  "project": {
+    "list": {
+      "new": "Nova obra",
+      "emptyTitle": "Você ainda não tem obras",
+      "emptyBody": "Crie sua primeira obra para começar a gerenciá-la.",
+      "emptyCta": "Criar sua primeira obra",
+      "columns": {
+        "name": "Obra",
+        "location": "Localização",
+        "dates": "Datas",
+        "budgetType": "Orçamento"
+      }
+    },
+    "new": {
+      "title": "Nova obra",
+      "submit": "Criar obra",
+      "created": "Obra criada"
+    },
+    "fields": {
+      "name": "Nome",
+      "description": "Descrição",
+      "location": "Localização",
+      "size": "Metragem ou dimensão (opcional)",
+      "startDate": "Início estimado",
+      "endDate": "Entrega estimada",
+      "currency": "Moeda",
+      "currencyPlaceholder": "Escolha uma moeda",
+      "budgetType": "Tipo de orçamento",
+      "budgetTypePlaceholder": "Escolha um tipo"
+    },
+    "budgetType": {
+      "cerrado": "Fechado",
+      "abierto": "Aberto",
+      "con_margen": "Com margem de variação"
+    },
+    "detail": {
+      "clients": "Clientes com acesso",
+      "invite": "Convidar cliente",
+      "inviteTitle": "Convidar quem paga a obra",
+      "inviteEmail": "E-mail",
+      "inviteSubmit": "Convidar",
+      "clientInvited": "Convite enviado",
+      "noClients": "Você ainda não convidou ninguém."
+    },
+    "errors": {
+      "create": "Não conseguimos criar a obra.",
+      "invite": "Não conseguimos convidar essa pessoa."
+    }
   },
   "auth": {
     "login": {
@@ -107,5 +154,98 @@
     "retry": "Tentar de novo",
     "goHome": "Ir para o início",
     "signOut": "Sair e começar do zero"
+  },
+  "activity": {
+    "list": {
+      "new": "Nova atividade",
+      "navLink": "Planejamento semanal",
+      "newTitle": "Nova atividade",
+      "newSubmit": "Criar atividade",
+      "created": "Atividade criada",
+      "updated": "Atividade atualizada",
+      "deleted": "Atividade excluída",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Próxima semana",
+      "currentWeek": "Semana atual",
+      "overdue": "Atrasada",
+      "missingMaterials": "Faltam materiais"
+    },
+    "new": {
+      "title": "Nova atividade"
+    },
+    "fields": {
+      "name": "Nome",
+      "area": "Área",
+      "startDate": "Início",
+      "endDate": "Fim",
+      "responsible": "Responsável",
+      "status": "Status",
+      "notes": "Notas (opcional)"
+    },
+    "status": {
+      "pendiente": "Pendente",
+      "en_curso": "Em andamento",
+      "completada": "Concluída",
+      "cancelada": "Cancelada"
+    },
+    "emptyState": {
+      "title": "Não há atividades planejadas para esta semana."
+    },
+    "errors": {
+      "create": "Não conseguimos criar a atividade.",
+      "update": "Não conseguimos atualizar a atividade.",
+      "delete": "Não conseguimos excluir a atividade."
+    }
+  },
+  "material": {
+    "list": {
+      "navLink": "Materiais",
+      "title": "Materiais",
+      "newTitle": "Adicionar material",
+      "newSubmit": "Adicionar",
+      "created": "Material adicionado",
+      "updated": "Material atualizado",
+      "deleted": "Material excluído",
+      "empty": "Você ainda não adicionou materiais.",
+      "withoutActivity": "Sem atividade associada",
+      "copyList": "Copiar lista",
+      "share": "Compartilhar",
+      "copied": "Lista copiada para a área de transferência",
+      "confirmStatusTitle": "Confirmar mudança de status",
+      "confirmStatusBody": "Você vai mudar o status para \"{{status}}\"."
+    },
+    "fields": {
+      "name": "Nome",
+      "quantity": "Quantidade",
+      "unit": "Unidade",
+      "unitPlaceholder": "Escolha uma unidade",
+      "activity": "Atividade (opcional)",
+      "activityPlaceholder": "Sem atividade associada",
+      "estimatedCost": "Custo estimado (opcional)",
+      "supplier": "Fornecedor (opcional)"
+    },
+    "status": {
+      "pendiente": "Pendente",
+      "solicitado": "Solicitado",
+      "comprado": "Comprado",
+      "en_obra": "Na obra"
+    },
+    "unit": {
+      "un": "Unidade",
+      "m": "Metro",
+      "m2": "Metro quadrado",
+      "m3": "Metro cúbico",
+      "kg": "Quilograma",
+      "l": "Litro",
+      "bolsa": "Saco",
+      "rollo": "Rolo",
+      "global": "Global"
+    },
+    "errors": {
+      "create": "Não conseguimos adicionar o material.",
+      "update": "Não conseguimos atualizar o material.",
+      "delete": "Não conseguimos excluir o material.",
+      "copy": "Não conseguimos copiar a lista."
+    }
   }
 }

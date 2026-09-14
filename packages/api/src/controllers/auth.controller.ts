@@ -17,6 +17,7 @@ import { User, type IUser } from '../models/User.js';
 import { generateTokens } from '../services/auth.service.js';
 import { EmailService } from '../services/email.service.js';
 import { JWTService } from '../services/jwt.service.js';
+import { createPersonalOrganization } from '../services/organization.service.js';
 import { verifyRecaptchaFromRequest } from '../services/recaptcha.service.js';
 
 const BCRYPT_ROUNDS = 10;
@@ -134,6 +135,10 @@ export async function register(req: Request, res: Response) {
       emailVerificationToken: verificationToken,
       emailVerificationTokenExpires: new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS),
     });
+
+    // Toda cuenta nueva tiene su empresa personal desde el arranque: así nunca
+    // hace falta un paso aparte de "creá tu empresa" antes de la primera obra.
+    await createPersonalOrganization(String(user._id), name);
 
     await EmailService.sendEmailVerificationEmail(email, verificationToken, name);
 
