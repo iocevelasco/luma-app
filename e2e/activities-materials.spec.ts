@@ -86,7 +86,7 @@ test.describe('planificación semanal y materiales', () => {
     await expect(page.getByText(MATERIAL_NAME)).toBeVisible();
 
     // Cambia el estado y confirma en el diálogo.
-    await page.getByText(MATERIAL_NAME).locator('..').getByRole('combobox').click();
+    await page.getByText(MATERIAL_NAME).locator('../..').getByRole('combobox').click();
     await page.getByRole('option', { name: /solicitado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
     await expect(page.getByRole('alertdialog')).toBeHidden();

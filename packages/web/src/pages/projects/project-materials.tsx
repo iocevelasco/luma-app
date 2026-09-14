@@ -158,8 +158,13 @@ function NewMaterialForm({ projectId }: { projectId: string }) {
               <Input
                 id="material-cost"
                 inputMode="decimal"
-                {...register('estimatedCost', { valueAsNumber: true })}
+                {...register('estimatedCost', {
+                  setValueAs: (value) => (value === '' ? undefined : Number(value)),
+                })}
               />
+              {errors.estimatedCost && (
+                <p className="text-sm text-destructive">{errors.estimatedCost.message}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
