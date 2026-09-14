@@ -1,4 +1,10 @@
 {
+  "dateRange": {
+    "thisMonth": "Este mes",
+    "lastMonth": "Mes pasado",
+    "last30": "Últimos 30 días",
+    "thisYear": "Este año"
+  },
   "common": {
     "appName": "Luma",
     "save": "Guardar",

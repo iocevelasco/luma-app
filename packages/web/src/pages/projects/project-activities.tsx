@@ -309,10 +309,9 @@ export function ProjectActivitiesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {activitiesData.activities.length === 0 && isOwner ? (
+          {activitiesData.activities.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
               <p className="text-sm text-muted-foreground">{t('activity.gantt.emptyState')}</p>
-              <NewActivityDialog projectId={projectId!} />
             </div>
           ) : (
             <ActivityGantt
