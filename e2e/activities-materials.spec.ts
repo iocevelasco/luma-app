@@ -58,16 +58,20 @@ test.describe('planificación semanal y materiales', () => {
     await page.getByRole('button', { name: /crear actividad/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
-    // Aparece en la semana actual.
-    await expect(page.getByText(ACTIVITY_NAME)).toBeVisible();
+    // Aparece como fila del gantt del rango actual (este mes).
+    const activityRow = page.getByRole('button', { name: ACTIVITY_NAME });
+    await expect(activityRow).toBeVisible();
 
-    // Navega a la semana siguiente y de vuelta.
-    await page.getByRole('button', { name: /semana siguiente/i }).click();
-    await expect(page.getByText(ACTIVITY_NAME)).toHaveCount(0);
-    await page.getByRole('button', { name: /semana actual/i }).click();
-    await expect(page.getByText(ACTIVITY_NAME)).toBeVisible();
+    // Abre el detalle en el modal de pantalla completa y vuelve sin cambiar la URL.
+    await activityRow.click();
+    const detailDialog = page.getByRole('dialog');
+    await expect(detailDialog.getByText(ACTIVITY_NAME)).toBeVisible();
+    await expect(page).toHaveURL(/\/actividades$/);
+    await detailDialog.getByRole('button', { name: /atrás/i }).click();
+    await expect(detailDialog).toBeHidden();
 
     // Agrega un material asociado a esa actividad.
+    await page.goto(page.url().replace(/\/actividades$/, ''));
     await page.getByRole('link', { name: /^materiales$/i }).click();
     await expect(page).toHaveURL(/\/materiales$/);
 

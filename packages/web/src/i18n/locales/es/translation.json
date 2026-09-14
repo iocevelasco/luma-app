@@ -69,7 +69,8 @@
       "inviteEmail": "Email",
       "inviteSubmit": "Invitar",
       "clientInvited": "Invitación enviada",
-      "noClients": "Todavía no invitaste a nadie."
+      "noClients": "Todavía no invitaste a nadie.",
+      "gantt": "Cronograma de actividades"
     },
     "errors": {
       "create": "No pudimos crear la obra.",
@@ -195,6 +196,13 @@
       "create": "No pudimos crear la actividad.",
       "update": "No pudimos actualizar la actividad.",
       "delete": "No pudimos eliminar la actividad."
+    },
+    "gantt": {
+      "emptyState": "No hay actividades planificadas en este rango de fechas."
+    },
+    "detail": {
+      "title": "Detalle de la actividad",
+      "back": "Atrás"
     }
   },
   "material": {

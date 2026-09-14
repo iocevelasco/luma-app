@@ -63,6 +63,7 @@
       "con_margen": "Com margem de variação"
     },
     "detail": {
+      "gantt": "Cronograma de atividades",
       "clients": "Clientes com acesso",
       "invite": "Convidar cliente",
       "inviteTitle": "Convidar quem paga a obra",
@@ -195,6 +196,13 @@
       "create": "Não conseguimos criar a atividade.",
       "update": "Não conseguimos atualizar a atividade.",
       "delete": "Não conseguimos excluir a atividade."
+    },
+    "gantt": {
+      "emptyState": "Não há atividades planejadas neste período."
+    },
+    "detail": {
+      "title": "Detalhe da atividade",
+      "back": "Voltar"
     }
   },
   "material": {

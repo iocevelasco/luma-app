@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { createActivitySchema, type Activity, type CreateActivityInput } from '@luma/shared';
-import { AlertTriangle, ChevronLeft, ChevronRight, PackageX, Plus } from 'lucide-react';
+import { ArrowLeft, PackageX, Plus } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { ActivityGantt } from '@/components/activities/activity-gantt';
+import { DateRangeFilter, fromDayKey, presetRange } from '@/components/common/date-range-filter';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,8 +35,7 @@ import { useAllActivities, useActivities, useCreateActivity } from '@/hooks/acti
 import { useMaterials } from '@/hooks/materials/use-material-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProject } from '@/hooks/projects/use-project-queries';
-import { currentWeekRange, isActivityOverdue, isSameWeek, isWithinNextDays, shiftWeek } from '@/lib/week';
-import { cn } from '@/lib/utils';
+import { isActivityOverdue, isWithinNextDays } from '@/lib/week';
 
 const ACTIVITY_STATUSES = ['pendiente', 'en_curso', 'completada', 'cancelada'] as const;
 
@@ -159,58 +159,111 @@ function NewActivityDialog({ projectId }: { projectId: string }) {
   );
 }
 
-function ActivityCard({ activity, missingMaterials }: { activity: Activity; missingMaterials: boolean }) {
+function ActivityDetailModal({
+  activity,
+  missingMaterials,
+  onClose,
+}: {
+  activity: Activity | undefined;
+  missingMaterials: boolean;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
-  const overdue = isActivityOverdue(activity.endDate, activity.status);
 
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-2 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="font-medium">{activity.name}</p>
-            <p className="text-sm text-muted-foreground">{activity.area}</p>
-          </div>
-          <div className="flex items-center gap-1">
-            {missingMaterials && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <PackageX className="size-4 text-destructive" aria-label={t('activity.list.missingMaterials')} />
-                </TooltipTrigger>
-                <TooltipContent>{t('activity.list.missingMaterials')}</TooltipContent>
-              </Tooltip>
-            )}
-            {overdue && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertTriangle className="size-4 text-destructive" aria-label={t('activity.list.overdue')} />
-                </TooltipTrigger>
-                <TooltipContent>{t('activity.list.overdue')}</TooltipContent>
-              </Tooltip>
-            )}
-            <Badge variant={overdue ? 'destructive' : 'secondary'} className="rounded-full">
-              {t(`activity.status.${activity.status}`)}
-            </Badge>
-          </div>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {format(fromDayKey(activity.startDate), 'PP', { locale: dateLocale })} –{' '}
-          {format(fromDayKey(activity.endDate), 'PP', { locale: dateLocale })}
-        </p>
-        <p className="text-sm">{t('activity.fields.responsible')}: {activity.responsible.name}</p>
-        {activity.notes && <p className="text-sm text-muted-foreground">{activity.notes}</p>}
-      </CardContent>
-    </Card>
+    <Dialog open={Boolean(activity)} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        showCloseButton={false}
+        className="left-0 top-0 h-dvh w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-none p-0 sm:max-w-none"
+      >
+        {activity && (
+          <>
+            <DialogHeader className="sticky top-0 z-10 flex-row items-center gap-3 space-y-0 border-b border-border bg-background p-4">
+              <Button variant="outline" onClick={onClose}>
+                <ArrowLeft className="size-4" />
+                {t('activity.detail.back')}
+              </Button>
+              <DialogTitle className="text-base">{t('activity.detail.title')}</DialogTitle>
+            </DialogHeader>
+
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 md:p-6">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-lg font-medium">{activity.name}</p>
+                  <p className="text-sm text-muted-foreground">{activity.area}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {missingMaterials && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <PackageX
+                          className="size-4 text-destructive"
+                          aria-label={t('activity.list.missingMaterials')}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>{t('activity.list.missingMaterials')}</TooltipContent>
+                    </Tooltip>
+                  )}
+                  <Badge
+                    variant={isActivityOverdue(activity.endDate, activity.status) ? 'destructive' : 'secondary'}
+                  >
+                    {t(`activity.status.${activity.status}`)}
+                  </Badge>
+                </div>
+              </div>
+
+              <dl className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <dt className="text-muted-foreground">{t('activity.fields.startDate')}</dt>
+                  <dd>{format(fromDayKey(activity.startDate), 'PP', { locale: dateLocale })}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">{t('activity.fields.endDate')}</dt>
+                  <dd>{format(fromDayKey(activity.endDate), 'PP', { locale: dateLocale })}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">{t('activity.fields.responsible')}</dt>
+                  <dd>{activity.responsible.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">{t('activity.fields.status')}</dt>
+                  <dd>{t(`activity.status.${activity.status}`)}</dd>
+                </div>
+              </dl>
+
+              {activity.notes && (
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('activity.fields.notes')}</p>
+                  <p className="text-sm">{activity.notes}</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export function ProjectActivitiesPage() {
   const { t } = useTranslation();
-  const dateLocale = useDateLocale();
   const { projectId } = useParams<{ projectId: string }>();
   const { data: projectData } = useProject(projectId);
-  const [range, setRange] = useState(currentWeekRange());
+  const [range, setRange] = useState<{ from: string; to: string }>(() => presetRange('thisMonth'));
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const rangeInitialized = useRef(false);
+
+  // Rango inicial: el de la obra completa, no "este mes" — una obra planifica
+  // meses a futuro y el default no puede empezar mostrando el gantt vacío.
+  useEffect(() => {
+    if (rangeInitialized.current || !projectData) return;
+    rangeInitialized.current = true;
+    setRange({
+      from: projectData.project.estimatedStartDate,
+      to: projectData.project.estimatedEndDate,
+    });
+  }, [projectData]);
 
   const { data: activitiesData, isLoading } = useActivities(projectId, range);
   const { data: allActivitiesData } = useAllActivities(projectId);
@@ -243,64 +296,39 @@ export function ProjectActivitiesPage() {
 
   if (isLoading || !activitiesData) return <RouteLoading />;
 
-  const isCurrentWeek = isSameWeek(range, currentWeekRange());
-  const rangeLabel = `${format(fromDayKey(range.from), 'PP', { locale: dateLocale })} – ${format(
-    fromDayKey(range.to),
-    'PP',
-    { locale: dateLocale },
-  )}`;
+  const selectedActivity = activitiesData.activities.find((a) => a.id === selectedActivityId);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 md:p-6">
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
+          <CardTitle className="text-base">{t('project.detail.gantt')}</CardTitle>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setRange((r) => shiftWeek(r, -1))}
-              aria-label={t('activity.list.prevWeek')}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <CardTitle className="text-base">{rangeLabel}</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setRange((r) => shiftWeek(r, 1))}
-              aria-label={t('activity.list.nextWeek')}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            {!isCurrentWeek && (
-              <Button variant="outline" size="sm" onClick={() => setRange(currentWeekRange())}>
-                {t('activity.list.currentWeek')}
-              </Button>
-            )}
+            <DateRangeFilter value={range} onChange={setRange} disableFuture={false} />
             {isOwner && <NewActivityDialog projectId={projectId!} />}
           </div>
         </CardHeader>
         <CardContent>
-          {activitiesData.activities.length === 0 ? (
+          {activitiesData.activities.length === 0 && isOwner ? (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <p className="text-sm text-muted-foreground">{t('activity.emptyState.title')}</p>
-              {isOwner && <NewActivityDialog projectId={projectId!} />}
+              <p className="text-sm text-muted-foreground">{t('activity.gantt.emptyState')}</p>
+              <NewActivityDialog projectId={projectId!} />
             </div>
           ) : (
-            <div className={cn('grid gap-3', 'sm:grid-cols-2')}>
-              {activitiesData.activities.map((activity) => (
-                <ActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  missingMaterials={activitiesWithAlert.has(activity.id)}
-                />
-              ))}
-            </div>
+            <ActivityGantt
+              activities={activitiesData.activities}
+              range={range}
+              onSelectActivity={setSelectedActivityId}
+            />
           )}
         </CardContent>
       </Card>
+
+      <ActivityDetailModal
+        activity={selectedActivity}
+        missingMaterials={Boolean(selectedActivityId && activitiesWithAlert.has(selectedActivityId))}
+        onClose={() => setSelectedActivityId(null)}
+      />
     </div>
   );
 }
