@@ -6,6 +6,7 @@ import { Gantt, Willow, WillowDark, type IApi, type IColumnConfig } from '@svar-
 import '@svar-ui/react-gantt/style.css';
 import type { Activity, ActivityStatus } from '@luma/shared';
 import { fromDayKey } from '@/components/common/date-range-filter';
+import { TruncatedText } from '@/components/common/truncated-text';
 import { Badge } from '@/components/ui/badge';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { isActivityOverdue } from '@/lib/week';
@@ -25,6 +26,18 @@ const STATUS_PROGRESS: Record<ActivityStatus, number> = {
 interface GanttTaskRow {
   activity: Activity;
   missingMaterials: boolean;
+}
+
+function TextCell({ row }: { row: unknown }) {
+  return <TruncatedText text={(row as GanttTaskRow).activity.name} />;
+}
+
+function AreaCell({ row }: { row: unknown }) {
+  return <TruncatedText text={(row as GanttTaskRow).activity.area} />;
+}
+
+function ResponsibleCell({ row }: { row: unknown }) {
+  return <TruncatedText text={(row as GanttTaskRow).activity.responsible.name} />;
 }
 
 function StatusCell({ row }: { row: unknown }) {
@@ -76,19 +89,9 @@ export function ActivityGantt({
 
   const columns: IColumnConfig[] = useMemo(
     () => [
-      { id: 'text', header: t('activity.fields.name'), width: 180, flexgrow: 1 },
-      {
-        id: 'area',
-        header: t('activity.fields.area'),
-        width: 120,
-        getter: (row: unknown) => (row as GanttTaskRow).activity.area,
-      },
-      {
-        id: 'responsible',
-        header: t('activity.fields.responsible'),
-        width: 140,
-        getter: (row: unknown) => (row as GanttTaskRow).activity.responsible.name,
-      },
+      { id: 'text', header: t('activity.fields.name'), width: 180, flexgrow: 1, cell: TextCell },
+      { id: 'area', header: t('activity.fields.area'), width: 120, cell: AreaCell },
+      { id: 'responsible', header: t('activity.fields.responsible'), width: 140, cell: ResponsibleCell },
       { id: 'status', header: t('activity.fields.status'), width: 140, cell: StatusCell },
     ],
     [t],
@@ -112,8 +115,8 @@ export function ActivityGantt({
   const Skin = resolvedTheme === 'dark' ? WillowDark : Willow;
 
   return (
-    <Skin fonts={false}>
-      <div style={{ height: 480 }}>
+    <div className="min-h-0 min-w-0 flex-1 [&_.wx-theme]:h-full">
+      <Skin fonts={false}>
         <Gantt
           tasks={tasks}
           links={[]}
@@ -127,8 +130,8 @@ export function ActivityGantt({
           readonly
           init={handleInit}
         />
-      </div>
-    </Skin>
+      </Skin>
+    </div>
   );
 }
 

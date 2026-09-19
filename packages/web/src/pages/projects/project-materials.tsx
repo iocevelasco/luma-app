@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ProjectNav } from '@/components/projects/project-nav';
+import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -265,7 +265,7 @@ export function ProjectMaterialsPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const { data: projectData } = useProject(projectId);
-  const { data: materialsData, isLoading } = useMaterials(projectId);
+  const { data: materialsData, isLoading, isError } = useMaterials(projectId);
   const { data: activitiesData } = useAllActivities(projectId);
 
   const isOwner = Boolean(projectData?.project.isOwner);
@@ -315,14 +315,13 @@ export function ProjectMaterialsPage() {
     }
   }
 
+  if (isError) return <RouteError />;
   if (isLoading || !materialsData) return <RouteLoading />;
 
   const canShare = typeof navigator.share === 'function';
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 md:p-6">
-      <ProjectNav projectId={projectId!} projectName={projectData?.project.name} />
-
       {isOwner && <NewMaterialForm projectId={projectId!} />}
 
       <Card>

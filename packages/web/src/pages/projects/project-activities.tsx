@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ActivityGantt } from '@/components/activities/activity-gantt';
 import { DateRangeFilter, fromDayKey, presetRange } from '@/components/common/date-range-filter';
-import { ProjectNav } from '@/components/projects/project-nav';
+import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -266,7 +266,7 @@ export function ProjectActivitiesPage() {
     });
   }, [projectData]);
 
-  const { data: activitiesData, isLoading } = useActivities(projectId, range);
+  const { data: activitiesData, isLoading, isError } = useActivities(projectId, range);
   const { data: allActivitiesData } = useAllActivities(projectId);
   const { data: materialsData } = useMaterials(projectId);
 
@@ -295,15 +295,14 @@ export function ProjectActivitiesPage() {
     return result;
   }, [allActivitiesData, missingByActivity]);
 
+  if (isError) return <RouteError />;
   if (isLoading || !activitiesData) return <RouteLoading />;
 
   const selectedActivity = activitiesData.activities.find((a) => a.id === selectedActivityId);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 md:p-6">
-      <ProjectNav projectId={projectId!} projectName={projectData?.project.name} />
-
-      <Card>
+    <div className="flex h-[calc(100dvh-3.5rem)] min-w-0 flex-col gap-3 p-3 md:p-4">
+      <Card className="min-h-0 min-w-0 flex-1">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
           <CardTitle className="text-base">{t('project.detail.gantt')}</CardTitle>
           <div className="flex items-center gap-2">
@@ -311,7 +310,7 @@ export function ProjectActivitiesPage() {
             {isOwner && <NewActivityDialog projectId={projectId!} />}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex min-h-0 min-w-0 flex-1 flex-col">
           {activitiesData.activities.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
               <p className="text-sm text-muted-foreground">{t('activity.gantt.emptyState')}</p>
