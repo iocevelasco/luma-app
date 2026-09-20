@@ -9,7 +9,6 @@ import { useParams } from 'react-router-dom';
 import { fromDayKey } from '@/components/common/date-range-filter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -94,61 +93,58 @@ export function ProjectDetailPage() {
   const { project, clients } = data;
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 md:p-6">
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-8 p-3 md:p-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <CardTitle>{project.name}</CardTitle>
+            <h2 className="text-2xl">{project.name}</h2>
             <p className="text-sm text-muted-foreground">{project.location}</p>
           </div>
           <Badge variant="secondary">{t(`project.budgetType.${project.budgetType}`)}</Badge>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <p className="text-sm">{project.description}</p>
+        </div>
 
-          <dl className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <dt className="text-muted-foreground">{t('project.fields.startDate')}</dt>
-              <dd>{format(fromDayKey(project.estimatedStartDate), 'PP', { locale: dateLocale })}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">{t('project.fields.endDate')}</dt>
-              <dd>{format(fromDayKey(project.estimatedEndDate), 'PP', { locale: dateLocale })}</dd>
-            </div>
-            {project.size && (
-              <div>
-                <dt className="text-muted-foreground">{t('project.fields.size')}</dt>
-                <dd>{project.size}</dd>
-              </div>
-            )}
-            <div>
-              <dt className="text-muted-foreground">{t('project.fields.currency')}</dt>
-              <dd>{project.currency}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
+        <p className="text-sm">{project.description}</p>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle className="text-base">{t('project.detail.clients')}</CardTitle>
-          {project.isOwner && <InviteClientDialog projectId={project.id} />}
-        </CardHeader>
-        <CardContent>
-          {clients.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('project.detail.noClients')}</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {clients.map((client) => (
-                <li key={client.id} className="flex items-center justify-between text-sm">
-                  <span>{client.name}</span>
-                  <span className="text-muted-foreground">{client.email}</span>
-                </li>
-              ))}
-            </ul>
+        <dl className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <dt className="text-muted-foreground">{t('project.fields.startDate')}</dt>
+            <dd>{format(fromDayKey(project.estimatedStartDate), 'PP', { locale: dateLocale })}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">{t('project.fields.endDate')}</dt>
+            <dd>{format(fromDayKey(project.estimatedEndDate), 'PP', { locale: dateLocale })}</dd>
+          </div>
+          {project.size && (
+            <div>
+              <dt className="text-muted-foreground">{t('project.fields.size')}</dt>
+              <dd>{project.size}</dd>
+            </div>
           )}
-        </CardContent>
-      </Card>
+          <div>
+            <dt className="text-muted-foreground">{t('project.fields.currency')}</dt>
+            <dd>{project.currency}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-border pt-6">
+        <div className="flex items-center justify-between gap-4">
+          <h3 className="text-sm font-medium">{t('project.detail.clients')}</h3>
+          {project.isOwner && <InviteClientDialog projectId={project.id} />}
+        </div>
+        {clients.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('project.detail.noClients')}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {clients.map((client) => (
+              <li key={client.id} className="flex items-center justify-between text-sm">
+                <span>{client.name}</span>
+                <span className="text-muted-foreground">{client.email}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

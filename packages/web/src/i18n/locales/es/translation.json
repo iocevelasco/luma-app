@@ -213,7 +213,12 @@
     },
     "detail": {
       "title": "Detalle de la actividad",
-      "back": "Atrás"
+      "back": "Atrás",
+      "edit": "Editar",
+      "editTitle": "Editar actividad",
+      "materials": "Materiales asociados",
+      "noMaterials": "No hay materiales asociados a esta actividad.",
+      "notes": "Notas"
     }
   },
   "material": {
