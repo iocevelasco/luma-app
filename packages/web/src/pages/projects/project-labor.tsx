@@ -49,7 +49,11 @@ function LaborRow({
     .split(',')
     .map((name) => name.trim())
     .filter(Boolean);
-  const deficit = expectedCount - presentNames.length;
+  // Para el cliente invitado la API vacía `presentNames` (regla de negocio: no
+  // ve la asignación individual de personal) — `presentCount` es la cuenta
+  // real igual, así el déficit no se calcula contra un array vacío.
+  const presentCount = isOwner ? presentNames.length : (record?.presentCount ?? 0);
+  const deficit = expectedCount - presentCount;
 
   return (
     <div className="flex flex-col gap-3 border-b border-border py-4 last:border-b-0 sm:flex-row sm:items-end">
@@ -82,7 +86,7 @@ function LaborRow({
             placeholder={t('labor.fields.presentPlaceholder')}
           />
         ) : (
-          <p>{presentNames.length > 0 ? presentNames.join(', ') : '—'}</p>
+          <p>{presentCount > 0 ? t('labor.presentCount', { count: presentCount }) : '—'}</p>
         )}
       </div>
 
@@ -128,6 +132,9 @@ export function ProjectLaborPage() {
     return map;
   }, [laborData]);
 
+  // Vacío para el cliente invitado (la API no manda nombres individuales):
+  // el total de `totalPresentToday` sigue siendo correcto porque sale de
+  // `presentCount`, no de contar este array.
   const presentToday = useMemo(() => {
     const result: { name: string; activityName: string }[] = [];
     for (const activity of activitiesToday) {
@@ -137,6 +144,13 @@ export function ProjectLaborPage() {
       }
     }
     return result;
+  }, [activitiesToday, recordByActivity]);
+
+  const totalPresentToday = useMemo(() => {
+    return activitiesToday.reduce(
+      (sum, activity) => sum + (recordByActivity.get(activity.id)?.presentCount ?? 0),
+      0,
+    );
   }, [activitiesToday, recordByActivity]);
 
   if (isError) return <RouteError />;
@@ -168,16 +182,23 @@ export function ProjectLaborPage() {
 
       <div className="flex flex-col gap-3">
         <h3 className="text-sm font-medium">{t('labor.whoIsHereTitle')}</h3>
-        {presentToday.length === 0 ? (
+        {isOwner ? (
+          presentToday.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('labor.whoIsHereEmpty')}</p>
+          ) : (
+            <ul className="flex flex-col gap-1 text-sm">
+              {presentToday.map((person, index) => (
+                <li key={index}>
+                  {person.name} <span className="text-muted-foreground">— {person.activityName}</span>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : totalPresentToday === 0 ? (
           <p className="text-sm text-muted-foreground">{t('labor.whoIsHereEmpty')}</p>
         ) : (
-          <ul className="flex flex-col gap-1 text-sm">
-            {presentToday.map((person, index) => (
-              <li key={index}>
-                {person.name} <span className="text-muted-foreground">— {person.activityName}</span>
-              </li>
-            ))}
-          </ul>
+          // El cliente ve el total, no quién en particular — regla de negocio.
+          <p className="text-sm">{t('labor.whoIsHereCount', { count: totalPresentToday })}</p>
         )}
       </div>
 

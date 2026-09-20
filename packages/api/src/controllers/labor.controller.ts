@@ -8,14 +8,21 @@ function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
 }
 
-function toLaborRecordDTO(record: ILaborRecord): LaborRecordDTO {
+/**
+ * `viewerIsOwner` en `false` vacía `presentNames` — regla de negocio: el
+ * cliente invitado no ve "la asignación individual de personal". `presentCount`
+ * sale siempre de `record.presentNames.length` real, para que el dashboard no
+ * reporte 0 presentes sólo porque quien mira es el cliente.
+ */
+function toLaborRecordDTO(record: ILaborRecord, viewerIsOwner: boolean): LaborRecordDTO {
   return {
     id: String(record._id),
     projectId: String(record.project),
     activityId: String(record.activity),
     date: record.date,
     expectedCount: record.expectedCount,
-    presentNames: record.presentNames,
+    presentNames: viewerIsOwner ? record.presentNames : [],
+    presentCount: record.presentNames.length,
     createdBy: String(record.createdBy),
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
@@ -27,13 +34,17 @@ export async function listLaborRecords(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const { date } = req.query as { date?: string };
+    const viewerIsOwner = Boolean(req.isProjectOwner);
 
     const filter: Record<string, unknown> = { project: project._id };
     if (date) filter.date = date;
 
     const records = await LaborRecord.find(filter).sort({ date: -1 });
 
-    return res.json({ success: true, data: { laborRecords: records.map(toLaborRecordDTO) } });
+    return res.json({
+      success: true,
+      data: { laborRecords: records.map((record) => toLaborRecordDTO(record, viewerIsOwner)) },
+    });
   } catch (error) {
     console.error('❌ [LABOR] listLaborRecords:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
@@ -77,7 +88,10 @@ export async function upsertLaborRecord(req: Request, res: Response) {
       { new: true, upsert: true },
     );
 
-    return res.status(200).json({ success: true, data: { laborRecord: toLaborRecordDTO(record) } });
+    // Esta ruta requiere `requireProjectOwner` — quien la llama siempre es el dueño.
+    return res
+      .status(200)
+      .json({ success: true, data: { laborRecord: toLaborRecordDTO(record, true) } });
   } catch (error) {
     console.error('❌ [LABOR] upsertLaborRecord:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });

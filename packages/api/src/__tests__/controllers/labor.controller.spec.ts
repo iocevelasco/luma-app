@@ -3,19 +3,20 @@ import type { Request, Response } from 'express';
 
 /**
  * Cubre lo que no puede vivir en Zod: `activityId` tiene que pertenecer al
- * mismo `project`, y el upsert por (activity, date) nunca pisa `createdBy` en
- * una actualización — mismo patrón que `material.controller.spec.ts`.
+ * mismo `project`, el upsert por (activity, date) nunca pisa `createdBy` en
+ * una actualización, y el cliente invitado no recibe nombres individuales de
+ * personal — mismo patrón que `material.controller.spec.ts`.
  */
 vi.mock('../../models/Activity.js', () => ({
   Activity: { findOne: vi.fn() },
 }));
 vi.mock('../../models/LaborRecord.js', () => ({
-  LaborRecord: { findOneAndUpdate: vi.fn() },
+  LaborRecord: { findOneAndUpdate: vi.fn(), find: vi.fn() },
 }));
 
 const { Activity } = await import('../../models/Activity.js');
 const { LaborRecord } = await import('../../models/LaborRecord.js');
-const { upsertLaborRecord } = await import('../../controllers/labor.controller.js');
+const { listLaborRecords, upsertLaborRecord } = await import('../../controllers/labor.controller.js');
 
 function mockRes(): Response {
   const res = {} as Response;
@@ -99,5 +100,50 @@ describe('upsertLaborRecord', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(Activity.findOne).not.toHaveBeenCalled();
+  });
+});
+
+describe('listLaborRecords', () => {
+  const record = {
+    _id: 'lr1',
+    project: 'project-1',
+    activity: 'activity-1',
+    date: '2026-09-15',
+    expectedCount: 4,
+    presentNames: ['Juan Pérez', 'María Gómez'],
+    createdBy: 'user-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(LaborRecord.find).mockReturnValue({
+      sort: vi.fn().mockResolvedValue([record]),
+    } as never);
+  });
+
+  it('el dueño ve los nombres individuales', async () => {
+    const req = { project: { _id: 'project-1' }, isProjectOwner: true, query: {} } as unknown as Request;
+    const res = mockRes();
+
+    await listLaborRecords(req, res);
+
+    const [{ laborRecords }] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0].map(
+      (arg: { data: { laborRecords: unknown[] } }) => arg.data,
+    );
+    expect(laborRecords[0]).toMatchObject({ presentNames: ['Juan Pérez', 'María Gómez'], presentCount: 2 });
+  });
+
+  it('el cliente invitado no recibe los nombres, pero sí la cuenta', async () => {
+    const req = { project: { _id: 'project-1' }, isProjectOwner: false, query: {} } as unknown as Request;
+    const res = mockRes();
+
+    await listLaborRecords(req, res);
+
+    const [{ laborRecords }] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0].map(
+      (arg: { data: { laborRecords: unknown[] } }) => arg.data,
+    );
+    expect(laborRecords[0]).toMatchObject({ presentNames: [], presentCount: 2 });
   });
 });

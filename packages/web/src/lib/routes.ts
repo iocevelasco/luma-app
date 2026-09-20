@@ -20,6 +20,7 @@ export const ROUTES = {
   PROJECT_ACTIVITIES: '/admin/proyectos/:projectId/actividades',
   PROJECT_MATERIALS: '/admin/proyectos/:projectId/materiales',
   PROJECT_LABOR: '/admin/proyectos/:projectId/personal',
+  PROJECT_BUDGET: '/admin/proyectos/:projectId/presupuesto',
 
   NOT_FOUND: '*',
 } as const;
@@ -44,4 +45,9 @@ export function projectMaterialsPath(projectId: string): string {
 /** `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. */
 export function projectLaborPath(projectId: string): string {
   return ROUTES.PROJECT_LABOR.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_BUDGET` con el `:projectId` resuelto, para armar links. */
+export function projectBudgetPath(projectId: string): string {
+  return ROUTES.PROJECT_BUDGET.replace(':projectId', projectId);
 }

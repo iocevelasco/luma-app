@@ -8,7 +8,13 @@ function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
 }
 
-function toMaterialDTO(material: IMaterialItem): MaterialDTO {
+/**
+ * `viewerIsOwner` en `false` saca `estimatedCost` — el cliente invitado ve
+ * estado y avance, no el detalle de costos internos (regla 13, la misma que
+ * rige el presupuesto). El resto del ítem sí es visible: cantidad y estado
+ * son lo que necesita para entender qué falta.
+ */
+function toMaterialDTO(material: IMaterialItem, viewerIsOwner: boolean): MaterialDTO {
   return {
     id: String(material._id),
     projectId: String(material.project),
@@ -19,7 +25,7 @@ function toMaterialDTO(material: IMaterialItem): MaterialDTO {
     status: material.status,
     statusChangedBy: material.statusChangedBy ? String(material.statusChangedBy) : undefined,
     statusChangedAt: material.statusChangedAt ? material.statusChangedAt.toISOString() : undefined,
-    estimatedCost: material.estimatedCost,
+    estimatedCost: viewerIsOwner ? material.estimatedCost : undefined,
     supplier: material.supplier,
     createdBy: String(material.createdBy),
     createdAt: material.createdAt.toISOString(),
@@ -44,9 +50,13 @@ async function activityBelongsToProject(
 export async function listMaterials(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
+    const viewerIsOwner = Boolean(req.isProjectOwner);
     const materials = await MaterialItem.find({ project: project._id }).sort({ createdAt: -1 });
 
-    return res.json({ success: true, data: { materials: materials.map(toMaterialDTO) } });
+    return res.json({
+      success: true,
+      data: { materials: materials.map((material) => toMaterialDTO(material, viewerIsOwner)) },
+    });
   } catch (error) {
     console.error('❌ [MATERIAL] listMaterials:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
@@ -86,7 +96,8 @@ export async function createMaterial(req: Request, res: Response) {
         : {}),
     });
 
-    return res.status(201).json({ success: true, data: { material: toMaterialDTO(material) } });
+    // Requiere `requireProjectOwner` — quien la llama siempre es el dueño.
+    return res.status(201).json({ success: true, data: { material: toMaterialDTO(material, true) } });
   } catch (error) {
     console.error('❌ [MATERIAL] createMaterial:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
@@ -137,7 +148,11 @@ export async function updateMaterial(req: Request, res: Response) {
 
     const material = await MaterialItem.findByIdAndUpdate(existing._id, update, { new: true });
 
-    return res.json({ success: true, data: { material: toMaterialDTO(material as IMaterialItem) } });
+    // Requiere `requireProjectOwner` — quien la llama siempre es el dueño.
+    return res.json({
+      success: true,
+      data: { material: toMaterialDTO(material as IMaterialItem, true) },
+    });
   } catch (error) {
     console.error('❌ [MATERIAL] updateMaterial:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
