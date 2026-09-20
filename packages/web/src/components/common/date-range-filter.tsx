@@ -69,6 +69,12 @@ interface DateRangeFilterProps {
   value: DateRange;
   onChange: (range: DateRange) => void;
   className?: string;
+  /**
+   * Por defecto el calendario no deja elegir fechas futuras: nació para
+   * filtros de pagos y gastos ya ocurridos. Una obra planifica actividades a
+   * futuro, así que ese caso lo pasa en `false`.
+   */
+  disableFuture?: boolean;
 }
 
 /**
@@ -79,7 +85,7 @@ interface DateRangeFilterProps {
  * suelto en el medio de cada selección, y la tabla parpadearía con datos que
  * nadie pidió.
  */
-export function DateRangeFilter({ value, onChange, className }: DateRangeFilterProps) {
+export function DateRangeFilter({ value, onChange, className, disableFuture = true }: DateRangeFilterProps) {
   const { t, i18n } = useTranslation();
   const dateLocale = useDateLocale();
   const [open, setOpen] = useState(false);
@@ -171,7 +177,7 @@ export function DateRangeFilter({ value, onChange, className }: DateRangeFilterP
           locale={dateLocale}
           // Un rango de caja hacia adelante no existe: no hay pagos futuros que
           // mostrar, y dejarlo elegible sólo produce tablas vacías.
-          disabled={{ after: new Date() }}
+          disabled={disableFuture ? { after: new Date() } : undefined}
         />
       </PopoverContent>
     </Popover>

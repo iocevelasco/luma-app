@@ -12,4 +12,5 @@ export enum QueryKeys {
   organization = 'organization',
   activities = 'activities',
   materials = 'materials',
+  laborRecords = 'labor-records',
 }

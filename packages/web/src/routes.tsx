@@ -49,6 +49,9 @@ const ProjectActivitiesPage = lazy(() =>
 const ProjectMaterialsPage = lazy(() =>
   import('./pages/projects/project-materials').then((m) => ({ default: m.ProjectMaterialsPage })),
 );
+const ProjectLaborPage = lazy(() =>
+  import('./pages/projects/project-labor').then((m) => ({ default: m.ProjectLaborPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -105,6 +108,10 @@ export function AppRoutes() {
           <Route
             path={ROUTES.PROJECT_MATERIALS}
             element={<LazyRoute><ProjectMaterialsPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_LABOR}
+            element={<LazyRoute><ProjectLaborPage /></LazyRoute>}
           />
         </Route>
       </Route>

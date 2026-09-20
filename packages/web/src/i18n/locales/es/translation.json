@@ -1,4 +1,10 @@
 {
+  "dateRange": {
+    "thisMonth": "Este mes",
+    "lastMonth": "Mes pasado",
+    "last30": "Últimos 30 días",
+    "thisYear": "Este año"
+  },
   "common": {
     "appName": "Luma",
     "save": "Guardar",
@@ -62,6 +68,12 @@
       "abierto": "Abierto",
       "con_margen": "Con margen de variación"
     },
+    "nav": {
+      "detail": "Detalle",
+      "gantt": "Cronograma",
+      "materials": "Materiales",
+      "labor": "Personal"
+    },
     "detail": {
       "clients": "Clientes con acceso",
       "invite": "Invitar cliente",
@@ -69,7 +81,18 @@
       "inviteEmail": "Email",
       "inviteSubmit": "Invitar",
       "clientInvited": "Invitación enviada",
-      "noClients": "Todavía no invitaste a nadie."
+      "noClients": "Todavía no invitaste a nadie.",
+      "gantt": "Cronograma de actividades"
+    },
+    "dashboard": {
+      "pendingTasks": "Tareas pendientes",
+      "noPendingTasks": "No hay tareas pendientes.",
+      "materials": "Materiales",
+      "noMaterialsPending": "No hay materiales pendientes.",
+      "labor": "Personal",
+      "noActivitiesToday": "No hay actividades programadas para hoy.",
+      "laborCount": "presentes",
+      "viewAll": "Ver todo"
     },
     "errors": {
       "create": "No pudimos crear la obra.",
@@ -195,6 +218,18 @@
       "create": "No pudimos crear la actividad.",
       "update": "No pudimos actualizar la actividad.",
       "delete": "No pudimos eliminar la actividad."
+    },
+    "gantt": {
+      "emptyState": "No hay actividades planificadas en este rango de fechas."
+    },
+    "detail": {
+      "title": "Detalle de la actividad",
+      "back": "Atrás",
+      "edit": "Editar",
+      "editTitle": "Editar actividad",
+      "materials": "Materiales asociados",
+      "noMaterials": "No hay materiales asociados a esta actividad.",
+      "notes": "Notas"
     }
   },
   "material": {
@@ -246,6 +281,27 @@
       "update": "No pudimos actualizar el material.",
       "delete": "No pudimos eliminar el material.",
       "copy": "No pudimos copiar la lista."
+    }
+  },
+  "labor": {
+    "prevDay": "Día anterior",
+    "nextDay": "Día siguiente",
+    "today": "Hoy",
+    "whoIsHereTitle": "Quién está trabajando hoy",
+    "whoIsHereEmpty": "Nadie registrado como presente todavía.",
+    "byActivityTitle": "Personal por actividad",
+    "emptyState": "No hay actividades programadas para este día.",
+    "fields": {
+      "expected": "Esperado",
+      "present": "Presentes",
+      "presentPlaceholder": "Nombres separados por coma"
+    },
+    "deficit": "Faltan {{count}}",
+    "list": {
+      "saved": "Registro guardado"
+    },
+    "errors": {
+      "save": "No pudimos guardar el registro."
     }
   }
 }

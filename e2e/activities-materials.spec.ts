@@ -42,7 +42,7 @@ test.describe('planificación semanal y materiales', () => {
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /planificación semanal/i }).click();
+    await page.getByRole('link', { name: /^cronograma$/i }).click();
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
@@ -58,16 +58,20 @@ test.describe('planificación semanal y materiales', () => {
     await page.getByRole('button', { name: /crear actividad/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
-    // Aparece en la semana actual.
-    await expect(page.getByText(ACTIVITY_NAME)).toBeVisible();
+    // Aparece como fila del gantt del rango actual (este mes).
+    const activityRow = page.getByRole('gridcell', { name: ACTIVITY_NAME });
+    await expect(activityRow).toBeVisible();
 
-    // Navega a la semana siguiente y de vuelta.
-    await page.getByRole('button', { name: /semana siguiente/i }).click();
-    await expect(page.getByText(ACTIVITY_NAME)).toHaveCount(0);
-    await page.getByRole('button', { name: /semana actual/i }).click();
-    await expect(page.getByText(ACTIVITY_NAME)).toBeVisible();
+    // Abre el detalle en el modal de pantalla completa y vuelve sin cambiar la URL.
+    await activityRow.click();
+    const detailDialog = page.getByRole('dialog');
+    await expect(detailDialog.getByText(ACTIVITY_NAME)).toBeVisible();
+    await expect(page).toHaveURL(/\/actividades$/);
+    await detailDialog.getByRole('button', { name: /atrás/i }).click();
+    await expect(detailDialog).toBeHidden();
 
     // Agrega un material asociado a esa actividad.
+    await page.goto(page.url().replace(/\/actividades$/, ''));
     await page.getByRole('link', { name: /^materiales$/i }).click();
     await expect(page).toHaveURL(/\/materiales$/);
 
@@ -82,7 +86,7 @@ test.describe('planificación semanal y materiales', () => {
     await expect(page.getByText(MATERIAL_NAME)).toBeVisible();
 
     // Cambia el estado y confirma en el diálogo.
-    await page.getByText(MATERIAL_NAME).locator('..').getByRole('combobox').click();
+    await page.getByText(MATERIAL_NAME).locator('../..').getByRole('combobox').click();
     await page.getByRole('option', { name: /solicitado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
     await expect(page.getByRole('alertdialog')).toBeHidden();

@@ -21,9 +21,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -78,18 +78,15 @@ function NewMaterialForm({ projectId }: { projectId: string }) {
   } = useForm<CreateMaterialInput>({ resolver: zodResolver(createMaterialSchema) });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t('material.list.newTitle')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) =>
-            createMaterial.mutate(values, { onSuccess: () => reset() }),
-          )}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
+    <div className="flex flex-col gap-4">
+      <h3 className="text-sm font-medium">{t('material.list.newTitle')}</h3>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={handleSubmit((values) =>
+          createMaterial.mutate(values, { onSuccess: () => reset() }),
+        )}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="material-name">{t('material.fields.name')}</Label>
               <Input id="material-name" {...register('name')} />
@@ -158,8 +155,13 @@ function NewMaterialForm({ projectId }: { projectId: string }) {
               <Input
                 id="material-cost"
                 inputMode="decimal"
-                {...register('estimatedCost', { valueAsNumber: true })}
+                {...register('estimatedCost', {
+                  setValueAs: (value) => (value === '' ? undefined : Number(value)),
+                })}
               />
+              {errors.estimatedCost && (
+                <p className="text-sm text-destructive">{errors.estimatedCost.message}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -173,9 +175,8 @@ function NewMaterialForm({ projectId }: { projectId: string }) {
               {createMaterial.isPending ? t('common.loading') : t('material.list.newSubmit')}
             </Button>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+      </form>
+    </div>
   );
 }
 
@@ -259,7 +260,7 @@ export function ProjectMaterialsPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const { data: projectData } = useProject(projectId);
-  const { data: materialsData, isLoading } = useMaterials(projectId);
+  const { data: materialsData, isLoading, isError } = useMaterials(projectId);
   const { data: activitiesData } = useAllActivities(projectId);
 
   const isOwner = Boolean(projectData?.project.isOwner);
@@ -309,17 +310,18 @@ export function ProjectMaterialsPage() {
     }
   }
 
+  if (isError) return <RouteError />;
   if (isLoading || !materialsData) return <RouteLoading />;
 
   const canShare = typeof navigator.share === 'function';
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 md:p-6">
+    <div className="mx-auto flex max-w-3xl flex-col gap-8 p-3 md:p-4">
       {isOwner && <NewMaterialForm projectId={projectId!} />}
 
-      <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-base">{t('material.list.title')}</CardTitle>
+      <div className="flex flex-col gap-6 border-t border-border pt-6">
+        <div className="flex flex-row flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-medium">{t('material.list.title')}</h3>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleCopy}>
               <Copy className="size-4" />
@@ -332,8 +334,8 @@ export function ProjectMaterialsPage() {
               </Button>
             )}
           </div>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
+        </div>
+        <div className="flex flex-col gap-6">
           {MATERIAL_STATUSES.map((status) => {
             const items = grouped[status];
             if (items.length === 0) return null;
@@ -373,8 +375,8 @@ export function ProjectMaterialsPage() {
           {materialsData.materials.length === 0 && (
             <p className="text-sm text-muted-foreground">{t('material.list.empty')}</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
