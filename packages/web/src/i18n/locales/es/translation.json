@@ -84,6 +84,16 @@
       "noClients": "Todavía no invitaste a nadie.",
       "gantt": "Cronograma de actividades"
     },
+    "dashboard": {
+      "pendingTasks": "Tareas pendientes",
+      "noPendingTasks": "No hay tareas pendientes.",
+      "materials": "Materiales",
+      "noMaterialsPending": "No hay materiales pendientes.",
+      "labor": "Personal",
+      "noActivitiesToday": "No hay actividades programadas para hoy.",
+      "laborCount": "presentes",
+      "viewAll": "Ver todo"
+    },
     "errors": {
       "create": "No pudimos crear la obra.",
       "invite": "No pudimos invitar a esa persona."

@@ -84,6 +84,16 @@
       "clientInvited": "Convite enviado",
       "noClients": "Você ainda não convidou ninguém."
     },
+    "dashboard": {
+      "pendingTasks": "Tarefas pendentes",
+      "noPendingTasks": "Não há tarefas pendentes.",
+      "materials": "Materiais",
+      "noMaterialsPending": "Não há materiais pendentes.",
+      "labor": "Pessoal",
+      "noActivitiesToday": "Não há atividades programadas para hoje.",
+      "laborCount": "presentes",
+      "viewAll": "Ver tudo"
+    },
     "errors": {
       "create": "Não conseguimos criar a obra.",
       "invite": "Não conseguimos convidar essa pessoa."
