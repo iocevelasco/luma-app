@@ -75,3 +75,4 @@ export type ChangeEmailRequestInput = z.infer<typeof changeEmailRequestSchema>;
 export * from './project.js';
 export * from './activity.js';
 export * from './material.js';
+export * from './labor.js';

@@ -71,7 +71,8 @@
     "nav": {
       "detail": "Detalle",
       "gantt": "Cronograma",
-      "materials": "Materiales"
+      "materials": "Materiales",
+      "labor": "Personal"
     },
     "detail": {
       "clients": "Clientes con acceso",
@@ -270,6 +271,27 @@
       "update": "No pudimos actualizar el material.",
       "delete": "No pudimos eliminar el material.",
       "copy": "No pudimos copiar la lista."
+    }
+  },
+  "labor": {
+    "prevDay": "Día anterior",
+    "nextDay": "Día siguiente",
+    "today": "Hoy",
+    "whoIsHereTitle": "Quién está trabajando hoy",
+    "whoIsHereEmpty": "Nadie registrado como presente todavía.",
+    "byActivityTitle": "Personal por actividad",
+    "emptyState": "No hay actividades programadas para este día.",
+    "fields": {
+      "expected": "Esperado",
+      "present": "Presentes",
+      "presentPlaceholder": "Nombres separados por coma"
+    },
+    "deficit": "Faltan {{count}}",
+    "list": {
+      "saved": "Registro guardado"
+    },
+    "errors": {
+      "save": "No pudimos guardar el registro."
     }
   }
 }

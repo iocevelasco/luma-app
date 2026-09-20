@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
-import { projectActivitiesPath, projectDetailPath, projectMaterialsPath } from '@/lib/routes';
+import { projectActivitiesPath, projectDetailPath, projectLaborPath, projectMaterialsPath } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 
 /**
@@ -23,6 +23,7 @@ export function ProjectTabs() {
     { to: projectDetailPath(projectId), label: t('project.nav.detail') },
     { to: projectActivitiesPath(projectId), label: t('project.nav.gantt') },
     { to: projectMaterialsPath(projectId), label: t('project.nav.materials') },
+    { to: projectLaborPath(projectId), label: t('project.nav.labor') },
   ];
 
   return (

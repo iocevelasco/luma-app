@@ -4,6 +4,7 @@ import { requireProjectAccess, requireProjectOwner } from '../middleware/project
 import { createProject, getProject, inviteClient, listProjects } from '../controllers/index.js';
 import { activityRouter } from './activity.js';
 import { materialRouter } from './material.js';
+import { laborRouter } from './labor.js';
 
 export const projectRouter = Router();
 
@@ -18,5 +19,6 @@ projectRouter.post('/:projectId/clients', requireProjectAccess, requireProjectOw
 // idempotentes y así quedan autocontenidos si algún día se montan aparte.
 projectRouter.use('/:projectId/activities', activityRouter);
 projectRouter.use('/:projectId/materials', materialRouter);
+projectRouter.use('/:projectId/labor', laborRouter);
 
 export default projectRouter;

@@ -1,7 +1,12 @@
 import { matchPath, useLocation } from 'react-router-dom';
 import { ROUTES } from '@/lib/routes';
 
-const PROJECT_PATTERNS = [ROUTES.PROJECT_DETAIL, ROUTES.PROJECT_ACTIVITIES, ROUTES.PROJECT_MATERIALS];
+const PROJECT_PATTERNS = [
+  ROUTES.PROJECT_DETAIL,
+  ROUTES.PROJECT_ACTIVITIES,
+  ROUTES.PROJECT_MATERIALS,
+  ROUTES.PROJECT_LABOR,
+];
 
 /**
  * `:projectId` de la URL activa, vía `matchPath` en vez de `useParams`.
