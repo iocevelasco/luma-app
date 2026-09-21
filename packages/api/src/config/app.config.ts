@@ -83,6 +83,29 @@ export const EMAIL_CONFIG = {
 } as const;
 
 /**
+ * Storage de archivos (RF-04: registro fotográfico de evidencia). Cualquier
+ * proveedor compatible con S3 sirve — Backblaze B2, Cloudflare R2, AWS S3 —
+ * cambiando sólo `STORAGE_ENDPOINT`. Sin credenciales el feature queda
+ * deshabilitado (`ENABLED: false`): no vale la pena que la app entera no
+ * arranque por un storage que todavía nadie configuró.
+ */
+export const STORAGE_CONFIG = {
+  ENDPOINT: process.env.STORAGE_ENDPOINT,
+  REGION: process.env.STORAGE_REGION ?? 'auto',
+  BUCKET: process.env.STORAGE_BUCKET,
+  ACCESS_KEY_ID: process.env.STORAGE_ACCESS_KEY_ID,
+  SECRET_ACCESS_KEY: process.env.STORAGE_SECRET_ACCESS_KEY,
+  /** Segundos de vida de cada URL firmada de lectura. */
+  SIGNED_URL_TTL: Number(process.env.STORAGE_SIGNED_URL_TTL ?? 3600),
+  ENABLED: Boolean(
+    process.env.STORAGE_ENDPOINT &&
+      process.env.STORAGE_BUCKET &&
+      process.env.STORAGE_ACCESS_KEY_ID &&
+      process.env.STORAGE_SECRET_ACCESS_KEY,
+  ),
+} as const;
+
+/**
  * Esquema del entorno. Las reglas que dependen de producción van en el refine:
  * en desarrollo se puede arrancar sin reCAPTCHA ni Resend, en producción no.
  */
@@ -145,6 +168,11 @@ export function validateConfig(): void {
   // Avisos que no justifican abortar: la app funciona, sólo que sin esa pieza.
   if (!EMAIL_CONFIG.ENABLED) {
     console.warn('⚠️  [CONFIG] Sin RESEND_API_KEY: los mails quedan deshabilitados.');
+  }
+  if (!STORAGE_CONFIG.ENABLED) {
+    console.warn(
+      '⚠️  [CONFIG] Sin STORAGE_*: el registro fotográfico de evidencia queda deshabilitado.',
+    );
   }
   if (isProduction && !process.env.APP_URL) {
     console.warn('⚠️  [CONFIG] Sin APP_URL: los links de los mails pueden apuntar mal.');

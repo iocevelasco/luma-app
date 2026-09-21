@@ -39,4 +39,17 @@ export const activitiesApi = {
     unwrap<{ activityId: string }>(
       apiClient.delete(`/api/projects/${projectId}/activities/${activityId}`),
     ),
+
+  uploadEvidence: (projectId: string, activityId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return unwrap<ActivityResponse>(
+      apiClient.post(`/api/projects/${projectId}/activities/${activityId}/evidence`, formData),
+    );
+  },
+
+  removeEvidence: (projectId: string, activityId: string, evidenceId: string) =>
+    unwrap<ActivityResponse>(
+      apiClient.delete(`/api/projects/${projectId}/activities/${activityId}/evidence/${evidenceId}`),
+    ),
 };

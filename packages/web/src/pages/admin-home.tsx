@@ -1,12 +1,24 @@
 import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { Building2, Check, Pencil, Plus, X } from 'lucide-react';
+import { inviteMemberSchema, type InviteMemberInput } from '@luma/shared';
+import { Building2, Check, Pencil, Plus, UserPlus, X } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/common/empty-state';
 import { fromDayKey } from '@/components/common/date-range-filter';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -16,7 +28,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { useMyOrganization, useRenameOrganization } from '@/hooks/organizations/use-organization-queries';
+import {
+  useInviteMember,
+  useMyOrganization,
+  useOrganizationMembers,
+  useRenameOrganization,
+} from '@/hooks/organizations/use-organization-queries';
 import { useProjects } from '@/hooks/projects/use-project-queries';
 import { ROUTES, projectActivitiesPath } from '@/lib/routes';
 
@@ -72,6 +89,95 @@ function OrganizationName() {
   );
 }
 
+function InviteMemberDialog() {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const inviteMember = useInviteMember();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<InviteMemberInput>({ resolver: zodResolver(inviteMemberSchema) });
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) reset();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <UserPlus className="size-4" />
+          {t('team.invite')}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('team.inviteTitle')}</DialogTitle>
+        </DialogHeader>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={handleSubmit((values) =>
+            inviteMember.mutate(values, {
+              onSuccess: () => {
+                setOpen(false);
+                reset();
+              },
+            }),
+          )}
+        >
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="member-email">{t('team.inviteEmail')}</Label>
+            <Input id="member-email" type="email" autoComplete="email" {...register('email')} />
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={inviteMember.isPending}>
+              {inviteMember.isPending ? t('common.loading') : t('team.inviteSubmit')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Asistentes de Obra de mi Empresa: acceso operativo a todas mis obras, sin
+ * presupuesto ni invitaciones. Vive acá (no en cada obra) porque es un rol de
+ * Empresa, no de una obra puntual — ver `OrganizationMember`.
+ */
+function TeamSection() {
+  const { t } = useTranslation();
+  const { data } = useOrganizationMembers();
+  const members = data?.members ?? [];
+
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+      <div className="flex items-center justify-between gap-4">
+        <h3 className="text-sm font-medium">{t('team.title')}</h3>
+        <InviteMemberDialog />
+      </div>
+      {members.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('team.empty')}</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {members.map((member) => (
+            <li key={member.id} className="flex items-center justify-between text-sm">
+              <span>{member.name}</span>
+              <span className="text-muted-foreground">{member.email}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /**
  * Home del panel: listado de obras. Deja de ser el vacío fijo — es el lugar
  * donde iba "la primera pantalla real" del producto.
@@ -94,6 +200,8 @@ export function AdminHomePage() {
           </Link>
         </Button>
       </div>
+
+      <TeamSection />
 
       {!isLoading && projects.length === 0 && (
         <EmptyState

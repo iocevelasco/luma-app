@@ -11,6 +11,19 @@ export interface ActivityResponsible {
   user?: string;
 }
 
+/**
+ * Evidencia fotográfica de avance (RF-04), opcional, asociada a la
+ * actividad — no a un cambio de estado puntual, para no obligar a elegir
+ * "en qué momento" quedó la foto. `url` es una URL firmada de lectura de
+ * vida corta: se recalcula en cada respuesta, nunca se guarda como tal.
+ */
+export interface ActivityEvidencePhoto {
+  id: string;
+  url: string;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
 export interface Activity {
   id: string;
   projectId: string;
@@ -22,6 +35,7 @@ export interface Activity {
   responsible: ActivityResponsible;
   status: ActivityStatus;
   notes?: string;
+  evidence: ActivityEvidencePhoto[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;

@@ -8,6 +8,7 @@ import {
 import { User } from '../models/User.js';
 import { Project, type IProject } from '../models/Project.js';
 import { ProjectClient } from '../models/ProjectClient.js';
+import { OrganizationMember } from '../models/OrganizationMember.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
 import { EmailService } from '../services/email.service.js';
 import { ACTIVATION_TOKEN_TTL_MS, randomToken } from './auth.controller.js';
@@ -66,7 +67,10 @@ export async function createProject(req: Request, res: Response) {
   }
 }
 
-/** Obras donde el usuario es dueño o tiene acceso como cliente. Sin paginación en v1, tope 100. */
+/**
+ * Obras donde el usuario es dueño, Asistente de Obra (miembro de la Empresa)
+ * o tiene acceso como cliente. Sin paginación en v1, tope 100.
+ */
 export async function listProjects(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -75,9 +79,16 @@ export async function listProjects(req: Request, res: Response) {
   try {
     const userId = req.user.sub;
     const clientProjectIds = await ProjectClient.find({ user: userId }).distinct('project');
+    const memberOrgIds = await OrganizationMember.find({ user: userId, role: 'member' }).distinct(
+      'organization',
+    );
 
     const projects = await Project.find({
-      $or: [{ createdBy: userId }, { _id: { $in: clientProjectIds } }],
+      $or: [
+        { createdBy: userId },
+        { _id: { $in: clientProjectIds } },
+        { organization: { $in: memberOrgIds } },
+      ],
     })
       .sort({ updatedAt: -1 })
       .limit(100);
@@ -109,7 +120,11 @@ export async function getProject(req: Request, res: Response) {
     return res.json({
       success: true,
       data: {
-        project: { ...toProjectDTO(project), isOwner: Boolean(req.isProjectOwner) },
+        project: {
+          ...toProjectDTO(project),
+          isOwner: Boolean(req.isProjectOwner),
+          isEditor: Boolean(req.isProjectEditor),
+        },
         clients,
       },
     });

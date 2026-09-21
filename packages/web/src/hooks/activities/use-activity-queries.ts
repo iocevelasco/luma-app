@@ -79,3 +79,30 @@ export function useDeleteActivity(projectId: string) {
     onError: (error) => toast.error(errorMessage(error, t('activity.errors.delete'))),
   });
 }
+
+export function useUploadActivityEvidence(projectId: string, activityId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (file: File) => activitiesApi.uploadEvidence(projectId, activityId, file),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
+    },
+    onError: (error) => toast.error(errorMessage(error, t('activity.errors.uploadEvidence'))),
+  });
+}
+
+export function useDeleteActivityEvidence(projectId: string, activityId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (evidenceId: string) =>
+      activitiesApi.removeEvidence(projectId, activityId, evidenceId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
+    },
+    onError: (error) => toast.error(errorMessage(error, t('activity.errors.removeEvidence'))),
+  });
+}

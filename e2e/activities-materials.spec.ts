@@ -67,6 +67,12 @@ test.describe('planificación semanal y materiales', () => {
     const detailDialog = page.getByRole('dialog');
     await expect(detailDialog.getByText(ACTIVITY_NAME)).toBeVisible();
     await expect(page).toHaveURL(/\/actividades$/);
+
+    // Evidencia fotográfica (RF-04): sin storage configurado en este entorno,
+    // igual tiene que renderizar el vacío en vez de romper la pantalla.
+    await expect(detailDialog.getByText(/todavía no se subieron fotos/i)).toBeVisible();
+    await expect(detailDialog.getByRole('button', { name: /agregar foto/i })).toBeVisible();
+
     await detailDialog.getByRole('button', { name: /atrás/i }).click();
     await expect(detailDialog).toBeHidden();
 

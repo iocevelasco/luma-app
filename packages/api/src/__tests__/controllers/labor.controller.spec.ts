@@ -124,7 +124,19 @@ describe('listLaborRecords', () => {
   });
 
   it('el dueño ve los nombres individuales', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectOwner: true, query: {} } as unknown as Request;
+    const req = { project: { _id: 'project-1' }, isProjectEditor: true, query: {} } as unknown as Request;
+    const res = mockRes();
+
+    await listLaborRecords(req, res);
+
+    const [{ laborRecords }] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0].map(
+      (arg: { data: { laborRecords: unknown[] } }) => arg.data,
+    );
+    expect(laborRecords[0]).toMatchObject({ presentNames: ['Juan Pérez', 'María Gómez'], presentCount: 2 });
+  });
+
+  it('el Asistente de Obra también ve los nombres individuales (isProjectEditor, no dueño)', async () => {
+    const req = { project: { _id: 'project-1' }, isProjectEditor: true, query: {} } as unknown as Request;
     const res = mockRes();
 
     await listLaborRecords(req, res);
@@ -136,7 +148,7 @@ describe('listLaborRecords', () => {
   });
 
   it('el cliente invitado no recibe los nombres, pero sí la cuenta', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectOwner: false, query: {} } as unknown as Request;
+    const req = { project: { _id: 'project-1' }, isProjectEditor: false, query: {} } as unknown as Request;
     const res = mockRes();
 
     await listLaborRecords(req, res);

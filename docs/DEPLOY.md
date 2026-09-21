@@ -59,6 +59,8 @@ nombre de la base no admite guiones en el formulario de Coolify.
 | `ALLOWED_ORIGINS` | whitelist de CORS, separada por comas | sólo entra `FRONTEND_URL` |
 | `LANDING_URL` | `http://landing:8080` | ese mismo default |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails | aviso; los mails quedan deshabilitados |
+| `STORAGE_ENDPOINT`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | fotos de evidencia (RF-04), cualquier S3-compatible (Backblaze B2, R2, S3) | aviso; subir evidencia da 503, el resto de la app sigue |
+| `STORAGE_REGION`, `STORAGE_SIGNED_URL_TTL` | opcionales | `auto` / `3600` segundos |
 
 Build args (las `VITE_*` se hornean en el bundle, no se leen en runtime):
 `VITE_RECAPTCHA_SITE_KEY` en `app`, `VITE_APP_URL` en `landing`

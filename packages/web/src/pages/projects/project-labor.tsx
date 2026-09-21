@@ -25,13 +25,13 @@ function LaborRow({
   activity,
   record,
   date,
-  isOwner,
+  isEditor,
 }: {
   projectId: string;
   activity: Activity;
   record: LaborRecord | undefined;
   date: string;
-  isOwner: boolean;
+  isEditor: boolean;
 }) {
   const { t } = useTranslation();
   const upsert = useUpsertLaborRecord(projectId);
@@ -52,7 +52,7 @@ function LaborRow({
   // Para el cliente invitado la API vacía `presentNames` (regla de negocio: no
   // ve la asignación individual de personal) — `presentCount` es la cuenta
   // real igual, así el déficit no se calcula contra un array vacío.
-  const presentCount = isOwner ? presentNames.length : (record?.presentCount ?? 0);
+  const presentCount = isEditor ? presentNames.length : (record?.presentCount ?? 0);
   const deficit = expectedCount - presentCount;
 
   return (
@@ -64,7 +64,7 @@ function LaborRow({
 
       <div className="flex flex-col gap-1">
         <Label className="text-xs text-muted-foreground">{t('labor.fields.expected')}</Label>
-        {isOwner ? (
+        {isEditor ? (
           <Input
             type="number"
             min={0}
@@ -79,7 +79,7 @@ function LaborRow({
 
       <div className="flex flex-1 flex-col gap-1">
         <Label className="text-xs text-muted-foreground">{t('labor.fields.present')}</Label>
-        {isOwner ? (
+        {isEditor ? (
           <Input
             value={presentNamesText}
             onChange={(event) => setPresentNamesText(event.target.value)}
@@ -92,7 +92,7 @@ function LaborRow({
 
       <div className="flex items-center gap-2">
         {deficit > 0 && <Badge variant="destructive">{t('labor.deficit', { count: deficit })}</Badge>}
-        {isOwner && (
+        {isEditor && (
           <Button
             size="sm"
             disabled={upsert.isPending}
@@ -117,7 +117,7 @@ export function ProjectLaborPage() {
   const { data: allActivitiesData, isLoading, isError } = useAllActivities(projectId);
   const { data: laborData } = useLaborRecords(projectId, date);
 
-  const isOwner = Boolean(projectData?.project.isOwner);
+  const isEditor = Boolean(projectData?.project.isEditor);
 
   const activitiesToday = useMemo(() => {
     if (!allActivitiesData) return [];
@@ -182,7 +182,7 @@ export function ProjectLaborPage() {
 
       <div className="flex flex-col gap-3">
         <h3 className="text-sm font-medium">{t('labor.whoIsHereTitle')}</h3>
-        {isOwner ? (
+        {isEditor ? (
           presentToday.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('labor.whoIsHereEmpty')}</p>
           ) : (
@@ -214,7 +214,7 @@ export function ProjectLaborPage() {
               activity={activity}
               record={recordByActivity.get(activity.id)}
               date={date}
-              isOwner={isOwner}
+              isEditor={isEditor}
             />
           ))
         )}

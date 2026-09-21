@@ -9,12 +9,13 @@ function errMsg(error: unknown): string {
 }
 
 /**
- * `viewerIsOwner` en `false` saca `estimatedCost` — el cliente invitado ve
- * estado y avance, no el detalle de costos internos (regla 13, la misma que
- * rige el presupuesto). El resto del ítem sí es visible: cantidad y estado
- * son lo que necesita para entender qué falta.
+ * `viewerCanSeeDetail` en `false` saca `estimatedCost` — el cliente invitado
+ * ve estado y avance, no el detalle de costos internos (regla 13, la misma
+ * que rige el presupuesto). El dueño y el Asistente de Obra sí lo ven: es
+ * quien lo carga. El resto del ítem sí es visible para todos: cantidad y
+ * estado son lo que necesita el cliente para entender qué falta.
  */
-function toMaterialDTO(material: IMaterialItem, viewerIsOwner: boolean): MaterialDTO {
+function toMaterialDTO(material: IMaterialItem, viewerCanSeeDetail: boolean): MaterialDTO {
   return {
     id: String(material._id),
     projectId: String(material.project),
@@ -25,7 +26,7 @@ function toMaterialDTO(material: IMaterialItem, viewerIsOwner: boolean): Materia
     status: material.status,
     statusChangedBy: material.statusChangedBy ? String(material.statusChangedBy) : undefined,
     statusChangedAt: material.statusChangedAt ? material.statusChangedAt.toISOString() : undefined,
-    estimatedCost: viewerIsOwner ? material.estimatedCost : undefined,
+    estimatedCost: viewerCanSeeDetail ? material.estimatedCost : undefined,
     supplier: material.supplier,
     createdBy: String(material.createdBy),
     createdAt: material.createdAt.toISOString(),
@@ -50,12 +51,12 @@ async function activityBelongsToProject(
 export async function listMaterials(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
-    const viewerIsOwner = Boolean(req.isProjectOwner);
+    const viewerCanSeeDetail = Boolean(req.isProjectEditor);
     const materials = await MaterialItem.find({ project: project._id }).sort({ createdAt: -1 });
 
     return res.json({
       success: true,
-      data: { materials: materials.map((material) => toMaterialDTO(material, viewerIsOwner)) },
+      data: { materials: materials.map((material) => toMaterialDTO(material, viewerCanSeeDetail)) },
     });
   } catch (error) {
     console.error('❌ [MATERIAL] listMaterials:', error);
@@ -63,7 +64,7 @@ export async function listMaterials(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectOwner` antes. */
+/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
 export async function createMaterial(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -96,7 +97,8 @@ export async function createMaterial(req: Request, res: Response) {
         : {}),
     });
 
-    // Requiere `requireProjectOwner` — quien la llama siempre es el dueño.
+    // Requiere `requireProjectEditor` — quien la llama siempre puede ver el
+    // detalle completo de lo que acaba de crear.
     return res.status(201).json({ success: true, data: { material: toMaterialDTO(material, true) } });
   } catch (error) {
     console.error('❌ [MATERIAL] createMaterial:', error);
@@ -104,7 +106,7 @@ export async function createMaterial(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectOwner` antes. */
+/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
 export async function updateMaterial(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -148,7 +150,8 @@ export async function updateMaterial(req: Request, res: Response) {
 
     const material = await MaterialItem.findByIdAndUpdate(existing._id, update, { new: true });
 
-    // Requiere `requireProjectOwner` — quien la llama siempre es el dueño.
+    // Requiere `requireProjectEditor` — quien la llama siempre puede ver el
+    // detalle completo de lo que acaba de actualizar.
     return res.json({
       success: true,
       data: { material: toMaterialDTO(material as IMaterialItem, true) },
@@ -159,7 +162,7 @@ export async function updateMaterial(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectOwner` antes. Borrado DURO. */
+/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. Borrado DURO. */
 export async function deleteMaterial(req: Request, res: Response) {
   try {
     const project = req.project as IProject;

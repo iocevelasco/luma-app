@@ -222,7 +222,9 @@
     "errors": {
       "create": "No pudimos crear la actividad.",
       "update": "No pudimos actualizar la actividad.",
-      "delete": "No pudimos eliminar la actividad."
+      "delete": "No pudimos eliminar la actividad.",
+      "uploadEvidence": "No pudimos subir la foto.",
+      "removeEvidence": "No pudimos borrar la foto."
     },
     "gantt": {
       "emptyState": "No hay actividades planificadas en este rango de fechas."
@@ -234,7 +236,11 @@
       "editTitle": "Editar actividad",
       "materials": "Materiales asociados",
       "noMaterials": "No hay materiales asociados a esta actividad.",
-      "notes": "Notas"
+      "notes": "Notas",
+      "evidence": "Evidencia fotográfica",
+      "addEvidence": "Agregar foto",
+      "noEvidence": "Todavía no se subieron fotos de avance.",
+      "removeEvidence": "Quitar foto"
     }
   },
   "material": {
@@ -374,6 +380,18 @@
     },
     "errors": {
       "create": "No pudimos guardar el presupuesto."
+    }
+  },
+  "team": {
+    "title": "Asistentes de obra",
+    "empty": "Todavía no invitaste a nadie a tu equipo.",
+    "invite": "Invitar asistente",
+    "inviteTitle": "Invitar Asistente de Obra",
+    "inviteEmail": "Email",
+    "inviteSubmit": "Invitar",
+    "invited": "Invitación enviada",
+    "errors": {
+      "invite": "No pudimos invitar a esa persona."
     }
   }
 }

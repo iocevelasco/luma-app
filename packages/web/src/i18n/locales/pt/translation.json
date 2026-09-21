@@ -222,7 +222,9 @@
     "errors": {
       "create": "Não conseguimos criar a atividade.",
       "update": "Não conseguimos atualizar a atividade.",
-      "delete": "Não conseguimos excluir a atividade."
+      "delete": "Não conseguimos excluir a atividade.",
+      "uploadEvidence": "Não conseguimos enviar a foto.",
+      "removeEvidence": "Não conseguimos remover a foto."
     },
     "gantt": {
       "emptyState": "Não há atividades planejadas neste período."
@@ -234,7 +236,11 @@
       "editTitle": "Editar atividade",
       "materials": "Materiais associados",
       "noMaterials": "Não há materiais associados a esta atividade.",
-      "notes": "Notas"
+      "notes": "Notas",
+      "evidence": "Evidência fotográfica",
+      "addEvidence": "Adicionar foto",
+      "noEvidence": "Ainda não foram enviadas fotos de progresso.",
+      "removeEvidence": "Remover foto"
     }
   },
   "material": {
@@ -374,6 +380,18 @@
     },
     "errors": {
       "create": "Não conseguimos salvar o orçamento."
+    }
+  },
+  "team": {
+    "title": "Assistentes de obra",
+    "empty": "Você ainda não convidou ninguém para o seu time.",
+    "invite": "Convidar assistente",
+    "inviteTitle": "Convidar Assistente de Obra",
+    "inviteEmail": "E-mail",
+    "inviteSubmit": "Convidar",
+    "invited": "Convite enviado",
+    "errors": {
+      "invite": "Não conseguimos convidar essa pessoa."
     }
   }
 }

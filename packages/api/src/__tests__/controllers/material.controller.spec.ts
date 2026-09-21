@@ -103,7 +103,7 @@ describe('createMaterial — pertenencia de activity al project', () => {
   });
 });
 
-describe('listMaterials — estimatedCost sólo para el dueño', () => {
+describe('listMaterials — estimatedCost sólo para quien puede editar', () => {
   const material = {
     _id: 'm1',
     project: 'project-1',
@@ -125,7 +125,19 @@ describe('listMaterials — estimatedCost sólo para el dueño', () => {
   });
 
   it('el dueño ve estimatedCost', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectOwner: true } as unknown as Request;
+    const req = { project: { _id: 'project-1' }, isProjectEditor: true } as unknown as Request;
+    const res = mockRes();
+
+    await listMaterials(req, res);
+
+    const [{ materials }] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0].map(
+      (arg: { data: { materials: unknown[] } }) => arg.data,
+    );
+    expect(materials[0]).toMatchObject({ estimatedCost: 5000 });
+  });
+
+  it('el Asistente de Obra también ve estimatedCost (isProjectEditor, no dueño)', async () => {
+    const req = { project: { _id: 'project-1' }, isProjectEditor: true } as unknown as Request;
     const res = mockRes();
 
     await listMaterials(req, res);
@@ -137,7 +149,7 @@ describe('listMaterials — estimatedCost sólo para el dueño', () => {
   });
 
   it('el cliente invitado no recibe estimatedCost', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectOwner: false } as unknown as Request;
+    const req = { project: { _id: 'project-1' }, isProjectEditor: false } as unknown as Request;
     const res = mockRes();
 
     await listMaterials(req, res);
