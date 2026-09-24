@@ -30,7 +30,6 @@
   "userMenu": {
     "account": "Mi cuenta",
     "settings": "Configuración",
-    "theme": "Tema",
     "logout": "Cerrar sesión"
   },
   "project": {
@@ -72,7 +71,9 @@
       "detail": "Detalle",
       "gantt": "Cronograma",
       "materials": "Materiales",
-      "labor": "Personal"
+      "labor": "Personal",
+      "budget": "Presupuesto",
+      "advisor": "Consultor IA"
     },
     "detail": {
       "clients": "Clientes con acceso",
@@ -85,6 +86,8 @@
       "gantt": "Cronograma de actividades"
     },
     "dashboard": {
+      "progress": "Avance general",
+      "progressCount": "{{completed}} de {{total}} actividades",
       "pendingTasks": "Tareas pendientes",
       "noPendingTasks": "No hay tareas pendientes.",
       "materials": "Materiales",
@@ -92,6 +95,8 @@
       "labor": "Personal",
       "noActivitiesToday": "No hay actividades programadas para hoy.",
       "laborCount": "presentes",
+      "budget": "Presupuesto",
+      "noBudget": "Todavía no cargaste el presupuesto.",
       "viewAll": "Ver todo"
     },
     "errors": {
@@ -217,7 +222,9 @@
     "errors": {
       "create": "No pudimos crear la actividad.",
       "update": "No pudimos actualizar la actividad.",
-      "delete": "No pudimos eliminar la actividad."
+      "delete": "No pudimos eliminar la actividad.",
+      "uploadEvidence": "No pudimos subir la foto.",
+      "removeEvidence": "No pudimos borrar la foto."
     },
     "gantt": {
       "emptyState": "No hay actividades planificadas en este rango de fechas."
@@ -229,7 +236,11 @@
       "editTitle": "Editar actividad",
       "materials": "Materiales asociados",
       "noMaterials": "No hay materiales asociados a esta actividad.",
-      "notes": "Notas"
+      "notes": "Notas",
+      "evidence": "Evidencia fotográfica",
+      "addEvidence": "Agregar foto",
+      "noEvidence": "Todavía no se subieron fotos de avance.",
+      "removeEvidence": "Quitar foto"
     }
   },
   "material": {
@@ -289,6 +300,7 @@
     "today": "Hoy",
     "whoIsHereTitle": "Quién está trabajando hoy",
     "whoIsHereEmpty": "Nadie registrado como presente todavía.",
+    "whoIsHereCount": "{{count}} personas presentes hoy",
     "byActivityTitle": "Personal por actividad",
     "emptyState": "No hay actividades programadas para este día.",
     "fields": {
@@ -296,12 +308,101 @@
       "present": "Presentes",
       "presentPlaceholder": "Nombres separados por coma"
     },
+    "presentCount": "{{count}} presentes",
     "deficit": "Faltan {{count}}",
     "list": {
       "saved": "Registro guardado"
     },
     "errors": {
       "save": "No pudimos guardar el registro."
+    }
+  },
+  "budget": {
+    "list": {
+      "created": "Presupuesto cargado"
+    },
+    "empty": {
+      "title": "Todavía no cargaste el presupuesto",
+      "body": "Cargá los capítulos e ítems de tu presupuesto para empezar a compararlo contra la ejecución."
+    },
+    "summary": {
+      "total": "Total",
+      "contingency": "Contingencia",
+      "sourceImport": "Importado desde {{fileName}}",
+      "sourceManual": "Cargado a mano"
+    },
+    "fields": {
+      "chapter": "Capítulo",
+      "name": "Ítem",
+      "unit": "Unidad",
+      "quantity": "Cantidad (opcional)",
+      "unitCost": "Costo unitario (opcional)",
+      "total": "Total",
+      "contingencyAmount": "Contingencia"
+    },
+    "form": {
+      "tab": "Cargar a mano",
+      "title": "Cargar presupuesto",
+      "addItem": "Agregar ítem",
+      "removeItem": "Quitar",
+      "computedTotal": "Total calculado",
+      "submit": "Guardar presupuesto"
+    },
+    "import": {
+      "tab": "Importar planilla",
+      "title": "Importar presupuesto desde planilla",
+      "selectFile": "Archivo (.xlsx o .csv)",
+      "errorTitle": "No pudimos leer el archivo",
+      "errors": {
+        "unsupported_type": "Formato no soportado. Subí un archivo .xlsx o .csv.",
+        "empty": "El archivo no tiene filas.",
+        "corrupt": "El archivo está dañado o no es una planilla válida.",
+        "too_many_rows": "El archivo tiene demasiadas filas (más de 2000). Revisá que sea el archivo correcto."
+      },
+      "missingColumnsTitle": "Faltan columnas por asignar",
+      "missingColumnsBody": "Asigná una columna de la planilla a cada campo obligatorio antes de continuar.",
+      "incompleteTitle": "Filas incompletas",
+      "incompleteBody": "{{count}} fila(s) sin un campo obligatorio: no se van a importar.",
+      "duplicateTitle": "Ítems repetidos",
+      "duplicateBody": "{{count}} ítem(s) con el mismo capítulo, nombre y unidad — se importan igual.",
+      "noValidRows": "No hay filas válidas para importar con este mapeo de columnas.",
+      "moreRows": "Y {{count}} fila(s) más — se importan todas, sólo se acorta la vista previa.",
+      "confirm": "Confirmar e importar",
+      "noColumn": "— Sin asignar —",
+      "columns": {
+        "chapter": "Capítulo",
+        "name": "Ítem",
+        "unit": "Unidad",
+        "quantity": "Cantidad (opcional)",
+        "unitCost": "Costo unitario (opcional)",
+        "total": "Total"
+      }
+    },
+    "errors": {
+      "create": "No pudimos guardar el presupuesto."
+    }
+  },
+  "advisor": {
+    "title": "Consultor IA",
+    "subtitle": "Preguntale por el presupuesto, el cronograma o la mano de obra de {{name}}.",
+    "empty": "Escribí una pregunta sobre esta obra para empezar.",
+    "placeholder": "Preguntale al Consultor IA sobre esta obra…",
+    "thinking": "Pensando…",
+    "notConfigured": "El Consultor IA todavía no está configurado en este entorno.",
+    "errors": {
+      "send": "No pudimos obtener respuesta del Consultor IA."
+    }
+  },
+  "team": {
+    "title": "Asistentes de obra",
+    "empty": "Todavía no invitaste a nadie a tu equipo.",
+    "invite": "Invitar asistente",
+    "inviteTitle": "Invitar Asistente de Obra",
+    "inviteEmail": "Email",
+    "inviteSubmit": "Invitar",
+    "invited": "Invitación enviada",
+    "errors": {
+      "invite": "No pudimos invitar a esa persona."
     }
   }
 }

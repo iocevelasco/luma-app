@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import {
@@ -7,7 +7,7 @@ import {
   type CreateActivityInput,
   type MaterialItem,
 } from '@luma/shared';
-import { ArrowLeft, PackageX, Pencil, Plus } from 'lucide-react';
+import { ArrowLeft, Camera, PackageX, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -36,7 +36,14 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAllActivities, useActivities, useCreateActivity, useUpdateActivity } from '@/hooks/activities/use-activity-queries';
+import {
+  useAllActivities,
+  useActivities,
+  useCreateActivity,
+  useDeleteActivityEvidence,
+  useUpdateActivity,
+  useUploadActivityEvidence,
+} from '@/hooks/activities/use-activity-queries';
 import { useMaterials } from '@/hooks/materials/use-material-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProject } from '@/hooks/projects/use-project-queries';
@@ -266,19 +273,102 @@ function ActivityMaterialsList({ materials }: { materials: MaterialItem[] }) {
   );
 }
 
+/**
+ * Registro fotográfico de avance (RF-04), opcional. Si el storage no está
+ * configurado en el server, subir da 503 — el toast de error ya lo explica,
+ * no hace falta un estado especial acá.
+ */
+function ActivityEvidenceSection({
+  projectId,
+  activity,
+  isEditor,
+}: {
+  projectId: string;
+  activity: Activity;
+  isEditor: boolean;
+}) {
+  const { t } = useTranslation();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadEvidence = useUploadActivityEvidence(projectId, activity.id);
+  const deleteEvidence = useDeleteActivityEvidence(projectId, activity.id);
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Permite volver a elegir el mismo archivo después de un error.
+    event.target.value = '';
+    if (file) uploadEvidence.mutate(file);
+  }
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-border pt-6">
+      <div className="flex items-center justify-between gap-4">
+        <h3 className="text-sm font-medium">{t('activity.detail.evidence')}</h3>
+        {isEditor && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uploadEvidence.isPending}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Camera className="size-4" />
+              {t('activity.detail.addEvidence')}
+            </Button>
+          </>
+        )}
+      </div>
+
+      {activity.evidence.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('activity.detail.noEvidence')}</p>
+      ) : (
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {activity.evidence.map((photo) => (
+            <li
+              key={photo.id}
+              className="group relative overflow-hidden rounded-lg border border-border"
+            >
+              <img src={photo.url} alt="" className="aspect-square w-full object-cover" />
+              {isEditor && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon-sm"
+                  className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                  onClick={() => deleteEvidence.mutate(photo.id)}
+                  aria-label={t('activity.detail.removeEvidence')}
+                >
+                  <Trash2 className="size-3" />
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function ActivityDetailModal({
   projectId,
   activity,
   materials,
   missingMaterials,
-  isOwner,
+  isEditor,
   onClose,
 }: {
   projectId: string;
   activity: Activity | undefined;
   materials: MaterialItem[];
   missingMaterials: boolean;
-  isOwner: boolean;
+  isEditor: boolean;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -303,7 +393,7 @@ function ActivityDetailModal({
                   {t('activity.detail.title')}
                 </DialogTitle>
               </div>
-              {isOwner && (
+              {isEditor && (
                 <Button variant="outline" onClick={() => setEditing(true)}>
                   <Pencil className="size-4" />
                   {t('activity.detail.edit')}
@@ -361,6 +451,8 @@ function ActivityDetailModal({
                 <ActivityMaterialsList materials={materials} />
               </div>
 
+              <ActivityEvidenceSection projectId={projectId} activity={activity} isEditor={isEditor} />
+
               {activity.notes && (
                 <div className="flex flex-col gap-2 border-t border-border pt-6">
                   <h3 className="text-sm font-medium">{t('activity.detail.notes')}</h3>
@@ -369,7 +461,7 @@ function ActivityDetailModal({
               )}
             </div>
 
-            {isOwner && (
+            {isEditor && (
               <EditActivityDialog
                 projectId={projectId}
                 activity={activity}
@@ -407,7 +499,7 @@ export function ProjectActivitiesPage() {
   const { data: allActivitiesData } = useAllActivities(projectId);
   const { data: materialsData } = useMaterials(projectId);
 
-  const isOwner = Boolean(projectData?.project.isOwner);
+  const isEditor = Boolean(projectData?.project.isEditor);
 
   const missingByActivity = useMemo(() => {
     const map = new Set<string>();
@@ -444,7 +536,7 @@ export function ProjectActivitiesPage() {
     <div className="flex h-[calc(100dvh-3.5rem)] min-w-0 flex-col gap-3 p-3 md:p-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateRangeFilter value={range} onChange={setRange} disableFuture={false} />
-        {isOwner && <NewActivityDialog projectId={projectId!} />}
+        {isEditor && <NewActivityDialog projectId={projectId!} />}
       </div>
 
       <div className="min-h-0 min-w-0 flex-1">
@@ -467,7 +559,7 @@ export function ProjectActivitiesPage() {
         activity={selectedActivity}
         materials={selectedActivityMaterials}
         missingMaterials={Boolean(selectedActivityId && activitiesWithAlert.has(selectedActivityId))}
-        isOwner={isOwner}
+        isEditor={isEditor}
         onClose={() => setSelectedActivityId(null)}
       />
     </div>

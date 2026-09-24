@@ -12,6 +12,15 @@ export interface IActivityResponsible {
   user?: mongoose.Types.ObjectId;
 }
 
+/** `key` es interno (S3) — nunca sale en la respuesta de la API, ver activity.controller.ts. */
+export interface IActivityEvidence {
+  /** Opcional en el tipo porque Mongoose lo genera solo al hacer `push`. */
+  _id?: mongoose.Types.ObjectId;
+  key: string;
+  uploadedBy: mongoose.Types.ObjectId;
+  uploadedAt: Date;
+}
+
 export interface IActivity extends Document {
   project: mongoose.Types.ObjectId;
   name: string;
@@ -21,6 +30,7 @@ export interface IActivity extends Document {
   responsible: IActivityResponsible;
   status: ActivityStatus;
   notes?: string;
+  evidence: mongoose.Types.DocumentArray<IActivityEvidence>;
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -33,6 +43,12 @@ const activityResponsibleSchema = new Schema<IActivityResponsible>(
   },
   { _id: false },
 );
+
+const activityEvidenceSchema = new Schema<IActivityEvidence>({
+  key: { type: String, required: true },
+  uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  uploadedAt: { type: Date, required: true, default: Date.now },
+});
 
 const activitySchema = new Schema<IActivity>(
   {
@@ -48,6 +64,7 @@ const activitySchema = new Schema<IActivity>(
       default: 'pendiente',
     },
     notes: { type: String, trim: true },
+    evidence: { type: [activityEvidenceSchema], default: [] },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true },

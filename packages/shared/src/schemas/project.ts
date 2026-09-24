@@ -58,6 +58,10 @@ export const inviteClientSchema = z.object({
     .email('Email inválido'),
 });
 
+/** Mismo shape que invitar cliente — invitar Asistente de Obra es "un email más". */
+export const inviteMemberSchema = inviteClientSchema;
+
 export type RenameOrganizationInput = z.infer<typeof renameOrganizationSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type InviteClientInput = z.infer<typeof inviteClientSchema>;
+export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;

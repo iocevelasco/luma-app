@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import type { InviteMemberInput } from '@luma/shared';
 import { organizationsApi } from '@/api/organizations';
 import { isApiError } from '@/lib/api-client';
 import { QueryKeys } from '@/lib/query-keys';
@@ -33,5 +34,29 @@ export function useRenameOrganization() {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.organization] });
     },
     onError: (error) => toast.error(errorMessage(error, t('auth.errors.generic'))),
+  });
+}
+
+export function useOrganizationMembers() {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.organizationMembers],
+    queryFn: () => organizationsApi.listMembers(),
+    enabled: isAuthenticated,
+  });
+}
+
+export function useInviteMember() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: InviteMemberInput) => organizationsApi.inviteMember(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.organizationMembers] });
+      toast.success(t('team.invited'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t('team.errors.invite'))),
   });
 }

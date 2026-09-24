@@ -263,7 +263,8 @@ export function ProjectMaterialsPage() {
   const { data: materialsData, isLoading, isError } = useMaterials(projectId);
   const { data: activitiesData } = useAllActivities(projectId);
 
-  const isOwner = Boolean(projectData?.project.isOwner);
+  // Dueño o Asistente de Obra — ambos gestionan materiales operativamente.
+  const isEditor = Boolean(projectData?.project.isEditor);
 
   const activityNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -317,7 +318,7 @@ export function ProjectMaterialsPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 p-3 md:p-4">
-      {isOwner && <NewMaterialForm projectId={projectId!} />}
+      {isEditor && <NewMaterialForm projectId={projectId!} />}
 
       <div className="flex flex-col gap-6 border-t border-border pt-6">
         <div className="flex flex-row flex-wrap items-center justify-between gap-2">
@@ -351,7 +352,7 @@ export function ProjectMaterialsPage() {
                     <p className="text-xs text-muted-foreground">
                       {activityNameById.get(material.activityId!) ?? ''}
                     </p>
-                    <MaterialRow material={material} projectId={projectId!} canEdit={isOwner} />
+                    <MaterialRow material={material} projectId={projectId!} canEdit={isEditor} />
                   </div>
                 ))}
                 {withoutActivity.length > 0 && (
@@ -364,7 +365,7 @@ export function ProjectMaterialsPage() {
                         key={material.id}
                         material={material}
                         projectId={projectId!}
-                        canEdit={isOwner}
+                        canEdit={isEditor}
                       />
                     ))}
                   </div>

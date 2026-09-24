@@ -11,12 +11,12 @@ vi.mock('../../models/Activity.js', () => ({
   Activity: { findOne: vi.fn() },
 }));
 vi.mock('../../models/MaterialItem.js', () => ({
-  MaterialItem: { create: vi.fn(), findOne: vi.fn(), findOneAndDelete: vi.fn() },
+  MaterialItem: { create: vi.fn(), findOne: vi.fn(), findOneAndDelete: vi.fn(), find: vi.fn() },
 }));
 
 const { Activity } = await import('../../models/Activity.js');
 const { MaterialItem } = await import('../../models/MaterialItem.js');
-const { createMaterial } = await import('../../controllers/material.controller.js');
+const { createMaterial, listMaterials } = await import('../../controllers/material.controller.js');
 
 function mockRes(): Response {
   const res = {} as Response;
@@ -100,5 +100,63 @@ describe('createMaterial — pertenencia de activity al project', () => {
 
     expect(Activity.findOne).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
+  });
+});
+
+describe('listMaterials — estimatedCost sólo para quien puede editar', () => {
+  const material = {
+    _id: 'm1',
+    project: 'project-1',
+    name: 'Cemento',
+    quantity: 10,
+    unit: 'bolsa',
+    status: 'pendiente',
+    estimatedCost: 5000,
+    createdBy: 'user-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(MaterialItem.find).mockReturnValue({
+      sort: vi.fn().mockResolvedValue([material]),
+    } as never);
+  });
+
+  it('el dueño ve estimatedCost', async () => {
+    const req = { project: { _id: 'project-1' }, isProjectEditor: true } as unknown as Request;
+    const res = mockRes();
+
+    await listMaterials(req, res);
+
+    const [{ materials }] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0].map(
+      (arg: { data: { materials: unknown[] } }) => arg.data,
+    );
+    expect(materials[0]).toMatchObject({ estimatedCost: 5000 });
+  });
+
+  it('el Asistente de Obra también ve estimatedCost (isProjectEditor, no dueño)', async () => {
+    const req = { project: { _id: 'project-1' }, isProjectEditor: true } as unknown as Request;
+    const res = mockRes();
+
+    await listMaterials(req, res);
+
+    const [{ materials }] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0].map(
+      (arg: { data: { materials: unknown[] } }) => arg.data,
+    );
+    expect(materials[0]).toMatchObject({ estimatedCost: 5000 });
+  });
+
+  it('el cliente invitado no recibe estimatedCost', async () => {
+    const req = { project: { _id: 'project-1' }, isProjectEditor: false } as unknown as Request;
+    const res = mockRes();
+
+    await listMaterials(req, res);
+
+    const [{ materials }] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0].map(
+      (arg: { data: { materials: unknown[] } }) => arg.data,
+    );
+    expect((materials[0] as { estimatedCost?: number }).estimatedCost).toBeUndefined();
   });
 });

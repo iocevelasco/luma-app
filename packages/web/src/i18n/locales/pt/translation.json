@@ -30,7 +30,6 @@
   "userMenu": {
     "account": "Minha conta",
     "settings": "Configurações",
-    "theme": "Tema",
     "logout": "Sair"
   },
   "project": {
@@ -72,7 +71,9 @@
       "detail": "Detalhe",
       "gantt": "Cronograma",
       "materials": "Materiais",
-      "labor": "Pessoal"
+      "labor": "Pessoal",
+      "budget": "Orçamento",
+      "advisor": "Consultor IA"
     },
     "detail": {
       "gantt": "Cronograma de atividades",
@@ -85,6 +86,8 @@
       "noClients": "Você ainda não convidou ninguém."
     },
     "dashboard": {
+      "progress": "Avanço geral",
+      "progressCount": "{{completed}} de {{total}} atividades",
       "pendingTasks": "Tarefas pendentes",
       "noPendingTasks": "Não há tarefas pendentes.",
       "materials": "Materiais",
@@ -92,6 +95,8 @@
       "labor": "Pessoal",
       "noActivitiesToday": "Não há atividades programadas para hoje.",
       "laborCount": "presentes",
+      "budget": "Orçamento",
+      "noBudget": "Você ainda não carregou o orçamento.",
       "viewAll": "Ver tudo"
     },
     "errors": {
@@ -217,7 +222,9 @@
     "errors": {
       "create": "Não conseguimos criar a atividade.",
       "update": "Não conseguimos atualizar a atividade.",
-      "delete": "Não conseguimos excluir a atividade."
+      "delete": "Não conseguimos excluir a atividade.",
+      "uploadEvidence": "Não conseguimos enviar a foto.",
+      "removeEvidence": "Não conseguimos remover a foto."
     },
     "gantt": {
       "emptyState": "Não há atividades planejadas neste período."
@@ -229,7 +236,11 @@
       "editTitle": "Editar atividade",
       "materials": "Materiais associados",
       "noMaterials": "Não há materiais associados a esta atividade.",
-      "notes": "Notas"
+      "notes": "Notas",
+      "evidence": "Evidência fotográfica",
+      "addEvidence": "Adicionar foto",
+      "noEvidence": "Ainda não foram enviadas fotos de progresso.",
+      "removeEvidence": "Remover foto"
     }
   },
   "material": {
@@ -289,6 +300,7 @@
     "today": "Hoje",
     "whoIsHereTitle": "Quem está trabalhando hoje",
     "whoIsHereEmpty": "Ninguém registrado como presente ainda.",
+    "whoIsHereCount": "{{count}} pessoas presentes hoje",
     "byActivityTitle": "Pessoal por atividade",
     "emptyState": "Não há atividades programadas para este dia.",
     "fields": {
@@ -296,12 +308,101 @@
       "present": "Presentes",
       "presentPlaceholder": "Nomes separados por vírgula"
     },
+    "presentCount": "{{count}} presentes",
     "deficit": "Faltam {{count}}",
     "list": {
       "saved": "Registro salvo"
     },
     "errors": {
       "save": "Não conseguimos salvar o registro."
+    }
+  },
+  "budget": {
+    "list": {
+      "created": "Orçamento salvo"
+    },
+    "empty": {
+      "title": "Você ainda não carregou o orçamento",
+      "body": "Carregue os capítulos e itens do seu orçamento para começar a compará-lo com a execução."
+    },
+    "summary": {
+      "total": "Total",
+      "contingency": "Contingência",
+      "sourceImport": "Importado de {{fileName}}",
+      "sourceManual": "Carregado manualmente"
+    },
+    "fields": {
+      "chapter": "Capítulo",
+      "name": "Item",
+      "unit": "Unidade",
+      "quantity": "Quantidade (opcional)",
+      "unitCost": "Custo unitário (opcional)",
+      "total": "Total",
+      "contingencyAmount": "Contingência"
+    },
+    "form": {
+      "tab": "Carregar manualmente",
+      "title": "Carregar orçamento",
+      "addItem": "Adicionar item",
+      "removeItem": "Remover",
+      "computedTotal": "Total calculado",
+      "submit": "Salvar orçamento"
+    },
+    "import": {
+      "tab": "Importar planilha",
+      "title": "Importar orçamento de uma planilha",
+      "selectFile": "Arquivo (.xlsx ou .csv)",
+      "errorTitle": "Não conseguimos ler o arquivo",
+      "errors": {
+        "unsupported_type": "Formato não suportado. Envie um arquivo .xlsx ou .csv.",
+        "empty": "O arquivo não tem linhas.",
+        "corrupt": "O arquivo está corrompido ou não é uma planilha válida.",
+        "too_many_rows": "O arquivo tem linhas demais (mais de 2000). Confira se é o arquivo certo."
+      },
+      "missingColumnsTitle": "Faltam colunas para atribuir",
+      "missingColumnsBody": "Atribua uma coluna da planilha para cada campo obrigatório antes de continuar.",
+      "incompleteTitle": "Linhas incompletas",
+      "incompleteBody": "{{count}} linha(s) sem um campo obrigatório: não serão importadas.",
+      "duplicateTitle": "Itens repetidos",
+      "duplicateBody": "{{count}} item(ns) com o mesmo capítulo, nome e unidade — são importados mesmo assim.",
+      "noValidRows": "Não há linhas válidas para importar com este mapeamento de colunas.",
+      "moreRows": "E mais {{count}} linha(s) — todas são importadas, só a prévia é encurtada.",
+      "confirm": "Confirmar e importar",
+      "noColumn": "— Não atribuído —",
+      "columns": {
+        "chapter": "Capítulo",
+        "name": "Item",
+        "unit": "Unidade",
+        "quantity": "Quantidade (opcional)",
+        "unitCost": "Custo unitário (opcional)",
+        "total": "Total"
+      }
+    },
+    "errors": {
+      "create": "Não conseguimos salvar o orçamento."
+    }
+  },
+  "advisor": {
+    "title": "Consultor IA",
+    "subtitle": "Pergunte sobre o orçamento, o cronograma ou a mão de obra de {{name}}.",
+    "empty": "Escreva uma pergunta sobre esta obra para começar.",
+    "placeholder": "Pergunte ao Consultor IA sobre esta obra…",
+    "thinking": "Pensando…",
+    "notConfigured": "O Consultor IA ainda não está configurado neste ambiente.",
+    "errors": {
+      "send": "Não conseguimos obter resposta do Consultor IA."
+    }
+  },
+  "team": {
+    "title": "Assistentes de obra",
+    "empty": "Você ainda não convidou ninguém para o seu time.",
+    "invite": "Convidar assistente",
+    "inviteTitle": "Convidar Assistente de Obra",
+    "inviteEmail": "E-mail",
+    "inviteSubmit": "Convidar",
+    "invited": "Convite enviado",
+    "errors": {
+      "invite": "Não conseguimos convidar essa pessoa."
     }
   }
 }

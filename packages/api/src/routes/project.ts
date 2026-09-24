@@ -5,6 +5,8 @@ import { createProject, getProject, inviteClient, listProjects } from '../contro
 import { activityRouter } from './activity.js';
 import { materialRouter } from './material.js';
 import { laborRouter } from './labor.js';
+import { budgetRouter } from './budget.js';
+import { advisorRouter } from './advisor.js';
 
 export const projectRouter = Router();
 
@@ -20,5 +22,7 @@ projectRouter.post('/:projectId/clients', requireProjectAccess, requireProjectOw
 projectRouter.use('/:projectId/activities', activityRouter);
 projectRouter.use('/:projectId/materials', materialRouter);
 projectRouter.use('/:projectId/labor', laborRouter);
+projectRouter.use('/:projectId/budget', budgetRouter);
+projectRouter.use('/:projectId/advisor', advisorRouter);
 
 export default projectRouter;

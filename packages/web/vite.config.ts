@@ -83,7 +83,7 @@ export default defineConfig(() => ({
     exclude: ['@luma/shared'],
   },
   server: {
-    port: 5173,
+    port: 6173,
     warmup: {
       clientFiles: ['./src/main.tsx', './src/pages/*.tsx'],
     },
