@@ -55,6 +55,9 @@ const ProjectLaborPage = lazy(() =>
 const ProjectBudgetPage = lazy(() =>
   import('./pages/projects/project-budget').then((m) => ({ default: m.ProjectBudgetPage })),
 );
+const ProjectAdvisorPage = lazy(() =>
+  import('./pages/projects/project-advisor').then((m) => ({ default: m.ProjectAdvisorPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -119,6 +122,10 @@ export function AppRoutes() {
           <Route
             path={ROUTES.PROJECT_BUDGET}
             element={<LazyRoute><ProjectBudgetPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_ADVISOR}
+            element={<LazyRoute><ProjectAdvisorPage /></LazyRoute>}
           />
         </Route>
       </Route>

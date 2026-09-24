@@ -22,14 +22,14 @@ export const SERVER_CONFIG = {
   HOST: process.env.HOST ?? '0.0.0.0',
   NODE_ENV,
   /** Origen del frontend, para CORS y para los redirects. */
-  FRONTEND_URL: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  FRONTEND_URL: process.env.FRONTEND_URL ?? 'http://localhost:6173',
   /**
    * Raíz del SPA, **incluyendo el subpath**: en producción la SPA se monta en
    * `/app`, así que esto es `https://<DOMINIO>/app`. Los links de los mails se
    * arman sobre esta variable (`utils/app-url.ts`); si apunta al dominio pelado,
    * cada link de verificación cae en la landing.
    */
-  APP_URL: process.env.APP_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  APP_URL: process.env.APP_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:6173',
   /** Hostname interno de la landing en la red de Docker. */
   LANDING_URL: process.env.LANDING_URL ?? 'http://landing:8080',
 } as const;
@@ -106,6 +106,17 @@ export const STORAGE_CONFIG = {
 } as const;
 
 /**
+ * Consultor IA de obra: chat de sólo lectura sobre UNA obra puntual (ver
+ * `services/project-advisor.service.ts`). Sin API key el feature queda
+ * deshabilitado — no justifica que el resto de la app no arranque.
+ */
+export const ANTHROPIC_CONFIG = {
+  API_KEY: process.env.ANTHROPIC_API_KEY,
+  MODEL: 'claude-sonnet-5',
+  ENABLED: Boolean(process.env.ANTHROPIC_API_KEY),
+} as const;
+
+/**
  * Esquema del entorno. Las reglas que dependen de producción van en el refine:
  * en desarrollo se puede arrancar sin reCAPTCHA ni Resend, en producción no.
  */
@@ -173,6 +184,9 @@ export function validateConfig(): void {
     console.warn(
       '⚠️  [CONFIG] Sin STORAGE_*: el registro fotográfico de evidencia queda deshabilitado.',
     );
+  }
+  if (!ANTHROPIC_CONFIG.ENABLED) {
+    console.warn('⚠️  [CONFIG] Sin ANTHROPIC_API_KEY: el Consultor IA queda deshabilitado.');
   }
   if (isProduction && !process.env.APP_URL) {
     console.warn('⚠️  [CONFIG] Sin APP_URL: los links de los mails pueden apuntar mal.');

@@ -5,7 +5,7 @@ import { chromium, request as playwrightRequest, type FullConfig } from '@playwr
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@luma.test';
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? 'E2eAdmin1234!';
 
-const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:5173';
+const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:6173';
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:8080';
 
 /**

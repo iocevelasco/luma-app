@@ -4,6 +4,7 @@ import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import {
   projectActivitiesPath,
+  projectAdvisorPath,
   projectBudgetPath,
   projectDetailPath,
   projectLaborPath,
@@ -36,10 +37,14 @@ export function ProjectTabs() {
     { to: projectActivitiesPath(projectId), label: t('project.nav.gantt') },
     { to: projectMaterialsPath(projectId), label: t('project.nav.materials') },
     { to: projectLaborPath(projectId), label: t('project.nav.labor') },
-    // Presupuesto es owner-only en este corte (regla 13): la utilidad del
-    // ejecutante nunca es visible para el cliente. No mostrarle ni la pestaña.
+    // Presupuesto y Consultor IA son owner-only en este corte (regla 13): la
+    // utilidad del ejecutante nunca es visible para el cliente, y el
+    // Consultor IA responde con datos de presupuesto entre sus herramientas.
     ...(isOwner
-      ? [{ to: projectBudgetPath(projectId), label: t('project.nav.budget') }]
+      ? [
+          { to: projectBudgetPath(projectId), label: t('project.nav.budget') },
+          { to: projectAdvisorPath(projectId), label: t('project.nav.advisor') },
+        ]
       : []),
   ];
 
