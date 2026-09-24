@@ -1,8 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { addDays, format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'next-themes';
-import { Gantt, Willow, WillowDark, type IApi, type IColumnConfig } from '@svar-ui/react-gantt';
+import { Gantt, WillowDark, type IApi, type IColumnConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
 import type { Activity, ActivityStatus } from '@luma/shared';
 import { fromDayKey } from '@/components/common/date-range-filter';
@@ -70,7 +69,6 @@ export function ActivityGantt({
 }: ActivityGanttProps) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
-  const { resolvedTheme } = useTheme();
 
   const tasks = useMemo(
     () =>
@@ -112,11 +110,9 @@ export function ActivityGantt({
     [onSelectActivity],
   );
 
-  const Skin = resolvedTheme === 'dark' ? WillowDark : Willow;
-
   return (
     <div className="min-h-0 min-w-0 flex-1 [&_.wx-theme]:h-full">
-      <Skin fonts={false}>
+      <WillowDark fonts={false}>
         <Gantt
           tasks={tasks}
           links={[]}
@@ -130,7 +126,7 @@ export function ActivityGantt({
           readonly
           init={handleInit}
         />
-      </Skin>
+      </WillowDark>
     </div>
   );
 }

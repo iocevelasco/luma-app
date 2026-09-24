@@ -30,7 +30,6 @@
   "userMenu": {
     "account": "Minha conta",
     "settings": "Configurações",
-    "theme": "Tema",
     "logout": "Sair"
   },
   "project": {
@@ -73,7 +72,8 @@
       "gantt": "Cronograma",
       "materials": "Materiais",
       "labor": "Pessoal",
-      "budget": "Orçamento"
+      "budget": "Orçamento",
+      "advisor": "Consultor IA"
     },
     "detail": {
       "gantt": "Cronograma de atividades",
@@ -380,6 +380,17 @@
     },
     "errors": {
       "create": "Não conseguimos salvar o orçamento."
+    }
+  },
+  "advisor": {
+    "title": "Consultor IA",
+    "subtitle": "Pergunte sobre o orçamento, o cronograma ou a mão de obra de {{name}}.",
+    "empty": "Escreva uma pergunta sobre esta obra para começar.",
+    "placeholder": "Pergunte ao Consultor IA sobre esta obra…",
+    "thinking": "Pensando…",
+    "notConfigured": "O Consultor IA ainda não está configurado neste ambiente.",
+    "errors": {
+      "send": "Não conseguimos obter resposta do Consultor IA."
     }
   },
   "team": {

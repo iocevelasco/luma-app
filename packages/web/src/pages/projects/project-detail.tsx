@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { inviteClientSchema, type InviteClientInput } from '@luma/shared';
-import { UserPlus } from 'lucide-react';
+import { Gauge, ListChecks, Package, UserPlus, Users, Wallet } from 'lucide-react';
+import type { ComponentType } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
@@ -34,6 +35,15 @@ import { projectActivitiesPath, projectBudgetPath, projectLaborPath, projectMate
 import { isActivityOverdue } from '@/lib/week';
 
 const MATERIAL_STATUS_PRIORITY = { pendiente: 0, solicitado: 1, comprado: 2, en_obra: 3 } as const;
+
+/** Ícono de sección en círculo, a la izquierda del título de cada card del dashboard. */
+function CardIcon({ icon: Icon }: { icon: ComponentType<{ className?: string }> }) {
+  return (
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+      <Icon className="size-4" />
+    </div>
+  );
+}
 
 function InviteClientDialog({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
@@ -105,7 +115,10 @@ function PendingTasksCard({ projectId }: { projectId: string }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-4">
-        <CardTitle className="text-base">{t('project.dashboard.pendingTasks')}</CardTitle>
+        <div className="flex items-center gap-3">
+          <CardIcon icon={ListChecks} />
+          <CardTitle className="text-base">{t('project.dashboard.pendingTasks')}</CardTitle>
+        </div>
         <Button variant="ghost" size="sm" asChild>
           <Link to={projectActivitiesPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
         </Button>
@@ -159,7 +172,8 @@ function ProgressCard({ projectId }: { projectId: string }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center gap-3">
+        <CardIcon icon={Gauge} />
         <CardTitle className="text-base">{t('project.dashboard.progress')}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -188,7 +202,10 @@ function MaterialsCard({ projectId }: { projectId: string }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-4">
-        <CardTitle className="text-base">{t('project.dashboard.materials')}</CardTitle>
+        <div className="flex items-center gap-3">
+          <CardIcon icon={Package} />
+          <CardTitle className="text-base">{t('project.dashboard.materials')}</CardTitle>
+        </div>
         <Button variant="ghost" size="sm" asChild>
           <Link to={projectMaterialsPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
         </Button>
@@ -232,7 +249,10 @@ function LaborCard({ projectId }: { projectId: string }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-4">
-        <CardTitle className="text-base">{t('project.dashboard.labor')}</CardTitle>
+        <div className="flex items-center gap-3">
+          <CardIcon icon={Users} />
+          <CardTitle className="text-base">{t('project.dashboard.labor')}</CardTitle>
+        </div>
         <Button variant="ghost" size="sm" asChild>
           <Link to={projectLaborPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
         </Button>
@@ -276,7 +296,10 @@ function BudgetSummaryCard({ projectId, currency }: { projectId: string; currenc
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-4">
-        <CardTitle className="text-base">{t('project.dashboard.budget')}</CardTitle>
+        <div className="flex items-center gap-3">
+          <CardIcon icon={Wallet} />
+          <CardTitle className="text-base">{t('project.dashboard.budget')}</CardTitle>
+        </div>
         <Button variant="ghost" size="sm" asChild>
           <Link to={projectBudgetPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
         </Button>

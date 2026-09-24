@@ -30,7 +30,6 @@
   "userMenu": {
     "account": "Mi cuenta",
     "settings": "Configuración",
-    "theme": "Tema",
     "logout": "Cerrar sesión"
   },
   "project": {
@@ -73,7 +72,8 @@
       "gantt": "Cronograma",
       "materials": "Materiales",
       "labor": "Personal",
-      "budget": "Presupuesto"
+      "budget": "Presupuesto",
+      "advisor": "Consultor IA"
     },
     "detail": {
       "clients": "Clientes con acceso",
@@ -380,6 +380,17 @@
     },
     "errors": {
       "create": "No pudimos guardar el presupuesto."
+    }
+  },
+  "advisor": {
+    "title": "Consultor IA",
+    "subtitle": "Preguntale por el presupuesto, el cronograma o la mano de obra de {{name}}.",
+    "empty": "Escribí una pregunta sobre esta obra para empezar.",
+    "placeholder": "Preguntale al Consultor IA sobre esta obra…",
+    "thinking": "Pensando…",
+    "notConfigured": "El Consultor IA todavía no está configurado en este entorno.",
+    "errors": {
+      "send": "No pudimos obtener respuesta del Consultor IA."
     }
   },
   "team": {
