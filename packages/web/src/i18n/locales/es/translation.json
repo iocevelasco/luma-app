@@ -319,7 +319,12 @@
       "empty": "Todavía no cargaste proveedores.",
       "emptyOwnerHint": "Agregá tu primer contacto para poder asignarlo a una actividad.",
       "confirmDeactivateTitle": "Dar de baja al proveedor",
-      "confirmDeactivateBody": "\"{{name}}\" ya no va a aparecer para asignar a nuevas actividades. Las actividades donde ya está asignado no cambian."
+      "confirmDeactivateBody": "\"{{name}}\" ya no va a aparecer para asignar a nuevas actividades. Las actividades donde ya está asignado no cambian.",
+      "activitiesTitle": "Actividades de {{name}}",
+      "noActivities": "Todavía no asignaste este proveedor a ninguna actividad de esta obra.",
+      "assignActivity": "Asignar",
+      "assignActivityPlaceholder": "Elegí una actividad",
+      "unassignActivity": "Quitar actividad"
     },
     "fields": {
       "name": "Nombre",
@@ -328,7 +333,8 @@
       "customSpecialty": "Especificá la especialidad",
       "phone": "Teléfono",
       "email": "Email (opcional)",
-      "notes": "Notas (opcional)"
+      "notes": "Notas (opcional)",
+      "assignActivities": "Asignar a actividades (opcional)"
     },
     "specialty": {
       "electricidad": "Electricidad",

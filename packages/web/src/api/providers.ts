@@ -1,8 +1,10 @@
 import type {
   ApiResponse,
   ActivityProvidersResponse,
+  AssignActivityInput,
   AssignProviderInput,
   CreateProviderInput,
+  ProviderActivitiesResponse,
   ProviderListResponse,
   ProviderResponse,
   UpdateProviderInput,
@@ -50,6 +52,24 @@ export const providersApi = {
     unwrap<{ providerId: string }>(
       apiClient.delete(
         `/api/projects/${projectId}/activities/${activityId}/providers/${providerId}`,
+      ),
+    ),
+
+  // Misma relación N:N, vista desde el proveedor (listado de Proveedores).
+  listActivities: (projectId: string, providerId: string) =>
+    unwrap<ProviderActivitiesResponse>(
+      apiClient.get(`/api/projects/${projectId}/providers/${providerId}/activities`),
+    ),
+
+  assignActivity: (projectId: string, providerId: string, payload: AssignActivityInput) =>
+    unwrap<{ activity: ProviderActivitiesResponse['activities'][number] }>(
+      apiClient.post(`/api/projects/${projectId}/providers/${providerId}/activities`, payload),
+    ),
+
+  unassignActivity: (projectId: string, providerId: string, activityId: string) =>
+    unwrap<{ activityId: string }>(
+      apiClient.delete(
+        `/api/projects/${projectId}/providers/${providerId}/activities/${activityId}`,
       ),
     ),
 };

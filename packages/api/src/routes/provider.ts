@@ -6,9 +6,12 @@ import {
   requireProjectOwner,
 } from '../middleware/project.middleware.js';
 import {
+  assignActivityToProvider,
   createProvider,
   deactivateProvider,
+  listProviderActivities,
   listProviders,
+  unassignActivityFromProvider,
   updateProvider,
 } from '../controllers/index.js';
 
@@ -30,5 +33,15 @@ providerRouter.get('/', requireProjectEditor, listProviders);
 providerRouter.post('/', requireProjectOwner, createProvider);
 providerRouter.patch('/:providerId', requireProjectOwner, updateProvider);
 providerRouter.delete('/:providerId', requireProjectOwner, deactivateProvider);
+
+// Misma asignación N:N que activity.ts, vista desde el proveedor —
+// `requireProjectEditor`: el Asistente de Obra también asigna desde acá.
+providerRouter.get('/:providerId/activities', requireProjectEditor, listProviderActivities);
+providerRouter.post('/:providerId/activities', requireProjectEditor, assignActivityToProvider);
+providerRouter.delete(
+  '/:providerId/activities/:activityId',
+  requireProjectEditor,
+  unassignActivityFromProvider,
+);
 
 export default providerRouter;

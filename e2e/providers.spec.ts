@@ -162,4 +162,115 @@ test.describe('directorio de proveedores', () => {
     detailDialog = page.getByRole('dialog');
     await expect(detailDialog.getByText(PROVIDER_NAME)).toBeVisible();
   });
+
+  test('asigna actividades desde el lado del proveedor (al crear y desde el listado)', async ({
+    page,
+  }) => {
+    const runId = `${RUN_ID}-b`;
+    const ownerEmail = `e2e-providers-${runId}@luma.test`;
+    const projectName = `Obra proveedores B ${runId}`;
+    const activityA = `Actividad A ${runId}`;
+    const activityB = `Actividad B ${runId}`;
+    const providerName = `María Electricista ${runId}`;
+
+    await registerWith(page, `Ejecutante E2E ${runId}`, ownerEmail, PASSWORD);
+    await loginWith(page, ownerEmail, PASSWORD);
+    await expect(page).toHaveURL(/\/admin$/);
+
+    await page.getByRole('link', { name: /crear tu primera obra/i }).click();
+    await page.locator('#name').fill(projectName);
+    await page.locator('#description').fill('Obra para probar la asignación desde el proveedor.');
+    await page.locator('#location').fill('CABA');
+    await page.locator('#estimatedStartDate').fill('2026-09-01');
+    await page.locator('#estimatedEndDate').fill('2026-12-15');
+    await page.locator('#currency').click();
+    await page.getByRole('option', { name: 'ARS' }).click();
+    await page.locator('#budgetType').click();
+    await page.getByRole('option', { name: /cerrado/i }).click();
+    await page.getByRole('button', { name: /crear obra/i }).click();
+    await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
+
+    // Dos actividades: una se asigna al crear el proveedor (C), la otra desde
+    // el diálogo del listado (B).
+    await page.getByRole('link', { name: /^cronograma$/i }).click();
+    await expect(page).toHaveURL(/\/actividades$/);
+
+    const today = new Date();
+    const start = toDayKey(today);
+    const end = toDayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2));
+
+    for (const name of [activityA, activityB]) {
+      await page.getByRole('button', { name: /nueva actividad/i }).click();
+      await page.locator('#activity-name').fill(name);
+      await page.locator('#activity-area').fill('Planta baja');
+      await page.locator('#activity-start').fill(start);
+      await page.locator('#activity-end').fill(end);
+      await page.locator('#activity-responsible').fill('Juan Pérez');
+      await page.getByRole('button', { name: /crear actividad/i }).click();
+      await expect(page.getByRole('dialog')).toBeHidden();
+    }
+
+    // --- C: crear el proveedor y asignarlo a la Actividad A de una ---
+    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await expect(page).toHaveURL(/\/proveedores$/);
+
+    await page.getByRole('button', { name: /nuevo proveedor/i }).click();
+    const createDialog = page.getByRole('dialog');
+    await page.locator('#provider-name').fill(providerName);
+    await page.locator('#provider-specialty').click();
+    await page.getByRole('option', { name: /^electricidad$/i }).click();
+    await page.locator('#provider-phone').fill('11-2222-2222');
+    await createDialog.getByText(activityA, { exact: true }).click();
+    await page.getByRole('button', { name: /crear proveedor/i }).click();
+    await expect(createDialog).toBeHidden();
+
+    // Confirma desde el lado de la Actividad que C efectivamente asignó.
+    await page.getByRole('link', { name: /^cronograma$/i }).click();
+    await expect(page).toHaveURL(/\/actividades$/);
+    await page.getByRole('gridcell', { name: activityA, exact: true }).click();
+    let activityDetail = page.getByRole('dialog');
+    await expect(activityDetail.getByText(providerName)).toBeVisible();
+    await activityDetail.getByRole('button', { name: /atrás/i }).click();
+    await expect(activityDetail).toBeHidden();
+
+    // --- B: desde el listado de Proveedores, asigna la Actividad B ---
+    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await expect(page).toHaveURL(/\/proveedores$/);
+
+    await page
+      .getByRole('button', { name: new RegExp(`^Actividades de ${providerName}$`, 'i') })
+      .first()
+      .click();
+    const activitiesDialog = page.getByRole('dialog');
+    await expect(activitiesDialog.getByText(activityA, { exact: true })).toBeVisible();
+
+    await activitiesDialog.getByRole('combobox').click();
+    await page.getByRole('option', { name: activityB, exact: true }).click();
+    await activitiesDialog.getByRole('button', { name: /^asignar$/i }).click();
+    await expect(activitiesDialog.getByText(activityB, { exact: true })).toBeVisible();
+
+    // Desasigna la Actividad A desde acá mismo — confirma que el diálogo del
+    // proveedor también puede quitar, no sólo agregar.
+    await activitiesDialog
+      .getByText(activityA, { exact: true })
+      .locator('..')
+      .locator('..')
+      .getByRole('button', { name: /quitar actividad/i })
+      .click();
+    await expect(activitiesDialog.getByText(activityA, { exact: true })).toBeHidden();
+    await activitiesDialog.getByRole('button', { name: /close/i }).click();
+
+    // Confirma la simetría: Actividad A ya no lo tiene, Actividad B sí.
+    await page.getByRole('link', { name: /^cronograma$/i }).click();
+    await expect(page).toHaveURL(/\/actividades$/);
+    await page.getByRole('gridcell', { name: activityA, exact: true }).click();
+    activityDetail = page.getByRole('dialog');
+    await expect(activityDetail.getByText(/todavía no asignaste proveedores/i)).toBeVisible();
+    await activityDetail.getByRole('button', { name: /atrás/i }).click();
+    await expect(activityDetail).toBeHidden();
+
+    await page.getByRole('gridcell', { name: activityB, exact: true }).click();
+    activityDetail = page.getByRole('dialog');
+    await expect(activityDetail.getByText(providerName)).toBeVisible();
+  });
 });

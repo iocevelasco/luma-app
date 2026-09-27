@@ -1,3 +1,5 @@
+import type { ActivityStatus } from './activity.js';
+
 /**
  * Directorio de proveedores/subcontratistas (electricidad, plomería,
  * carpintería, etc.). Vive a nivel `Organization` —la Empresa del
@@ -52,4 +54,23 @@ export interface ProviderResponse {
 /** Proveedores asignados a una actividad puntual (relación N:N vía `ActivityProvider`). */
 export interface ActivityProvidersResponse {
   providers: Provider[];
+}
+
+/**
+ * Actividad vista desde el lado del proveedor — versión liviana de `Activity`,
+ * sin evidencia fotográfica (esa requiere firmar URLs y no hace falta acá).
+ * Alcance: sólo actividades del proyecto donde se está consultando, aunque el
+ * directorio sea de la Empresa — ver comentario en provider.controller.ts.
+ */
+export interface ProviderActivitySummary {
+  id: string;
+  name: string;
+  area: string;
+  startDate: string;
+  endDate: string;
+  status: ActivityStatus;
+}
+
+export interface ProviderActivitiesResponse {
+  activities: ProviderActivitySummary[];
 }

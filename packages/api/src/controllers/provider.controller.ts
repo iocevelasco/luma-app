@@ -1,17 +1,30 @@
 import type { Request, Response } from 'express';
 import {
+  assignActivitySchema,
   assignProviderSchema,
   createProviderSchema,
   updateProviderSchema,
   type Provider as ProviderDTO,
+  type ProviderActivitySummary,
 } from '@luma/shared';
 import { Provider, type IProvider } from '../models/Provider.js';
 import { ActivityProvider } from '../models/ActivityProvider.js';
-import { Activity } from '../models/Activity.js';
+import { Activity, type IActivity } from '../models/Activity.js';
 import type { IProject } from '../models/Project.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
+}
+
+function toActivitySummaryDTO(activity: IActivity): ProviderActivitySummary {
+  return {
+    id: String(activity._id),
+    name: activity.name,
+    area: activity.area,
+    startDate: activity.startDate,
+    endDate: activity.endDate,
+    status: activity.status,
+  };
 }
 
 function toProviderDTO(provider: IProvider): ProviderDTO {
@@ -226,6 +239,119 @@ export async function unassignProvider(req: Request, res: Response) {
     return res.json({ success: true, data: { providerId: req.params.providerId } });
   } catch (error) {
     console.error('❌ [PROVIDER] unassignProvider:', error);
+    return res.status(500).json({ success: false, error: errMsg(error) });
+  }
+}
+
+/**
+ * Requiere `requireProjectAccess` + `requireProjectEditor` antes. Misma
+ * relación N:N que `listActivityProviders`, vista desde el lado del
+ * proveedor — para el listado de Proveedores, que hasta ahora sólo permitía
+ * asignar desde el detalle de la Actividad.
+ *
+ * Alcance deliberado: sólo actividades de ESTE proyecto, aunque el
+ * directorio sea de la Empresa y el mismo proveedor pueda estar en obras
+ * distintas — mostrar "todas mis obras" es una vista nueva (organización, no
+ * proyecto) que no está pedida todavía.
+ */
+export async function listProviderActivities(req: Request, res: Response) {
+  try {
+    const project = req.project as IProject;
+    const provider = await Provider.findOne({
+      _id: req.params.providerId,
+      organization: project.organization,
+    });
+    if (!provider) {
+      return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
+    }
+
+    const links = await ActivityProvider.find({ provider: provider._id }).populate<{
+      activity: IActivity;
+    }>('activity');
+
+    const activities = links
+      .filter((link) => link.activity && String(link.activity.project) === String(project._id))
+      .map((link) => toActivitySummaryDTO(link.activity));
+
+    return res.json({ success: true, data: { activities } });
+  } catch (error) {
+    console.error('❌ [PROVIDER] listProviderActivities:', error);
+    return res.status(500).json({ success: false, error: errMsg(error) });
+  }
+}
+
+/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+export async function assignActivityToProvider(req: Request, res: Response) {
+  try {
+    const parsed = assignActivitySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
+    }
+
+    const project = req.project as IProject;
+    const provider = await Provider.findOne({
+      _id: req.params.providerId,
+      organization: project.organization,
+    });
+    if (!provider) {
+      return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
+    }
+
+    const activity = await Activity.findOne({
+      _id: parsed.data.activityId,
+      project: project._id,
+    });
+    if (!activity) {
+      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+    }
+
+    const alreadyAssigned = await ActivityProvider.exists({
+      activity: activity._id,
+      provider: provider._id,
+    });
+    if (alreadyAssigned) {
+      return res
+        .status(409)
+        .json({ success: false, error: 'Ese proveedor ya está asignado a la actividad' });
+    }
+
+    await ActivityProvider.create({ activity: activity._id, provider: provider._id });
+
+    return res
+      .status(201)
+      .json({ success: true, data: { activity: toActivitySummaryDTO(activity) } });
+  } catch (error) {
+    console.error('❌ [PROVIDER] assignActivityToProvider:', error);
+    return res.status(500).json({ success: false, error: errMsg(error) });
+  }
+}
+
+/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+export async function unassignActivityFromProvider(req: Request, res: Response) {
+  try {
+    const project = req.project as IProject;
+    const provider = await Provider.findOne({
+      _id: req.params.providerId,
+      organization: project.organization,
+    });
+    if (!provider) {
+      return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
+    }
+
+    const link = await ActivityProvider.findOneAndDelete({
+      activity: req.params.activityId,
+      provider: provider._id,
+    });
+
+    if (!link) {
+      return res.status(404).json({ success: false, error: 'Esa actividad no está asignada' });
+    }
+
+    return res.json({ success: true, data: { activityId: req.params.activityId } });
+  } catch (error) {
+    console.error('❌ [PROVIDER] unassignActivityFromProvider:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }
 }

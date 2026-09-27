@@ -74,6 +74,12 @@ export const assignProviderSchema = z.object({
   providerId: z.string().trim().min(1, 'Elegí un proveedor'),
 });
 
+/** Misma asignación N:N, vista desde el lado del proveedor. */
+export const assignActivitySchema = z.object({
+  activityId: z.string().trim().min(1, 'Elegí una actividad'),
+});
+
 export type CreateProviderInput = z.infer<typeof createProviderSchema>;
 export type UpdateProviderInput = z.infer<typeof updateProviderSchema>;
 export type AssignProviderInput = z.infer<typeof assignProviderSchema>;
+export type AssignActivityInput = z.infer<typeof assignActivitySchema>;

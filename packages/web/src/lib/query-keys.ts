@@ -17,4 +17,5 @@ export enum QueryKeys {
   budget = 'budget',
   providers = 'providers',
   activityProviders = 'activity-providers',
+  providerActivities = 'provider-activities',
 }

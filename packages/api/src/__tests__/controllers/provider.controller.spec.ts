@@ -31,6 +31,9 @@ const {
   createProvider,
   assignProvider,
   unassignProvider,
+  listProviderActivities,
+  assignActivityToProvider,
+  unassignActivityFromProvider,
 } = await import('../../controllers/provider.controller.js');
 
 function mockRes(): Response {
@@ -198,5 +201,151 @@ describe('unassignProvider', () => {
       provider: 'provider-1',
     });
     expect(res.json).toHaveBeenCalledWith({ success: true, data: { providerId: 'provider-1' } });
+  });
+});
+
+const baseActivity = {
+  _id: 'activity-1',
+  project: 'project-1',
+  name: 'Colocación de aberturas',
+  area: 'Fachada',
+  startDate: '2026-09-01',
+  endDate: '2026-09-05',
+  status: 'pendiente',
+};
+
+describe('listProviderActivities — mismo vínculo N:N visto desde el proveedor', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('404 si el proveedor no pertenece a la Empresa de la obra', async () => {
+    vi.mocked(Provider.findOne).mockResolvedValue(null);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      params: { providerId: 'provider-1' },
+    } as unknown as Request;
+    const res = mockRes();
+
+    await listProviderActivities(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('filtra las actividades a las de este proyecto, aunque el vínculo apunte a otro', async () => {
+    vi.mocked(Provider.findOne).mockResolvedValue(baseProvider as never);
+    vi.mocked(ActivityProvider.find).mockReturnValue({
+      populate: vi.fn().mockResolvedValue([
+        { activity: baseActivity },
+        { activity: { ...baseActivity, _id: 'activity-2', project: 'otro-project' } },
+      ]),
+    } as never);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      params: { providerId: 'provider-1' },
+    } as unknown as Request;
+    const res = mockRes();
+
+    await listProviderActivities(req, res);
+
+    expect(jsonData(res)).toMatchObject({
+      success: true,
+      data: { activities: [{ id: 'activity-1' }] },
+    });
+  });
+});
+
+describe('assignActivityToProvider — pertenencia cruzada antes de crear el vínculo', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  function mockReq(overrides: Record<string, unknown> = {}): Request {
+    return {
+      project: { _id: 'project-1', organization: 'org-1' },
+      params: { providerId: 'provider-1' },
+      body: { activityId: 'activity-1' },
+      ...overrides,
+    } as unknown as Request;
+  }
+
+  it('404 si el proveedor no pertenece a la Empresa de la obra', async () => {
+    vi.mocked(Provider.findOne).mockResolvedValue(null);
+    const res = mockRes();
+
+    await assignActivityToProvider(mockReq(), res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(ActivityProvider.create).not.toHaveBeenCalled();
+  });
+
+  it('404 si la actividad no pertenece a esa obra', async () => {
+    vi.mocked(Provider.findOne).mockResolvedValue(baseProvider as never);
+    vi.mocked(Activity.findOne).mockResolvedValue(null);
+    const res = mockRes();
+
+    await assignActivityToProvider(mockReq(), res);
+
+    expect(Activity.findOne).toHaveBeenCalledWith({ _id: 'activity-1', project: 'project-1' });
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(ActivityProvider.create).not.toHaveBeenCalled();
+  });
+
+  it('409 si ya está asignado', async () => {
+    vi.mocked(Provider.findOne).mockResolvedValue(baseProvider as never);
+    vi.mocked(Activity.findOne).mockResolvedValue(baseActivity as never);
+    vi.mocked(ActivityProvider.exists).mockResolvedValue({ _id: 'link-1' } as never);
+    const res = mockRes();
+
+    await assignActivityToProvider(mockReq(), res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(ActivityProvider.create).not.toHaveBeenCalled();
+  });
+
+  it('crea el vínculo cuando todo pertenece a la misma obra/Empresa', async () => {
+    vi.mocked(Provider.findOne).mockResolvedValue(baseProvider as never);
+    vi.mocked(Activity.findOne).mockResolvedValue(baseActivity as never);
+    vi.mocked(ActivityProvider.exists).mockResolvedValue(null);
+    const res = mockRes();
+
+    await assignActivityToProvider(mockReq(), res);
+
+    expect(ActivityProvider.create).toHaveBeenCalledWith({
+      activity: 'activity-1',
+      provider: 'provider-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+});
+
+describe('unassignActivityFromProvider', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('404 si el proveedor no pertenece a la Empresa de la obra', async () => {
+    vi.mocked(Provider.findOne).mockResolvedValue(null);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      params: { providerId: 'provider-1', activityId: 'activity-1' },
+    } as unknown as Request;
+    const res = mockRes();
+
+    await unassignActivityFromProvider(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('borra el vínculo cuando existe', async () => {
+    vi.mocked(Provider.findOne).mockResolvedValue(baseProvider as never);
+    vi.mocked(ActivityProvider.findOneAndDelete).mockResolvedValue({ _id: 'link-1' } as never);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      params: { providerId: 'provider-1', activityId: 'activity-1' },
+    } as unknown as Request;
+    const res = mockRes();
+
+    await unassignActivityFromProvider(req, res);
+
+    expect(ActivityProvider.findOneAndDelete).toHaveBeenCalledWith({
+      activity: 'activity-1',
+      provider: 'provider-1',
+    });
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: { activityId: 'activity-1' } });
   });
 });

@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import type { AssignProviderInput, CreateProviderInput, UpdateProviderInput } from '@luma/shared';
+import type {
+  AssignActivityInput,
+  AssignProviderInput,
+  CreateProviderInput,
+  UpdateProviderInput,
+} from '@luma/shared';
 import { providersApi } from '@/api/providers';
 import { isApiError } from '@/lib/api-client';
 import { QueryKeys } from '@/lib/query-keys';
@@ -110,5 +115,93 @@ export function useUnassignProvider(projectId: string, activityId: string) {
       toast.success(t('provider.list.unassigned'));
     },
     onError: (error) => toast.error(errorMessage(error, t('provider.errors.unassign'))),
+  });
+}
+
+// --- Misma relación N:N, vista desde el proveedor (listado de Proveedores) ---
+
+/** Actividades de esta obra donde ya está asignado este proveedor. */
+export function useProviderActivities(projectId: string | undefined, providerId: string | undefined) {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.providerActivities, projectId, providerId],
+    queryFn: () => providersApi.listActivities(projectId!, providerId!),
+    enabled: isAuthenticated && !!projectId && !!providerId,
+  });
+}
+
+/**
+ * Invalida las dos vistas de la misma relación: la lista de actividades de
+ * este proveedor (donde se dispara) y las de proveedores de la actividad
+ * afectada (donde también se ve, desde `project-activities.tsx`) — sin esto
+ * asignar desde acá dejaría el detalle de la Actividad con datos viejos hasta
+ * el próximo refetch.
+ */
+function invalidateProviderActivityLinks(
+  queryClient: ReturnType<typeof useQueryClient>,
+  projectId: string,
+  providerId: string,
+  activityId: string,
+) {
+  void queryClient.invalidateQueries({
+    queryKey: [QueryKeys.providerActivities, projectId, providerId],
+  });
+  void queryClient.invalidateQueries({
+    queryKey: [QueryKeys.activityProviders, projectId, activityId],
+  });
+}
+
+export function useAssignActivityToProvider(projectId: string, providerId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: AssignActivityInput) =>
+      providersApi.assignActivity(projectId, providerId, payload),
+    onSuccess: (_, payload) => {
+      invalidateProviderActivityLinks(queryClient, projectId, providerId, payload.activityId);
+      toast.success(t('provider.list.assigned'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t('provider.errors.assign'))),
+  });
+}
+
+export function useUnassignActivityFromProvider(projectId: string, providerId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (activityId: string) =>
+      providersApi.unassignActivity(projectId, providerId, activityId),
+    onSuccess: (_, activityId) => {
+      invalidateProviderActivityLinks(queryClient, projectId, providerId, activityId);
+      toast.success(t('provider.list.unassigned'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t('provider.errors.unassign'))),
+  });
+}
+
+/**
+ * Sólo para el alta con asignación inmediata (Nuevo proveedor → elegir
+ * actividades). Asigna varias de una, sin pasar por `apiClient` desde el
+ * componente — la capa 1 vive acá, no en `NewProviderDialog`.
+ */
+export function useAssignActivitiesToProvider(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: ({ providerId, activityIds }: { providerId: string; activityIds: string[] }) =>
+      Promise.all(
+        activityIds.map((activityId) => providersApi.assignActivity(projectId, providerId, { activityId })),
+      ),
+    onSuccess: (_, { providerId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: [QueryKeys.providerActivities, projectId, providerId],
+      });
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.activityProviders, projectId] });
+    },
+    onError: (error) => toast.error(errorMessage(error, t('provider.errors.assign'))),
   });
 }
