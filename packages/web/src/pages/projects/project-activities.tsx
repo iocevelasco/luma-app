@@ -7,7 +7,7 @@ import {
   type CreateActivityInput,
   type MaterialItem,
 } from '@luma/shared';
-import { ArrowLeft, Camera, PackageX, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Camera, PackageX, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -45,6 +45,12 @@ import {
   useUploadActivityEvidence,
 } from '@/hooks/activities/use-activity-queries';
 import { useMaterials } from '@/hooks/materials/use-material-queries';
+import {
+  useActivityProviders,
+  useAssignProvider,
+  useProviders,
+  useUnassignProvider,
+} from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { isActivityOverdue, isWithinNextDays } from '@/lib/week';
@@ -274,6 +280,108 @@ function ActivityMaterialsList({ materials }: { materials: MaterialItem[] }) {
 }
 
 /**
+ * Proveedores asignados a la actividad — directorio de la Empresa (no de la
+ * obra), ver RF nuevo. Dueño y Asistente de Obra asignan/desasignan por
+ * igual; el cliente ni siquiera ve esta sección (se oculta desde el tab de
+ * navegación — ver `project-tabs.tsx`).
+ */
+function ActivityProvidersSection({
+  projectId,
+  activityId,
+  isEditor,
+}: {
+  projectId: string;
+  activityId: string;
+  isEditor: boolean;
+}) {
+  const { t } = useTranslation();
+  const [selectedProviderId, setSelectedProviderId] = useState('');
+  // El cliente ni siquiera pide estos endpoints: son 403 para su rol, y el
+  // directorio/asignación es información operativa que no le corresponde ver.
+  const { data: assignedData } = useActivityProviders(
+    isEditor ? projectId : undefined,
+    isEditor ? activityId : undefined,
+  );
+  const { data: directoryData } = useProviders(isEditor ? projectId : undefined);
+  const assignProvider = useAssignProvider(projectId, activityId);
+  const unassignProvider = useUnassignProvider(projectId, activityId);
+
+  if (!isEditor) return null;
+
+  const assigned = assignedData?.providers ?? [];
+  const assignedIds = new Set(assigned.map((provider) => provider.id));
+  const available = (directoryData?.providers ?? []).filter(
+    (provider) => !assignedIds.has(provider.id),
+  );
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-border pt-6">
+      <h3 className="text-sm font-medium">{t('activity.detail.providers')}</h3>
+
+      {assigned.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('activity.detail.noProviders')}</p>
+      ) : (
+        <ul className="flex flex-wrap gap-2">
+          {assigned.map((provider) => (
+            <li
+              key={provider.id}
+              className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-sm"
+            >
+              <span>{provider.name}</span>
+              <span className="text-muted-foreground">
+                · {provider.specialty === 'otra' ? provider.customSpecialty : t(`provider.specialty.${provider.specialty}`)}
+              </span>
+              {isEditor && (
+                <button
+                  type="button"
+                  onClick={() => unassignProvider.mutate(provider.id)}
+                  aria-label={t('activity.detail.unassignProvider')}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-3" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {isEditor && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder={t('activity.detail.assignProviderPlaceholder')} />
+            </SelectTrigger>
+            <SelectContent>
+              {available.map((provider) => (
+                <SelectItem key={provider.id} value={provider.id}>
+                  {provider.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!selectedProviderId || assignProvider.isPending}
+            onClick={() => {
+              assignProvider.mutate(
+                { providerId: selectedProviderId },
+                { onSuccess: () => setSelectedProviderId('') },
+              );
+            }}
+          >
+            <Plus className="size-4" />
+            {t('activity.detail.assignProvider')}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * Registro fotográfico de avance (RF-04), opcional. Si el storage no está
  * configurado en el server, subir da 503 — el toast de error ya lo explica,
  * no hace falta un estado especial acá.
@@ -450,6 +558,12 @@ function ActivityDetailModal({
                 <h3 className="text-sm font-medium">{t('activity.detail.materials')}</h3>
                 <ActivityMaterialsList materials={materials} />
               </div>
+
+              <ActivityProvidersSection
+                projectId={projectId}
+                activityId={activity.id}
+                isEditor={isEditor}
+              />
 
               <ActivityEvidenceSection projectId={projectId} activity={activity} isEditor={isEditor} />
 

@@ -72,6 +72,7 @@
       "gantt": "Cronograma",
       "materials": "Materiais",
       "labor": "Pessoal",
+      "providers": "Fornecedores",
       "budget": "Orçamento",
       "advisor": "Consultor IA"
     },
@@ -95,6 +96,8 @@
       "labor": "Pessoal",
       "noActivitiesToday": "Não há atividades programadas para hoje.",
       "laborCount": "presentes",
+      "providers": "Fornecedores",
+      "noProviders": "Você ainda não adicionou fornecedores.",
       "budget": "Orçamento",
       "noBudget": "Você ainda não carregou o orçamento.",
       "viewAll": "Ver tudo"
@@ -236,6 +239,11 @@
       "editTitle": "Editar atividade",
       "materials": "Materiais associados",
       "noMaterials": "Não há materiais associados a esta atividade.",
+      "providers": "Fornecedores atribuídos",
+      "noProviders": "Você ainda não atribuiu fornecedores a esta atividade.",
+      "assignProvider": "Atribuir",
+      "assignProviderPlaceholder": "Escolha um fornecedor",
+      "unassignProvider": "Remover fornecedor",
       "notes": "Notas",
       "evidence": "Evidência fotográfica",
       "addEvidence": "Adicionar foto",
@@ -292,6 +300,58 @@
       "update": "Não conseguimos atualizar o material.",
       "delete": "Não conseguimos excluir o material.",
       "copy": "Não conseguimos copiar a lista."
+    }
+  },
+  "provider": {
+    "list": {
+      "navLink": "Fornecedores",
+      "title": "Fornecedores",
+      "new": "Novo fornecedor",
+      "newTitle": "Novo fornecedor",
+      "newSubmit": "Criar fornecedor",
+      "editTitle": "Editar fornecedor",
+      "deactivate": "Desativar",
+      "created": "Fornecedor adicionado",
+      "updated": "Fornecedor atualizado",
+      "deactivated": "Fornecedor desativado",
+      "assigned": "Fornecedor atribuído",
+      "unassigned": "Fornecedor removido",
+      "empty": "Você ainda não adicionou fornecedores.",
+      "emptyOwnerHint": "Adicione seu primeiro contato para poder atribuí-lo a uma atividade.",
+      "confirmDeactivateTitle": "Desativar o fornecedor",
+      "confirmDeactivateBody": "\"{{name}}\" não vai mais aparecer para atribuir a novas atividades. As atividades onde já está atribuído não mudam."
+    },
+    "fields": {
+      "name": "Nome",
+      "companyName": "Empresa (opcional)",
+      "specialty": "Especialidade",
+      "customSpecialty": "Especifique a especialidade",
+      "phone": "Telefone",
+      "email": "Email (opcional)",
+      "notes": "Notas (opcional)"
+    },
+    "specialty": {
+      "electricidad": "Eletricidade",
+      "plomeria": "Encanamento",
+      "gas": "Gás",
+      "carpinteria": "Carpintaria",
+      "albanileria": "Alvenaria",
+      "pintura": "Pintura",
+      "herreria": "Serralheria",
+      "techos": "Telhados e impermeabilização",
+      "climatizacion": "Climatização",
+      "pisos_revestimientos": "Pisos e revestimentos",
+      "vidrieria": "Vidraçaria",
+      "jardineria": "Jardinagem",
+      "demolicion": "Demolição",
+      "otra": "Outra"
+    },
+    "errors": {
+      "create": "Não conseguimos adicionar o fornecedor.",
+      "update": "Não conseguimos atualizar o fornecedor.",
+      "deactivate": "Não conseguimos desativar o fornecedor.",
+      "assign": "Não conseguimos atribuir o fornecedor.",
+      "unassign": "Não conseguimos remover o fornecedor."
     }
   },
   "labor": {

@@ -72,6 +72,7 @@
       "gantt": "Cronograma",
       "materials": "Materiales",
       "labor": "Personal",
+      "providers": "Proveedores",
       "budget": "Presupuesto",
       "advisor": "Consultor IA"
     },
@@ -95,6 +96,8 @@
       "labor": "Personal",
       "noActivitiesToday": "No hay actividades programadas para hoy.",
       "laborCount": "presentes",
+      "providers": "Proveedores",
+      "noProviders": "Todavía no cargaste proveedores.",
       "budget": "Presupuesto",
       "noBudget": "Todavía no cargaste el presupuesto.",
       "viewAll": "Ver todo"
@@ -236,6 +239,11 @@
       "editTitle": "Editar actividad",
       "materials": "Materiales asociados",
       "noMaterials": "No hay materiales asociados a esta actividad.",
+      "providers": "Proveedores asignados",
+      "noProviders": "Todavía no asignaste proveedores a esta actividad.",
+      "assignProvider": "Asignar",
+      "assignProviderPlaceholder": "Elegí un proveedor",
+      "unassignProvider": "Quitar proveedor",
       "notes": "Notas",
       "evidence": "Evidencia fotográfica",
       "addEvidence": "Agregar foto",
@@ -292,6 +300,58 @@
       "update": "No pudimos actualizar el material.",
       "delete": "No pudimos eliminar el material.",
       "copy": "No pudimos copiar la lista."
+    }
+  },
+  "provider": {
+    "list": {
+      "navLink": "Proveedores",
+      "title": "Proveedores",
+      "new": "Nuevo proveedor",
+      "newTitle": "Nuevo proveedor",
+      "newSubmit": "Crear proveedor",
+      "editTitle": "Editar proveedor",
+      "deactivate": "Dar de baja",
+      "created": "Proveedor agregado",
+      "updated": "Proveedor actualizado",
+      "deactivated": "Proveedor dado de baja",
+      "assigned": "Proveedor asignado",
+      "unassigned": "Proveedor desasignado",
+      "empty": "Todavía no cargaste proveedores.",
+      "emptyOwnerHint": "Agregá tu primer contacto para poder asignarlo a una actividad.",
+      "confirmDeactivateTitle": "Dar de baja al proveedor",
+      "confirmDeactivateBody": "\"{{name}}\" ya no va a aparecer para asignar a nuevas actividades. Las actividades donde ya está asignado no cambian."
+    },
+    "fields": {
+      "name": "Nombre",
+      "companyName": "Empresa (opcional)",
+      "specialty": "Especialidad",
+      "customSpecialty": "Especificá la especialidad",
+      "phone": "Teléfono",
+      "email": "Email (opcional)",
+      "notes": "Notas (opcional)"
+    },
+    "specialty": {
+      "electricidad": "Electricidad",
+      "plomeria": "Plomería",
+      "gas": "Gas",
+      "carpinteria": "Carpintería",
+      "albanileria": "Albañilería",
+      "pintura": "Pintura",
+      "herreria": "Herrería",
+      "techos": "Techos e impermeabilización",
+      "climatizacion": "Climatización",
+      "pisos_revestimientos": "Pisos y revestimientos",
+      "vidrieria": "Vidriería",
+      "jardineria": "Jardinería",
+      "demolicion": "Demolición",
+      "otra": "Otra"
+    },
+    "errors": {
+      "create": "No pudimos agregar el proveedor.",
+      "update": "No pudimos actualizar el proveedor.",
+      "deactivate": "No pudimos dar de baja al proveedor.",
+      "assign": "No pudimos asignar el proveedor.",
+      "unassign": "No pudimos quitar el proveedor."
     }
   },
   "labor": {

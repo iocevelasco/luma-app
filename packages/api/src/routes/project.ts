@@ -7,6 +7,7 @@ import { materialRouter } from './material.js';
 import { laborRouter } from './labor.js';
 import { budgetRouter } from './budget.js';
 import { advisorRouter } from './advisor.js';
+import { providerRouter } from './provider.js';
 
 export const projectRouter = Router();
 
@@ -24,5 +25,6 @@ projectRouter.use('/:projectId/materials', materialRouter);
 projectRouter.use('/:projectId/labor', laborRouter);
 projectRouter.use('/:projectId/budget', budgetRouter);
 projectRouter.use('/:projectId/advisor', advisorRouter);
+projectRouter.use('/:projectId/providers', providerRouter);
 
 export default projectRouter;

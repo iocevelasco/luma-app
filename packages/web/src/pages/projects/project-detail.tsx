@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { inviteClientSchema, type InviteClientInput } from '@luma/shared';
-import { Gauge, ListChecks, Package, UserPlus, Users, Wallet } from 'lucide-react';
+import { Gauge, ListChecks, Package, UserPlus, Users, Wallet, Wrench } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -28,10 +28,17 @@ import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import { useBudget } from '@/hooks/budget/use-budget-queries';
 import { useLaborRecords } from '@/hooks/labor/use-labor-queries';
 import { useMaterials } from '@/hooks/materials/use-material-queries';
+import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useInviteClient, useProject } from '@/hooks/projects/use-project-queries';
 import { formatMoney } from '@/lib/format-money';
-import { projectActivitiesPath, projectBudgetPath, projectLaborPath, projectMaterialsPath } from '@/lib/routes';
+import {
+  projectActivitiesPath,
+  projectBudgetPath,
+  projectLaborPath,
+  projectMaterialsPath,
+  projectProvidersPath,
+} from '@/lib/routes';
 import { isActivityOverdue } from '@/lib/week';
 
 const MATERIAL_STATUS_PRIORITY = { pendiente: 0, solicitado: 1, comprado: 2, en_obra: 3 } as const;
@@ -288,6 +295,53 @@ function LaborCard({ projectId }: { projectId: string }) {
   );
 }
 
+const PROVIDERS_PREVIEW_COUNT = 5;
+
+/**
+ * Dueño o Asistente de Obra — el cliente no ve este módulo (regla 4:
+ * información operativa interna). Igual que en `project-tabs.tsx`, se
+ * condiciona con `isEditor`, no con `isOwner`.
+ */
+function ProvidersCard({ projectId }: { projectId: string }) {
+  const { t } = useTranslation();
+  const { data } = useProviders(projectId);
+
+  const providers = data?.providers ?? [];
+  const preview = providers.slice(0, PROVIDERS_PREVIEW_COUNT);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <CardIcon icon={Wrench} />
+          <CardTitle className="text-base">{t('project.dashboard.providers')}</CardTitle>
+        </div>
+        <Button variant="ghost" size="sm" asChild>
+          <Link to={projectProvidersPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {providers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('project.dashboard.noProviders')}</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {preview.map((provider) => (
+              <li key={provider.id} className="flex items-center justify-between gap-2 text-sm">
+                <p className="font-medium">{provider.name}</p>
+                <Badge variant="secondary">
+                  {provider.specialty === 'otra'
+                    ? provider.customSpecialty
+                    : t(`provider.specialty.${provider.specialty}`)}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Owner-only — presupuesto no lo ve el cliente invitado (ver project-budget.tsx). */
 function BudgetSummaryCard({ projectId, currency }: { projectId: string; currency: string }) {
   const { t, i18n } = useTranslation();
@@ -402,6 +456,7 @@ export function ProjectDetailPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <LaborCard projectId={project.id} />
+        {project.isEditor && <ProvidersCard projectId={project.id} />}
         {project.isOwner && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
       </div>
     </div>
