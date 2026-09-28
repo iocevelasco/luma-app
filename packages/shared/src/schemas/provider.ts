@@ -10,17 +10,26 @@ export const providerSpecialtySchema = z.enum([
   'plomeria',
   'gas',
   'carpinteria',
+  'cristaleria',
   'albanileria',
-  'pintura',
   'herreria',
-  'techos',
+  'redes',
+  'mecanicas',
+  'estructura',
+  'acabados',
+  'pintura',
   'climatizacion',
+  'techos',
   'pisos_revestimientos',
-  'vidrieria',
   'jardineria',
   'demolicion',
   'otra',
 ]);
+
+export const providerScopeSchema = z.enum(['organization', 'project']);
+
+/** Especialidades que admiten una descripción libre además del rubro. */
+const SPECIALTIES_WITH_DETAIL = ['otra', 'acabados'] as const;
 
 const providerBaseFields = {
   name: z
@@ -31,6 +40,7 @@ const providerBaseFields = {
   companyName: z.string().trim().max(120, 'Es demasiado largo').optional(),
   specialty: providerSpecialtySchema,
   customSpecialty: z.string().trim().max(60, 'Es demasiado largo').optional(),
+  scope: providerScopeSchema.default('organization'),
   phone: z
     .string()
     .trim()
@@ -39,6 +49,15 @@ const providerBaseFields = {
   email: z.string().trim().toLowerCase().email('Email inválido').optional().or(z.literal('')),
   notes: z.string().trim().max(1000, 'Es demasiado largo').optional(),
 };
+
+/**
+ * `true` si ese rubro admite una descripción libre además del enum. En
+ * `acabados` es opcional (el rubro ya dice bastante); en `otra` es lo único
+ * que da información, así que el refine de abajo lo exige.
+ */
+export function allowsCustomSpecialty(specialty: string): boolean {
+  return (SPECIALTIES_WITH_DETAIL as readonly string[]).includes(specialty);
+}
 
 /** `customSpecialty` es obligatorio si y sólo si `specialty` es `'otra'`. */
 function refineCustomSpecialty<T extends { specialty: string; customSpecialty?: string }>(

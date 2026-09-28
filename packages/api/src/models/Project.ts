@@ -21,6 +21,7 @@ export interface IProject extends Document {
   currency: string;
   budgetType: BudgetType;
   status: ProjectStatus;
+  providersVisibleToClient: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +44,10 @@ const projectSchema = new Schema<IProject>(
     currency: { type: String, required: true, trim: true },
     budgetType: { type: String, enum: ['cerrado', 'abierto', 'con_margen'], required: true },
     status: { type: String, enum: ['active', 'archived'], default: 'active' },
+    // Default cerrado: el cliente no ve proveedores salvo que el dueño lo
+    // habilite — la regla 4 del documento (nada de información operativa
+    // interna) es el default, y esto es la excepción explícita.
+    providersVisibleToClient: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

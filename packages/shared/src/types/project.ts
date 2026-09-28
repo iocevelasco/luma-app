@@ -47,6 +47,13 @@ export interface Project {
   currency: string;
   budgetType: BudgetType;
   status: ProjectStatus;
+  /**
+   * Si el cliente final ve el directorio de proveedores de esta obra y quién
+   * está asignado a cada actividad. Por obra y no por proveedor: en algunas
+   * obras el cliente conoce a todos los subcontratistas y en otras no tiene
+   * por qué, pero rara vez es una decisión contacto por contacto.
+   */
+  providersVisibleToClient: boolean;
   createdAt: string;
   updatedAt: string;
 }

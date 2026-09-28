@@ -84,7 +84,10 @@
       "inviteSubmit": "Invitar",
       "clientInvited": "Invitación enviada",
       "noClients": "Todavía no invitaste a nadie.",
-      "gantt": "Cronograma de actividades"
+      "gantt": "Cronograma de actividades",
+      "providersVisibleToClient": "El cliente ve los proveedores",
+      "providersVisibleToClientHint": "Si lo activás, el cliente ve el directorio de esta obra y quién está asignado a cada actividad.",
+      "settingsSaved": "Ajuste guardado"
     },
     "dashboard": {
       "progress": "Avance general",
@@ -104,6 +107,7 @@
     },
     "errors": {
       "create": "No pudimos crear la obra.",
+      "update": "No pudimos guardar el ajuste.",
       "invite": "No pudimos invitar a esa persona."
     }
   },
@@ -334,23 +338,35 @@
       "phone": "Teléfono",
       "email": "Email (opcional)",
       "notes": "Notas (opcional)",
-      "assignActivities": "Asignar a actividades (opcional)"
+      "assignActivities": "Asignar a actividades (opcional)",
+      "customSpecialtyAcabados": "Qué acabado hace (opcional)",
+      "scope": "Disponible en",
+      "scopeHint": "Los de \"Todas mis obras\" quedan en tu libreta y aparecen en cualquier obra. Usá \"Solo esta obra\" para el proveedor que trae el cliente."
     },
     "specialty": {
       "electricidad": "Electricidad",
       "plomeria": "Plomería",
       "gas": "Gas",
       "carpinteria": "Carpintería",
+      "cristaleria": "Cristalería",
       "albanileria": "Albañilería",
-      "pintura": "Pintura",
       "herreria": "Herrería",
-      "techos": "Techos e impermeabilización",
+      "redes": "Redes (CCTV, internet, domótica)",
+      "mecanicas": "Mecánicas (aires, ascensores, escaleras)",
+      "estructura": "Estructura (columnas, vigas, losas)",
+      "acabados": "Acabados",
+      "pintura": "Pintura",
       "climatizacion": "Climatización",
+      "techos": "Techos e impermeabilización",
       "pisos_revestimientos": "Pisos y revestimientos",
-      "vidrieria": "Vidriería",
       "jardineria": "Jardinería",
       "demolicion": "Demolición",
       "otra": "Otra"
+    },
+    "scope": {
+      "organization": "Todas mis obras",
+      "project": "Solo esta obra",
+      "projectBadge": "Solo esta obra"
     },
     "errors": {
       "create": "No pudimos agregar el proveedor.",

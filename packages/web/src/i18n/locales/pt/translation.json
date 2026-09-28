@@ -84,7 +84,10 @@
       "inviteEmail": "E-mail",
       "inviteSubmit": "Convidar",
       "clientInvited": "Convite enviado",
-      "noClients": "Você ainda não convidou ninguém."
+      "noClients": "Você ainda não convidou ninguém.",
+      "providersVisibleToClient": "O cliente vê os fornecedores",
+      "providersVisibleToClientHint": "Se ativar, o cliente vê o diretório desta obra e quem está atribuído a cada atividade.",
+      "settingsSaved": "Ajuste salvo"
     },
     "dashboard": {
       "progress": "Avanço geral",
@@ -104,6 +107,7 @@
     },
     "errors": {
       "create": "Não conseguimos criar a obra.",
+      "update": "Não conseguimos salvar o ajuste.",
       "invite": "Não conseguimos convidar essa pessoa."
     }
   },
@@ -334,23 +338,35 @@
       "phone": "Telefone",
       "email": "Email (opcional)",
       "notes": "Notas (opcional)",
-      "assignActivities": "Atribuir a atividades (opcional)"
+      "assignActivities": "Atribuir a atividades (opcional)",
+      "customSpecialtyAcabados": "Qual acabamento faz (opcional)",
+      "scope": "Disponível em",
+      "scopeHint": "Os de \"Todas as minhas obras\" ficam na sua agenda e aparecem em qualquer obra. Use \"Somente esta obra\" para o fornecedor que o cliente traz."
     },
     "specialty": {
       "electricidad": "Eletricidade",
       "plomeria": "Encanamento",
       "gas": "Gás",
       "carpinteria": "Carpintaria",
+      "cristaleria": "Vidraçaria",
       "albanileria": "Alvenaria",
-      "pintura": "Pintura",
       "herreria": "Serralheria",
-      "techos": "Telhados e impermeabilização",
+      "redes": "Redes (CFTV, internet, automação)",
+      "mecanicas": "Mecânicas (ar-condicionado, elevadores, escadas)",
+      "estructura": "Estrutura (pilares, vigas, lajes)",
+      "acabados": "Acabamentos",
+      "pintura": "Pintura",
       "climatizacion": "Climatização",
+      "techos": "Telhados e impermeabilização",
       "pisos_revestimientos": "Pisos e revestimentos",
-      "vidrieria": "Vidraçaria",
       "jardineria": "Jardinagem",
       "demolicion": "Demolição",
       "otra": "Outra"
+    },
+    "scope": {
+      "organization": "Todas as minhas obras",
+      "project": "Somente esta obra",
+      "projectBadge": "Somente esta obra"
     },
     "errors": {
       "create": "Não conseguimos adicionar o fornecedor.",

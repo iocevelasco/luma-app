@@ -273,4 +273,70 @@ test.describe('directorio de proveedores', () => {
     activityDetail = page.getByRole('dialog');
     await expect(activityDetail.getByText(providerName)).toBeVisible();
   });
+
+  test('la libreta se reusa entre obras, el proveedor del cliente no', async ({ page }) => {
+    const runId = `${RUN_ID}-c`;
+    const ownerEmail = `e2e-providers-${runId}@luma.test`;
+    const projectA = `Obra A ${runId}`;
+    const projectB = `Obra B ${runId}`;
+    const libraryProvider = `Electricista de siempre ${runId}`;
+    const clientProvider = `Cristalería del cliente ${runId}`;
+
+    async function createProject(name: string, firstOne: boolean) {
+      await page
+        .getByRole('link', { name: firstOne ? /crear tu primera obra/i : /nueva obra/i })
+        .click();
+      await page.locator('#name').fill(name);
+      await page.locator('#description').fill('Obra para probar el alcance de proveedores.');
+      await page.locator('#location').fill('CABA');
+      await page.locator('#estimatedStartDate').fill('2026-09-01');
+      await page.locator('#estimatedEndDate').fill('2026-12-15');
+      await page.locator('#currency').click();
+      await page.getByRole('option', { name: 'ARS' }).click();
+      await page.locator('#budgetType').click();
+      await page.getByRole('option', { name: /cerrado/i }).click();
+      await page.getByRole('button', { name: /crear obra/i }).click();
+      await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
+    }
+
+    async function createProvider(name: string, specialty: RegExp, onlyThisProject: boolean) {
+      await page.getByRole('button', { name: /nuevo proveedor/i }).click();
+      const dialog = page.getByRole('dialog');
+      await page.locator('#provider-name').fill(name);
+      await page.locator('#provider-specialty').click();
+      await page.getByRole('option', { name: specialty }).click();
+      if (onlyThisProject) {
+        await page.locator('#provider-scope').click();
+        await page.getByRole('option', { name: /solo esta obra/i }).click();
+      }
+      await page.locator('#provider-phone').fill('11-3333-3333');
+      await page.getByRole('button', { name: /crear proveedor/i }).click();
+      await expect(dialog).toBeHidden();
+    }
+
+    await registerWith(page, `Ejecutante E2E ${runId}`, ownerEmail, PASSWORD);
+    await loginWith(page, ownerEmail, PASSWORD);
+
+    // Obra A: uno de la libreta y uno que "trae el cliente".
+    await createProject(projectA, true);
+    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await expect(page).toHaveURL(/\/proveedores$/);
+    await createProvider(libraryProvider, /^electricidad$/i, false);
+    await createProvider(clientProvider, /^cristalería$/i, true);
+
+    await expect(page.getByText(libraryProvider).first()).toBeVisible();
+    await expect(page.getByText(clientProvider).first()).toBeVisible();
+    await expect(page.getByText(/solo esta obra/i).first()).toBeVisible();
+
+    // Obra B: sólo tiene que ver el de la libreta. Se vuelve por URL: "Obras"
+    // aparece dos veces (breadcrumb y riel) y no vale la pena desambiguar.
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/admin$/);
+    await createProject(projectB, false);
+    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await expect(page).toHaveURL(/\/proveedores$/);
+
+    await expect(page.getByText(libraryProvider).first()).toBeVisible();
+    await expect(page.getByText(clientProvider)).toHaveCount(0);
+  });
 });

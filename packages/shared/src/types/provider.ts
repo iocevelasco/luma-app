@@ -9,25 +9,50 @@ import type { ActivityStatus } from './activity.js';
  * y anticipos" — el mismo criterio aplica acá, un proveedor no tiene costo).
  */
 
+/**
+ * Los once primeros son el catálogo que usa el cliente en obra; el resto son
+ * rubros que ya estaban y se contratan aparte en obras chicas (en una casa se
+ * contrata "climatización", en un edificio entra dentro de "mecánicas").
+ *
+ * `acabados` es deliberadamente amplio: según qué se esté haciendo cambia por
+ * completo, así que admite `customSpecialty` igual que `otra`.
+ */
 export type ProviderSpecialty =
   | 'electricidad'
   | 'plomeria'
   | 'gas'
   | 'carpinteria'
+  | 'cristaleria'
   | 'albanileria'
-  | 'pintura'
   | 'herreria'
-  | 'techos'
+  | 'redes'
+  | 'mecanicas'
+  | 'estructura'
+  | 'acabados'
+  | 'pintura'
   | 'climatizacion'
+  | 'techos'
   | 'pisos_revestimientos'
-  | 'vidrieria'
   | 'jardineria'
   | 'demolicion'
   | 'otra';
 
+/**
+ * De dónde sale el proveedor.
+ *
+ * `organization` es la libreta del ejecutante: los que usa siempre, visibles
+ * en todas sus obras. `project` es la excepción — el proveedor que trae el
+ * cliente para un rubro puntual de UNA obra, que no tiene por qué ensuciar la
+ * libreta del resto.
+ */
+export type ProviderScope = 'organization' | 'project';
+
 export interface Provider {
   id: string;
   organizationId: string;
+  scope: ProviderScope;
+  /** Sólo cuando `scope === 'project'`: la obra a la que queda atado. */
+  projectId?: string;
   name: string;
   companyName?: string;
   specialty: ProviderSpecialty;

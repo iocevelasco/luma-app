@@ -39,10 +39,10 @@ export function ProjectTabs() {
     { to: projectActivitiesPath(projectId), label: t('project.nav.gantt') },
     { to: projectMaterialsPath(projectId), label: t('project.nav.materials') },
     { to: projectLaborPath(projectId), label: t('project.nav.labor') },
-    // Proveedores es información operativa interna (regla 4): el cliente
-    // nunca ve el directorio, ni siquiera de sólo lectura — dueño y
-    // Asistente de Obra sí, por eso `isEditor` y no `isOwner`.
-    ...(isEditor
+    // Proveedores es información operativa interna (regla 4): dueño y
+    // Asistente siempre, y el cliente sólo si esta obra lo habilitó — hay
+    // obras donde conoce a todos los subcontratistas y otras donde no.
+    ...(isEditor || projectData?.project.providersVisibleToClient
       ? [{ to: projectProvidersPath(projectId), label: t('project.nav.providers') }]
       : []),
     // Presupuesto y Consultor IA son owner-only en este corte (regla 13): la

@@ -4,6 +4,7 @@ import {
   requireProjectAccess,
   requireProjectEditor,
   requireProjectOwner,
+  requireProviderRead,
 } from '../middleware/project.middleware.js';
 import {
   assignActivityToProvider,
@@ -29,14 +30,15 @@ export const providerRouter = Router({ mergeParams: true });
 
 providerRouter.use(isAuthenticated, requireProjectAccess);
 
-providerRouter.get('/', requireProjectEditor, listProviders);
+// Lectura: dueño, Asistente, y el cliente sólo si la obra lo habilitó.
+providerRouter.get('/', requireProviderRead, listProviders);
 providerRouter.post('/', requireProjectOwner, createProvider);
 providerRouter.patch('/:providerId', requireProjectOwner, updateProvider);
 providerRouter.delete('/:providerId', requireProjectOwner, deactivateProvider);
 
 // Misma asignación N:N que activity.ts, vista desde el proveedor —
 // `requireProjectEditor`: el Asistente de Obra también asigna desde acá.
-providerRouter.get('/:providerId/activities', requireProjectEditor, listProviderActivities);
+providerRouter.get('/:providerId/activities', requireProviderRead, listProviderActivities);
 providerRouter.post('/:providerId/activities', requireProjectEditor, assignActivityToProvider);
 providerRouter.delete(
   '/:providerId/activities/:activityId',

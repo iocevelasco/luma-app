@@ -58,17 +58,21 @@ const baseProvider = {
   updatedAt: new Date(),
 };
 
-describe('listProviders — filtra por organization del proyecto, sólo activos', () => {
+describe('listProviders — libreta de la Empresa MÁS los propios de esta obra', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('consulta Provider.find con la organization del proyecto y active:true', async () => {
+  it('pide los de la organization unidos a los de este proyecto, sólo activos', async () => {
     vi.mocked(Provider.find).mockReturnValue({ sort: vi.fn().mockResolvedValue([baseProvider]) } as never);
-    const req = { project: { organization: 'org-1' } } as unknown as Request;
+    const req = { project: { _id: 'project-1', organization: 'org-1' } } as unknown as Request;
     const res = mockRes();
 
     await listProviders(req, res);
 
-    expect(Provider.find).toHaveBeenCalledWith({ organization: 'org-1', active: true });
+    expect(Provider.find).toHaveBeenCalledWith({
+      organization: 'org-1',
+      $or: [{ scope: { $ne: 'project' } }, { project: 'project-1' }],
+      active: true,
+    });
     expect(jsonData(res)).toMatchObject({ success: true, data: { providers: [{ id: 'provider-1' }] } });
   });
 });
@@ -104,6 +108,34 @@ describe('createProvider — organization viene del proyecto, nunca del body', (
     expect(res.status).toHaveBeenCalledWith(400);
     expect(Provider.create).not.toHaveBeenCalled();
   });
+
+  it('el de la libreta no queda atado a ninguna obra', async () => {
+    vi.mocked(Provider.create).mockResolvedValue(baseProvider as never);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      body: { name: 'Juan', specialty: 'electricidad', phone: '11-1', scope: 'organization' },
+    } as unknown as Request;
+    const res = mockRes();
+
+    await createProvider(req, res);
+
+    expect(Provider.create).toHaveBeenCalledWith(expect.objectContaining({ project: null }));
+  });
+
+  it('el que trae el cliente queda atado a ESTA obra', async () => {
+    vi.mocked(Provider.create).mockResolvedValue(baseProvider as never);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      body: { name: 'Vidriero del cliente', specialty: 'cristaleria', phone: '11-2', scope: 'project' },
+    } as unknown as Request;
+    const res = mockRes();
+
+    await createProvider(req, res);
+
+    expect(Provider.create).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: 'project', project: 'project-1' }),
+    );
+  });
 });
 
 describe('assignProvider — pertenencia cruzada antes de crear el vínculo', () => {
@@ -135,7 +167,13 @@ describe('assignProvider — pertenencia cruzada antes de crear el vínculo', ()
 
     await assignProvider(mockReq(), res);
 
-    expect(Provider.findOne).toHaveBeenCalledWith({ _id: 'provider-1', organization: 'org-1' });
+    // El filtro incluye el alcance: un proveedor privado de otra obra tampoco
+    // se puede asignar acá aunque sea de la misma Empresa.
+    expect(Provider.findOne).toHaveBeenCalledWith({
+      _id: 'provider-1',
+      organization: 'org-1',
+      $or: [{ scope: { $ne: 'project' } }, { project: 'project-1' }],
+    });
     expect(res.status).toHaveBeenCalledWith(404);
     expect(ActivityProvider.create).not.toHaveBeenCalled();
   });

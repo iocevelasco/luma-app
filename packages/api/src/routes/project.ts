@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireProjectAccess, requireProjectOwner } from '../middleware/project.middleware.js';
-import { createProject, getProject, inviteClient, listProjects } from '../controllers/index.js';
+import {
+  createProject,
+  getProject,
+  inviteClient,
+  listProjects,
+  updateProject,
+} from '../controllers/index.js';
 import { activityRouter } from './activity.js';
 import { materialRouter } from './material.js';
 import { laborRouter } from './labor.js';
@@ -16,6 +22,7 @@ projectRouter.use(isAuthenticated);
 projectRouter.post('/', createProject);
 projectRouter.get('/', listProjects);
 projectRouter.get('/:projectId', requireProjectAccess, getProject);
+projectRouter.patch('/:projectId', requireProjectAccess, requireProjectOwner, updateProject);
 projectRouter.post('/:projectId/clients', requireProjectAccess, requireProjectOwner, inviteClient);
 
 // Cada router anidado repite `isAuthenticated` + `requireProjectAccess`: son

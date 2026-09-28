@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  allowsCustomSpecialty,
   createProviderSchema,
   type CreateProviderInput,
   type Provider,
@@ -23,6 +24,7 @@ import {
 import { EmptyState } from '@/components/common/empty-state';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
 import { RouteError } from '@/components/routes/route-error';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -56,18 +58,23 @@ import {
 } from '@/hooks/providers/use-provider-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
 
+/** Mismo orden que el enum de `@luma/shared`: primero el catálogo de obra. */
 const PROVIDER_SPECIALTIES: ProviderSpecialty[] = [
   'electricidad',
   'plomeria',
   'gas',
   'carpinteria',
+  'cristaleria',
   'albanileria',
-  'pintura',
   'herreria',
-  'techos',
+  'redes',
+  'mecanicas',
+  'estructura',
+  'acabados',
+  'pintura',
   'climatizacion',
+  'techos',
   'pisos_revestimientos',
-  'vidrieria',
   'jardineria',
   'demolicion',
   'otra',
@@ -83,12 +90,15 @@ function ProviderFormFields({
   control,
   errors,
   specialty,
+  showScope = false,
 }: {
   idPrefix: string;
   register: UseFormRegister<CreateProviderInput>;
   control: Control<CreateProviderInput>;
   errors: FieldErrors<CreateProviderInput>;
   specialty: ProviderSpecialty | undefined;
+  /** Sólo al crear: mover un proveedor de alcance después es otra conversación. */
+  showScope?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -127,13 +137,39 @@ function ProviderFormFields({
         />
       </div>
 
-      {specialty === 'otra' && (
+      {specialty && allowsCustomSpecialty(specialty) && (
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${idPrefix}-custom-specialty`}>{t('provider.fields.customSpecialty')}</Label>
+          <Label htmlFor={`${idPrefix}-custom-specialty`}>
+            {specialty === 'acabados'
+              ? t('provider.fields.customSpecialtyAcabados')
+              : t('provider.fields.customSpecialty')}
+          </Label>
           <Input id={`${idPrefix}-custom-specialty`} {...register('customSpecialty')} />
           {errors.customSpecialty && (
             <p className="text-sm text-destructive">{errors.customSpecialty.message}</p>
           )}
+        </div>
+      )}
+
+      {showScope && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-scope`}>{t('provider.fields.scope')}</Label>
+          <Controller
+            control={control}
+            name="scope"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id={`${idPrefix}-scope`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="organization">{t('provider.scope.organization')}</SelectItem>
+                  <SelectItem value="project">{t('provider.scope.project')}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+          <p className="text-sm text-muted-foreground">{t('provider.fields.scopeHint')}</p>
         </div>
       )}
 
@@ -214,7 +250,10 @@ function NewProviderDialog({ projectId }: { projectId: string }) {
     control,
     watch,
     formState: { errors },
-  } = useForm<CreateProviderInput>({ resolver: zodResolver(createProviderSchema) });
+  } = useForm<CreateProviderInput>({
+    resolver: zodResolver(createProviderSchema),
+    defaultValues: { scope: 'organization' },
+  });
 
   function toggleActivity(activityId: string) {
     setSelectedActivityIds((prev) => {
@@ -270,6 +309,7 @@ function NewProviderDialog({ projectId }: { projectId: string }) {
             control={control}
             errors={errors}
             specialty={watch('specialty')}
+            showScope
           />
           <AssignOnCreateField
             projectId={projectId}
@@ -309,6 +349,9 @@ function EditProviderDialog({
     formState: { errors },
   } = useForm<CreateProviderInput>({
     resolver: zodResolver(createProviderSchema),
+    // `scope` va acá por coherencia del form, pero `updateProviderSchema` no
+    // lo acepta: cambiar el alcance de un proveedor ya creado no es un edit,
+    // es una decisión aparte que hoy no existe.
     values: {
       name: provider.name,
       companyName: provider.companyName,
@@ -317,6 +360,7 @@ function EditProviderDialog({
       phone: provider.phone,
       email: provider.email,
       notes: provider.notes,
+      scope: provider.scope,
     },
   });
 
@@ -475,8 +519,15 @@ export function ProjectProvidersPage() {
         id: 'name',
         header: t('provider.fields.name'),
         cell: (provider) => (
-          <div>
-            <p className="font-medium">{provider.name}</p>
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium">{provider.name}</p>
+              {/* Sólo se marca la excepción: los de la libreta son el default
+                  y etiquetarlos a todos sería ruido. */}
+              {provider.scope === 'project' && (
+                <Badge variant="secondary">{t('provider.scope.projectBadge')}</Badge>
+              )}
+            </div>
             {provider.companyName && (
               <p className="text-sm text-muted-foreground">{provider.companyName}</p>
             )}

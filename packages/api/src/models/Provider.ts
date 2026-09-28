@@ -1,5 +1,5 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { ProviderSpecialty } from '@luma/shared';
+import type { ProviderScope, ProviderSpecialty } from '@luma/shared';
 
 /**
  * Directorio de proveedores/subcontratistas de una Empresa (`organization`),
@@ -11,6 +11,9 @@ import type { ProviderSpecialty } from '@luma/shared';
  */
 export interface IProvider extends Document {
   organization: mongoose.Types.ObjectId;
+  scope: ProviderScope;
+  /** Sólo con `scope: 'project'` — el proveedor que trae el cliente para UNA obra. */
+  project?: mongoose.Types.ObjectId | null;
   name: string;
   companyName?: string;
   specialty: ProviderSpecialty;
@@ -31,6 +34,8 @@ const providerSchema = new Schema<IProvider>(
       required: true,
       index: true,
     },
+    scope: { type: String, enum: ['organization', 'project'], default: 'organization' },
+    project: { type: Schema.Types.ObjectId, ref: 'Project', default: null, index: true },
     name: { type: String, required: true, trim: true },
     companyName: { type: String, trim: true },
     specialty: {
@@ -40,13 +45,17 @@ const providerSchema = new Schema<IProvider>(
         'plomeria',
         'gas',
         'carpinteria',
+        'cristaleria',
         'albanileria',
-        'pintura',
         'herreria',
-        'techos',
+        'redes',
+        'mecanicas',
+        'estructura',
+        'acabados',
+        'pintura',
         'climatizacion',
+        'techos',
         'pisos_revestimientos',
-        'vidrieria',
         'jardineria',
         'demolicion',
         'otra',

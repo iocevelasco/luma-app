@@ -2,7 +2,11 @@ import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
 import multer from 'multer';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
-import { requireProjectAccess, requireProjectEditor } from '../middleware/project.middleware.js';
+import {
+  requireProjectAccess,
+  requireProjectEditor,
+  requireProviderRead,
+} from '../middleware/project.middleware.js';
 import {
   assignProvider,
   createActivity,
@@ -61,7 +65,7 @@ activityRouter.delete(
 // Proveedores asignados (RF nuevo, directorio de la Empresa — ver routes/provider.ts).
 // `requireProjectEditor`, no `requireProjectOwner`: el Asistente de Obra
 // también asigna proveedores a las actividades que gestiona.
-activityRouter.get('/:activityId/providers', requireProjectEditor, listActivityProviders);
+activityRouter.get('/:activityId/providers', requireProviderRead, listActivityProviders);
 activityRouter.post('/:activityId/providers', requireProjectEditor, assignProvider);
 activityRouter.delete('/:activityId/providers/:providerId', requireProjectEditor, unassignProvider);
 

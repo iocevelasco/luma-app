@@ -30,7 +30,8 @@ import { useLaborRecords } from '@/hooks/labor/use-labor-queries';
 import { useMaterials } from '@/hooks/materials/use-material-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { useInviteClient, useProject } from '@/hooks/projects/use-project-queries';
+import { useInviteClient, useProject, useUpdateProject } from '@/hooks/projects/use-project-queries';
+import { Switch } from '@/components/ui/switch';
 import { formatMoney } from '@/lib/format-money';
 import {
   projectActivitiesPath,
@@ -106,6 +107,31 @@ function InviteClientDialog({ projectId }: { projectId: string }) {
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Owner-only. Es la única excepción a la regla 4 (el cliente no ve
+ * información operativa interna), así que se decide obra por obra y queda
+ * apagado por default.
+ */
+function ProvidersVisibilitySwitch({
+  projectId,
+  checked,
+}: {
+  projectId: string;
+  checked: boolean;
+}) {
+  const { t } = useTranslation();
+  const updateProject = useUpdateProject(projectId);
+
+  return (
+    <Switch
+      checked={checked}
+      disabled={updateProject.isPending}
+      onCheckedChange={(next) => updateProject.mutate({ providersVisibleToClient: next })}
+      aria-label={t('project.detail.providersVisibleToClient')}
+    />
   );
 }
 
@@ -428,6 +454,23 @@ export function ProjectDetailPage() {
               </div>
             </dl>
 
+            {project.isOwner && (
+              <div className="flex items-start justify-between gap-4 border-t border-border pt-4">
+                <div>
+                  <h3 className="text-sm font-medium">
+                    {t('project.detail.providersVisibleToClient')}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t('project.detail.providersVisibleToClientHint')}
+                  </p>
+                </div>
+                <ProvidersVisibilitySwitch
+                  projectId={project.id}
+                  checked={project.providersVisibleToClient}
+                />
+              </div>
+            )}
+
             <div className="flex flex-col gap-3 border-t border-border pt-4">
               <div className="flex items-center justify-between gap-4">
                 <h3 className="text-sm font-medium">{t('project.detail.clients')}</h3>
@@ -456,7 +499,9 @@ export function ProjectDetailPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <LaborCard projectId={project.id} />
-        {project.isEditor && <ProvidersCard projectId={project.id} />}
+        {(project.isEditor || project.providersVisibleToClient) && (
+          <ProvidersCard projectId={project.id} />
+        )}
         {project.isOwner && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
       </div>
     </div>

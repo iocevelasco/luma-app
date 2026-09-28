@@ -289,24 +289,27 @@ function ActivityProvidersSection({
   projectId,
   activityId,
   isEditor,
+  canRead,
 }: {
   projectId: string;
   activityId: string;
   isEditor: boolean;
+  /** Dueño/Asistente siempre; el cliente sólo si la obra lo habilitó. */
+  canRead: boolean;
 }) {
   const { t } = useTranslation();
   const [selectedProviderId, setSelectedProviderId] = useState('');
-  // El cliente ni siquiera pide estos endpoints: son 403 para su rol, y el
-  // directorio/asignación es información operativa que no le corresponde ver.
+  // Sin permiso de lectura no se piden los endpoints: para ese rol son 403.
   const { data: assignedData } = useActivityProviders(
-    isEditor ? projectId : undefined,
-    isEditor ? activityId : undefined,
+    canRead ? projectId : undefined,
+    canRead ? activityId : undefined,
   );
+  // El directorio completo sólo lo necesita quien puede asignar.
   const { data: directoryData } = useProviders(isEditor ? projectId : undefined);
   const assignProvider = useAssignProvider(projectId, activityId);
   const unassignProvider = useUnassignProvider(projectId, activityId);
 
-  if (!isEditor) return null;
+  if (!canRead) return null;
 
   const assigned = assignedData?.providers ?? [];
   const assignedIds = new Set(assigned.map((provider) => provider.id));
@@ -470,6 +473,7 @@ function ActivityDetailModal({
   materials,
   missingMaterials,
   isEditor,
+  canReadProviders,
   onClose,
 }: {
   projectId: string;
@@ -477,6 +481,7 @@ function ActivityDetailModal({
   materials: MaterialItem[];
   missingMaterials: boolean;
   isEditor: boolean;
+  canReadProviders: boolean;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -563,6 +568,7 @@ function ActivityDetailModal({
                 projectId={projectId}
                 activityId={activity.id}
                 isEditor={isEditor}
+                canRead={canReadProviders}
               />
 
               <ActivityEvidenceSection projectId={projectId} activity={activity} isEditor={isEditor} />
@@ -614,6 +620,7 @@ export function ProjectActivitiesPage() {
   const { data: materialsData } = useMaterials(projectId);
 
   const isEditor = Boolean(projectData?.project.isEditor);
+  const canReadProviders = isEditor || Boolean(projectData?.project.providersVisibleToClient);
 
   const missingByActivity = useMemo(() => {
     const map = new Set<string>();
@@ -674,6 +681,7 @@ export function ProjectActivitiesPage() {
         materials={selectedActivityMaterials}
         missingMaterials={Boolean(selectedActivityId && activitiesWithAlert.has(selectedActivityId))}
         isEditor={isEditor}
+        canReadProviders={canReadProviders}
         onClose={() => setSelectedActivityId(null)}
       />
     </div>

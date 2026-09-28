@@ -16,6 +16,24 @@ function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
 }
 
+/**
+ * Alcance visible desde una obra: los de la Empresa más los propios de ESTA
+ * obra. Va en todas las búsquedas por id, no sólo en el listado — si no, un
+ * `providerId` a mano alcanzaría para asignar (o editar) el proveedor privado
+ * de otra obra de la misma Empresa.
+ */
+function visibleFromProject(project: IProject) {
+  return {
+    organization: project.organization,
+    // `$ne: 'project'` y no `eq: 'organization'` a propósito: los proveedores
+    // creados antes de que existiera `scope` no tienen el campo, y el default
+    // de Mongoose sólo corre al crear — con un `eq` desaparecerían todos del
+    // listado sin migrar la base. "Privado de una obra" es la excepción
+    // explícita; todo lo demás es la libreta.
+    $or: [{ scope: { $ne: 'project' } }, { project: project._id }],
+  };
+}
+
 function toActivitySummaryDTO(activity: IActivity): ProviderActivitySummary {
   return {
     id: String(activity._id),
@@ -31,6 +49,8 @@ function toProviderDTO(provider: IProvider): ProviderDTO {
   return {
     id: String(provider._id),
     organizationId: String(provider.organization),
+    scope: provider.scope,
+    projectId: provider.project ? String(provider.project) : undefined,
     name: provider.name,
     companyName: provider.companyName,
     specialty: provider.specialty,
@@ -45,9 +65,14 @@ function toProviderDTO(provider: IProvider): ProviderDTO {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes. El
- * directorio es de la Empresa (`project.organization`), no de la obra — por
- * eso una misma lista aparece igual en cualquier proyecto de esa Empresa.
+ * Requiere `requireProjectAccess` + `requireProviderRead` antes.
+ *
+ * Devuelve la libreta de la Empresa MÁS los proveedores propios de esta obra
+ * (los que trae el cliente para un rubro puntual). Es la unión a propósito:
+ * el ejecutante tiene un puñado que usa siempre y no los quiere recargar obra
+ * por obra, pero el proveedor que le impone el cliente en una obra no tiene
+ * por qué aparecerle en las demás.
+ *
  * Sólo activos: un proveedor dado de baja no vuelve a aparecer para asignar,
  * aunque siga existiendo para las actividades donde ya está.
  */
@@ -55,7 +80,7 @@ export async function listProviders(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const providers = await Provider.find({
-      organization: project.organization,
+      ...visibleFromProject(project),
       active: true,
     }).sort({ name: 1 });
 
@@ -77,7 +102,13 @@ export async function createProvider(req: Request, res: Response) {
     }
 
     const project = req.project as IProject;
-    const provider = await Provider.create({ ...parsed.data, organization: project.organization });
+    // `project` se setea sólo cuando el alcance es de esta obra — nunca viaja
+    // en el body, igual que `organization`.
+    const provider = await Provider.create({
+      ...parsed.data,
+      organization: project.organization,
+      project: parsed.data.scope === 'project' ? project._id : null,
+    });
 
     return res.status(201).json({ success: true, data: { provider: toProviderDTO(provider) } });
   } catch (error) {
@@ -98,7 +129,7 @@ export async function updateProvider(req: Request, res: Response) {
 
     const project = req.project as IProject;
     const provider = await Provider.findOneAndUpdate(
-      { _id: req.params.providerId, organization: project.organization },
+      { _id: req.params.providerId, ...visibleFromProject(project) },
       parsed.data,
       { new: true },
     );
@@ -122,7 +153,7 @@ export async function deactivateProvider(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const provider = await Provider.findOneAndUpdate(
-      { _id: req.params.providerId, organization: project.organization },
+      { _id: req.params.providerId, ...visibleFromProject(project) },
       { active: false },
       { new: true },
     );
@@ -190,7 +221,7 @@ export async function assignProvider(req: Request, res: Response) {
 
     const provider = await Provider.findOne({
       _id: parsed.data.providerId,
-      organization: project.organization,
+      ...visibleFromProject(project),
     });
     if (!provider) {
       return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
@@ -259,7 +290,7 @@ export async function listProviderActivities(req: Request, res: Response) {
     const project = req.project as IProject;
     const provider = await Provider.findOne({
       _id: req.params.providerId,
-      organization: project.organization,
+      ...visibleFromProject(project),
     });
     if (!provider) {
       return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
@@ -293,7 +324,7 @@ export async function assignActivityToProvider(req: Request, res: Response) {
     const project = req.project as IProject;
     const provider = await Provider.findOne({
       _id: req.params.providerId,
-      organization: project.organization,
+      ...visibleFromProject(project),
     });
     if (!provider) {
       return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
@@ -334,7 +365,7 @@ export async function unassignActivityFromProvider(req: Request, res: Response) 
     const project = req.project as IProject;
     const provider = await Provider.findOne({
       _id: req.params.providerId,
-      organization: project.organization,
+      ...visibleFromProject(project),
     });
     if (!provider) {
       return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
