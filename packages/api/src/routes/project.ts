@@ -14,6 +14,7 @@ import { laborRouter } from './labor.js';
 import { budgetRouter } from './budget.js';
 import { advisorRouter } from './advisor.js';
 import { providerRouter } from './provider.js';
+import { crewRouter } from './crew.js';
 
 export const projectRouter = Router();
 
@@ -33,5 +34,6 @@ projectRouter.use('/:projectId/labor', laborRouter);
 projectRouter.use('/:projectId/budget', budgetRouter);
 projectRouter.use('/:projectId/advisor', advisorRouter);
 projectRouter.use('/:projectId/providers', providerRouter);
+projectRouter.use('/:projectId/crew', crewRouter);
 
 export default projectRouter;

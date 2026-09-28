@@ -418,7 +418,65 @@
       "requirement": "No pudimos actualizar el requisito."
     }
   },
+  "crew": {
+    "list": {
+      "title": "Personal fijo",
+      "add": "Agregar",
+      "empty": "Todavía no cargaste personal fijo de obra.",
+      "lead": "Encargado",
+      "deactivate": "Dar de baja",
+      "created": "Personal agregado",
+      "updated": "Personal actualizado",
+      "deactivated": "Personal dado de baja"
+    },
+    "fields": {
+      "name": "Nombre",
+      "kind": "Tipo",
+      "specialty": "Especialidad (opcional)",
+      "specialtyPlaceholder": "Sin especialidad",
+      "isLead": "Es el encargado de su especialidad",
+      "onlyThisProject": "Sólo para esta obra"
+    },
+    "kind": {
+      "persona": "Persona",
+      "equipo": "Equipo"
+    },
+    "goals": {
+      "assignee": "¿De quién es la meta?",
+      "assigneePlaceholder": "Elegí persona o equipo",
+      "activity": "Actividad (opcional)",
+      "activityPlaceholder": "Sin actividad asociada",
+      "description": "Meta de la semana",
+      "descriptionPlaceholder": "Ej: terminar el revoque del segundo piso",
+      "add": "Agregar meta",
+      "delete": "Eliminar meta",
+      "created": "Meta agregada",
+      "deleted": "Meta eliminada",
+      "empty": "No hay metas cargadas para esta semana.",
+      "needRoster": "Primero cargá el personal fijo de obra para poder asignarle metas.",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "currentWeek": "Semana actual"
+    },
+    "goalStatus": {
+      "pendiente": "Pendiente",
+      "cumplida": "Cumplida",
+      "no_cumplida": "No cumplida"
+    },
+    "errors": {
+      "create": "No pudimos agregar el personal.",
+      "update": "No pudimos actualizar el personal.",
+      "deactivate": "No pudimos dar de baja al personal.",
+      "createGoal": "No pudimos agregar la meta.",
+      "updateGoal": "No pudimos actualizar la meta.",
+      "deleteGoal": "No pudimos eliminar la meta."
+    }
+  },
   "labor": {
+    "tabs": {
+      "attendance": "Asistencia del día",
+      "goals": "Metas de la semana"
+    },
     "prevDay": "Día anterior",
     "nextDay": "Día siguiente",
     "today": "Hoy",

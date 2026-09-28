@@ -79,3 +79,4 @@ export * from './labor.js';
 export * from './budget.js';
 export * from './chat.js';
 export * from './provider.js';
+export * from './crew.js';

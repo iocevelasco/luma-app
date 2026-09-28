@@ -4,8 +4,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { CrewGoalsPanel } from '@/components/crew/crew-goals-panel';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -159,7 +161,28 @@ export function ProjectLaborPage() {
   const isToday = date === toDayKey(new Date());
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 p-3 md:p-4">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-3 md:p-4">
+      {/*
+        Dos preguntas distintas con su propio navegador de fecha: quién está
+        HOY (asistencia, por día) y qué tiene que lograr cada uno esta SEMANA
+        (metas, cargadas una o dos semanas antes). Mezclarlas en una sola
+        vista dejaría dos calendarios compitiendo en la misma pantalla.
+      */}
+      <Tabs defaultValue="attendance">
+        <TabsList>
+          <TabsTrigger value="attendance">{t('labor.tabs.attendance')}</TabsTrigger>
+          <TabsTrigger value="goals">{t('labor.tabs.goals')}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="goals" className="pt-4">
+          <CrewGoalsPanel
+            projectId={projectId!}
+            isEditor={isEditor}
+            isOwner={Boolean(projectData?.project.isOwner)}
+          />
+        </TabsContent>
+
+        <TabsContent value="attendance" className="flex flex-col gap-8 pt-4">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => setDate((d) => shiftDay(d, -1))} aria-label={t('labor.prevDay')}>
           <ChevronLeft className="size-4" />
@@ -219,6 +242,8 @@ export function ProjectLaborPage() {
           ))
         )}
       </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

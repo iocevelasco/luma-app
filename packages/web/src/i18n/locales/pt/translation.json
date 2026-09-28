@@ -418,7 +418,65 @@
       "requirement": "Não conseguimos atualizar o requisito."
     }
   },
+  "crew": {
+    "list": {
+      "title": "Pessoal fixo",
+      "add": "Adicionar",
+      "empty": "Você ainda não cadastrou pessoal fixo de obra.",
+      "lead": "Encarregado",
+      "deactivate": "Desativar",
+      "created": "Pessoal adicionado",
+      "updated": "Pessoal atualizado",
+      "deactivated": "Pessoal desativado"
+    },
+    "fields": {
+      "name": "Nome",
+      "kind": "Tipo",
+      "specialty": "Especialidade (opcional)",
+      "specialtyPlaceholder": "Sem especialidade",
+      "isLead": "É o encarregado da sua especialidade",
+      "onlyThisProject": "Somente para esta obra"
+    },
+    "kind": {
+      "persona": "Pessoa",
+      "equipo": "Equipe"
+    },
+    "goals": {
+      "assignee": "De quem é a meta?",
+      "assigneePlaceholder": "Escolha pessoa ou equipe",
+      "activity": "Atividade (opcional)",
+      "activityPlaceholder": "Sem atividade associada",
+      "description": "Meta da semana",
+      "descriptionPlaceholder": "Ex: terminar o reboco do segundo andar",
+      "add": "Adicionar meta",
+      "delete": "Excluir meta",
+      "created": "Meta adicionada",
+      "deleted": "Meta excluída",
+      "empty": "Não há metas cadastradas para esta semana.",
+      "needRoster": "Cadastre primeiro o pessoal fixo de obra para poder atribuir metas.",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Próxima semana",
+      "currentWeek": "Semana atual"
+    },
+    "goalStatus": {
+      "pendiente": "Pendente",
+      "cumplida": "Cumprida",
+      "no_cumplida": "Não cumprida"
+    },
+    "errors": {
+      "create": "Não conseguimos adicionar o pessoal.",
+      "update": "Não conseguimos atualizar o pessoal.",
+      "deactivate": "Não conseguimos desativar o pessoal.",
+      "createGoal": "Não conseguimos adicionar a meta.",
+      "updateGoal": "Não conseguimos atualizar a meta.",
+      "deleteGoal": "Não conseguimos excluir a meta."
+    }
+  },
   "labor": {
+    "tabs": {
+      "attendance": "Presença do dia",
+      "goals": "Metas da semana"
+    },
     "prevDay": "Dia anterior",
     "nextDay": "Próximo dia",
     "today": "Hoje",
