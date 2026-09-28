@@ -11,16 +11,10 @@ import {
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { FormDrawer } from '@/components/common/form-drawer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -211,14 +205,13 @@ function EngagementForm({
         <Textarea id="engagement-notes" rows={2} {...register('notes')} />
       </div>
 
-      <DialogFooter>
-        <Button
-          type="submit"
-          disabled={createEngagement.isPending || updateEngagement.isPending}
-        >
+      {/* Este pie no lo pone `FormDrawer`: el panel alterna lista y formulario,
+          así que la acción viaja con el formulario, no con el drawer. */}
+      <div className="flex justify-end border-t border-border pt-4">
+        <Button type="submit" disabled={createEngagement.isPending || updateEngagement.isPending}>
           {isEdit ? t('common.save') : t('engagement.createSubmit')}
         </Button>
-      </DialogFooter>
+      </div>
     </form>
   );
 }
@@ -354,18 +347,15 @@ export function ProviderEngagementDialog({
   const engagements = data?.engagements ?? [];
 
   return (
-    <Dialog
+    <FormDrawer
       open={open}
       onOpenChange={(next) => {
         onOpenChange(next);
         if (!next) setFormFor(null);
       }}
+      title={t('engagement.title', { name: provider.name })}
+      size="md"
     >
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t('engagement.title', { name: provider.name })}</DialogTitle>
-        </DialogHeader>
-
         {formFor ? (
           <EngagementForm
             projectId={projectId}
@@ -399,8 +389,7 @@ export function ProviderEngagementDialog({
             )}
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+    </FormDrawer>
   );
 }
 

@@ -22,20 +22,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { EmptyState } from '@/components/common/empty-state';
+import { FormDrawer } from '@/components/common/form-drawer';
 import { ProviderEngagementDialog } from '@/components/providers/provider-engagement-dialog';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
 import { RouteError } from '@/components/routes/route-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -266,65 +259,56 @@ function NewProviderDialog({ projectId }: { projectId: string }) {
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) {
-          reset();
-          setSelectedActivityIds(new Set());
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="size-4" />
-          {t('provider.list.new')}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('provider.list.newTitle')}</DialogTitle>
-        </DialogHeader>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) =>
-            createProvider.mutate(values, {
-              onSuccess: (data) => {
-                if (selectedActivityIds.size > 0) {
-                  assignActivities.mutate({
-                    providerId: data.provider.id,
-                    activityIds: [...selectedActivityIds],
-                  });
-                }
-                setOpen(false);
-                reset();
-                setSelectedActivityIds(new Set());
-              },
-            }),
-          )}
-        >
-          <ProviderFormFields
-            idPrefix="provider"
-            register={register}
-            control={control}
-            errors={errors}
-            specialty={watch('specialty')}
-            showScope
-          />
-          <AssignOnCreateField
-            projectId={projectId}
-            selected={selectedActivityIds}
-            onToggle={toggleActivity}
-          />
-          <DialogFooter>
-            <Button type="submit" disabled={createProvider.isPending}>
-              {createProvider.isPending ? t('common.loading') : t('provider.list.newSubmit')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="size-4" />
+        {t('provider.list.new')}
+      </Button>
+
+      <FormDrawer
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) {
+            reset();
+            setSelectedActivityIds(new Set());
+          }
+        }}
+        title={t('provider.list.newTitle')}
+        fieldCount={8}
+        submitLabel={t('provider.list.newSubmit')}
+        isSubmitting={createProvider.isPending}
+        onSubmit={handleSubmit((values) =>
+          createProvider.mutate(values, {
+            onSuccess: (data) => {
+              if (selectedActivityIds.size > 0) {
+                assignActivities.mutate({
+                  providerId: data.provider.id,
+                  activityIds: [...selectedActivityIds],
+                });
+              }
+              setOpen(false);
+              reset();
+              setSelectedActivityIds(new Set());
+            },
+          }),
+        )}
+      >
+        <ProviderFormFields
+          idPrefix="provider"
+          register={register}
+          control={control}
+          errors={errors}
+          specialty={watch('specialty')}
+          showScope
+        />
+        <AssignOnCreateField
+          projectId={projectId}
+          selected={selectedActivityIds}
+          onToggle={toggleActivity}
+        />
+      </FormDrawer>
+    </>
   );
 }
 
@@ -366,35 +350,27 @@ function EditProviderDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('provider.list.editTitle')}</DialogTitle>
-        </DialogHeader>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) =>
-            updateProvider.mutate(
-              { providerId: provider.id, payload: values },
-              { onSuccess: () => onOpenChange(false) },
-            ),
-          )}
-        >
-          <ProviderFormFields
-            idPrefix="edit-provider"
-            register={register}
-            control={control}
-            errors={errors}
-            specialty={watch('specialty')}
-          />
-          <DialogFooter>
-            <Button type="submit" disabled={updateProvider.isPending}>
-              {updateProvider.isPending ? t('common.loading') : t('common.save')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('provider.list.editTitle')}
+      fieldCount={7}
+      isSubmitting={updateProvider.isPending}
+      onSubmit={handleSubmit((values) =>
+        updateProvider.mutate(
+          { providerId: provider.id, payload: values },
+          { onSuccess: () => onOpenChange(false) },
+        ),
+      )}
+    >
+      <ProviderFormFields
+        idPrefix="edit-provider"
+        register={register}
+        control={control}
+        errors={errors}
+        specialty={watch('specialty')}
+      />
+    </FormDrawer>
   );
 }
 
@@ -430,12 +406,12 @@ function ProviderActivitiesDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('provider.list.activitiesTitle', { name: provider.name })}</DialogTitle>
-        </DialogHeader>
-
+    <FormDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('provider.list.activitiesTitle', { name: provider.name })}
+      size="md"
+    >
         <div className="flex flex-col gap-4">
           {assigned.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('provider.list.noActivities')}</p>
@@ -493,8 +469,7 @@ function ProviderActivitiesDialog({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </FormDrawer>
   );
 }
 

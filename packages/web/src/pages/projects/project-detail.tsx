@@ -13,14 +13,7 @@ import { RouteLoading } from '@/components/routes/route-loading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { FormDrawer } from '@/components/common/form-drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
@@ -66,47 +59,38 @@ function InviteClientDialog({ projectId }: { projectId: string }) {
   } = useForm<InviteClientInput>({ resolver: zodResolver(inviteClientSchema) });
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) reset();
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <UserPlus className="size-4" />
-          {t('project.detail.invite')}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('project.detail.inviteTitle')}</DialogTitle>
-        </DialogHeader>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) =>
-            inviteClient.mutate(values, {
-              onSuccess: () => {
-                setOpen(false);
-                reset();
-              },
-            }),
-          )}
-        >
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="client-email">{t('project.detail.inviteEmail')}</Label>
-            <Input id="client-email" type="email" autoComplete="email" {...register('email')} />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={inviteClient.isPending}>
-              {inviteClient.isPending ? t('common.loading') : t('project.detail.inviteSubmit')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Button size="sm" onClick={() => setOpen(true)}>
+        <UserPlus className="size-4" />
+        {t('project.detail.invite')}
+      </Button>
+
+      <FormDrawer
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) reset();
+        }}
+        title={t('project.detail.inviteTitle')}
+        fieldCount={1}
+        submitLabel={t('project.detail.inviteSubmit')}
+        isSubmitting={inviteClient.isPending}
+        onSubmit={handleSubmit((values) =>
+          inviteClient.mutate(values, {
+            onSuccess: () => {
+              setOpen(false);
+              reset();
+            },
+          }),
+        )}
+      >
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="client-email">{t('project.detail.inviteEmail')}</Label>
+          <Input id="client-email" type="email" autoComplete="email" {...register('email')} />
+          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+        </div>
+      </FormDrawer>
+    </>
   );
 }
 

@@ -18,14 +18,10 @@ import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { FormDrawer } from '@/components/common/form-drawer';
+// El detalle de la actividad sigue siendo un Dialog a pantalla completa: es
+// una vista de lectura, no un formulario.
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -198,7 +194,7 @@ function ActivityFormFields({
   );
 }
 
-function NewActivityDialog({ projectId }: { projectId: string }) {
+function NewActivityDialog({ projectId, isOwner }: { projectId: string; isOwner: boolean }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const createActivity = useCreateActivity(projectId);
@@ -215,43 +211,40 @@ function NewActivityDialog({ projectId }: { projectId: string }) {
   });
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) reset();
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="size-4" />
-          {t('activity.list.new')}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('activity.list.newTitle')}</DialogTitle>
-        </DialogHeader>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) =>
-            createActivity.mutate(values, {
-              onSuccess: () => {
-                setOpen(false);
-                reset();
-              },
-            }),
-          )}
-        >
-          <ActivityFormFields idPrefix="activity" register={register} control={control} errors={errors} />
-          <DialogFooter>
-            <Button type="submit" disabled={createActivity.isPending}>
-              {createActivity.isPending ? t('common.loading') : t('activity.list.newSubmit')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="size-4" />
+        {t('activity.list.new')}
+      </Button>
+
+      <FormDrawer
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) reset();
+        }}
+        title={t('activity.list.newTitle')}
+        fieldCount={8}
+        submitLabel={t('activity.list.newSubmit')}
+        isSubmitting={createActivity.isPending}
+        onSubmit={handleSubmit((values) =>
+          createActivity.mutate(values, {
+            onSuccess: () => {
+              setOpen(false);
+              reset();
+            },
+          }),
+        )}
+      >
+        <ActivityFormFields
+          idPrefix="activity"
+          register={register}
+          control={control}
+          errors={errors}
+          isOwner={isOwner}
+        />
+      </FormDrawer>
+    </>
   );
 }
 
@@ -291,35 +284,27 @@ function EditActivityDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('activity.detail.editTitle')}</DialogTitle>
-        </DialogHeader>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) =>
-            updateActivity.mutate(
-              { activityId: activity.id, payload: values },
-              { onSuccess: () => onOpenChange(false) },
-            ),
-          )}
-        >
-          <ActivityFormFields
-            idPrefix="edit-activity"
-            register={register}
-            control={control}
-            errors={errors}
-            isOwner={isOwner}
-          />
-          <DialogFooter>
-            <Button type="submit" disabled={updateActivity.isPending}>
-              {updateActivity.isPending ? t('common.loading') : t('common.save')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('activity.detail.editTitle')}
+      fieldCount={8}
+      isSubmitting={updateActivity.isPending}
+      onSubmit={handleSubmit((values) =>
+        updateActivity.mutate(
+          { activityId: activity.id, payload: values },
+          { onSuccess: () => onOpenChange(false) },
+        ),
+      )}
+    >
+      <ActivityFormFields
+        idPrefix="edit-activity"
+        register={register}
+        control={control}
+        errors={errors}
+        isOwner={isOwner}
+      />
+    </FormDrawer>
   );
 }
 
@@ -843,7 +828,12 @@ export function ProjectActivitiesPage() {
     <div className="flex h-[calc(100dvh-3.5rem)] min-w-0 flex-col gap-3 p-3 md:p-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateRangeFilter value={range} onChange={setRange} disableFuture={false} />
-        {isEditor && <NewActivityDialog projectId={projectId!} />}
+        {isEditor && (
+          <NewActivityDialog
+            projectId={projectId!}
+            isOwner={Boolean(projectData?.project.isOwner)}
+          />
+        )}
       </div>
 
       <div className="min-h-0 min-w-0 flex-1">

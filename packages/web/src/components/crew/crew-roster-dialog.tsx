@@ -2,15 +2,10 @@ import { useState } from 'react';
 import type { CrewMemberKind, ProviderSpecialty } from '@luma/shared';
 import { Plus, UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { FormDrawer } from '@/components/common/form-drawer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -88,12 +83,12 @@ export function CrewRosterDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{t('crew.list.title')}</DialogTitle>
-        </DialogHeader>
-
+    <FormDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('crew.list.title')}
+      size="md"
+    >
         <div className="flex flex-col gap-4">
           {crewMembers.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('crew.list.empty')}</p>
@@ -217,8 +212,7 @@ export function CrewRosterDialog({
             </form>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+    </FormDrawer>
   );
 }
 
