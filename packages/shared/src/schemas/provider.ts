@@ -5,6 +5,19 @@ import { z } from 'zod';
  * sin imports de `./index.ts`.
  */
 
+/** Mismo criterio que `activity.ts`: fecha como `YYYY-MM-DD`, nunca `Date`. */
+const dayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida');
+
+/**
+ * Fecha opcional que además tolera `''`. Un `<input type="date">` vacío manda
+ * string vacío, no `undefined`: con un `.optional()` pelado el form queda
+ * bloqueado por un campo que la persona dejó en blanco a propósito.
+ */
+const optionalDayKeySchema = z
+  .union([dayKeySchema, z.literal('')])
+  .optional()
+  .transform((value) => value || undefined);
+
 export const providerSpecialtySchema = z.enum([
   'electricidad',
   'plomeria',
@@ -97,6 +110,86 @@ export const assignProviderSchema = z.object({
 export const assignActivitySchema = z.object({
   activityId: z.string().trim().min(1, 'Elegí una actividad'),
 });
+
+// --- Contratación del proveedor ---
+
+export const providerEngagementStatusSchema = z.enum([
+  'solicitada',
+  'cotizada',
+  'aprobada',
+  'rechazada',
+]);
+
+export const providerRequirementTypeSchema = z.enum([
+  'materiales_en_obra',
+  'personal_libre',
+  'area_desocupada',
+  'actividad_previa',
+  'otro',
+]);
+
+const amountSchema = z
+  .number({ invalid_type_error: 'Tiene que ser un número' })
+  .nonnegative('No puede ser negativo')
+  .max(999_999_999_999, 'Es demasiado grande');
+
+export const providerRequirementSchema = z
+  .object({
+    type: providerRequirementTypeSchema,
+    detail: z.string().trim().max(200, 'Es demasiado largo').optional(),
+    activityId: z.string().trim().min(1).optional(),
+    met: z.boolean().default(false),
+  })
+  .refine((data) => data.type !== 'otro' || Boolean(data.detail?.trim()), {
+    message: 'Describí el requisito cuando elegís "Otro"',
+    path: ['detail'],
+  });
+
+/** El adelanto nunca puede superar lo cotizado — ver el comentario del update. */
+function advanceWithinQuote(data: { quotedAmount?: number; advanceAmount?: number }) {
+  return (
+    data.advanceAmount === undefined ||
+    data.quotedAmount === undefined ||
+    data.advanceAmount <= data.quotedAmount
+  );
+}
+
+export const createProviderEngagementSchema = z
+  .object({
+    status: providerEngagementStatusSchema.default('solicitada'),
+    quotedAmount: amountSchema.optional(),
+    advanceAmount: amountSchema.optional(),
+    estimatedStartDate: optionalDayKeySchema,
+    requirements: z.array(providerRequirementSchema).max(20, 'Demasiados requisitos').default([]),
+    notes: z.string().trim().max(1000, 'Es demasiado largo').optional(),
+  })
+  .refine(advanceWithinQuote, {
+    message: 'El adelanto no puede superar lo cotizado',
+    path: ['advanceAmount'],
+  });
+
+/**
+ * El adelanto no puede superar lo cotizado: es la única regla del dominio que
+ * atrapa un error de tipeo caro (un cero de más en el adelanto) antes de que
+ * quede registrado como comprometido contra el presupuesto.
+ */
+export const updateProviderEngagementSchema = z
+  .object({
+    status: providerEngagementStatusSchema.optional(),
+    quotedAmount: amountSchema.optional(),
+    advanceAmount: amountSchema.optional(),
+    estimatedStartDate: optionalDayKeySchema,
+    requirements: z.array(providerRequirementSchema).max(20).optional(),
+    notes: z.string().trim().max(1000).optional(),
+  })
+  .refine(advanceWithinQuote, {
+    message: 'El adelanto no puede superar lo cotizado',
+    path: ['advanceAmount'],
+  });
+
+export type CreateProviderEngagementInput = z.infer<typeof createProviderEngagementSchema>;
+export type UpdateProviderEngagementInput = z.infer<typeof updateProviderEngagementSchema>;
+export type ProviderRequirementInput = z.infer<typeof providerRequirementSchema>;
 
 export type CreateProviderInput = z.infer<typeof createProviderSchema>;
 export type UpdateProviderInput = z.infer<typeof updateProviderSchema>;

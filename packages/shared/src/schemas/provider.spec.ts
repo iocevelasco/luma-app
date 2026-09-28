@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { allowsCustomSpecialty, createProviderSchema, updateProviderSchema } from './provider.js';
+import {
+  allowsCustomSpecialty,
+  createProviderEngagementSchema,
+  createProviderSchema,
+  updateProviderEngagementSchema,
+  updateProviderSchema,
+} from './provider.js';
 
 const validProvider = {
   name: 'Juan Pérez',
@@ -79,6 +85,66 @@ describe('createProviderSchema', () => {
         customSpecialty: 'Microcemento alisado',
       }).success,
     ).toBe(true);
+  });
+});
+
+describe('createProviderEngagementSchema', () => {
+  it('acepta una contratación mínima y nace "solicitada"', () => {
+    const result = createProviderEngagementSchema.safeParse({});
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.status).toBe('solicitada');
+  });
+
+  it('tolera la fecha vacía de un input date en blanco', () => {
+    const result = createProviderEngagementSchema.safeParse({ estimatedStartDate: '' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.estimatedStartDate).toBeUndefined();
+  });
+
+  it('sigue rechazando una fecha con formato inválido', () => {
+    expect(
+      createProviderEngagementSchema.safeParse({ estimatedStartDate: '13/08/2026' }).success,
+    ).toBe(false);
+  });
+
+  it('rechaza un adelanto mayor a lo cotizado también al crear', () => {
+    const result = createProviderEngagementSchema.safeParse({
+      quotedAmount: 100_000,
+      advanceAmount: 500_000,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('acepta un adelanto menor o igual a lo cotizado', () => {
+    expect(
+      createProviderEngagementSchema.safeParse({ quotedAmount: 100_000, advanceAmount: 100_000 })
+        .success,
+    ).toBe(true);
+  });
+
+  it('rechaza montos negativos', () => {
+    expect(createProviderEngagementSchema.safeParse({ quotedAmount: -1 }).success).toBe(false);
+  });
+
+  it('exige descripción en un requisito "otro"', () => {
+    expect(
+      createProviderEngagementSchema.safeParse({ requirements: [{ type: 'otro' }] }).success,
+    ).toBe(false);
+    expect(
+      createProviderEngagementSchema.safeParse({
+        requirements: [{ type: 'otro', detail: 'Andamios montados' }],
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe('updateProviderEngagementSchema', () => {
+  it('acepta un update parcial de estado', () => {
+    expect(updateProviderEngagementSchema.safeParse({ status: 'aprobada' }).success).toBe(true);
+  });
+
+  it('rechaza un estado fuera del enum', () => {
+    expect(updateProviderEngagementSchema.safeParse({ status: 'en_curso' }).success).toBe(false);
   });
 });
 

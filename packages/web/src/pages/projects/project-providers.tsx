@@ -7,7 +7,7 @@ import {
   type Provider,
   type ProviderSpecialty,
 } from '@luma/shared';
-import { CalendarClock, Pencil, Plus, UserX, X } from 'lucide-react';
+import { CalendarClock, FileSignature, Pencil, Plus, UserX, X } from 'lucide-react';
 import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { EmptyState } from '@/components/common/empty-state';
+import { ProviderEngagementDialog } from '@/components/providers/provider-engagement-dialog';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
 import { RouteError } from '@/components/routes/route-error';
 import { Badge } from '@/components/ui/badge';
@@ -507,6 +508,7 @@ export function ProjectProvidersPage() {
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [deactivatingProvider, setDeactivatingProvider] = useState<Provider | null>(null);
   const [assigningProvider, setAssigningProvider] = useState<Provider | null>(null);
+  const [contractingProvider, setContractingProvider] = useState<Provider | null>(null);
 
   // Dueño administra el directorio (crear, editar, dar de baja). Asignar a
   // actividades es escritura operativa, como en Activity: dueño o Asistente.
@@ -576,6 +578,15 @@ export function ProjectProvidersPage() {
             >
               <CalendarClock className="size-4" />
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              onClick={() => setContractingProvider(provider)}
+              aria-label={t('engagement.title', { name: provider.name })}
+            >
+              <FileSignature className="size-4" />
+            </Button>
             {isOwner && (
               <>
                 <Button
@@ -643,6 +654,17 @@ export function ProjectProvidersPage() {
           provider={assigningProvider}
           open={Boolean(assigningProvider)}
           onOpenChange={(open) => !open && setAssigningProvider(null)}
+        />
+      )}
+
+      {contractingProvider && (
+        <ProviderEngagementDialog
+          projectId={projectId!}
+          provider={contractingProvider}
+          currency={projectData?.project.currency ?? ''}
+          isOwner={isOwner}
+          open={Boolean(contractingProvider)}
+          onOpenChange={(open) => !open && setContractingProvider(null)}
         />
       )}
 

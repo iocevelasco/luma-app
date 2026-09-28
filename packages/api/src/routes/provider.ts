@@ -9,11 +9,16 @@ import {
 import {
   assignActivityToProvider,
   createProvider,
+  createProviderEngagement,
   deactivateProvider,
+  deleteProviderEngagement,
   listProviderActivities,
+  listProviderEngagements,
   listProviders,
+  setRequirementMet,
   unassignActivityFromProvider,
   updateProvider,
+  updateProviderEngagement,
 } from '../controllers/index.js';
 
 /**
@@ -44,6 +49,30 @@ providerRouter.delete(
   '/:providerId/activities/:activityId',
   requireProjectEditor,
   unassignActivityFromProvider,
+);
+
+/**
+ * Contratación (RF nuevo): la parte comercial la gestiona el dueño
+ * (`requireProjectOwner`) porque son montos comprometidos contra el
+ * presupuesto. La excepción es marcar requisitos cumplidos: eso lo hace quien
+ * está en la obra, así que va con `requireProjectEditor`.
+ */
+providerRouter.get('/:providerId/engagements', requireProviderRead, listProviderEngagements);
+providerRouter.post('/:providerId/engagements', requireProjectOwner, createProviderEngagement);
+providerRouter.patch(
+  '/:providerId/engagements/:engagementId',
+  requireProjectOwner,
+  updateProviderEngagement,
+);
+providerRouter.delete(
+  '/:providerId/engagements/:engagementId',
+  requireProjectOwner,
+  deleteProviderEngagement,
+);
+providerRouter.patch(
+  '/:providerId/engagements/:engagementId/requirements/:requirementId',
+  requireProjectEditor,
+  setRequirementMet,
 );
 
 export default providerRouter;

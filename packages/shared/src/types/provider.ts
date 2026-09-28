@@ -99,3 +99,68 @@ export interface ProviderActivitySummary {
 export interface ProviderActivitiesResponse {
   activities: ProviderActivitySummary[];
 }
+
+/**
+ * Contratación de un proveedor para una obra: el acuerdo comercial, separado
+ * de `ActivityProvider` (que dice quién trabaja en qué). Una cotización suele
+ * cubrir varias actividades, así que fusionarlas obligaría a cotizar
+ * actividad por actividad.
+ *
+ * No tiene estados de ejecución ("en curso", "terminado") a propósito: el
+ * avance del trabajo ya vive en el estado de cada actividad, y repetirlo acá
+ * serían dos fuentes de verdad que se contradicen.
+ */
+export type ProviderEngagementStatus = 'solicitada' | 'cotizada' | 'aprobada' | 'rechazada';
+
+/**
+ * Lo que tiene que estar listo para que el proveedor pueda arrancar. Los
+ * cuatro primeros son los que se repiten en toda obra; `otro` cubre el resto.
+ */
+export type ProviderRequirementType =
+  | 'materiales_en_obra'
+  | 'personal_libre'
+  | 'area_desocupada'
+  | 'actividad_previa'
+  | 'otro';
+
+export interface ProviderRequirement {
+  id: string;
+  type: ProviderRequirementType;
+  /** Obligatorio en `otro`; en el resto es una aclaración opcional. */
+  detail?: string;
+  /**
+   * Sólo en `actividad_previa`. No cambia `met` solo: la UI muestra el estado
+   * de esa actividad al lado, pero quien marca el requisito es una persona —
+   * un check que se mueve solo es un check en el que nadie confía.
+   */
+  activityId?: string;
+  met: boolean;
+}
+
+export interface ProviderEngagement {
+  id: string;
+  projectId: string;
+  providerId: string;
+  status: ProviderEngagementStatus;
+  /**
+   * Montos como COMPROMISO contra el presupuesto, no como contabilidad: la
+   * plataforma no registra pagos ni cuentas por pagar (ver documento
+   * funcional, "Exclusión explícita: pagos y anticipos").
+   */
+  quotedAmount?: number;
+  advanceAmount?: number;
+  /** `YYYY-MM-DD`, nunca ISO datetime — ver CLAUDE.md sobre fechas y Safari. */
+  estimatedStartDate?: string;
+  requirements: ProviderRequirement[];
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProviderEngagementListResponse {
+  engagements: ProviderEngagement[];
+}
+
+export interface ProviderEngagementResponse {
+  engagement: ProviderEngagement;
+}

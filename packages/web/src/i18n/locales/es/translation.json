@@ -376,6 +376,48 @@
       "unassign": "No pudimos quitar el proveedor."
     }
   },
+  "engagement": {
+    "title": "Contratación — {{name}}",
+    "new": "Nueva contratación",
+    "createSubmit": "Crear contratación",
+    "edit": "Editar contratación",
+    "delete": "Eliminar contratación",
+    "empty": "Todavía no registraste una contratación con este proveedor en esta obra.",
+    "created": "Contratación registrada",
+    "updated": "Contratación actualizada",
+    "deleted": "Contratación eliminada",
+    "requirementsReady": "Todo listo para arrancar",
+    "requirementsPending": "Falta {{count}} requisito para arrancar",
+    "requirementsPending_other": "Faltan {{count}} requisitos para arrancar",
+    "fields": {
+      "status": "Estado",
+      "quotedAmount": "Cotizado",
+      "advanceAmount": "Adelanto",
+      "amountsHint": "Se registran como comprometido contra el presupuesto. Luma no lleva pagos ni facturación.",
+      "estimatedStartDate": "Inicio estimado",
+      "requirements": "¿Qué tiene que estar listo para que arranque?",
+      "notes": "Notas (opcional)"
+    },
+    "status": {
+      "solicitada": "Cotización solicitada",
+      "cotizada": "Cotizada",
+      "aprobada": "Aprobada",
+      "rechazada": "Rechazada"
+    },
+    "requirement": {
+      "materiales_en_obra": "Materiales en obra",
+      "personal_libre": "Personal libre",
+      "area_desocupada": "Área de trabajo desocupada",
+      "actividad_previa": "Actividad previa terminada",
+      "otro": "Otro"
+    },
+    "errors": {
+      "create": "No pudimos registrar la contratación.",
+      "update": "No pudimos actualizar la contratación.",
+      "delete": "No pudimos eliminar la contratación.",
+      "requirement": "No pudimos actualizar el requisito."
+    }
+  },
   "labor": {
     "prevDay": "Día anterior",
     "nextDay": "Día siguiente",

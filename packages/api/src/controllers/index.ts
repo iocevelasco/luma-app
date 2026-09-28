@@ -7,3 +7,4 @@ export * from './labor.controller.js';
 export * from './budget.controller.js';
 export * from './advisor.controller.js';
 export * from './provider.controller.js';
+export * from './provider-engagement.controller.js';

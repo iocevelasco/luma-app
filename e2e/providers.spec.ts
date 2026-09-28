@@ -339,4 +339,73 @@ test.describe('directorio de proveedores', () => {
     await expect(page.getByText(libraryProvider).first()).toBeVisible();
     await expect(page.getByText(clientProvider)).toHaveCount(0);
   });
+
+  test('contratación: cotización, adelanto y requisitos para arrancar', async ({ page }) => {
+    const runId = `${RUN_ID}-d`;
+    const ownerEmail = `e2e-providers-${runId}@luma.test`;
+    const projectName = `Obra contratación ${runId}`;
+    const providerName = `Carpintero ${runId}`;
+
+    await registerWith(page, `Ejecutante E2E ${runId}`, ownerEmail, PASSWORD);
+    await loginWith(page, ownerEmail, PASSWORD);
+
+    await page.getByRole('link', { name: /crear tu primera obra/i }).click();
+    await page.locator('#name').fill(projectName);
+    await page.locator('#description').fill('Obra para probar la contratación.');
+    await page.locator('#location').fill('CABA');
+    await page.locator('#estimatedStartDate').fill('2026-09-01');
+    await page.locator('#estimatedEndDate').fill('2026-12-15');
+    await page.locator('#currency').click();
+    await page.getByRole('option', { name: 'ARS' }).click();
+    await page.locator('#budgetType').click();
+    await page.getByRole('option', { name: /cerrado/i }).click();
+    await page.getByRole('button', { name: /crear obra/i }).click();
+    await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
+
+    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await page.getByRole('button', { name: /nuevo proveedor/i }).click();
+    await page.locator('#provider-name').fill(providerName);
+    await page.locator('#provider-specialty').click();
+    await page.getByRole('option', { name: /^carpintería$/i }).click();
+    await page.locator('#provider-phone').fill('11-6666-6666');
+    await page.getByRole('button', { name: /crear proveedor/i }).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+
+    // Abre la contratación del proveedor.
+    await page
+      .getByRole('button', { name: new RegExp(`^Contratación — ${providerName}$`, 'i') })
+      .first()
+      .click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText(/todavía no registraste una contratación/i)).toBeVisible();
+    await dialog.getByRole('button', { name: /nueva contratación/i }).click();
+
+    // El adelanto no puede superar lo cotizado: el error se tiene que VER.
+    await page.locator('#engagement-quoted').fill('100000');
+    await page.locator('#engagement-advance').fill('500000');
+    await dialog.getByRole('button', { name: /crear contratación/i }).click();
+    await expect(dialog.getByText(/el adelanto no puede superar lo cotizado/i)).toBeVisible();
+
+    // Corrige y suma un requisito para arrancar.
+    await page.locator('#engagement-advance').fill('30000');
+    await dialog.getByText(/^materiales en obra$/i).click();
+    await dialog.getByRole('button', { name: /crear contratación/i }).click();
+
+    // El contador de requisitos sólo existe en la tarjeta, así que sirve para
+    // esperar a que el form cierre. El texto del estado no: vive también
+    // dentro del `<select>` del formulario y resuelve a dos elementos.
+    await expect(dialog.getByText(/falta 1 requisito/i)).toBeVisible({ timeout: 10_000 });
+
+    // El requisito se tilda desde acá (lo hace quien está en obra).
+    await dialog.getByText(/^materiales en obra$/i).click();
+    await expect(dialog.getByText(/todo listo para arrancar/i)).toBeVisible();
+
+    // Editar el monto NO puede borrar el requisito ya tildado.
+    await dialog.getByRole('button', { name: /editar contratación/i }).click();
+    await page.locator('#engagement-quoted').fill('120000');
+    await dialog.getByRole('button', { name: /^guardar$/i }).click();
+
+    await expect(dialog.getByText(/todo listo para arrancar/i)).toBeVisible();
+    await expect(dialog.getByText(/120\.000/)).toBeVisible();
+  });
 });

@@ -18,4 +18,5 @@ export enum QueryKeys {
   providers = 'providers',
   activityProviders = 'activity-providers',
   providerActivities = 'provider-activities',
+  providerEngagements = 'provider-engagements',
 }
