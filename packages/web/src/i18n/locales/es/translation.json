@@ -215,13 +215,27 @@
       "endDate": "Fin",
       "responsible": "Responsable",
       "status": "Estado",
+      "specialty": "Especialidad (opcional)",
+      "specialtyPlaceholder": "Sin especialidad",
       "notes": "Notas (opcional)"
     },
     "status": {
       "pendiente": "Pendiente",
       "en_curso": "En curso",
+      "en_revision": "En revisión",
       "completada": "Completada",
       "cancelada": "Cancelada"
+    },
+    "review": {
+      "title": "Validación del supervisor",
+      "approve": "Aprobar y cerrar",
+      "return": "Devolver",
+      "confirmReturn": "Devolver con este motivo",
+      "reasonLabel": "¿Por qué la devolvés?",
+      "reasonPlaceholder": "Ej: falta terminar el borde del zócalo",
+      "returnedTitle": "El supervisor devolvió esta actividad",
+      "waiting": "Reportada como terminada. Espera la validación del supervisor.",
+      "rejected": "Actividad devuelta"
     },
     "emptyState": {
       "title": "No hay actividades planificadas para esta semana."
@@ -231,7 +245,8 @@
       "update": "No pudimos actualizar la actividad.",
       "delete": "No pudimos eliminar la actividad.",
       "uploadEvidence": "No pudimos subir la foto.",
-      "removeEvidence": "No pudimos borrar la foto."
+      "removeEvidence": "No pudimos borrar la foto.",
+      "reject": "No pudimos devolver la actividad."
     },
     "gantt": {
       "emptyState": "No hay actividades planificadas en este rango de fechas."

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createActivitySchema, updateActivitySchema } from './activity.js';
+import {
+  activitySpecialtySchema,
+  createActivitySchema,
+  rejectActivitySchema,
+  updateActivitySchema,
+} from './activity.js';
+import { providerSpecialtySchema } from './provider.js';
 
 const validActivity = {
   name: 'Contrapiso',
@@ -51,6 +57,45 @@ describe('createActivitySchema', () => {
   it('rechaza responsible sin name', () => {
     const result = createActivitySchema.safeParse({ ...validActivity, responsible: {} });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('activitySpecialtySchema', () => {
+  it('tiene exactamente los mismos rubros que el de proveedores', () => {
+    expect([...activitySpecialtySchema.options].sort()).toEqual(
+      [...providerSpecialtySchema.options].sort(),
+    );
+  });
+
+  it('la especialidad es opcional: hay actividades de varios rubros', () => {
+    expect(createActivitySchema.safeParse(validActivity).success).toBe(true);
+  });
+
+  it('acepta una actividad con rubro declarado', () => {
+    expect(
+      createActivitySchema.safeParse({ ...validActivity, specialty: 'electricidad' }).success,
+    ).toBe(true);
+  });
+});
+
+describe('estado en_revision', () => {
+  it('acepta el paso intermedio antes de cerrar', () => {
+    expect(
+      createActivitySchema.safeParse({ ...validActivity, status: 'en_revision' }).success,
+    ).toBe(true);
+  });
+});
+
+describe('rejectActivitySchema', () => {
+  it('exige un motivo: un rechazo mudo deja la actividad en limbo', () => {
+    expect(rejectActivitySchema.safeParse({ reason: '   ' }).success).toBe(false);
+    expect(rejectActivitySchema.safeParse({}).success).toBe(false);
+  });
+
+  it('acepta un motivo escrito', () => {
+    expect(rejectActivitySchema.safeParse({ reason: 'Falta terminar el borde' }).success).toBe(
+      true,
+    );
   });
 });
 

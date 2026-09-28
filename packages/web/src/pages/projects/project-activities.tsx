@@ -6,8 +6,9 @@ import {
   type Activity,
   type CreateActivityInput,
   type MaterialItem,
+  type ProviderSpecialty,
 } from '@luma/shared';
-import { ArrowLeft, Camera, PackageX, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Camera, Check, PackageX, Pencil, Plus, Trash2, Undo2, X } from 'lucide-react';
 import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -41,6 +42,7 @@ import {
   useActivities,
   useCreateActivity,
   useDeleteActivityEvidence,
+  useRejectActivity,
   useUpdateActivity,
   useUploadActivityEvidence,
 } from '@/hooks/activities/use-activity-queries';
@@ -55,7 +57,35 @@ import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { isActivityOverdue, isWithinNextDays } from '@/lib/week';
 
-const ACTIVITY_STATUSES = ['pendiente', 'en_curso', 'completada', 'cancelada'] as const;
+const ACTIVITY_STATUSES = [
+  'pendiente',
+  'en_curso',
+  'en_revision',
+  'completada',
+  'cancelada',
+] as const;
+
+/** Mismo catálogo que proveedores y personal (test de sincronía en `@luma/shared`). */
+const ACTIVITY_SPECIALTIES: ProviderSpecialty[] = [
+  'electricidad',
+  'plomeria',
+  'gas',
+  'carpinteria',
+  'cristaleria',
+  'albanileria',
+  'herreria',
+  'redes',
+  'mecanicas',
+  'estructura',
+  'acabados',
+  'pintura',
+  'climatizacion',
+  'techos',
+  'pisos_revestimientos',
+  'jardineria',
+  'demolicion',
+  'otra',
+];
 const MATERIAL_STATUSES_BLOCKING = new Set(['pendiente', 'solicitado']);
 
 /**
@@ -67,13 +97,19 @@ function ActivityFormFields({
   register,
   control,
   errors,
+  isOwner = false,
 }: {
   idPrefix: string;
   register: UseFormRegister<CreateActivityInput>;
   control: Control<CreateActivityInput>;
   errors: FieldErrors<CreateActivityInput>;
+  /** Cerrar es del supervisor: al resto ni se le ofrece "Completada". */
+  isOwner?: boolean;
 }) {
   const { t } = useTranslation();
+  const statuses = isOwner
+    ? ACTIVITY_STATUSES
+    : ACTIVITY_STATUSES.filter((status) => status !== 'completada');
 
   return (
     <>
@@ -121,9 +157,31 @@ function ActivityFormFields({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ACTIVITY_STATUSES.map((status) => (
+                {statuses.map((status) => (
                   <SelectItem key={status} value={status}>
                     {t(`activity.status.${status}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={`${idPrefix}-specialty`}>{t('activity.fields.specialty')}</Label>
+        <Controller
+          control={control}
+          name="specialty"
+          render={({ field }) => (
+            <Select value={field.value ?? undefined} onValueChange={field.onChange}>
+              <SelectTrigger id={`${idPrefix}-specialty`}>
+                <SelectValue placeholder={t('activity.fields.specialtyPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {ACTIVITY_SPECIALTIES.map((specialty) => (
+                  <SelectItem key={specialty} value={specialty}>
+                    {t(`provider.specialty.${specialty}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -200,11 +258,13 @@ function NewActivityDialog({ projectId }: { projectId: string }) {
 function EditActivityDialog({
   projectId,
   activity,
+  isOwner,
   open,
   onOpenChange,
 }: {
   projectId: string;
   activity: Activity;
+  isOwner: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -225,6 +285,7 @@ function EditActivityDialog({
       endDate: activity.endDate,
       responsible: activity.responsible,
       status: activity.status,
+      specialty: activity.specialty,
       notes: activity.notes,
     },
   });
@@ -244,7 +305,13 @@ function EditActivityDialog({
             ),
           )}
         >
-          <ActivityFormFields idPrefix="edit-activity" register={register} control={control} errors={errors} />
+          <ActivityFormFields
+            idPrefix="edit-activity"
+            register={register}
+            control={control}
+            errors={errors}
+            isOwner={isOwner}
+          />
           <DialogFooter>
             <Button type="submit" disabled={updateActivity.isPending}>
               {updateActivity.isPending ? t('common.loading') : t('common.save')}
@@ -276,6 +343,111 @@ function ActivityMaterialsList({ materials }: { materials: MaterialItem[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * El paso de validación: quien hizo el trabajo lo reporta (`en_revision`) y
+ * el supervisor cierra o lo devuelve con motivo. El motivo sobrevive al
+ * rechazo y queda visible mientras la actividad está `en_curso` — es lo que
+ * tiene que leer quien vuelve a corregirla.
+ */
+function ActivityReviewSection({
+  projectId,
+  activity,
+  isOwner,
+}: {
+  projectId: string;
+  activity: Activity;
+  isOwner: boolean;
+}) {
+  const { t } = useTranslation();
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState('');
+  const updateActivity = useUpdateActivity(projectId);
+  const rejectActivity = useRejectActivity(projectId);
+
+  const rejection = activity.review?.rejectionReason;
+  const showRejection = Boolean(rejection) && activity.status !== 'en_revision';
+
+  if (activity.status !== 'en_revision' && !showRejection) return null;
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-border pt-6">
+      <h3 className="text-sm font-medium">{t('activity.review.title')}</h3>
+
+      {showRejection && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3">
+          <p className="text-sm font-medium text-destructive">
+            {t('activity.review.returnedTitle')}
+          </p>
+          <p className="text-sm">{rejection}</p>
+        </div>
+      )}
+
+      {activity.status === 'en_revision' &&
+        (isOwner ? (
+          rejecting ? (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="reject-reason">{t('activity.review.reasonLabel')}</Label>
+              <Textarea
+                id="reject-reason"
+                rows={2}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder={t('activity.review.reasonPlaceholder')}
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={!reason.trim() || rejectActivity.isPending}
+                  onClick={() =>
+                    rejectActivity.mutate(
+                      { activityId: activity.id, reason: reason.trim() },
+                      {
+                        onSuccess: () => {
+                          setReason('');
+                          setRejecting(false);
+                        },
+                      },
+                    )
+                  }
+                >
+                  {t('activity.review.confirmReturn')}
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setRejecting(false)}>
+                  {t('common.cancel')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                disabled={updateActivity.isPending}
+                onClick={() =>
+                  updateActivity.mutate({
+                    activityId: activity.id,
+                    payload: { status: 'completada' },
+                  })
+                }
+              >
+                <Check className="size-4" />
+                {t('activity.review.approve')}
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setRejecting(true)}>
+                <Undo2 className="size-4" />
+                {t('activity.review.return')}
+              </Button>
+            </div>
+          )
+        ) : (
+          <p className="text-sm text-muted-foreground">{t('activity.review.waiting')}</p>
+        ))}
+    </div>
   );
 }
 
@@ -473,6 +645,7 @@ function ActivityDetailModal({
   materials,
   missingMaterials,
   isEditor,
+  isOwner,
   canReadProviders,
   onClose,
 }: {
@@ -481,6 +654,7 @@ function ActivityDetailModal({
   materials: MaterialItem[];
   missingMaterials: boolean;
   isEditor: boolean;
+  isOwner: boolean;
   canReadProviders: boolean;
   onClose: () => void;
 }) {
@@ -518,7 +692,12 @@ function ActivityDetailModal({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-3xl">{activity.name}</h2>
-                  <p className="text-muted-foreground">{activity.area}</p>
+                  <p className="text-muted-foreground">
+                    {activity.area}
+                    {activity.specialty
+                      ? ` · ${t(`provider.specialty.${activity.specialty}`)}`
+                      : ''}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   {missingMaterials && (
@@ -559,6 +738,12 @@ function ActivityDetailModal({
                 </div>
               </dl>
 
+              <ActivityReviewSection
+                projectId={projectId}
+                activity={activity}
+                isOwner={isOwner}
+              />
+
               <div className="flex flex-col gap-3 border-t border-border pt-6">
                 <h3 className="text-sm font-medium">{t('activity.detail.materials')}</h3>
                 <ActivityMaterialsList materials={materials} />
@@ -585,6 +770,7 @@ function ActivityDetailModal({
               <EditActivityDialog
                 projectId={projectId}
                 activity={activity}
+                isOwner={isOwner}
                 open={editing}
                 onOpenChange={setEditing}
               />
@@ -681,6 +867,7 @@ export function ProjectActivitiesPage() {
         materials={selectedActivityMaterials}
         missingMaterials={Boolean(selectedActivityId && activitiesWithAlert.has(selectedActivityId))}
         isEditor={isEditor}
+        isOwner={Boolean(projectData?.project.isOwner)}
         canReadProviders={canReadProviders}
         onClose={() => setSelectedActivityId(null)}
       />

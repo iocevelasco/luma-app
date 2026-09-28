@@ -35,6 +35,12 @@ export const activitiesApi = {
       apiClient.patch(`/api/projects/${projectId}/activities/${activityId}`, payload),
     ),
 
+  /** El supervisor devuelve el trabajo con un motivo; vuelve a `en_curso`. */
+  reject: (projectId: string, activityId: string, reason: string) =>
+    unwrap<ActivityResponse>(
+      apiClient.post(`/api/projects/${projectId}/activities/${activityId}/reject`, { reason }),
+    ),
+
   remove: (projectId: string, activityId: string) =>
     unwrap<{ activityId: string }>(
       apiClient.delete(`/api/projects/${projectId}/activities/${activityId}`),

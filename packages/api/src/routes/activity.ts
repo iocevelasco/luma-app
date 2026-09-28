@@ -5,6 +5,7 @@ import { isAuthenticated } from '../middleware/auth.middleware.js';
 import {
   requireProjectAccess,
   requireProjectEditor,
+  requireProjectOwner,
   requireProviderRead,
 } from '../middleware/project.middleware.js';
 import {
@@ -14,6 +15,7 @@ import {
   deleteActivityEvidence,
   listActivities,
   listActivityProviders,
+  rejectActivity,
   unassignProvider,
   updateActivity,
   uploadActivityEvidence,
@@ -48,6 +50,9 @@ activityRouter.use(isAuthenticated, requireProjectAccess);
 activityRouter.get('/', listActivities);
 activityRouter.post('/', requireProjectEditor, createActivity);
 activityRouter.patch('/:activityId', requireProjectEditor, updateActivity);
+// Devolver el trabajo es del supervisor, igual que cerrarlo — cerrar se gatea
+// dentro de `updateActivity`, que necesita distinguir el estado pedido.
+activityRouter.post('/:activityId/reject', requireProjectOwner, rejectActivity);
 activityRouter.delete('/:activityId', requireProjectEditor, deleteActivity);
 activityRouter.post(
   '/:activityId/evidence',
