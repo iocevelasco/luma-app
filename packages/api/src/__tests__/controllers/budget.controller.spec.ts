@@ -13,9 +13,22 @@ vi.mock('../../models/Budget.js', () => ({
 vi.mock('../../models/BudgetLine.js', () => ({
   BudgetLine: { insertMany: vi.fn(), find: vi.fn() },
 }));
+// `getBudget` suma lo comprometido en contrataciones aprobadas para poder
+// responder "cuánto queda".
+vi.mock('../../models/ProviderEngagement.js', () => ({
+  ProviderEngagement: { find: vi.fn() },
+}));
 
 const { Budget } = await import('../../models/Budget.js');
 const { BudgetLine } = await import('../../models/BudgetLine.js');
+const { ProviderEngagement } = await import('../../models/ProviderEngagement.js');
+
+/** `find(...).select(...)` devuelve las contrataciones aprobadas. */
+function mockEngagements(engagements: { quotedAmount?: number }[]) {
+  vi.mocked(ProviderEngagement.find).mockReturnValue({
+    select: vi.fn().mockResolvedValue(engagements),
+  } as never);
+}
 const { createBudget, getBudget } = await import('../../controllers/budget.controller.js');
 
 function mockRes(): Response {
@@ -142,12 +155,63 @@ describe('getBudget', () => {
     vi.mocked(Budget.findOne).mockReturnValue({
       sort: vi.fn().mockResolvedValue(null),
     } as never);
+    mockEngagements([]);
 
     const req = { project: { _id: 'project-1' } } as unknown as Request;
     const res = mockRes();
 
     await getBudget(req, res);
 
-    expect(res.json).toHaveBeenCalledWith({ success: true, data: { budget: null } });
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { budget: null, committedAmount: 0 },
+    });
+  });
+
+  it('suma lo cotizado en contrataciones aprobadas como comprometido', async () => {
+    vi.mocked(Budget.findOne).mockReturnValue({
+      sort: vi.fn().mockResolvedValue({
+        _id: 'budget-1',
+        project: 'project-1',
+        version: 1,
+        currency: 'ARS',
+        totalAmount: 1_000_000,
+        contingencyAmount: 50_000,
+        importMode: 'manual',
+        importedBy: 'user-1',
+        importedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    } as never);
+    vi.mocked(BudgetLine.find).mockReturnValue({
+      sort: vi.fn().mockResolvedValue([]),
+    } as never);
+    mockEngagements([{ quotedAmount: 300_000 }, { quotedAmount: 120_000 }]);
+
+    const req = { project: { _id: 'project-1' } } as unknown as Request;
+    const res = mockRes();
+
+    await getBudget(req, res);
+
+    expect(ProviderEngagement.find).toHaveBeenCalledWith({
+      project: 'project-1',
+      status: 'aprobada',
+    });
+    const [{ data }] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(data.committedAmount).toBe(420_000);
+  });
+
+  it('una contratación aprobada sin monto no rompe la suma', async () => {
+    vi.mocked(Budget.findOne).mockReturnValue({
+      sort: vi.fn().mockResolvedValue(null),
+    } as never);
+    mockEngagements([{ quotedAmount: 50_000 }, {}]);
+
+    const res = mockRes();
+    await getBudget({ project: { _id: 'project-1' } } as unknown as Request, res);
+
+    const [{ data }] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(data.committedAmount).toBe(50_000);
   });
 });

@@ -7,6 +7,7 @@ import {
 } from '@luma/shared';
 import { Budget, type IBudget } from '../models/Budget.js';
 import { BudgetLine, type IBudgetLine } from '../models/BudgetLine.js';
+import { committedForProject } from '../services/commitment.service.js';
 import type { IProject } from '../models/Project.js';
 
 function errMsg(error: unknown): string {
@@ -55,18 +56,22 @@ export async function getBudget(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const budget = await Budget.findOne({ project: project._id }).sort({ version: -1 });
+    const committedAmount = await committedForProject(project._id as never);
 
     if (!budget) {
       // Todavía no hay presupuesto cargado — es el estado sano de una obra
       // recién creada, no un error. La pantalla lo resuelve con un vacío.
-      return res.json({ success: true, data: { budget: null } });
+      return res.json({ success: true, data: { budget: null, committedAmount } });
     }
 
     const lines = await BudgetLine.find({ budget: budget._id }).sort({ order: 1 });
 
     return res.json({
       success: true,
-      data: { budget: { ...toBudgetDTO(budget), lines: lines.map(toBudgetLineDTO) } },
+      data: {
+        budget: { ...toBudgetDTO(budget), lines: lines.map(toBudgetLineDTO) },
+        committedAmount,
+      },
     });
   } catch (error) {
     console.error('❌ [BUDGET] getBudget:', error);

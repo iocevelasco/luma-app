@@ -72,6 +72,7 @@
       "gantt": "Cronograma",
       "materials": "Materiales",
       "labor": "Personal",
+      "providers": "Proveedores",
       "budget": "Presupuesto",
       "advisor": "Consultor IA"
     },
@@ -83,7 +84,10 @@
       "inviteSubmit": "Invitar",
       "clientInvited": "Invitación enviada",
       "noClients": "Todavía no invitaste a nadie.",
-      "gantt": "Cronograma de actividades"
+      "gantt": "Cronograma de actividades",
+      "providersVisibleToClient": "El cliente ve los proveedores",
+      "providersVisibleToClientHint": "Si lo activás, el cliente ve el directorio de esta obra y quién está asignado a cada actividad.",
+      "settingsSaved": "Ajuste guardado"
     },
     "dashboard": {
       "progress": "Avance general",
@@ -95,12 +99,15 @@
       "labor": "Personal",
       "noActivitiesToday": "No hay actividades programadas para hoy.",
       "laborCount": "presentes",
+      "providers": "Proveedores",
+      "noProviders": "Todavía no cargaste proveedores.",
       "budget": "Presupuesto",
       "noBudget": "Todavía no cargaste el presupuesto.",
       "viewAll": "Ver todo"
     },
     "errors": {
       "create": "No pudimos crear la obra.",
+      "update": "No pudimos guardar el ajuste.",
       "invite": "No pudimos invitar a esa persona."
     }
   },
@@ -208,13 +215,27 @@
       "endDate": "Fin",
       "responsible": "Responsable",
       "status": "Estado",
+      "specialty": "Especialidad (opcional)",
+      "specialtyPlaceholder": "Sin especialidad",
       "notes": "Notas (opcional)"
     },
     "status": {
       "pendiente": "Pendiente",
       "en_curso": "En curso",
+      "en_revision": "En revisión",
       "completada": "Completada",
       "cancelada": "Cancelada"
+    },
+    "review": {
+      "title": "Validación del supervisor",
+      "approve": "Aprobar y cerrar",
+      "return": "Devolver",
+      "confirmReturn": "Devolver con este motivo",
+      "reasonLabel": "¿Por qué la devolvés?",
+      "reasonPlaceholder": "Ej: falta terminar el borde del zócalo",
+      "returnedTitle": "El supervisor devolvió esta actividad",
+      "waiting": "Reportada como terminada. Espera la validación del supervisor.",
+      "rejected": "Actividad devuelta"
     },
     "emptyState": {
       "title": "No hay actividades planificadas para esta semana."
@@ -224,7 +245,8 @@
       "update": "No pudimos actualizar la actividad.",
       "delete": "No pudimos eliminar la actividad.",
       "uploadEvidence": "No pudimos subir la foto.",
-      "removeEvidence": "No pudimos borrar la foto."
+      "removeEvidence": "No pudimos borrar la foto.",
+      "reject": "No pudimos devolver la actividad."
     },
     "gantt": {
       "emptyState": "No hay actividades planificadas en este rango de fechas."
@@ -236,6 +258,11 @@
       "editTitle": "Editar actividad",
       "materials": "Materiales asociados",
       "noMaterials": "No hay materiales asociados a esta actividad.",
+      "providers": "Proveedores asignados",
+      "noProviders": "Todavía no asignaste proveedores a esta actividad.",
+      "assignProvider": "Asignar",
+      "assignProviderPlaceholder": "Elegí un proveedor",
+      "unassignProvider": "Quitar proveedor",
       "notes": "Notas",
       "evidence": "Evidencia fotográfica",
       "addEvidence": "Agregar foto",
@@ -294,7 +321,178 @@
       "copy": "No pudimos copiar la lista."
     }
   },
+  "provider": {
+    "list": {
+      "navLink": "Proveedores",
+      "title": "Proveedores",
+      "new": "Nuevo proveedor",
+      "newTitle": "Nuevo proveedor",
+      "newSubmit": "Crear proveedor",
+      "editTitle": "Editar proveedor",
+      "deactivate": "Dar de baja",
+      "created": "Proveedor agregado",
+      "updated": "Proveedor actualizado",
+      "deactivated": "Proveedor dado de baja",
+      "assigned": "Proveedor asignado",
+      "unassigned": "Proveedor desasignado",
+      "empty": "Todavía no cargaste proveedores.",
+      "emptyOwnerHint": "Agregá tu primer contacto para poder asignarlo a una actividad.",
+      "confirmDeactivateTitle": "Dar de baja al proveedor",
+      "confirmDeactivateBody": "\"{{name}}\" ya no va a aparecer para asignar a nuevas actividades. Las actividades donde ya está asignado no cambian.",
+      "activitiesTitle": "Actividades de {{name}}",
+      "noActivities": "Todavía no asignaste este proveedor a ninguna actividad de esta obra.",
+      "assignActivity": "Asignar",
+      "assignActivityPlaceholder": "Elegí una actividad",
+      "unassignActivity": "Quitar actividad"
+    },
+    "fields": {
+      "name": "Nombre",
+      "companyName": "Empresa (opcional)",
+      "specialty": "Especialidad",
+      "customSpecialty": "Especificá la especialidad",
+      "phone": "Teléfono",
+      "email": "Email (opcional)",
+      "notes": "Notas (opcional)",
+      "assignActivities": "Asignar a actividades (opcional)",
+      "customSpecialtyAcabados": "Qué acabado hace (opcional)",
+      "scope": "Disponible en",
+      "scopeHint": "Los de \"Todas mis obras\" quedan en tu libreta y aparecen en cualquier obra. Usá \"Solo esta obra\" para el proveedor que trae el cliente."
+    },
+    "specialty": {
+      "electricidad": "Electricidad",
+      "plomeria": "Plomería",
+      "gas": "Gas",
+      "carpinteria": "Carpintería",
+      "cristaleria": "Cristalería",
+      "albanileria": "Albañilería",
+      "herreria": "Herrería",
+      "redes": "Redes (CCTV, internet, domótica)",
+      "mecanicas": "Mecánicas (aires, ascensores, escaleras)",
+      "estructura": "Estructura (columnas, vigas, losas)",
+      "acabados": "Acabados",
+      "pintura": "Pintura",
+      "climatizacion": "Climatización",
+      "techos": "Techos e impermeabilización",
+      "pisos_revestimientos": "Pisos y revestimientos",
+      "jardineria": "Jardinería",
+      "demolicion": "Demolición",
+      "otra": "Otra"
+    },
+    "scope": {
+      "organization": "Todas mis obras",
+      "project": "Solo esta obra",
+      "projectBadge": "Solo esta obra"
+    },
+    "errors": {
+      "create": "No pudimos agregar el proveedor.",
+      "update": "No pudimos actualizar el proveedor.",
+      "deactivate": "No pudimos dar de baja al proveedor.",
+      "assign": "No pudimos asignar el proveedor.",
+      "unassign": "No pudimos quitar el proveedor."
+    }
+  },
+  "engagement": {
+    "title": "Contratación — {{name}}",
+    "new": "Nueva contratación",
+    "createSubmit": "Crear contratación",
+    "edit": "Editar contratación",
+    "delete": "Eliminar contratación",
+    "empty": "Todavía no registraste una contratación con este proveedor en esta obra.",
+    "created": "Contratación registrada",
+    "updated": "Contratación actualizada",
+    "deleted": "Contratación eliminada",
+    "requirementsReady": "Todo listo para arrancar",
+    "requirementsPending": "Falta {{count}} requisito para arrancar",
+    "requirementsPending_other": "Faltan {{count}} requisitos para arrancar",
+    "fields": {
+      "status": "Estado",
+      "quotedAmount": "Cotizado",
+      "advanceAmount": "Adelanto",
+      "amountsHint": "Se registran como comprometido contra el presupuesto. Luma no lleva pagos ni facturación.",
+      "estimatedStartDate": "Inicio estimado",
+      "requirements": "¿Qué tiene que estar listo para que arranque?",
+      "notes": "Notas (opcional)"
+    },
+    "status": {
+      "solicitada": "Cotización solicitada",
+      "cotizada": "Cotizada",
+      "aprobada": "Aprobada",
+      "rechazada": "Rechazada"
+    },
+    "requirement": {
+      "materiales_en_obra": "Materiales en obra",
+      "personal_libre": "Personal libre",
+      "area_desocupada": "Área de trabajo desocupada",
+      "actividad_previa": "Actividad previa terminada",
+      "otro": "Otro"
+    },
+    "errors": {
+      "create": "No pudimos registrar la contratación.",
+      "update": "No pudimos actualizar la contratación.",
+      "delete": "No pudimos eliminar la contratación.",
+      "requirement": "No pudimos actualizar el requisito."
+    }
+  },
+  "crew": {
+    "list": {
+      "title": "Personal fijo",
+      "add": "Agregar",
+      "empty": "Todavía no cargaste personal fijo de obra.",
+      "lead": "Encargado",
+      "deactivate": "Dar de baja",
+      "created": "Personal agregado",
+      "updated": "Personal actualizado",
+      "deactivated": "Personal dado de baja"
+    },
+    "fields": {
+      "name": "Nombre",
+      "kind": "Tipo",
+      "specialty": "Especialidad (opcional)",
+      "specialtyPlaceholder": "Sin especialidad",
+      "isLead": "Es el encargado de su especialidad",
+      "onlyThisProject": "Sólo para esta obra",
+      "phone": "Teléfono (opcional)"
+    },
+    "kind": {
+      "persona": "Persona",
+      "equipo": "Equipo"
+    },
+    "goals": {
+      "assignee": "¿De quién es la meta?",
+      "assigneePlaceholder": "Elegí persona o equipo",
+      "activity": "Actividad (opcional)",
+      "activityPlaceholder": "Sin actividad asociada",
+      "description": "Meta de la semana",
+      "descriptionPlaceholder": "Ej: terminar el revoque del segundo piso",
+      "add": "Agregar meta",
+      "delete": "Eliminar meta",
+      "created": "Meta agregada",
+      "deleted": "Meta eliminada",
+      "empty": "No hay metas cargadas para esta semana.",
+      "needRoster": "Primero cargá el personal fijo de obra para poder asignarle metas.",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "currentWeek": "Semana actual"
+    },
+    "goalStatus": {
+      "pendiente": "Pendiente",
+      "cumplida": "Cumplida",
+      "no_cumplida": "No cumplida"
+    },
+    "errors": {
+      "create": "No pudimos agregar el personal.",
+      "update": "No pudimos actualizar el personal.",
+      "deactivate": "No pudimos dar de baja al personal.",
+      "createGoal": "No pudimos agregar la meta.",
+      "updateGoal": "No pudimos actualizar la meta.",
+      "deleteGoal": "No pudimos eliminar la meta."
+    }
+  },
   "labor": {
+    "tabs": {
+      "attendance": "Asistencia del día",
+      "goals": "Metas de la semana"
+    },
     "prevDay": "Día anterior",
     "nextDay": "Día siguiente",
     "today": "Hoy",
@@ -314,8 +512,29 @@
       "saved": "Registro guardado"
     },
     "errors": {
-      "save": "No pudimos guardar el registro."
-    }
+      "save": "No pudimos guardar el registro.",
+      "assignCrew": "No pudimos asignar a esa persona.",
+      "unassignCrew": "No pudimos quitar a esa persona."
+    },
+    "summary": {
+      "present": "Presentes",
+      "missing": "Faltan",
+      "activities": "Actividades hoy"
+    },
+    "crew": {
+      "empty": "Todavía no asignaste personal a esta actividad.",
+      "assign": "Asignar personal",
+      "pickPerson": "Elegí a quién asignar",
+      "assigned": "Personal asignado",
+      "unassigned": "Personal quitado",
+      "unassign": "Quitar de la cuadrilla",
+      "call": "Llamar",
+      "cover": "Cubrir",
+      "pickCover": "¿Quién lo cubre?",
+      "covering": "Cubriendo hoy",
+      "removeCover": "Quitar reemplazo"
+    },
+    "legacyNotice": "Parte cargado antes del roster: nombres escritos a mano."
   },
   "budget": {
     "list": {
@@ -328,6 +547,9 @@
     "summary": {
       "total": "Total",
       "contingency": "Contingencia",
+      "available": "Disponible",
+      "committed": "Comprometido",
+      "committedHint": "Cotizaciones de proveedores ya aprobadas.",
       "sourceImport": "Importado desde {{fileName}}",
       "sourceManual": "Cargado a mano"
     },

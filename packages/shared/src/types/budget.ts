@@ -46,6 +46,19 @@ export interface BudgetWithLines extends Budget {
 /** `null` cuando la obra todavía no tiene presupuesto cargado — no es un error. */
 export interface BudgetResponse {
   budget: BudgetWithLines | null;
+  /**
+   * Lo cotizado en contrataciones APROBADAS. Es "comprometido" en el sentido
+   * del documento funcional —plata que ya tiene dueño— y no contabilidad: la
+   * plataforma no registra pagos (regla 8).
+   *
+   * No sale de las líneas del presupuesto: ésas suman exactamente
+   * `totalAmount` por validación del alta, así que como "comprometido"
+   * darían siempre el 100% y no dirían nada.
+   *
+   * No incluye el costo estimado de materiales a propósito: una cotización de
+   * proveedor suele incluir sus materiales, y sumarlos los contaría dos veces.
+   */
+  committedAmount: number;
 }
 
 export interface CreateBudgetResponse {

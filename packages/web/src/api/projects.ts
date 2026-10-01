@@ -6,6 +6,7 @@ import type {
   InviteClientResponse,
   ProjectDetailResponse,
   ProjectListResponse,
+  UpdateProjectInput,
 } from '@luma/shared';
 import { apiClient } from '@/lib/api-client';
 
@@ -27,6 +28,9 @@ export const projectsApi = {
 
   create: (payload: CreateProjectInput) =>
     unwrap<CreateProjectResponse>(apiClient.post('/api/projects', payload)),
+
+  update: (projectId: string, payload: UpdateProjectInput) =>
+    unwrap<CreateProjectResponse>(apiClient.patch(`/api/projects/${projectId}`, payload)),
 
   inviteClient: (projectId: string, payload: InviteClientInput) =>
     unwrap<InviteClientResponse>(

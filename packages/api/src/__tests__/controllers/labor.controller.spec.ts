@@ -10,12 +10,16 @@ import type { Request, Response } from 'express';
 vi.mock('../../models/Activity.js', () => ({
   Activity: { findOne: vi.fn() },
 }));
+vi.mock('../../models/CrewMember.js', () => ({
+  CrewMember: { countDocuments: vi.fn() },
+}));
 vi.mock('../../models/LaborRecord.js', () => ({
   LaborRecord: { findOneAndUpdate: vi.fn(), find: vi.fn() },
 }));
 
 const { Activity } = await import('../../models/Activity.js');
 const { LaborRecord } = await import('../../models/LaborRecord.js');
+const { CrewMember } = await import('../../models/CrewMember.js');
 const { listLaborRecords, upsertLaborRecord } = await import('../../controllers/labor.controller.js');
 
 function mockRes(): Response {
@@ -32,7 +36,6 @@ function mockReq(overrides: Record<string, unknown> = {}): Request {
     body: {
       activityId: 'activity-1',
       date: '2026-09-15',
-      expectedCount: 4,
       ...overrides,
     },
   } as unknown as Request;
@@ -60,18 +63,20 @@ describe('upsertLaborRecord', () => {
 
   it('hace upsert por (activity, date) sin pisar createdBy en un update', async () => {
     vi.mocked(Activity.findOne).mockResolvedValue({ _id: 'activity-1' } as never);
+    vi.mocked(CrewMember.countDocuments).mockResolvedValue(1 as never);
     vi.mocked(LaborRecord.findOneAndUpdate).mockResolvedValue({
       _id: 'lr1',
       project: 'project-1',
       activity: 'activity-1',
       date: '2026-09-15',
-      expectedCount: 4,
-      presentNames: ['Juan Pérez'],
+      presentCrewMembers: ['crew-1'],
+      presentNames: [],
+      expectedCount: 0,
       createdBy: 'user-1',
       createdAt: new Date(),
       updatedAt: new Date(),
     } as never);
-    const req = mockReq({ presentNames: ['Juan Pérez'] });
+    const req = mockReq({ presentCrewMemberIds: ['crew-1'] });
     const res = mockRes();
 
     await upsertLaborRecord(req, res);
@@ -79,7 +84,7 @@ describe('upsertLaborRecord', () => {
     expect(LaborRecord.findOneAndUpdate).toHaveBeenCalledWith(
       { project: 'project-1', activity: 'activity-1', date: '2026-09-15' },
       {
-        $set: { expectedCount: 4, presentNames: ['Juan Pérez'] },
+        $set: { presentCrewMembers: ['crew-1'] },
         $setOnInsert: {
           project: 'project-1',
           activity: 'activity-1',
@@ -92,8 +97,21 @@ describe('upsertLaborRecord', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it('rechaza expectedCount inválido antes de tocar la base', async () => {
-    const req = mockReq({ expectedCount: -1 });
+  it('400 si algún presente no es del roster visible desde esta obra', async () => {
+    vi.mocked(Activity.findOne).mockResolvedValue({ _id: 'activity-1' } as never);
+    // Se mandan dos ids pero sólo uno existe en el roster de la Empresa.
+    vi.mocked(CrewMember.countDocuments).mockResolvedValue(1 as never);
+    const req = mockReq({ presentCrewMemberIds: ['crew-1', 'de-otra-empresa'] });
+    const res = mockRes();
+
+    await upsertLaborRecord(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(LaborRecord.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rechaza una fecha inválida antes de tocar la base', async () => {
+    const req = mockReq({ date: '15-09-2026' });
     const res = mockRes();
 
     await upsertLaborRecord(req, res);

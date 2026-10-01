@@ -1,3 +1,4 @@
+import type { ActivityStatus } from '@luma/shared';
 import { toDayKey } from '@/components/common/date-range-filter';
 
 /**
@@ -48,10 +49,13 @@ export function isSameWeek(a: WeekRange, b: WeekRange): boolean {
 /**
  * "Atrasada" es derivado, nunca persistido: vencida (comparación lexicográfica
  * de strings `YYYY-MM-DD`, válida porque el formato es fijo) y sin cerrar.
+ *
+ * `en_revision` cuenta como atrasada a propósito: el trabajo está reportado
+ * pero nadie lo validó todavía, así que para la obra sigue abierto.
  */
 export function isActivityOverdue(
   endDate: string,
-  status: 'pendiente' | 'en_curso' | 'completada' | 'cancelada',
+  status: ActivityStatus,
   today = toDayKey(new Date()),
 ): boolean {
   return endDate < today && status !== 'completada' && status !== 'cancelada';

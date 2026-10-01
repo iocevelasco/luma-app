@@ -1,111 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { Activity, LaborRecord } from '@luma/shared';
+import { useMemo, useState } from 'react';
+
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { CrewGoalsPanel } from '@/components/crew/crew-goals-panel';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ActivityAttendance } from '@/components/labor/activity-attendance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
-import { useLaborRecords, useUpsertLaborRecord } from '@/hooks/labor/use-labor-queries';
+import { useDayAttendance } from '@/hooks/labor/use-labor-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
 
 function shiftDay(date: string, deltaDays: number): string {
   const d = fromDayKey(date);
   d.setDate(d.getDate() + deltaDays);
   return toDayKey(d);
-}
-
-function LaborRow({
-  projectId,
-  activity,
-  record,
-  date,
-  isEditor,
-}: {
-  projectId: string;
-  activity: Activity;
-  record: LaborRecord | undefined;
-  date: string;
-  isEditor: boolean;
-}) {
-  const { t } = useTranslation();
-  const upsert = useUpsertLaborRecord(projectId);
-  const [expectedCount, setExpectedCount] = useState(record?.expectedCount ?? 0);
-  const [presentNamesText, setPresentNamesText] = useState((record?.presentNames ?? []).join(', '));
-
-  // El registro llega async (o cambia al navegar de día) — el form tiene que
-  // reflejarlo, no quedarse con el valor default del primer render.
-  useEffect(() => {
-    setExpectedCount(record?.expectedCount ?? 0);
-    setPresentNamesText((record?.presentNames ?? []).join(', '));
-  }, [record]);
-
-  const presentNames = presentNamesText
-    .split(',')
-    .map((name) => name.trim())
-    .filter(Boolean);
-  // Para el cliente invitado la API vacía `presentNames` (regla de negocio: no
-  // ve la asignación individual de personal) — `presentCount` es la cuenta
-  // real igual, así el déficit no se calcula contra un array vacío.
-  const presentCount = isEditor ? presentNames.length : (record?.presentCount ?? 0);
-  const deficit = expectedCount - presentCount;
-
-  return (
-    <div className="flex flex-col gap-3 border-b border-border py-4 last:border-b-0 sm:flex-row sm:items-end">
-      <div className="flex-1">
-        <p className="font-medium">{activity.name}</p>
-        <p className="text-sm text-muted-foreground">{activity.area}</p>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">{t('labor.fields.expected')}</Label>
-        {isEditor ? (
-          <Input
-            type="number"
-            min={0}
-            className="w-20"
-            value={expectedCount}
-            onChange={(event) => setExpectedCount(Number(event.target.value))}
-          />
-        ) : (
-          <p>{expectedCount}</p>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col gap-1">
-        <Label className="text-xs text-muted-foreground">{t('labor.fields.present')}</Label>
-        {isEditor ? (
-          <Input
-            value={presentNamesText}
-            onChange={(event) => setPresentNamesText(event.target.value)}
-            placeholder={t('labor.fields.presentPlaceholder')}
-          />
-        ) : (
-          <p>{presentCount > 0 ? t('labor.presentCount', { count: presentCount }) : '—'}</p>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        {deficit > 0 && <Badge variant="destructive">{t('labor.deficit', { count: deficit })}</Badge>}
-        {isEditor && (
-          <Button
-            size="sm"
-            disabled={upsert.isPending}
-            onClick={() =>
-              upsert.mutate({ activityId: activity.id, date, expectedCount, presentNames })
-            }
-          >
-            {t('common.save')}
-          </Button>
-        )}
-      </div>
-    </div>
-  );
 }
 
 export function ProjectLaborPage() {
@@ -115,7 +28,7 @@ export function ProjectLaborPage() {
   const [date, setDate] = useState(() => toDayKey(new Date()));
 
   const { data: allActivitiesData, isLoading, isError } = useAllActivities(projectId);
-  const { data: laborData } = useLaborRecords(projectId, date);
+  const { data: attendanceData } = useDayAttendance(projectId, date);
 
   const isEditor = Boolean(projectData?.project.isEditor);
 
@@ -126,32 +39,32 @@ export function ProjectLaborPage() {
     );
   }, [allActivitiesData, date]);
 
-  const recordByActivity = useMemo(() => {
-    const map = new Map<string, LaborRecord>();
-    for (const record of laborData?.laborRecords ?? []) map.set(record.activityId, record);
+  const attendanceByActivity = useMemo(() => {
+    const map = new Map<string, (typeof list)[number]>();
+    const list = attendanceData?.attendance ?? [];
+    for (const item of list) map.set(item.activityId, item);
     return map;
-  }, [laborData]);
+  }, [attendanceData]);
 
-  // Vacío para el cliente invitado (la API no manda nombres individuales):
-  // el total de `totalPresentToday` sigue siendo correcto porque sale de
-  // `presentCount`, no de contar este array.
-  const presentToday = useMemo(() => {
-    const result: { name: string; activityName: string }[] = [];
+  /**
+   * Totales de la obra. Los partes viejos no tienen gente del roster, así que
+   * su presente sale de los nombres tipeados y su esperado del número que se
+   * cargaba a mano — si no, esos días aparecerían en cero.
+   */
+  const { totalPresentToday, totalExpectedToday } = useMemo(() => {
+    let present = 0;
+    let expected = 0;
     for (const activity of activitiesToday) {
-      const record = recordByActivity.get(activity.id);
-      for (const name of record?.presentNames ?? []) {
-        result.push({ name, activityName: activity.name });
-      }
+      const item = attendanceByActivity.get(activity.id);
+      if (!item) continue;
+      const fromRoster = item.presentCrewMemberIds.length;
+      present += fromRoster > 0 ? fromRoster : item.legacyPresentNames.length;
+      expected += item.expected.length > 0 ? item.expected.length : item.legacyExpectedCount;
     }
-    return result;
-  }, [activitiesToday, recordByActivity]);
+    return { totalPresentToday: present, totalExpectedToday: expected };
+  }, [activitiesToday, attendanceByActivity]);
 
-  const totalPresentToday = useMemo(() => {
-    return activitiesToday.reduce(
-      (sum, activity) => sum + (recordByActivity.get(activity.id)?.presentCount ?? 0),
-      0,
-    );
-  }, [activitiesToday, recordByActivity]);
+  const totalMissingToday = Math.max(totalExpectedToday - totalPresentToday, 0);
 
   if (isError) return <RouteError />;
   if (isLoading || !allActivitiesData) return <RouteLoading />;
@@ -159,7 +72,28 @@ export function ProjectLaborPage() {
   const isToday = date === toDayKey(new Date());
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 p-3 md:p-4">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-3 md:p-4">
+      {/*
+        Dos preguntas distintas con su propio navegador de fecha: quién está
+        HOY (asistencia, por día) y qué tiene que lograr cada uno esta SEMANA
+        (metas, cargadas una o dos semanas antes). Mezclarlas en una sola
+        vista dejaría dos calendarios compitiendo en la misma pantalla.
+      */}
+      <Tabs defaultValue="attendance">
+        <TabsList>
+          <TabsTrigger value="attendance">{t('labor.tabs.attendance')}</TabsTrigger>
+          <TabsTrigger value="goals">{t('labor.tabs.goals')}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="goals" className="pt-4">
+          <CrewGoalsPanel
+            projectId={projectId!}
+            isEditor={isEditor}
+            isOwner={Boolean(projectData?.project.isOwner)}
+          />
+        </TabsContent>
+
+        <TabsContent value="attendance" className="flex flex-col gap-8 pt-4">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => setDate((d) => shiftDay(d, -1))} aria-label={t('labor.prevDay')}>
           <ChevronLeft className="size-4" />
@@ -180,45 +114,52 @@ export function ProjectLaborPage() {
         )}
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h3 className="text-sm font-medium">{t('labor.whoIsHereTitle')}</h3>
-        {isEditor ? (
-          presentToday.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('labor.whoIsHereEmpty')}</p>
-          ) : (
-            <ul className="flex flex-col gap-1 text-sm">
-              {presentToday.map((person, index) => (
-                <li key={index}>
-                  {person.name} <span className="text-muted-foreground">— {person.activityName}</span>
-                </li>
-              ))}
-            </ul>
-          )
-        ) : totalPresentToday === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('labor.whoIsHereEmpty')}</p>
-        ) : (
-          // El cliente ve el total, no quién en particular — regla de negocio.
-          <p className="text-sm">{t('labor.whoIsHereCount', { count: totalPresentToday })}</p>
+      {/*
+        El resumen de la obra entera arriba: la primera pregunta de la mañana
+        es con cuánta gente se cuenta hoy. Antes había que sumar a ojo fila
+        por fila, y la lista de presentes repetía lo mismo que el formulario.
+      */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-border bg-card p-4">
+        <div>
+          <p className="text-2xs text-muted-foreground">{t('labor.summary.present')}</p>
+          <p className="text-2xl font-semibold tabular-nums">
+            {totalPresentToday}
+            <span className="text-base text-muted-foreground"> / {totalExpectedToday}</span>
+          </p>
+        </div>
+        {totalMissingToday > 0 && (
+          <div>
+            <p className="text-2xs text-muted-foreground">{t('labor.summary.missing')}</p>
+            <p className="text-2xl font-semibold tabular-nums text-destructive">
+              {totalMissingToday}
+            </p>
+          </div>
         )}
+        <div>
+          <p className="text-2xs text-muted-foreground">{t('labor.summary.activities')}</p>
+          <p className="text-2xl font-semibold tabular-nums">{activitiesToday.length}</p>
+        </div>
       </div>
 
-      <div className="flex flex-col border-t border-border pt-6">
-        <h3 className="mb-2 text-sm font-medium">{t('labor.byActivityTitle')}</h3>
+      <div className="flex flex-col gap-3">
+        <h3 className="text-sm font-medium">{t('labor.byActivityTitle')}</h3>
         {activitiesToday.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('labor.emptyState')}</p>
         ) : (
           activitiesToday.map((activity) => (
-            <LaborRow
+            <ActivityAttendance
               key={activity.id}
               projectId={projectId!}
               activity={activity}
-              record={recordByActivity.get(activity.id)}
+              attendance={attendanceByActivity.get(activity.id)}
               date={date}
               isEditor={isEditor}
             />
           ))
         )}
       </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

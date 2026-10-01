@@ -1,33 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import { laborRecordSchema } from './labor.js';
+import { assignCrewToActivitySchema, laborRecordSchema } from './labor.js';
 
 const validRecord = {
   activityId: 'activity-1',
   date: '2026-09-15',
-  expectedCount: 4,
 };
 
 describe('laborRecordSchema', () => {
-  it('acepta un registro válido', () => {
+  it('acepta un parte válido', () => {
     expect(laborRecordSchema.safeParse(validRecord).success).toBe(true);
   });
 
-  it('default de presentNames es []', () => {
+  /**
+   * El parte del día sólo dice quiénes vinieron. Lo esperado vive en la
+   * asignación de la actividad (`ActivityCrew`) y no se repite por día: si se
+   * guardara acá, cada jornada habría que volver a declarar la misma cuadrilla.
+   */
+  it('sin presentes asume que no vino nadie', () => {
     const result = laborRecordSchema.safeParse(validRecord);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.presentNames).toEqual([]);
+    if (result.success) expect(result.data.presentCrewMemberIds).toEqual([]);
   });
 
-  it('rechaza expectedCount negativo', () => {
-    expect(laborRecordSchema.safeParse({ ...validRecord, expectedCount: -1 }).success).toBe(false);
+  it('acepta la lista de quienes estuvieron', () => {
+    const result = laborRecordSchema.safeParse({
+      ...validRecord,
+      presentCrewMemberIds: ['crew-1', 'crew-2'],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.presentCrewMemberIds).toHaveLength(2);
   });
 
-  it('rechaza expectedCount no entero', () => {
-    expect(laborRecordSchema.safeParse({ ...validRecord, expectedCount: 2.5 }).success).toBe(false);
+  it('rechaza ids vacíos', () => {
+    expect(
+      laborRecordSchema.safeParse({ ...validRecord, presentCrewMemberIds: [''] }).success,
+    ).toBe(false);
   });
 
-  it('acepta expectedCount cero', () => {
-    expect(laborRecordSchema.safeParse({ ...validRecord, expectedCount: 0 }).success).toBe(true);
+  it('ya no acepta un conteo suelto: esperado son personas, no un número', () => {
+    const result = laborRecordSchema.safeParse({ ...validRecord, expectedCount: 4 });
+    expect(result.success).toBe(true);
+    // Zod descarta la clave desconocida en vez de guardarla.
+    if (result.success) expect('expectedCount' in result.data).toBe(false);
   });
 
   it('rechaza fecha con formato inválido', () => {
@@ -38,19 +52,14 @@ describe('laborRecordSchema', () => {
     const { activityId: _activityId, ...rest } = validRecord;
     expect(laborRecordSchema.safeParse(rest).success).toBe(false);
   });
+});
 
-  it('acepta presentNames con nombres', () => {
-    const result = laborRecordSchema.safeParse({
-      ...validRecord,
-      presentNames: ['Juan Pérez', 'María Gómez'],
-    });
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data.presentNames).toHaveLength(2);
+describe('assignCrewToActivitySchema', () => {
+  it('acepta asignar a alguien del roster', () => {
+    expect(assignCrewToActivitySchema.safeParse({ crewMemberId: 'crew-1' }).success).toBe(true);
   });
 
-  it('rechaza nombres vacíos en presentNames', () => {
-    expect(
-      laborRecordSchema.safeParse({ ...validRecord, presentNames: [''] }).success,
-    ).toBe(false);
+  it('rechaza una asignación sin persona', () => {
+    expect(assignCrewToActivitySchema.safeParse({ crewMemberId: '' }).success).toBe(false);
   });
 });

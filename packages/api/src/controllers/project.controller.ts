@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import {
   createProjectSchema,
   inviteClientSchema,
+  updateProjectSchema,
   type Project as ProjectDTO,
   type ProjectClientSummary,
 } from '@luma/shared';
@@ -31,9 +32,36 @@ function toProjectDTO(project: IProject): ProjectDTO {
     currency: project.currency,
     budgetType: project.budgetType,
     status: project.status,
+    providersVisibleToClient: Boolean(project.providersVisibleToClient),
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };
+}
+
+/**
+ * Requiere `requireProjectAccess` + `requireProjectOwner` antes. Ajustes de
+ * una obra ya creada — hoy sólo la visibilidad de proveedores para el cliente.
+ */
+export async function updateProject(req: Request, res: Response) {
+  try {
+    const parsed = updateProjectSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
+    }
+
+    const current = req.project as IProject;
+    const project = await Project.findByIdAndUpdate(current._id, parsed.data, { new: true });
+    if (!project) {
+      return res.status(404).json({ success: false, error: 'Obra no encontrada' });
+    }
+
+    return res.json({ success: true, data: { project: toProjectDTO(project) } });
+  } catch (error) {
+    console.error('❌ [PROJECT] updateProject:', error);
+    return res.status(500).json({ success: false, error: errMsg(error) });
+  }
 }
 
 export async function createProject(req: Request, res: Response) {
