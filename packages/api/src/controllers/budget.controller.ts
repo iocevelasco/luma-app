@@ -7,7 +7,7 @@ import {
 } from '@luma/shared';
 import { Budget, type IBudget } from '../models/Budget.js';
 import { BudgetLine, type IBudgetLine } from '../models/BudgetLine.js';
-import { ProviderEngagement } from '../models/ProviderEngagement.js';
+import { committedForProject } from '../services/commitment.service.js';
 import type { IProject } from '../models/Project.js';
 
 function errMsg(error: unknown): string {
@@ -52,30 +52,11 @@ function toBudgetLineDTO(line: IBudgetLine): BudgetLineDTO {
 }
 
 /** Requiere `requireProjectAccess` + `requireProjectOwner` antes (montado a nivel router: ver routes/budget.ts). */
-/**
- * Plata que ya tiene dueño: lo cotizado en contrataciones APROBADAS.
- *
- * No sale de las líneas del presupuesto —ésas suman exactamente `totalAmount`
- * por validación del alta, así que darían siempre 100%— ni de los costos
- * estimados de materiales, que una cotización de proveedor suele incluir y
- * contarlos aparte sería contarlos dos veces.
- */
-async function committedForProject(project: IProject): Promise<number> {
-  const approved = await ProviderEngagement.find({
-    project: project._id,
-    status: 'aprobada',
-  }).select('quotedAmount');
-
-  return roundMoney(
-    approved.reduce((sum, engagement) => sum + (engagement.quotedAmount ?? 0), 0),
-  );
-}
-
 export async function getBudget(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const budget = await Budget.findOne({ project: project._id }).sort({ version: -1 });
-    const committedAmount = await committedForProject(project);
+    const committedAmount = await committedForProject(project._id as never);
 
     if (!budget) {
       // Todavía no hay presupuesto cargado — es el estado sano de una obra
