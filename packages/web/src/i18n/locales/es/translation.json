@@ -450,7 +450,8 @@
       "specialty": "Especialidad (opcional)",
       "specialtyPlaceholder": "Sin especialidad",
       "isLead": "Es el encargado de su especialidad",
-      "onlyThisProject": "Sólo para esta obra"
+      "onlyThisProject": "Sólo para esta obra",
+      "phone": "Teléfono (opcional)"
     },
     "kind": {
       "persona": "Persona",
@@ -511,8 +512,29 @@
       "saved": "Registro guardado"
     },
     "errors": {
-      "save": "No pudimos guardar el registro."
-    }
+      "save": "No pudimos guardar el registro.",
+      "assignCrew": "No pudimos asignar a esa persona.",
+      "unassignCrew": "No pudimos quitar a esa persona."
+    },
+    "summary": {
+      "present": "Presentes",
+      "missing": "Faltan",
+      "activities": "Actividades hoy"
+    },
+    "crew": {
+      "empty": "Todavía no asignaste personal a esta actividad.",
+      "assign": "Asignar personal",
+      "pickPerson": "Elegí a quién asignar",
+      "assigned": "Personal asignado",
+      "unassigned": "Personal quitado",
+      "unassign": "Quitar de la cuadrilla",
+      "call": "Llamar",
+      "cover": "Cubrir",
+      "pickCover": "¿Quién lo cubre?",
+      "covering": "Cubriendo hoy",
+      "removeCover": "Quitar reemplazo"
+    },
+    "legacyNotice": "Parte cargado antes del roster: nombres escritos a mano."
   },
   "budget": {
     "list": {

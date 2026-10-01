@@ -9,13 +9,16 @@ import {
   requireProviderRead,
 } from '../middleware/project.middleware.js';
 import {
+  assignCrewToActivity,
   assignProvider,
   createActivity,
   deleteActivity,
   deleteActivityEvidence,
   listActivities,
+  listActivityCrew,
   listActivityProviders,
   rejectActivity,
+  unassignCrewFromActivity,
   unassignProvider,
   updateActivity,
   uploadActivityEvidence,
@@ -73,5 +76,15 @@ activityRouter.delete(
 activityRouter.get('/:activityId/providers', requireProviderRead, listActivityProviders);
 activityRouter.post('/:activityId/providers', requireProjectEditor, assignProvider);
 activityRouter.delete('/:activityId/providers/:providerId', requireProjectEditor, unassignProvider);
+
+// Cuadrilla fija de la actividad: quiénes se esperan todos los días. El parte
+// diario (`/labor`) sólo confirma quién de ellos vino.
+activityRouter.get('/:activityId/crew', requireProjectEditor, listActivityCrew);
+activityRouter.post('/:activityId/crew', requireProjectEditor, assignCrewToActivity);
+activityRouter.delete(
+  '/:activityId/crew/:crewMemberId',
+  requireProjectEditor,
+  unassignCrewFromActivity,
+);
 
 export default activityRouter;

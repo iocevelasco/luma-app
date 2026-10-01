@@ -1,4 +1,5 @@
 import type {
+  ActivityCrewResponse,
   ActivityListResponse,
   ActivityResponse,
   ApiResponse,
@@ -33,6 +34,24 @@ export const activitiesApi = {
   update: (projectId: string, activityId: string, payload: UpdateActivityInput) =>
     unwrap<ActivityResponse>(
       apiClient.patch(`/api/projects/${projectId}/activities/${activityId}`, payload),
+    ),
+
+  /** Cuadrilla fija de la actividad: quiénes se esperan todos los días. */
+  listCrew: (projectId: string, activityId: string) =>
+    unwrap<ActivityCrewResponse>(
+      apiClient.get(`/api/projects/${projectId}/activities/${activityId}/crew`),
+    ),
+
+  assignCrew: (projectId: string, activityId: string, crewMemberId: string) =>
+    unwrap<{ crewMember: ActivityCrewResponse['crew'][number] }>(
+      apiClient.post(`/api/projects/${projectId}/activities/${activityId}/crew`, { crewMemberId }),
+    ),
+
+  unassignCrew: (projectId: string, activityId: string, crewMemberId: string) =>
+    unwrap<{ crewMemberId: string }>(
+      apiClient.delete(
+        `/api/projects/${projectId}/activities/${activityId}/crew/${crewMemberId}`,
+      ),
     ),
 
   /** El supervisor devuelve el trabajo con un motivo; vuelve a `en_curso`. */

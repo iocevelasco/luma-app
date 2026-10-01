@@ -1,4 +1,10 @@
-import type { ApiResponse, LaborRecordInput, LaborRecordListResponse, LaborRecordResponse } from '@luma/shared';
+import type {
+  ActivityAttendance,
+  ApiResponse,
+  LaborRecordInput,
+  LaborRecordListResponse,
+  LaborRecordResponse,
+} from '@luma/shared';
 import { apiClient } from '@/lib/api-client';
 
 /** Capa 1: mismo patrón que `src/api/activities.ts` — nunca lo importa un componente. */
@@ -21,4 +27,10 @@ export const laborApi = {
 
   upsert: (projectId: string, payload: LaborRecordInput) =>
     unwrap<LaborRecordResponse>(apiClient.post(`/api/projects/${projectId}/labor`, payload)),
+
+  /** Asistencia de todas las actividades vigentes ese día, en una consulta. */
+  attendance: (projectId: string, date: string) =>
+    unwrap<{ attendance: ActivityAttendance[] }>(
+      apiClient.get(`/api/projects/${projectId}/labor/attendance?date=${date}`),
+    ),
 };

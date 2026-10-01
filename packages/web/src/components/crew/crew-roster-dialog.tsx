@@ -66,6 +66,7 @@ export function CrewRosterDialog({
   const [kind, setKind] = useState<CrewMemberKind>('persona');
   const [specialty, setSpecialty] = useState<string>('');
   const [isLead, setIsLead] = useState(false);
+  const [phone, setPhone] = useState('');
   const [onlyThisProject, setOnlyThisProject] = useState(false);
 
   const { data } = useCrewMembers(open ? projectId : undefined);
@@ -79,6 +80,7 @@ export function CrewRosterDialog({
     setKind('persona');
     setSpecialty('');
     setIsLead(false);
+    setPhone('');
     setOnlyThisProject(false);
   }
 
@@ -141,6 +143,7 @@ export function CrewRosterDialog({
                     kind,
                     isLead,
                     scope: onlyThisProject ? 'project' : 'organization',
+                    ...(phone.trim() ? { phone: phone.trim() } : {}),
                     ...(specialty ? { specialty: specialty as ProviderSpecialty } : {}),
                   },
                   { onSuccess: resetForm },
@@ -188,6 +191,18 @@ export function CrewRosterDialog({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {/* Sin teléfono no se puede llamar al que faltó, que es el
+                    motivo de ser de la pantalla de asistencia. */}
+                <Label htmlFor="crew-phone">{t('crew.fields.phone')}</Label>
+                <Input
+                  id="crew-phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                />
               </div>
 
               <label className="flex items-center gap-2 text-sm">

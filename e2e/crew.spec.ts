@@ -38,8 +38,10 @@ test.describe('personal fijo y metas semanales', () => {
     await page.getByRole('link', { name: /^personal$/i }).click();
     await expect(page).toHaveURL(/\/personal$/);
 
-    // La asistencia diaria sigue siendo la vista por defecto.
-    await expect(page.getByText(/quién está trabajando hoy/i)).toBeVisible();
+    // La asistencia diaria sigue siendo la vista por defecto. Ya no hay una
+    // lista suelta de presentes: arriba va el resumen de la obra.
+    await expect(page.getByText(/^presentes$/i)).toBeVisible();
+    await expect(page.getByText(/actividades hoy/i)).toBeVisible();
 
     await page.getByRole('tab', { name: /metas de la semana/i }).click();
     await expect(page.getByText(/primero cargá el personal fijo/i)).toBeVisible();

@@ -450,7 +450,8 @@
       "specialty": "Especialidade (opcional)",
       "specialtyPlaceholder": "Sem especialidade",
       "isLead": "É o encarregado da sua especialidade",
-      "onlyThisProject": "Somente para esta obra"
+      "onlyThisProject": "Somente para esta obra",
+      "phone": "Telefone (opcional)"
     },
     "kind": {
       "persona": "Pessoa",
@@ -511,8 +512,29 @@
       "saved": "Registro salvo"
     },
     "errors": {
-      "save": "Não conseguimos salvar o registro."
-    }
+      "save": "Não conseguimos salvar o registro.",
+      "assignCrew": "Não conseguimos atribuir essa pessoa.",
+      "unassignCrew": "Não conseguimos remover essa pessoa."
+    },
+    "summary": {
+      "present": "Presentes",
+      "missing": "Faltam",
+      "activities": "Atividades hoje"
+    },
+    "crew": {
+      "empty": "Você ainda não atribuiu pessoal a esta atividade.",
+      "assign": "Atribuir pessoal",
+      "pickPerson": "Escolha quem atribuir",
+      "assigned": "Pessoal atribuído",
+      "unassigned": "Pessoal removido",
+      "unassign": "Remover da equipe",
+      "call": "Ligar",
+      "cover": "Cobrir",
+      "pickCover": "Quem cobre?",
+      "covering": "Cobrindo hoje",
+      "removeCover": "Remover substituto"
+    },
+    "legacyNotice": "Registro feito antes do roster: nomes digitados à mão."
   },
   "budget": {
     "list": {
