@@ -525,6 +525,9 @@
     "summary": {
       "total": "Total",
       "contingency": "Contingencia",
+      "available": "Disponible",
+      "committed": "Comprometido",
+      "committedHint": "Cotizaciones de proveedores ya aprobadas.",
       "sourceImport": "Importado desde {{fileName}}",
       "sourceManual": "Cargado a mano"
     },

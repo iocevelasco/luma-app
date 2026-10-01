@@ -13,6 +13,7 @@ import { Controller, useForm, type Control, type FieldErrors, type UseFormRegist
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ActivityGantt } from '@/components/activities/activity-gantt';
+import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { DateRangeFilter, fromDayKey, presetRange } from '@/components/common/date-range-filter';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
@@ -51,7 +52,7 @@ import {
 } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProject } from '@/hooks/projects/use-project-queries';
-import { isActivityOverdue, isWithinNextDays } from '@/lib/week';
+import { isWithinNextDays } from '@/lib/week';
 
 const ACTIVITY_STATUSES = [
   'pendiente',
@@ -696,11 +697,7 @@ function ActivityDetailModal({
                       <TooltipContent>{t('activity.list.missingMaterials')}</TooltipContent>
                     </Tooltip>
                   )}
-                  <Badge
-                    variant={isActivityOverdue(activity.endDate, activity.status) ? 'destructive' : 'secondary'}
-                  >
-                    {t(`activity.status.${activity.status}`)}
-                  </Badge>
+                  <ActivityStatusBadge status={activity.status} endDate={activity.endDate} />
                 </div>
               </div>
 
