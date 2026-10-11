@@ -331,6 +331,23 @@ Coolify sobre VPS: `app` (API + SPA) + `landing` (nginx interno) + `mongo`. Todo
 en `docs/DEPLOY.md`, incluidas las dos trampas operativas (el network alias de la
 landing y el redeploy obligatorio al cambiar env vars).
 
+### Cambios de configuración: primero el skill de Coolify
+
+Cuando se pida un cambio relacionado con la **configuración del proyecto** —
+env vars, scopes, deploys, métricas, analytics, dominios del server, storages,
+backups, tareas programadas, servicios, bases de datos, o cualquier otra cosa
+que Coolify ofrezca— **usá siempre primero el skill `~/Documents/Claude/coolify-deploy`
+y el MCP de Coolify** (`.mcp.json`), con todas sus capabilities, **antes de
+ejecutar el cambio**.
+
+- Leé `~/Documents/Claude/coolify-deploy/SKILL.md` (y `REFERENCE.md` si hace
+  falta) para saber qué operación corresponde, y recién después actuá.
+- Inspeccioná el estado actual (list/get) antes de modificar.
+- No edites la configuración de deploy a mano ni por fuera de Coolify: si el
+  cambio se puede hacer por el skill o el MCP, se hace por ahí.
+- Las herramientas destructivas del MCP siguen pidiendo aprobación; el skill no
+  la saltea.
+
 ## Notas
 
 - **pnpm siempre.** Nunca `npm` ni `yarn`.
