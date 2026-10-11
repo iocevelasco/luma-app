@@ -1,4 +1,4 @@
-import { HardHat, type LucideIcon } from 'lucide-react';
+import { Building2, HardHat, type LucideIcon } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 
 /**
@@ -6,8 +6,10 @@ import { ROUTES } from '@/lib/routes';
  * mobile. Si cada navegación arma su propia lista, se desincronizan en el
  * primer cambio.
  *
- * Hoy hay uno solo, y está bien que así sea: la base no tiene producto. Cuando
- * aparezcan los dominios reales, se agregan acá y las dos barras los toman.
+ * El orden es el de uso: a las obras se entra todos los días, a la Empresa
+ * cuando entra alguien nuevo. Por eso la Empresa es un destino y no una
+ * sección al final de la home: ahí quedaba debajo del listado de obras, que
+ * crece, y con unas cuantas obras ya había que scrollear para encontrarla.
  */
 export interface DashboardDestination {
   /** Clave i18n bajo `layout`. */
@@ -25,5 +27,11 @@ export const DASHBOARD_DESTINATIONS: DashboardDestination[] = [
     to: ROUTES.ADMIN,
     icon: HardHat,
     testId: 'nav-home',
+  },
+  {
+    labelKey: 'company',
+    to: ROUTES.COMPANY,
+    icon: Building2,
+    testId: 'nav-company',
   },
 ];

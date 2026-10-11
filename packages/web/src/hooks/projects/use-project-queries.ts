@@ -2,19 +2,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import type { CreateProjectInput, InviteClientInput, UpdateProjectInput } from '@luma/shared';
+import type {
+  CreateProjectInput,
+  InvitableProjectRole,
+  InviteProjectMemberInput,
+  UpdateProjectInput,
+} from '@luma/shared';
 import { projectsApi } from '@/api/projects';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { projectDetailPath } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-auth-queries.ts`. */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 export function useProjects() {
   const { isAuthenticated } = useAuth();
@@ -48,7 +49,9 @@ export function useCreateProject() {
       toast.success(t('project.new.created'));
       navigate(projectDetailPath(project.id));
     },
-    onError: (error) => toast.error(errorMessage(error, t('project.errors.create'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }
 
@@ -65,20 +68,56 @@ export function useUpdateProject(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.providers, projectId] });
       toast.success(t('project.detail.settingsSaved'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('project.errors.update'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
-export function useInviteClient(projectId: string) {
+export function useInviteProjectMember(projectId: string) {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: (payload: InviteClientInput) => projectsApi.inviteClient(projectId, payload),
+    mutationFn: (payload: InviteProjectMemberInput) => projectsApi.inviteMember(projectId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
-      toast.success(t('project.detail.clientInvited'));
+      toast.success(t('project.detail.memberInvited'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('project.errors.invite'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
+  });
+}
+
+export function useUpdateProjectMemberRole(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: ({
+      membershipId,
+      role,
+    }: {
+      membershipId: string;
+      role: InvitableProjectRole;
+    }) => projectsApi.updateMemberRole(projectId, membershipId, role),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
+      toast.success(t('project.team.roleChanged'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
+export function useRemoveProjectMember(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (membershipId: string) => projectsApi.removeMember(projectId, membershipId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
+      toast.success(t('project.team.removed'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

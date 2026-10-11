@@ -64,7 +64,7 @@ function toGoalDTO(goal: ICrewGoal): CrewGoalDTO {
 
 // --- Roster ---
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function listCrewMembers(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
@@ -80,7 +80,7 @@ export async function listCrewMembers(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectOwner` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function createCrewMember(req: Request, res: Response) {
   try {
     const parsed = createCrewMemberSchema.safeParse(req.body);
@@ -106,7 +106,7 @@ export async function createCrewMember(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectOwner` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function updateCrewMember(req: Request, res: Response) {
   try {
     const parsed = updateCrewMemberSchema.safeParse(req.body);
@@ -135,7 +135,7 @@ export async function updateCrewMember(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectOwner` antes. Baja lógica:
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Baja lógica:
  * quien ya no está sigue siendo el dueño de las metas de semanas pasadas.
  */
 export async function deactivateCrewMember(req: Request, res: Response) {
@@ -161,7 +161,7 @@ export async function deactivateCrewMember(req: Request, res: Response) {
 // --- Metas semanales ---
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes. Filtra por
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Filtra por
  * `?weekStart=YYYY-MM-DD`; sin el parámetro devuelve todas las de la obra.
  *
  * Trae el nombre de cada destinatario resuelto: la pantalla de metas siempre
@@ -197,7 +197,7 @@ export async function listCrewGoals(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes. Planificar
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Planificar
  * la semana es trabajo operativo: lo hace el dueño o el Asistente de Obra.
  */
 export async function createCrewGoal(req: Request, res: Response) {
@@ -252,7 +252,7 @@ export async function createCrewGoal(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function updateCrewGoal(req: Request, res: Response) {
   try {
     const parsed = updateCrewGoalSchema.safeParse(req.body);
@@ -291,7 +291,7 @@ export async function updateCrewGoal(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. Borrado duro. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Borrado duro. */
 export async function deleteCrewGoal(req: Request, res: Response) {
   try {
     const project = req.project as IProject;

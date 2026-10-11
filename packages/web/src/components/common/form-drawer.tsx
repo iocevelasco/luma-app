@@ -1,6 +1,5 @@
 import type { FormEventHandler, ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+import { FormShell } from '@/components/common/form-shell';
 import {
   Sheet,
   SheetContent,
@@ -56,10 +55,14 @@ interface FormDrawerProps {
   fieldCount?: number;
   /** Gana sobre `fieldCount`. Para paneles, donde contar campos no dice nada. */
   size?: FormDrawerSize;
-  /** Con esto el drawer arma el `<form>` y el pie con el botón de guardar. */
+  /** Con esto el drawer arma el `<form>` y el pie con las acciones. */
   onSubmit?: FormEventHandler<HTMLFormElement>;
   submitLabel?: string;
   isSubmitting?: boolean;
+  /** Apaga el submit mientras no haya cambios. Ver `FormShell`. */
+  isDirty?: boolean;
+  /** El error crudo de la mutación. El shell lo resuelve — ver `FormShell`. */
+  error?: unknown;
   children: ReactNode;
 }
 
@@ -73,9 +76,10 @@ export function FormDrawer({
   onSubmit,
   submitLabel,
   isSubmitting = false,
+  isDirty,
+  error,
   children,
 }: FormDrawerProps) {
-  const { t } = useTranslation();
   const resolvedSize = size ?? (fieldCount ? sizeForFieldCount(fieldCount) : 'md');
 
   const body = <div className="flex flex-col gap-4 px-4 pb-4">{children}</div>;
@@ -97,16 +101,23 @@ export function FormDrawer({
         </SheetHeader>
 
         {onSubmit ? (
-          <form className="flex min-h-0 flex-1 flex-col" onSubmit={onSubmit}>
-            <div className="min-h-0 flex-1 overflow-y-auto pt-4">{body}</div>
-            {/* Pie fijo: el botón de guardar no se va con el scroll en un
-                formulario largo. */}
-            <div className="flex justify-end border-t border-border p-4">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('common.loading') : (submitLabel ?? t('common.save'))}
-              </Button>
-            </div>
-          </form>
+          /*
+            El pie y los estados los pone `FormShell`, el mismo que usan las
+            páginas de alta. Antes el drawer tenía su propio pie y su propio
+            criterio de "guardando": dos implementaciones de lo mismo que ya
+            habían empezado a divergir.
+          */
+          <FormShell
+            variant="embedded"
+            onSubmit={onSubmit}
+            submitLabel={submitLabel}
+            onCancel={() => onOpenChange(false)}
+            isSubmitting={isSubmitting}
+            isDirty={isDirty}
+            error={error}
+          >
+            <div className="pt-4">{body}</div>
+          </FormShell>
         ) : (
           <div className="min-h-0 flex-1 overflow-y-auto pt-4">{body}</div>
         )}

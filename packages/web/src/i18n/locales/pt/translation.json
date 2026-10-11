@@ -25,7 +25,8 @@
   "layout": {
     "projects": "Obras",
     "openMenu": "Abrir menu",
-    "closeMenu": "Fechar menu"
+    "closeMenu": "Fechar menu",
+    "company": "Empresa"
   },
   "userMenu": {
     "account": "Minha conta",
@@ -48,7 +49,12 @@
     "new": {
       "title": "Nova obra",
       "submit": "Criar obra",
-      "created": "Obra criada"
+      "created": "Obra criada",
+      "sections": {
+        "what": "Que obra é",
+        "when": "Prazos",
+        "money": "Dinheiro"
+      }
     },
     "fields": {
       "name": "Nome",
@@ -74,20 +80,21 @@
       "labor": "Pessoal",
       "providers": "Fornecedores",
       "budget": "Orçamento",
-      "advisor": "Consultor IA"
+      "advisor": "Consultor IA",
+      "documents": "Documentação",
+      "milestones": "Marcos",
+      "team": "Equipe",
+      "payments": "Pagamentos",
+      "expenses": "Despesas",
+      "aria": "Seções da obra"
     },
     "detail": {
       "gantt": "Cronograma de atividades",
-      "clients": "Clientes com acesso",
-      "invite": "Convidar cliente",
-      "inviteTitle": "Convidar quem paga a obra",
-      "inviteEmail": "E-mail",
-      "inviteSubmit": "Convidar",
-      "clientInvited": "Convite enviado",
-      "noClients": "Você ainda não convidou ninguém.",
       "providersVisibleToClient": "O cliente vê os fornecedores",
       "providersVisibleToClientHint": "Se ativar, o cliente vê o diretório desta obra e quem está atribuído a cada atividade.",
-      "settingsSaved": "Ajuste salvo"
+      "settingsSaved": "Ajuste salvo",
+      "team": "Equipe da obra",
+      "memberInvited": "Acesso concedido"
     },
     "dashboard": {
       "progress": "Avanço geral",
@@ -108,7 +115,39 @@
     "errors": {
       "create": "Não conseguimos criar a obra.",
       "update": "Não conseguimos salvar o ajuste.",
-      "invite": "Não conseguimos convidar essa pessoa."
+      "invite": "Não conseguimos convidar essa pessoa.",
+      "memberRole": "Não foi possível alterar o papel.",
+      "memberRemove": "Não foi possível remover o acesso."
+    },
+    "role": {
+      "gerente": "Gerente de obra",
+      "supervisor": "Supervisor de obra",
+      "contador": "Contador",
+      "cliente": "Cliente"
+    },
+    "roleHint": {
+      "supervisor": "Reporta avanço, presença e materiais do canteiro. Não vê dinheiro.",
+      "contador": "Apenas recebimentos e despesas. Não vê atividades, pessoal nem fornecedores.",
+      "cliente": "Acompanha o avanço da obra e seu cronograma de pagamentos. Somente leitura."
+    },
+    "team": {
+      "title": "Equipe e acessos",
+      "subtitle": "Quem entra nesta obra e o que pode fazer.",
+      "manage": "Gerenciar",
+      "invite": "Dar acesso",
+      "inviteTitle": "Dar acesso à obra",
+      "inviteHint": "Se a pessoa ainda não tem conta no Luma, criamos uma e ela recebe um e-mail para ativá-la e escolher a senha.",
+      "inviteEmail": "E-mail",
+      "inviteSubmit": "Dar acesso",
+      "role": "Papel",
+      "roleChanged": "Papel atualizado",
+      "remove": "Remover da obra",
+      "removeTitle": "Remover o acesso?",
+      "removeDescription": "{{name}} deixa de ver esta obra. O que cadastrou permanece.",
+      "removeConfirm": "Remover",
+      "removed": "Acesso removido",
+      "capabilityCount": "{{count}} permissões",
+      "activationHint": "Quem ainda não tem conta recebe um e-mail para ativá-la e escolher a senha. Até lá, aparece na lista mesmo assim."
     }
   },
   "auth": {
@@ -451,7 +490,9 @@
       "specialtyPlaceholder": "Sem especialidade",
       "isLead": "É o encarregado da sua especialidade",
       "onlyThisProject": "Somente para esta obra",
-      "phone": "Telefone (opcional)"
+      "phone": "Telefone (opcional)",
+      "dailyRate": "Diária",
+      "dailyRateHint": "Usada para calcular a folha contra a presença. Opcional."
     },
     "kind": {
       "persona": "Pessoa",
@@ -616,15 +657,278 @@
     }
   },
   "team": {
-    "title": "Assistentes de obra",
-    "empty": "Você ainda não convidou ninguém para o seu time.",
-    "invite": "Convidar assistente",
-    "inviteTitle": "Convidar Assistente de Obra",
+    "title": "Equipe da Empresa",
+    "hint": "Pertencer à Empresa não dá acesso a nenhuma obra. O acesso é convidado obra a obra, com seu papel.",
+    "empty": "Você ainda não adicionou ninguém à sua Empresa.",
+    "invite": "Adicionar à equipe",
+    "inviteTitle": "Adicionar alguém à Empresa",
     "inviteEmail": "E-mail",
-    "inviteSubmit": "Convidar",
+    "inviteSubmit": "Adicionar",
     "invited": "Convite enviado",
     "errors": {
-      "invite": "Não conseguimos convidar essa pessoa."
+      "invite": "Não foi possível convidar essa pessoa."
+    },
+    "pageSubtitle": "O nome da sua Empresa e quem trabalha nela."
+  },
+  "document": {
+    "list": {
+      "title": "Documentação da obra",
+      "noSpace": "Sem espaço atribuído"
+    },
+    "category": {
+      "condiciones_sitio": "Condições do local",
+      "horario_trabajo": "Horário de trabalho",
+      "permiso_edificio": "Autorização do edifício",
+      "permiso_municipal": "Alvará municipal",
+      "plano": "Plantas",
+      "render": "Renders",
+      "otra": "Outros"
+    },
+    "fields": {
+      "file": "Arquivo",
+      "filePlaceholder": "Escolher arquivo",
+      "fileHint": "PDF ou imagem (.jpg, .png, .webp). Até 20MB.",
+      "category": "Categoria",
+      "categoryPlaceholder": "Escolha uma categoria",
+      "title": "Título",
+      "space": "Espaço",
+      "spacePlaceholder": "Cozinha, banheiro principal, sala…",
+      "notes": "Observações"
+    },
+    "new": {
+      "title": "Enviar documento",
+      "submit": "Enviar"
+    },
+    "delete": {
+      "action": "Excluir documento",
+      "title": "Excluir este documento?",
+      "description": "«{{title}}» e seu arquivo serão excluídos. Não é possível desfazer.",
+      "confirm": "Excluir"
+    },
+    "empty": {
+      "title": "Ainda não há documentação",
+      "description": "Envie as autorizações, as condições do local, as plantas e os renders da obra.",
+      "descriptionReadOnly": "Quando o gerente enviar autorizações, plantas ou renders, você verá aqui."
+    },
+    "open": "Abrir documento",
+    "uploadedBy": "Enviado por {{name}} em {{date}}",
+    "created": "Documento enviado",
+    "updated": "Documento atualizado",
+    "deleted": "Documento excluído",
+    "errors": {
+      "create": "Não foi possível enviar o documento.",
+      "update": "Não foi possível atualizar o documento.",
+      "delete": "Não foi possível excluir o documento.",
+      "fileRequired": "Escolha um arquivo.",
+      "fileType": "Formato não suportado. Envie um PDF ou imagem .jpg, .png ou .webp.",
+      "fileSize": "O arquivo é muito grande (máximo 20MB)."
     }
+  },
+  "milestone": {
+    "list": {
+      "title": "Marcos e eventualidades"
+    },
+    "type": {
+      "etapa_concluida": "Etapa concluída",
+      "compra_significativa": "Compra significativa",
+      "permisologia": "Problema de licenciamento",
+      "vicio_oculto": "Vício oculto",
+      "retraso": "Atraso",
+      "cambio_proyecto": "Mudança no projeto",
+      "otro": "Outro"
+    },
+    "audience": {
+      "cliente": "Visível para o cliente",
+      "interno": "Interno"
+    },
+    "audienceHint": {
+      "cliente": "O cliente recebe o aviso e vê na obra.",
+      "interno": "Apenas o gerente e o supervisor veem."
+    },
+    "severity": {
+      "info": "Informativo",
+      "atencion": "Atenção",
+      "critico": "Crítico"
+    },
+    "fields": {
+      "type": "Tipo",
+      "typePlaceholder": "Escolha um tipo",
+      "title": "Título",
+      "occurredOn": "Quando aconteceu",
+      "audience": "Quem fica sabendo",
+      "severity": "Gravidade",
+      "activity": "Atividade relacionada",
+      "activityPlaceholder": "Nenhuma",
+      "description": "Descrição"
+    },
+    "new": {
+      "title": "Reportar marco",
+      "submit": "Reportar"
+    },
+    "delete": {
+      "action": "Excluir marco",
+      "title": "Excluir este marco?",
+      "description": "«{{title}}» será excluído. Não é possível desfazer.",
+      "confirm": "Excluir"
+    },
+    "empty": {
+      "title": "Ainda não há marcos",
+      "description": "Reporte as etapas concluídas, os atrasos e o que precisar ser avisado.",
+      "descriptionReadOnly": "Quando algo importante acontecer na obra, você verá aqui."
+    },
+    "reportedBy": "Reportado por {{name}} · {{date}}",
+    "created": "Marco reportado",
+    "updated": "Marco atualizado",
+    "deleted": "Marco excluído",
+    "errors": {
+      "create": "Não foi possível reportar o marco.",
+      "update": "Não foi possível atualizar o marco.",
+      "delete": "Não foi possível excluir o marco."
+    }
+  },
+  "notification": {
+    "title": "Notificações",
+    "aria": "Notificações",
+    "ariaWithUnread": "Notificações, {{count}} não lidas",
+    "empty": "Você não tem notificações.",
+    "markAllRead": "Marcar tudo como lido",
+    "type": {
+      "actividad_iniciada": "«{{name}}» começou",
+      "actividad_en_revision": "«{{name}}» foi reportada como concluída e aguarda sua revisão",
+      "actividad_completada": "«{{name}}» foi dada como concluída",
+      "hito": "Novo marco na obra: «{{name}}»",
+      "eventualidad": "Eventualidade reportada: «{{name}}»"
+    }
+  },
+  "permissions": {
+    "notAllowed": "Seu papel não permite esta ação."
+  },
+  "finance": {
+    "summary": {
+      "title": "Recebimentos",
+      "scheduled": "Acordado",
+      "paid": "Recebido",
+      "pending": "Pendente",
+      "nextDue": "Próximo: {{concept}} · {{date}} · {{amount}}"
+    },
+    "schedule": {
+      "title": "Cronograma acordado",
+      "new": "Adicionar parcela",
+      "newTitle": "Adicionar parcela ao cronograma",
+      "newSubmit": "Adicionar",
+      "empty": "Ainda não há parcelas acordadas.",
+      "dueOn": "Vence em {{date}}",
+      "paidSoFar": "recebido {{amount}}",
+      "delete": "Excluir parcela"
+    },
+    "payments": {
+      "title": "Recebimentos",
+      "new": "Registrar recebimento",
+      "newTitle": "Registrar um recebimento",
+      "newSubmit": "Registrar",
+      "empty": "Você ainda não registrou recebimentos.",
+      "onAccount": "Por conta",
+      "delete": "Excluir recebimento"
+    },
+    "expenses": {
+      "title": "Despesas",
+      "new": "Registrar despesa",
+      "newTitle": "Registrar uma despesa",
+      "newSubmit": "Registrar",
+      "emptyTitle": "Ainda não há despesas",
+      "emptyDescription": "Registre materiais, ferramentas, folha e insumos para ver o resultado da obra.",
+      "delete": "Excluir despesa",
+      "openReceipt": "Abrir comprovante"
+    },
+    "payroll": {
+      "title": "Folha de pagamento",
+      "from": "De",
+      "to": "Até",
+      "empty": "Não há presença registrada neste período.",
+      "days": "{{count}} dias",
+      "total": "Total",
+      "missingRate": "{{count}} pessoas sem diária cadastrada. O custo delas não está no total."
+    },
+    "result": {
+      "title": "Resultado da obra",
+      "paid": "Recebido",
+      "spent": "Gasto",
+      "committed": "Comprometido",
+      "margin": "Margem"
+    },
+    "category": {
+      "material": "Materiais",
+      "herramienta": "Ferramentas",
+      "nomina": "Folha",
+      "insumo": "Insumos",
+      "otro": "Outros"
+    },
+    "method": {
+      "transferencia": "Transferência",
+      "efectivo": "Dinheiro",
+      "cheque": "Cheque",
+      "otro": "Outro"
+    },
+    "status": {
+      "pendiente": "Pendente",
+      "parcial": "Parcial",
+      "cobrado": "Recebido",
+      "vencido": "Vencido"
+    },
+    "fields": {
+      "amount": "Valor",
+      "currency": "Moeda",
+      "exchangeRate": "Cotação {{from}} para {{to}}",
+      "exchangeRateHint": "É salva junto com o movimento. Não é recalculada depois.",
+      "concept": "Descrição",
+      "conceptPlaceholder": "Entrada, parcela 1, saldo final…",
+      "dueOn": "Vencimento",
+      "paidOn": "Data do recebimento",
+      "method": "Forma de pagamento",
+      "scheduleItem": "Vincular a",
+      "scheduleItemPlaceholder": "Por conta, sem parcela",
+      "reference": "Referência",
+      "category": "Categoria",
+      "description": "Descrição",
+      "spentOn": "Data da despesa",
+      "provider": "Fornecedor",
+      "activity": "Atividade",
+      "none": "Nenhum",
+      "receipt": "Comprovante",
+      "receiptPlaceholder": "Escolher arquivo (opcional)"
+    },
+    "empty": {
+      "title": "Ainda não há pagamentos",
+      "description": "Cadastre o cronograma acordado com o cliente para começar a acompanhar os recebimentos."
+    },
+    "scheduleCreated": "Parcela adicionada",
+    "scheduleDeleted": "Parcela excluída",
+    "paymentCreated": "Recebimento registrado",
+    "paymentDeleted": "Recebimento excluído",
+    "expenseCreated": "Despesa registrada",
+    "expenseDeleted": "Despesa excluída",
+    "errors": {
+      "scheduleCreate": "Não foi possível adicionar a parcela.",
+      "scheduleDelete": "Não foi possível excluir a parcela.",
+      "paymentCreate": "Não foi possível registrar o recebimento.",
+      "paymentDelete": "Não foi possível excluir o recebimento.",
+      "expenseCreate": "Não foi possível registrar a despesa.",
+      "expenseDelete": "Não foi possível excluir a despesa.",
+      "receiptType": "Comprovante não suportado. Envie um PDF ou uma imagem.",
+      "receiptSize": "O comprovante é muito grande (máximo 20MB)."
+    }
+  },
+  "errors": {
+    "validation": "Revise os dados: há campos com erros.",
+    "unauthenticated": "Sua sessão expirou. Entre novamente.",
+    "forbidden": "Seu papel não permite esta ação.",
+    "notFound": "Não encontramos o que você procurava. Pode ter sido excluído.",
+    "conflict": "Isso conflita com algo que já existe.",
+    "payloadTooLarge": "O arquivo é muito grande.",
+    "rateLimited": "Muitas tentativas. Aguarde um momento e tente de novo.",
+    "serviceUnavailable": "Esse serviço não está disponível no momento.",
+    "internal": "Algo falhou do nosso lado. Tente de novo em instantes.",
+    "network": "Não conseguimos conectar. Verifique sua conexão.",
+    "title": "Não foi possível salvar"
   }
 }

@@ -4,6 +4,8 @@
  * al de auth.
  */
 
+import type { Capability, InvitableProjectRole, ProjectRole } from '../permissions/index.js';
+
 export type BudgetType = 'cerrado' | 'abierto' | 'con_margen';
 
 export type ProjectStatus = 'active' | 'archived';
@@ -59,33 +61,53 @@ export interface Project {
 }
 
 /**
- * `GET /api/projects/:id`: la ficha más si quien la pide es su dueño.
+ * `GET /api/projects/:id`: la ficha más qué puede hacer acá quien la pide.
  *
- * `isOwner` es estricto — sólo quien creó la obra (gatea presupuesto e
- * invitaciones). `isEditor` es dueño **o** Asistente de Obra (un miembro de
- * la misma Empresa) — gatea la escritura operativa (actividades, materiales,
- * personal). Todo dueño es editor; no todo editor es dueño.
+ * `role` y `capabilities` vienen resueltos server-side contra la grilla de
+ * `permissions/` — con los flags de la obra ya aplicados. La UI no vuelve a
+ * derivar nada: pregunta por capacidad y muestra o esconde. Mandar la lista
+ * y no el rol es lo que permite agregar un rol nuevo sin tocar el frontend.
+ *
+ * `isOwner`/`isEditor` quedan como azúcar derivada para no reescribir de una
+ * sola vez todas las pantallas de la v1. Son lo mismo que preguntar por
+ * `role === 'gerente'` y por `activity.evidence.write`; en código nuevo usá
+ * `capabilities`.
  */
 export interface ProjectDetail extends Project {
+  role: ProjectRole;
+  capabilities: Capability[];
+  /** @deprecated Derivado de `role === 'gerente'`. Usá `capabilities`. */
   isOwner: boolean;
+  /** @deprecated Derivado de `capabilities`. Usá `capabilities`. */
   isEditor: boolean;
 }
 
-/** Fila de acceso de un cliente a una obra puntual — no un rol genérico. */
-export interface ProjectClient {
+/**
+ * Acceso de una persona a una obra puntual, con el rol que tiene ahí.
+ *
+ * Reemplaza a `ProjectClient` de la v1: el cliente dejó de ser la única
+ * relación invitable cuando entró el supervisor, y dos tablas con la misma
+ * forma y distinto nombre terminan con dos flujos de invitación distintos.
+ *
+ * El gerente no tiene fila: se deriva de `Project.createdBy`. Una obra sin
+ * dueño no existe, y tenerlo en dos lugares abre la puerta a que discrepen.
+ */
+export interface ProjectMembership {
   id: string;
   projectId: string;
   userId: string;
+  role: InvitableProjectRole;
   invitedBy: string;
   createdAt: string;
 }
 
-/** Cliente de una obra, con los datos de contacto ya resueltos server-side. */
-export interface ProjectClientSummary {
+/** Integrante de la obra, con los datos de contacto ya resueltos server-side. */
+export interface ProjectMemberSummary {
   id: string;
   userId: string;
   email: string;
   name: string;
+  role: ProjectRole;
   createdAt: string;
 }
 
@@ -95,15 +117,24 @@ export interface ProjectListResponse {
 
 export interface ProjectDetailResponse {
   project: ProjectDetail;
-  clients: ProjectClientSummary[];
+  /** Todo el equipo de la obra, gerente incluido — no sólo los clientes. */
+  members: ProjectMemberSummary[];
 }
 
 export interface CreateProjectResponse {
   project: Project;
 }
 
-export interface InviteClientResponse {
-  client: ProjectClientSummary;
+export interface InviteProjectMemberResponse {
+  member: ProjectMemberSummary;
+}
+
+export interface UpdateProjectMemberResponse {
+  member: ProjectMemberSummary;
+}
+
+export interface RemoveProjectMemberResponse {
+  membershipId: string;
 }
 
 export interface OrganizationResponse {

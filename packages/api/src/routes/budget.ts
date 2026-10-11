@@ -1,22 +1,21 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
-import { requireProjectAccess, requireProjectOwner } from '../middleware/project.middleware.js';
+import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
 import { createBudget, getBudget } from '../controllers/index.js';
 
 /**
  * Anidado bajo `/api/projects/:projectId/budget` — ver routes/project.ts.
  *
- * A diferencia de materials/labor, acá `requireProjectOwner` va a nivel de
- * `.use()` e incluye el GET: el cliente invitado no ve presupuesto en este
- * corte (regla 13 — la utilidad del ejecutante nunca es visible para el
- * cliente). No es el mismo patrón que el resto de los routers anidados a
- * propósito.
+ * El gate va a nivel de `.use()` e incluye el GET: ni el cliente ni el
+ * supervisor ven presupuesto (regla 13 — la utilidad del ejecutante nunca es
+ * visible para el cliente, y la matriz de roles no le da economía al
+ * supervisor). `budget.read` lo tiene sólo el gerente.
  */
 export const budgetRouter = Router({ mergeParams: true });
 
-budgetRouter.use(isAuthenticated, requireProjectAccess, requireProjectOwner);
+budgetRouter.use(isAuthenticated, requireProjectAccess, requireCapability('budget.read'));
 
 budgetRouter.get('/', getBudget);
-budgetRouter.post('/', createBudget);
+budgetRouter.post('/', requireCapability('budget.write'), createBudget);
 
 export default budgetRouter;

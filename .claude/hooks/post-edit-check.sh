@@ -106,6 +106,47 @@ case "$REL" in
     ;;
 esac
 
+# ── 7. Permisos de obra: la grilla es el único lugar donde se compara un rol ─
+# `role === 'supervisor'` repartido por controllers y componentes es exactamente
+# la duplicación que la grilla vino a evitar: la copia que se desincroniza es
+# siempre la que decide qué botón se muestra.
+case "$REL" in
+  packages/shared/src/permissions/*|packages/api/src/middleware/project.middleware.ts)
+    ;;
+  packages/api/src/*|packages/web/src/*)
+    ROLECMP=$(grep -nE "(projectRole|\.role|role)[[:space:]]*[!=]==[[:space:]]*'(gerente|supervisor|cliente)'" "$FILE" || true)
+    [ -n "$ROLECMP" ] && add "Comparación directa contra un rol de obra — quién puede qué vive en la grilla de packages/shared/src/permissions/. En la API preguntá con req.can('la.capacidad'), en la UI con project.capabilities. Si falta la capacidad, agregala a la grilla:"$'\n'"$(lines "$ROLECMP")"
+
+    FLAGS=$(grep -nE "isProjectOwner|isProjectEditor|\.isOwner|\.isEditor" "$FILE" || true)
+    [ -n "$FLAGS" ] && add "isProjectOwner/isProjectEditor están deprecados — son azúcar derivada de la grilla y no distinguen supervisor de cliente. En código nuevo usá req.can(...) o project.capabilities:"$'\n'"$(lines "$FLAGS")"
+    ;;
+esac
+
+# ── 8. Plata: cobros y gastos no comparten gate ─────────────────────────────
+# Una ruta de gastos gateada con `payment.*` deja que el cliente calcule el
+# margen del ejecutante con un curl. Es la regla 13, y es el error de una sola
+# palabra que no se ve leyendo el diff.
+case "$REL" in
+  packages/api/src/routes/*)
+    LEAK=$(grep -nE "(expenses|summary|payroll)[^)]*requireCapability\('payment\." "$FILE" || true)
+    [ -n "$LEAK" ] && add "Ruta de gastos gateada con una capacidad de cobros — el cliente tiene payment.read y con cobros+gastos despeja tu margen restando. Usá requireCapability('expense.read') o ('expense.write'):"$'\n'"$(lines "$LEAK")"
+
+    # Un cobro es un hecho con fecha: se borra y se carga de nuevo, no se edita.
+    PATCHPAY=$(grep -nE "\.patch\(\s*'/payments" "$FILE" || true)
+    [ -n "$PATCHPAY" ] && add "PATCH sobre un cobro — los cobros no se editan: corregir el monto in situ deja el saldo cuadrando con una historia que nadie vivió. Se borra y se carga de nuevo (ver CLAUDE.md, sección Plata):"$'\n'"$(lines "$PATCHPAY")"
+    ;;
+esac
+
+# ── 9. Errores: un solo canal y un solo traductor ───────────────────────────
+case "$REL" in
+  packages/web/src/lib/error-message.ts)
+    ;;
+  packages/web/src/hooks/*)
+    DUP=$(grep -nE "^function errorMessage" "$FILE" || true)
+    [ -n "$DUP" ] && add "errorMessage local en un hook — hay uno solo, en lib/error-message.ts. Un helper por hook hace que la misma falla diga cosas distintas en cada pantalla:"$'\n'"$(lines "$DUP")"
+    ;;
+esac
+
 if [ -n "$FINDINGS" ]; then
   printf 'Revisión automática de %s:\n\n%s' "$REL" "$FINDINGS" >&2
   exit 2

@@ -3,16 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { InviteMemberInput } from '@luma/shared';
 import { organizationsApi } from '@/api/organizations';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-auth-queries.ts`. */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 export function useMyOrganization() {
   const { isAuthenticated } = useAuth();
@@ -33,7 +29,7 @@ export function useRenameOrganization() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.organization] });
     },
-    onError: (error) => toast.error(errorMessage(error, t('auth.errors.generic'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -57,6 +53,8 @@ export function useInviteMember() {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.organizationMembers] });
       toast.success(t('team.invited'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('team.errors.invite'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }

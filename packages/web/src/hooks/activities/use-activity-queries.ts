@@ -3,17 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { CreateActivityInput, UpdateActivityInput } from '@luma/shared';
 import { activitiesApi } from '@/api/activities';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import type { WeekRange } from '@/lib/week';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 export function useActivities(projectId: string | undefined, range: WeekRange) {
   const { isAuthenticated } = useAuth();
@@ -46,7 +42,9 @@ export function useCreateActivity(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
       toast.success(t('activity.list.created'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('activity.errors.create'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }
 
@@ -61,7 +59,9 @@ export function useUpdateActivity(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
       toast.success(t('activity.list.updated'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('activity.errors.update'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }
 
@@ -77,7 +77,7 @@ export function useRejectActivity(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
       toast.success(t('activity.review.rejected'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('activity.errors.reject'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -92,7 +92,7 @@ export function useDeleteActivity(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
       toast.success(t('activity.list.deleted'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('activity.errors.delete'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -105,7 +105,7 @@ export function useUploadActivityEvidence(projectId: string, activityId: string)
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
     },
-    onError: (error) => toast.error(errorMessage(error, t('activity.errors.uploadEvidence'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -119,6 +119,6 @@ export function useDeleteActivityEvidence(projectId: string, activityId: string)
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
     },
-    onError: (error) => toast.error(errorMessage(error, t('activity.errors.removeEvidence'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

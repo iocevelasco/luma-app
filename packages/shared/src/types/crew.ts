@@ -39,6 +39,12 @@ export interface CrewMember {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Jornal diario, en la moneda de la Empresa. Sólo lo ve quien puede ver
+   * plata: la API lo omite para el resto, igual que `estimatedCost` en
+   * materiales.
+   */
+  dailyRate?: number;
 }
 
 /**

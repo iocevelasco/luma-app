@@ -16,8 +16,10 @@ import {
 } from './config/app.config.js';
 import { connectDatabase, isDatabaseConnected } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { normalizeErrors } from './middleware/normalizeErrors.js';
 import { authRouter } from './routes/auth.js';
 import { organizationRouter } from './routes/organization.js';
+import { notificationRouter } from './routes/notification.js';
 import { projectRouter } from './routes/project.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -155,9 +157,14 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// Antes de las rutas: envuelve `res.json` para que toda respuesta de error
+// salga con `code`, incluidas las que los controllers arman a mano.
+app.use(normalizeErrors);
+
 app.use('/api/auth', authRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/organizations', organizationRouter);
+app.use('/api/notifications', notificationRouter);
 
 if (isProduction) {
   // Proxy /home/* → la landing, un servicio aparte en la red interna de Docker.

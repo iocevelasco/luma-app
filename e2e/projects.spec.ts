@@ -37,13 +37,18 @@ test.describe('empresa, obra e invitación del cliente', () => {
     await expect(page).toHaveURL(/\/admin$/);
 
     // Empresa personal auto-creada, nombrada como la persona — y editable.
+    // Vive en su propia pantalla, no al final de la home: ahí quedaba debajo
+    // del listado de obras y con unas cuantas había que scrollear.
+    await page.getByTestId('nav-company').click();
+    await expect(page).toHaveURL(/\/admin\/empresa$/);
     await expect(page.getByRole('button', { name: OWNER_NAME })).toBeVisible();
     await page.getByRole('button', { name: OWNER_NAME }).click();
     await page.getByRole('textbox').fill(NEW_ORG_NAME);
     await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: NEW_ORG_NAME })).toBeVisible();
 
-    // Primera obra, desde el estado vacío.
+    // Primera obra, desde el estado vacío de la home.
+    await page.getByTestId('nav-home').click();
     await page.getByRole('link', { name: /crear tu primera obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/nuevo/);
 
@@ -62,10 +67,15 @@ test.describe('empresa, obra e invitación del cliente', () => {
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
     await expect(page.getByText(PROJECT_NAME)).toBeVisible();
 
-    // Invitar a quien paga la obra.
-    await page.getByRole('button', { name: /invitar cliente/i }).click();
-    await page.locator('#client-email').fill(CLIENT_EMAIL);
-    await page.getByRole('dialog').getByRole('button', { name: /invitar/i }).click();
+    // Dar acceso vive en su propia pantalla: es una tarea con su momento, no
+    // algo con lo que uno se tropieza mirando cómo viene la obra.
+    await page.goto(`${page.url()}/equipo`);
+    await page.getByRole('button', { name: /dar acceso/i }).first().click();
+    await page.locator('#member-email').fill(CLIENT_EMAIL);
+    // El rol es explícito: el mismo diálogo invita supervisores y contadores,
+    // así que no hay default silencioso.
+    await page.getByRole('dialog').getByRole('button', { name: /^cliente$/i }).click();
+    await page.getByRole('dialog').getByRole('button', { name: /^dar acceso$/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(page.getByText(CLIENT_EMAIL)).toBeVisible();
 
@@ -77,7 +87,11 @@ test.describe('empresa, obra e invitación del cliente', () => {
     // el breadcrumb del header y en el contenido—, y sin acotar el modo
     // estricto de Playwright lo toma como ambigüedad.
     await expect(clientPage.getByText(PROJECT_NAME).first()).toBeVisible();
-    await expect(clientPage.getByRole('button', { name: /invitar cliente/i })).toHaveCount(0);
+    // Ni la pestaña de equipo ni la de gastos existen para el cliente.
+    await expect(clientPage.getByRole('link', { name: /^equipo$/i })).toHaveCount(0);
+    await expect(clientPage.getByRole('link', { name: /^gastos$/i })).toHaveCount(0);
+    // Pero sí ve su cronograma de pagos: es su fila de la matriz de roles.
+    await expect(clientPage.getByRole('link', { name: /^pagos$/i })).toBeVisible();
 
     await clientContext.close();
   });

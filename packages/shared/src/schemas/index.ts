@@ -80,3 +80,6 @@ export * from './budget.js';
 export * from './chat.js';
 export * from './provider.js';
 export * from './crew.js';
+export * from './document.js';
+export * from './milestone.js';
+export * from './payment.js';

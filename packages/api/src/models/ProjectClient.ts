@@ -1,9 +1,12 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
 
 /**
- * Acceso de un cliente (quien paga la obra) a una obra puntual. Sin campo de
- * rol: en v1 es la única relación invitable, así que la entidad se nombra por
- * lo que es en vez de un `roles: []` genérico que nadie pidió todavía.
+ * @deprecated Reemplazada por `ProjectMembership` con `role: 'cliente'`.
+ *
+ * Se conserva **sólo** para que `scripts/migrate-project-memberships.ts` pueda
+ * leerla y para poder volver atrás si la migración sale mal. Ningún controller
+ * la usa. Una vez que la migración corrió en producción y pasó un ciclo, se
+ * borran el modelo y la colección.
  */
 export interface IProjectClient extends Document {
   project: mongoose.Types.ObjectId;

@@ -80,7 +80,7 @@ function mapRequirements(
   }));
 }
 
-/** Requiere `requireProjectAccess` + `requireProviderRead` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function listProviderEngagements(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
@@ -105,7 +105,7 @@ export async function listProviderEngagements(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectOwner` antes: la
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes: la
  * contratación es plata, y el documento funcional deja la parte comercial en
  * manos de quien gestiona la obra, no del Asistente.
  */
@@ -152,7 +152,7 @@ export async function createProviderEngagement(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectOwner` antes. Valida el
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Valida el
  * adelanto contra lo cotizado usando también lo que ya estaba guardado: si el
  * update trae sólo el adelanto, el tope sigue siendo la cotización vigente.
  */
@@ -204,7 +204,7 @@ export async function updateProviderEngagement(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes.
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes.
  *
  * Marcar requisitos SÍ es del Asistente de Obra: es quien está en el sitio y
  * sabe si llegó el material o si el área quedó desocupada. Sólo toca `met`,
@@ -242,7 +242,7 @@ export async function setRequirementMet(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectOwner` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function deleteProviderEngagement(req: Request, res: Response) {
   try {
     const project = req.project as IProject;

@@ -10,7 +10,7 @@ function errMsg(error: unknown): string {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectOwner` antes (ver
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes (ver
  * routes/advisor.ts) — mismo gate que `budgetRouter`: el Consultor IA puede
  * responder con datos de presupuesto, que en este corte es owner-only.
  */

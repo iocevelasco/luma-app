@@ -51,7 +51,7 @@ function toBudgetLineDTO(line: IBudgetLine): BudgetLineDTO {
   };
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectOwner` antes (montado a nivel router: ver routes/budget.ts). */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes (montado a nivel router: ver routes/budget.ts). */
 export async function getBudget(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
@@ -80,7 +80,7 @@ export async function getBudget(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectOwner` antes. Carga manual
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Carga manual
  * (RF-05, corte 1): un solo Budget vigente por obra — no hay versionado real
  * todavía. `totalAmount` lo declara quien carga, pero nunca se confía en él:
  * se valida contra la suma de los ítems, y si no coincide es un 400 con el

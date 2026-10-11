@@ -22,4 +22,12 @@ export enum QueryKeys {
   crewMembers = 'crew-members',
   crewGoals = 'crew-goals',
   activityCrew = 'activity-crew',
+  projectDocuments = 'project-documents',
+  milestones = 'milestones',
+  notifications = 'notifications',
+  paymentSchedule = 'payment-schedule',
+  payments = 'payments',
+  expenses = 'expenses',
+  financeSummary = 'finance-summary',
+  payroll = 'payroll',
 }

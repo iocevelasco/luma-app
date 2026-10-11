@@ -113,7 +113,7 @@ export async function listMembers(req: Request, res: Response) {
 /**
  * Invita a un Asistente de Obra a mi Empresa — acceso operativo a todas mis
  * obras, nunca a presupuesto ni a gestionar gente. Mismo patrón que
- * `inviteClient` en `project.controller.ts`: si el email no tiene cuenta
+ * `inviteProjectMember` en `project.controller.ts`: si el email no tiene cuenta
  * todavía, la crea sin contraseña y manda el mail de activación que ya
  * existe — no hay flujo nuevo que inventar.
  */

@@ -8,16 +8,12 @@ import type {
   UpdateProviderInput,
 } from '@luma/shared';
 import { providersApi } from '@/api/providers';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-activity-queries.ts`. */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 /** Directorio de proveedores de la Empresa dueña de esta obra. */
 export function useProviders(projectId: string | undefined) {
@@ -51,7 +47,9 @@ export function useCreateProvider(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.providers, projectId] });
       toast.success(t('provider.list.created'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('provider.errors.create'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }
 
@@ -66,7 +64,9 @@ export function useUpdateProvider(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.providers, projectId] });
       toast.success(t('provider.list.updated'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('provider.errors.update'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }
 
@@ -80,7 +80,7 @@ export function useDeactivateProvider(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.providers, projectId] });
       toast.success(t('provider.list.deactivated'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('provider.errors.deactivate'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -97,7 +97,7 @@ export function useAssignProvider(projectId: string, activityId: string) {
       });
       toast.success(t('provider.list.assigned'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('provider.errors.assign'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -114,7 +114,7 @@ export function useUnassignProvider(projectId: string, activityId: string) {
       });
       toast.success(t('provider.list.unassigned'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('provider.errors.unassign'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -163,7 +163,7 @@ export function useAssignActivityToProvider(projectId: string, providerId: strin
       invalidateProviderActivityLinks(queryClient, projectId, providerId, payload.activityId);
       toast.success(t('provider.list.assigned'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('provider.errors.assign'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -178,7 +178,7 @@ export function useUnassignActivityFromProvider(projectId: string, providerId: s
       invalidateProviderActivityLinks(queryClient, projectId, providerId, activityId);
       toast.success(t('provider.list.unassigned'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('provider.errors.unassign'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -202,6 +202,6 @@ export function useAssignActivitiesToProvider(projectId: string) {
       });
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activityProviders, projectId] });
     },
-    onError: (error) => toast.error(errorMessage(error, t('provider.errors.assign'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

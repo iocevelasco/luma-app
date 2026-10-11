@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { FormShell } from '@/components/common/form-shell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -114,8 +115,13 @@ function EngagementForm({
   }
 
   return (
-    <form
-      className="flex flex-col gap-4"
+    /*
+      El pie va con el formulario y no con el `FormDrawer` de afuera: el panel
+      alterna lista y alta, así que la acción pertenece al formulario.
+    */
+    <FormShell
+      variant="embedded"
+      className="gap-4"
       onSubmit={handleSubmit((values) => {
         const payload = { ...values, requirements: buildRequirements() };
         if (engagement) {
@@ -127,6 +133,10 @@ function EngagementForm({
           createEngagement.mutate(payload, { onSuccess: onDone });
         }
       })}
+      submitLabel={isEdit ? t('common.save') : t('engagement.createSubmit')}
+      onCancel={onDone}
+      isSubmitting={createEngagement.isPending || updateEngagement.isPending}
+      error={createEngagement.error ?? updateEngagement.error}
     >
       <div className="flex flex-col gap-2">
         <Label htmlFor="engagement-status">{t('engagement.fields.status')}</Label>
@@ -205,14 +215,7 @@ function EngagementForm({
         <Textarea id="engagement-notes" rows={2} {...register('notes')} />
       </div>
 
-      {/* Este pie no lo pone `FormDrawer`: el panel alterna lista y formulario,
-          así que la acción viaja con el formulario, no con el drawer. */}
-      <div className="flex justify-end border-t border-border pt-4">
-        <Button type="submit" disabled={createEngagement.isPending || updateEngagement.isPending}>
-          {isEdit ? t('common.save') : t('engagement.createSubmit')}
-        </Button>
-      </div>
-    </form>
+    </FormShell>
   );
 }
 

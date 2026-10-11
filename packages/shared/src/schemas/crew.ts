@@ -48,6 +48,12 @@ export const createCrewMemberSchema = z.object({
   isLead: z.boolean().default(false),
   scope: z.enum(['organization', 'project']).default('organization'),
   phone: z.string().trim().max(30, 'Es demasiado largo').optional(),
+  /**
+   * Jornal diario. Opcional a propósito: una obra puede funcionar sin cargar
+   * sueldos, y entonces la nómina no se calcula para esa persona en vez de
+   * calcularla como cero —un cero haría creer que trabaja gratis.
+   */
+  dailyRate: z.coerce.number().min(0, 'El jornal no puede ser negativo').optional(),
   notes: z.string().trim().max(1000, 'Es demasiado largo').optional(),
 });
 
@@ -57,6 +63,7 @@ export const updateCrewMemberSchema = z.object({
   specialty: crewSpecialtySchema.optional(),
   isLead: z.boolean().optional(),
   phone: z.string().trim().max(30).optional(),
+  dailyRate: z.coerce.number().min(0).optional(),
   notes: z.string().trim().max(1000).optional(),
   active: z.boolean().optional(),
 });

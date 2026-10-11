@@ -2,8 +2,11 @@ import type {
   ApiResponse,
   CreateProjectInput,
   CreateProjectResponse,
-  InviteClientInput,
-  InviteClientResponse,
+  InvitableProjectRole,
+  InviteProjectMemberInput,
+  InviteProjectMemberResponse,
+  RemoveProjectMemberResponse,
+  UpdateProjectMemberResponse,
   ProjectDetailResponse,
   ProjectListResponse,
   UpdateProjectInput,
@@ -32,8 +35,18 @@ export const projectsApi = {
   update: (projectId: string, payload: UpdateProjectInput) =>
     unwrap<CreateProjectResponse>(apiClient.patch(`/api/projects/${projectId}`, payload)),
 
-  inviteClient: (projectId: string, payload: InviteClientInput) =>
-    unwrap<InviteClientResponse>(
-      apiClient.post(`/api/projects/${projectId}/clients`, payload),
+  inviteMember: (projectId: string, payload: InviteProjectMemberInput) =>
+    unwrap<InviteProjectMemberResponse>(
+      apiClient.post(`/api/projects/${projectId}/members`, payload),
+    ),
+
+  updateMemberRole: (projectId: string, membershipId: string, role: InvitableProjectRole) =>
+    unwrap<UpdateProjectMemberResponse>(
+      apiClient.patch(`/api/projects/${projectId}/members/${membershipId}`, { role }),
+    ),
+
+  removeMember: (projectId: string, membershipId: string) =>
+    unwrap<RemoveProjectMemberResponse>(
+      apiClient.delete(`/api/projects/${projectId}/members/${membershipId}`),
     ),
 };

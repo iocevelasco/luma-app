@@ -1,5 +1,5 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { CrewMemberKind, ProviderScope, ProviderSpecialty } from '@luma/shared';
+import { roundMoney, type CrewMemberKind, type ProviderScope, type ProviderSpecialty } from '@luma/shared';
 
 /**
  * Personal fijo de obra: el que está toda la ejecución haciendo actividades
@@ -21,6 +21,13 @@ export interface ICrewMember extends Document {
   specialty?: ProviderSpecialty;
   isLead: boolean;
   phone?: string;
+  /**
+   * Jornal diario, en la moneda de la Empresa. Opcional: una obra puede
+   * funcionar sin cargar sueldos, y entonces la nómina simplemente no se
+   * calcula para esa persona en vez de calcularla como cero —un cero haría
+   * creer que trabaja gratis.
+   */
+  dailyRate?: number;
   notes?: string;
   active: boolean;
   createdAt: Date;
@@ -64,6 +71,7 @@ const crewMemberSchema = new Schema<ICrewMember>(
     },
     isLead: { type: Boolean, default: false },
     phone: { type: String, trim: true },
+    dailyRate: { type: Number, min: 0, set: roundMoney },
     notes: { type: String, trim: true },
     active: { type: Boolean, default: true },
   },

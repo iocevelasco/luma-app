@@ -35,6 +35,9 @@ const AdminHomePage = lazy(() =>
 const AccountSettingsPage = lazy(() =>
   import('./pages/account-settings').then((m) => ({ default: m.AccountSettingsPage })),
 );
+const CompanyPage = lazy(() =>
+  import('./pages/company').then((m) => ({ default: m.CompanyPage })),
+);
 const ProjectNewPage = lazy(() =>
   import('./pages/projects/project-new').then((m) => ({ default: m.ProjectNewPage })),
 );
@@ -55,6 +58,25 @@ const ProjectLaborPage = lazy(() =>
 const ProjectProvidersPage = lazy(() =>
   import('./pages/projects/project-providers').then((m) => ({
     default: m.ProjectProvidersPage,
+  })),
+);
+const ProjectPaymentsPage = lazy(() =>
+  import('./pages/projects/project-payments').then((m) => ({ default: m.ProjectPaymentsPage })),
+);
+const ProjectExpensesPage = lazy(() =>
+  import('./pages/projects/project-expenses').then((m) => ({ default: m.ProjectExpensesPage })),
+);
+const ProjectTeamPage = lazy(() =>
+  import('./pages/projects/project-team').then((m) => ({ default: m.ProjectTeamPage })),
+);
+const ProjectMilestonesPage = lazy(() =>
+  import('./pages/projects/project-milestones').then((m) => ({
+    default: m.ProjectMilestonesPage,
+  })),
+);
+const ProjectDocumentsPage = lazy(() =>
+  import('./pages/projects/project-documents').then((m) => ({
+    default: m.ProjectDocumentsPage,
   })),
 );
 const ProjectBudgetPage = lazy(() =>
@@ -107,6 +129,7 @@ export function AppRoutes() {
             path={ROUTES.ACCOUNT_SETTINGS}
             element={<LazyRoute><AccountSettingsPage /></LazyRoute>}
           />
+          <Route path={ROUTES.COMPANY} element={<LazyRoute><CompanyPage /></LazyRoute>} />
           <Route path={ROUTES.PROJECT_NEW} element={<LazyRoute><ProjectNewPage /></LazyRoute>} />
           <Route
             path={ROUTES.PROJECT_DETAIL}
@@ -127,6 +150,26 @@ export function AppRoutes() {
           <Route
             path={ROUTES.PROJECT_PROVIDERS}
             element={<LazyRoute><ProjectProvidersPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_PAYMENTS}
+            element={<LazyRoute><ProjectPaymentsPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_EXPENSES}
+            element={<LazyRoute><ProjectExpensesPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_TEAM}
+            element={<LazyRoute><ProjectTeamPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_MILESTONES}
+            element={<LazyRoute><ProjectMilestonesPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_DOCUMENTS}
+            element={<LazyRoute><ProjectDocumentsPage /></LazyRoute>}
           />
           <Route
             path={ROUTES.PROJECT_BUDGET}

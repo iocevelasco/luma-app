@@ -10,9 +10,13 @@ import {
   updateActivitySchema,
   type Activity as ActivityDTO,
   type ActivityEvidencePhoto,
+  type ActivityStatus,
+  type NotificationType,
+  type ProjectRole,
 } from '@luma/shared';
 import { Activity, type IActivity } from '../models/Activity.js';
 import { MaterialItem } from '../models/MaterialItem.js';
+import { notifyProject } from '../services/notification.service.js';
 import type { IProject } from '../models/Project.js';
 import {
   StorageNotConfiguredError,
@@ -104,7 +108,7 @@ export async function listActivities(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function createActivity(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -136,7 +140,7 @@ export async function createActivity(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes.
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes.
  *
  * Cerrar a `completada` es exclusivo del dueño de la obra: el Asistente llega
  * hasta `en_revision` (reportar terminado) y el supervisor confirma. Nadie
@@ -155,10 +159,26 @@ export async function updateActivity(req: Request, res: Response) {
         .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
     }
 
-    if (parsed.data.status === 'completada' && !req.isProjectOwner) {
+    // El router deja pasar `activity.report` (gerente y supervisor), pero dar
+    // por terminada una actividad es la revisión, no el reporte: eso es del
+    // gerente. La misma capacidad que gatea `rejectActivity`.
+    if (parsed.data.status === 'completada' && !req.can?.('activity.review')) {
       return res.status(403).json({
         success: false,
-        error: 'Sólo el supervisor de la obra puede dar una actividad por terminada',
+        error: 'Sólo quien gestiona la obra puede dar una actividad por terminada',
+      });
+    }
+
+    // El supervisor reporta sobre lo planificado; no replanifica. Si el body
+    // toca fechas, responsable o alcance, hace falta `activity.plan`.
+    const PLANNING_FIELDS = ['name', 'area', 'startDate', 'endDate', 'responsible', 'specialty'] as const;
+    const touchesPlanning = PLANNING_FIELDS.some((field) => parsed.data[field] !== undefined);
+    if (touchesPlanning && !req.can?.('activity.plan')) {
+      return res.status(403).json({
+        success: false,
+        error: 'No tenés permiso para replanificar esta actividad',
+        code: 'FORBIDDEN_CAPABILITY',
+        details: { capability: 'activity.plan' },
       });
     }
 
@@ -173,6 +193,9 @@ export async function updateActivity(req: Request, res: Response) {
     }
 
     const now = new Date();
+    // Antes del `set`: después, `activity.status` ya es el nuevo y no habría
+    // con qué comparar para saber si hubo transición.
+    const previousStatus = activity.status;
     activity.set(parsed.data);
 
     // Reportar terminado abre un ciclo de revisión nuevo y limpia el rechazo
@@ -188,6 +211,10 @@ export async function updateActivity(req: Request, res: Response) {
 
     await activity.save();
 
+    if (parsed.data.status && parsed.data.status !== previousStatus) {
+      await notifyForStatusChange(project, activity, parsed.data.status, req.user.sub);
+    }
+
     return res.json({ success: true, data: { activity: await toActivityDTO(activity) } });
   } catch (error) {
     console.error('❌ [ACTIVITY] updateActivity:', error);
@@ -196,7 +223,7 @@ export async function updateActivity(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectOwner` antes. El supervisor
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. El supervisor
  * devuelve el trabajo: vuelve a `en_curso` con el motivo visible para quien
  * lo reportó. Sin este camino, no aprobar deja la actividad en un limbo donde
  * nadie sabe si está trabada o si el supervisor todavía no la miró.
@@ -244,7 +271,7 @@ export async function rejectActivity(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes. Borrado
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Borrado
  * DURO. Los `MaterialItem` asociados quedan con `activity: null` en vez de
  * borrarse en cascada. La evidencia fotográfica sí se borra del storage acá
  * — sin este paso, cada actividad borrada deja fotos huérfanas pagándose
@@ -271,7 +298,7 @@ export async function deleteActivity(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes. Multipart
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Multipart
  * con un único campo `photo` (`upload.single('photo')` en la ruta).
  */
 export async function uploadActivityEvidence(req: Request, res: Response) {
@@ -324,7 +351,7 @@ export async function uploadActivityEvidence(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function deleteActivityEvidence(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
@@ -347,6 +374,46 @@ export async function deleteActivityEvidence(req: Request, res: Response) {
     console.error('❌ [ACTIVITY] deleteActivityEvidence:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }
+}
+
+/**
+ * "Recibir notificaciones de actividad iniciada, avanzada y cumplida" — la
+ * fila del cliente en la matriz.
+ *
+ * Sólo tres de los cinco estados avisan. `pendiente` es el estado inicial y no
+ * es noticia; `cancelada` sí lo sería, pero la matriz no la menciona y
+ * avisarla sin que nadie la haya pedido es ruido que enseña a ignorar el
+ * badge.
+ *
+ * `en_revision` no llega al cliente: es un paso interno del circuito de
+ * validación —alguien reportó terminado y el gerente todavía no lo aprobó— y
+ * anunciarlo como avance sería anunciar algo que puede volver atrás.
+ */
+const STATUS_NOTIFICATIONS = {
+  en_curso: { type: 'actividad_iniciada', audience: ['gerente', 'supervisor', 'cliente'] },
+  en_revision: { type: 'actividad_en_revision', audience: ['gerente'] },
+  completada: { type: 'actividad_completada', audience: ['gerente', 'supervisor', 'cliente'] },
+} as const satisfies Partial<
+  Record<ActivityStatus, { type: NotificationType; audience: readonly ProjectRole[] }>
+>;
+
+async function notifyForStatusChange(
+  project: IProject,
+  activity: IActivity,
+  status: ActivityStatus,
+  actorId: string,
+) {
+  const config = STATUS_NOTIFICATIONS[status as keyof typeof STATUS_NOTIFICATIONS];
+  if (!config) return;
+
+  await notifyProject({
+    project,
+    type: config.type,
+    subjectName: activity.name,
+    link: `/admin/proyectos/${String(project._id)}/actividades`,
+    audience: config.audience,
+    actorId,
+  });
 }
 
 export function isValidObjectId(id: string): boolean {

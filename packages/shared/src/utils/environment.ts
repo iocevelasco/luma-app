@@ -99,15 +99,24 @@ export function getEnvironmentInfo(hostname?: string | null): EnvironmentInfo {
 
 /**
  * URL base de la API.
+ *
  * En producción devuelve cadena vacía: la SPA y la API comparten origen, así que
  * las URLs relativas son correctas y evitan un preflight de CORS por request.
+ *
+ * En desarrollo devuelve una URL **absoluta**, y eso tiene una consecuencia que
+ * conviene tener presente: el navegador va derecho a ese puerto y **el proxy
+ * `/api` de `vite.config.ts` no participa**. Las dos cosas tienen que apuntar
+ * al mismo lugar; si se separan, la SPA habla con un puerto donde no hay nadie
+ * —o peor, con otra app que responde y confunde el diagnóstico.
+ *
+ * 8081 y no 8080: ver el comentario de `SERVER_CONFIG.PORT` en la API.
  */
 export function getApiBaseUrl(devUrl?: string, productionUrl: string = ''): string {
   if (isProduction()) {
     return productionUrl;
   }
 
-  return devUrl || 'http://localhost:8080';
+  return devUrl || 'http://localhost:8081';
 }
 
 /** reCAPTCHA se desactiva en localhost: en desarrollo no hay site key válida. */

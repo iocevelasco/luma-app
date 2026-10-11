@@ -69,8 +69,21 @@ export const inviteClientSchema = z.object({
 /** Mismo shape que invitar cliente — invitar Asistente de Obra es "un email más". */
 export const inviteMemberSchema = inviteClientSchema;
 
+/** Los roles que se invitan a una obra. El gerente no: se deriva de quién la creó. */
+export const invitableProjectRoleSchema = z.enum(['supervisor', 'contador', 'cliente']);
+
+/**
+ * Invitar a alguien a una obra. A diferencia de `inviteClientSchema`, acá el
+ * rol viaja explícito: desde que existe el supervisor, "invitar a la obra"
+ * dejó de significar una sola cosa y el endpoint no puede adivinarlo.
+ */
+export const inviteProjectMemberSchema = inviteClientSchema.extend({
+  role: invitableProjectRoleSchema,
+});
+
 export type RenameOrganizationInput = z.infer<typeof renameOrganizationSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type InviteClientInput = z.infer<typeof inviteClientSchema>;
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
+export type InviteProjectMemberInput = z.infer<typeof inviteProjectMemberSchema>;

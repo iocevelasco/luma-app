@@ -37,18 +37,95 @@ nombre de paquete contra su `dist`.
 
 - **Auth**: access token en `Authorization: Bearer`, refresh en cookie httpOnly
   `refresh_token` (90 días). HS256 si hay `JWT_SECRET`, si no RS256 con el par PEM.
-- **Roles**: `admin` y `user`. Middlewares: `isAuthenticated` → `requireAdmin` |
-  `requireRole`.
+- **Roles de plataforma**: `admin` y `user`. Middlewares: `isAuthenticated` →
+  `requireAdmin` | `requireRole`. No gatean ninguna pantalla del producto.
+- **Roles de obra**: `gerente` | `supervisor` | `cliente`, por obra y no por
+  Empresa. El gerente sale de `Project.createdBy`; los otros dos son filas de
+  `ProjectMembership`. **Quién puede qué vive en una sola grilla**:
+  `packages/shared/src/permissions/index.ts`. Los routers declaran la acción
+  con `requireCapability('activity.plan')` y los controllers preguntan con
+  `req.can(...)` — nunca por rol. La UI lee `project.capabilities`, que la API
+  ya resolvió; no la vuelve a derivar.
+  Agregar un permiso = una celda en la grilla. Si estás escribiendo
+  `role === 'supervisor'` en cualquier lado, estás en el camino equivocado.
 - **Baja lógica**: `account_status: 'inactive'` + `enabled: false`. Nunca se borra
   el documento.
-- **Errores**: todo sale por `errorHandler` con la forma
-  `{ success: false, error, details?, code? }`. Las respuestas exitosas son
+- **Errores**: toda respuesta de error tiene la forma
+  `{ success: false, error, code, details? }`. Las exitosas son
   `{ success: true, data }`.
+  - `code` es un `ApiErrorCode` de `@luma/shared` — estable, para la máquina.
+    **El frontend ramifica por `code`, nunca comparando el texto**: el texto
+    cambia cuando alguien edita un mensaje.
+  - En código nuevo, **lanzá** el error: `throw notFound('No encontramos esa
+    obra.')` desde `utils/errors.ts`. El `errorHandler` lo formatea. Un
+    `return res.status(...)` arma la respuesta a mano y cada lugar elige su
+    propio criterio — así llegamos a 221 de esas.
+  - Los que quedan escritos a mano los cubre `normalizeErrors`, que completa
+    el `code` a partir del status. Es una red, no una excusa.
+  - **Un 500 nunca cuenta qué pasó adentro.** El mensaje real se loguea; hacia
+    afuera va uno genérico. Un error de Mongoose trae la consulta y la
+    colección.
+  - Los mensajes van **en castellano** y describen lo que pasó desde el lado
+    de quien lo lee.
 - **Config**: todo lo del entorno pasa por `config/app.config.ts` y `validateConfig()`
   corre **antes** de crear la app. No leas `process.env` desde un controller.
 - **El orden del pipeline en `src/index.ts` no es arbitrario.** `trust proxy` antes
   del rate limit, el handler manual de `OPTIONS *` antes de `cors()`, y el
   `errorHandler` al final. Si movés algo de lugar, entendé por qué está ahí.
+
+## Errores en la UI
+
+Un solo canal por tipo de aviso, y un solo lugar que arma el texto.
+
+- **Falla al guardar → banner** en el formulario, nunca un toast. `FormShell`
+  lo muestra pegado al botón que la persona acaba de apretar; un toast sale en
+  la esquina opuesta de la pantalla.
+- **Éxito → toast.** Verde, y nada más.
+- **Falla sin formulario detrás** —un borrar, un cambio inline— sí va por
+  toast: no hay dónde poner un banner.
+
+El texto lo resuelve `lib/error-message.ts` y nadie más. Gana el mensaje del
+servidor, porque sabe cosas que el cliente no puede saber ("esa cuota ya tiene
+cobros registrados"); el mapa por `code` es el fallback. Si ves un
+`errorMessage` local en un hook, es de antes — hay uno solo.
+
+## Plata
+
+La regla 8 del documento funcional decía que la app no registraba pagos. **Eso
+ya no vale**: desde el módulo de cobros y gastos sí se registran, con moneda,
+cotización y comprobante. Si encontrás un comentario que diga lo contrario,
+está viejo — arreglalo.
+
+Lo que la regla protegía sigue en pie, y ahora importa más porque hay cuatro
+cifras parecidas conviviendo. No son lo mismo y **no se suman entre sí**:
+
+| Cifra | Qué es | Dónde |
+|---|---|---|
+| Presupuestado | Lo que se planeó gastar | `Budget` |
+| Comprometido | Lo cotizado en contrataciones aprobadas — tiene dueño, no salió | `commitment.service.ts` |
+| Gastado | Lo que salió, con fecha y comprobante | `Expense` |
+| Cobrado | Lo que entró del cliente | `Payment` |
+
+Un adelanto a un proveedor está en "comprometido" y en "gastado": sumarlas
+cuenta la misma plata dos veces.
+
+Tres reglas que no se negocian:
+
+1. **Nada derivado se guarda.** Saldos, estado de cada cuota y margen se
+   recalculan siempre en `finance.service.ts`. Un saldo guardado es la garantía
+   de que algún día no va a coincidir con la suma de sus movimientos, y cuando
+   eso pase ninguno de los dos números sirve.
+2. **Cada movimiento lleva su moneda y su cotización, congeladas.** Un gasto de
+   agosto vale lo que valía en agosto. Reconvertir con la cotización de hoy
+   haría que el total de una obra cerrada cambie solo.
+3. **Cobros y gastos van por rutas separadas.** `payment.*` lo ve el cliente,
+   `expense.*` no. Con los dos totales, la utilidad del ejecutante sale de una
+   resta — la regla 13, que esa sí sigue vigente. Si una ruta de gastos queda
+   con `payment.read`, el cliente puede calcular tu margen con un `curl`.
+
+Los cobros **no se editan**, sólo se crean o se borran: un cobro es un hecho
+con fecha, y corregirle el monto in situ deja el saldo cuadrando con una
+historia que nadie vivió.
 
 ## Frontend — llamadas a la API
 

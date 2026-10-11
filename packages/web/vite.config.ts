@@ -89,7 +89,10 @@ export default defineConfig(() => ({
     },
     proxy: {
       '/api': {
-        target: process.env.VITE_API_BASE_URL || 'http://localhost:8080',
+        // 8081: el puerto de la API en desarrollo. Tiene que coincidir con el
+        // default de `SERVER_CONFIG.PORT` — si se separan, la SPA habla con
+        // un puerto donde no hay nadie (o peor, con otra app).
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:8081',
         changeOrigin: true,
       },
     },

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+import { FormShell } from '@/components/common/form-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,8 +27,15 @@ export function AccountSettingsPage() {
           <CardTitle className="text-base">{t('auth.account.changePassword')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form
-            className="flex flex-col gap-4"
+          {/*
+            Formularios cortos: el pie pegajoso queda donde ya estaba el
+            botón. Van igual por el shell para que el error, el "guardando" y
+            el bloqueo mientras no hay cambios se comporten como en el resto
+            de la app, y no cada pantalla a su manera.
+          */}
+          <FormShell
+            variant="embedded"
+            className="gap-4"
             onSubmit={(event) => {
               event.preventDefault();
               changePassword.mutate(
@@ -41,6 +48,9 @@ export function AccountSettingsPage() {
                 },
               );
             }}
+            isSubmitting={changePassword.isPending}
+            isDirty={Boolean(currentPassword && newPassword)}
+            error={changePassword.error}
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="current-password">{t('auth.account.currentPassword')}</Label>
@@ -67,10 +77,7 @@ export function AccountSettingsPage() {
               />
             </div>
 
-            <Button type="submit" disabled={changePassword.isPending}>
-              {t('common.save')}
-            </Button>
-          </form>
+          </FormShell>
         </CardContent>
       </Card>
 
@@ -79,8 +86,9 @@ export function AccountSettingsPage() {
           <CardTitle className="text-base">{t('auth.account.changeEmail')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form
-            className="flex flex-col gap-4"
+          <FormShell
+            variant="embedded"
+            className="gap-4"
             onSubmit={(event) => {
               event.preventDefault();
               changeEmail.mutate(
@@ -93,6 +101,9 @@ export function AccountSettingsPage() {
                 },
               );
             }}
+            isSubmitting={changeEmail.isPending}
+            isDirty={Boolean(newEmail && emailPassword)}
+            error={changeEmail.error}
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="current-email">{t('common.email')}</Label>
@@ -122,10 +133,7 @@ export function AccountSettingsPage() {
               />
             </div>
 
-            <Button type="submit" disabled={changeEmail.isPending}>
-              {t('common.save')}
-            </Button>
-          </form>
+          </FormShell>
         </CardContent>
       </Card>
     </div>

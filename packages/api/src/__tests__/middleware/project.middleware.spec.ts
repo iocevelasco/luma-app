@@ -5,26 +5,21 @@ import type { Request, Response } from 'express';
  * Cubre en unit lo que el E2E no puede: la rama de "no tiene acceso" no se
  * ejercita con dos cuentas reales invitadas entre sí, así que el aislamiento
  * (404, nunca 403) se prueba acá mockeando los modelos.
+ *
+ * Qué puede cada rol es otra cosa y vive en `@luma/shared/permissions`, con su
+ * propio test. Acá se prueba el cableado: que el rol se resuelva bien y que
+ * `requireCapability` lo consulte.
  */
 vi.mock('../../models/Project.js', () => ({
   Project: { findById: vi.fn() },
 }));
-vi.mock('../../models/ProjectClient.js', () => ({
-  ProjectClient: { exists: vi.fn() },
-}));
-vi.mock('../../models/OrganizationMember.js', () => ({
-  OrganizationMember: { exists: vi.fn() },
+vi.mock('../../models/ProjectMembership.js', () => ({
+  ProjectMembership: { findOne: vi.fn() },
 }));
 
 const { Project } = await import('../../models/Project.js');
-const { ProjectClient } = await import('../../models/ProjectClient.js');
-const { OrganizationMember } = await import('../../models/OrganizationMember.js');
-const {
-  requireProjectAccess,
-  requireProjectOwner,
-  requireProjectEditor,
-  requireProviderRead,
-} = await import(
+const { ProjectMembership } = await import('../../models/ProjectMembership.js');
+const { requireProjectAccess, requireCapability } = await import(
   '../../middleware/project.middleware.js'
 );
 
@@ -35,188 +30,162 @@ function mockRes(): Response {
   return res;
 }
 
+function mockReq(userId = 'user-1'): Request {
+  return { params: { projectId: 'p1' }, user: { sub: userId } } as unknown as Request;
+}
+
+/** `ProjectMembership.findOne(...).select(...)` devuelve esto. */
+function membership(role: string | null) {
+  return { select: vi.fn().mockResolvedValue(role ? { role } : null) };
+}
+
+const PROJECT = {
+  _id: 'p1',
+  createdBy: 'owner-1',
+  organization: 'org-1',
+  providersVisibleToClient: false,
+};
+
 describe('requireProjectAccess', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(ProjectMembership.findOne).mockReturnValue(membership(null) as never);
   });
 
   it('404 si la obra no existe', async () => {
     vi.mocked(Project.findById).mockResolvedValue(null);
-    const req = { params: { projectId: 'p1' }, user: { sub: 'user-1' } } as unknown as Request;
     const res = mockRes();
     const next = vi.fn();
 
-    await requireProjectAccess(req, res, next);
+    await requireProjectAccess(mockReq(), res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('404, no 403, si el usuario no es dueño, asistente ni cliente', async () => {
-    vi.mocked(Project.findById).mockResolvedValue({
-      createdBy: 'other-user',
-      organization: 'org-1',
-      _id: 'p1',
-    } as never);
-    vi.mocked(OrganizationMember.exists).mockResolvedValue(null as never);
-    vi.mocked(ProjectClient.exists).mockResolvedValue(null as never);
-    const req = { params: { projectId: 'p1' }, user: { sub: 'user-1' } } as unknown as Request;
+  it('404, no 403, si no tiene ningún rol en la obra', async () => {
+    vi.mocked(Project.findById).mockResolvedValue(PROJECT as never);
     const res = mockRes();
     const next = vi.fn();
 
-    await requireProjectAccess(req, res, next);
+    await requireProjectAccess(mockReq(), res, next);
 
+    // Un 403 confirmaría que la obra existe, que es justo lo que el NFR de
+    // aislamiento entre clientes distintos pide evitar.
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.status).not.toHaveBeenCalledWith(403);
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('deja pasar al dueño y marca isProjectOwner + isProjectEditor', async () => {
-    vi.mocked(Project.findById).mockResolvedValue({
-      createdBy: 'user-1',
-      organization: 'org-1',
-      _id: 'p1',
-    } as never);
-    const req = { params: { projectId: 'p1' }, user: { sub: 'user-1' } } as unknown as Request;
-    const res = mockRes();
+  it('quien creó la obra es gerente, sin consultar membresías', async () => {
+    vi.mocked(Project.findById).mockResolvedValue(PROJECT as never);
+    const req = mockReq('owner-1');
     const next = vi.fn();
 
-    await requireProjectAccess(req, res, next);
+    await requireProjectAccess(req, mockRes(), next);
 
     expect(next).toHaveBeenCalled();
+    expect(req.projectRole).toBe('gerente');
     expect(req.isProjectOwner).toBe(true);
-    expect(req.isProjectEditor).toBe(true);
-    // Es dueño: ni siquiera hace falta ir a buscar la membresía.
-    expect(OrganizationMember.exists).not.toHaveBeenCalled();
+    expect(ProjectMembership.findOne).not.toHaveBeenCalled();
   });
 
-  it('deja pasar a un cliente invitado sin marcarlo dueño ni editor', async () => {
-    vi.mocked(Project.findById).mockResolvedValue({
-      createdBy: 'other-user',
-      organization: 'org-1',
-      _id: 'p1',
-    } as never);
-    vi.mocked(OrganizationMember.exists).mockResolvedValue(null as never);
-    vi.mocked(ProjectClient.exists).mockResolvedValue({ _id: 'row1' } as never);
-    const req = { params: { projectId: 'p1' }, user: { sub: 'user-1' } } as unknown as Request;
-    const res = mockRes();
+  it('el rol sale de la membresía cuando no creó la obra', async () => {
+    vi.mocked(Project.findById).mockResolvedValue(PROJECT as never);
+    vi.mocked(ProjectMembership.findOne).mockReturnValue(membership('supervisor') as never);
+    const req = mockReq();
     const next = vi.fn();
 
-    await requireProjectAccess(req, res, next);
+    await requireProjectAccess(req, mockRes(), next);
 
     expect(next).toHaveBeenCalled();
+    expect(req.projectRole).toBe('supervisor');
     expect(req.isProjectOwner).toBe(false);
-    expect(req.isProjectEditor).toBe(false);
   });
 
-  it('deja pasar a un Asistente de Obra (miembro de la Empresa) como editor, sin ser dueño', async () => {
+  it('ser miembro de la Empresa ya no abre la obra por sí solo', async () => {
+    // El Asistente de Obra de la v1 entraba a todas las obras de su Empresa.
+    // La migración le crea una membresía por obra; sin ella, no entra.
+    vi.mocked(Project.findById).mockResolvedValue(PROJECT as never);
+    const res = mockRes();
+    const next = vi.fn();
+
+    await requireProjectAccess(mockReq('org-mate'), res, next);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('un id con formato inválido es 404, no 500', async () => {
+    const { default: mongoose } = await import('mongoose');
+    vi.mocked(Project.findById).mockRejectedValue(
+      new mongoose.Error.CastError('ObjectId', 'nope', '_id'),
+    );
+    const res = mockRes();
+    const next = vi.fn();
+
+    await requireProjectAccess(mockReq(), res, next);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('`can` aplica el flag de la obra, no sólo el rol', async () => {
+    vi.mocked(Project.findById).mockResolvedValue(PROJECT as never);
+    vi.mocked(ProjectMembership.findOne).mockReturnValue(membership('cliente') as never);
+    const req = mockReq();
+
+    await requireProjectAccess(req, mockRes(), vi.fn());
+
+    expect(req.can?.('provider.read')).toBe(false);
+
     vi.mocked(Project.findById).mockResolvedValue({
-      createdBy: 'other-user',
-      organization: 'org-1',
-      _id: 'p1',
+      ...PROJECT,
+      providersVisibleToClient: true,
     } as never);
-    vi.mocked(OrganizationMember.exists).mockResolvedValue({ _id: 'member-row' } as never);
-    const req = { params: { projectId: 'p1' }, user: { sub: 'user-1' } } as unknown as Request;
-    const res = mockRes();
-    const next = vi.fn();
+    const visible = mockReq();
+    await requireProjectAccess(visible, mockRes(), vi.fn());
 
-    await requireProjectAccess(req, res, next);
-
-    expect(OrganizationMember.exists).toHaveBeenCalledWith({
-      organization: 'org-1',
-      user: 'user-1',
-      role: 'member',
-    });
-    expect(next).toHaveBeenCalled();
-    expect(req.isProjectOwner).toBe(false);
-    expect(req.isProjectEditor).toBe(true);
-    // Ya es editor por ser Asistente — no hace falta ir a buscar ProjectClient.
-    expect(ProjectClient.exists).not.toHaveBeenCalled();
+    expect(visible.can?.('provider.read')).toBe(true);
   });
 });
 
-describe('requireProjectOwner', () => {
-  it('403 si no es dueño', () => {
-    const req = { isProjectOwner: false } as unknown as Request;
+describe('requireCapability', () => {
+  it('deja pasar si `can` dice que sí', () => {
+    const req = { can: () => true } as unknown as Request;
+    const next = vi.fn();
+
+    requireCapability('activity.plan')(req, mockRes(), next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('403 con la capacidad que faltó', () => {
+    const req = { can: () => false } as unknown as Request;
     const res = mockRes();
     const next = vi.fn();
 
-    requireProjectOwner(req, res, next);
+    requireCapability('budget.read')(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        code: 'FORBIDDEN_CAPABILITY',
+        details: { capability: 'budget.read' },
+      }),
+    );
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('deja pasar al dueño', () => {
-    const req = { isProjectOwner: true } as unknown as Request;
+  it('sin `can` en la request niega en vez de dejar pasar', () => {
+    // Si alguien monta el gate sin `requireProjectAccess` antes, el error debe
+    // ser un 403 y no un bypass silencioso.
     const res = mockRes();
     const next = vi.fn();
 
-    requireProjectOwner(req, res, next);
-
-    expect(next).toHaveBeenCalled();
-  });
-});
-
-describe('requireProjectEditor', () => {
-  it('403 si no es dueño ni asistente', () => {
-    const req = { isProjectEditor: false } as unknown as Request;
-    const res = mockRes();
-    const next = vi.fn();
-
-    requireProjectEditor(req, res, next);
+    requireCapability('budget.read')({} as Request, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(next).not.toHaveBeenCalled();
-  });
-
-  it('deja pasar a un editor (dueño o asistente)', () => {
-    const req = { isProjectEditor: true } as unknown as Request;
-    const res = mockRes();
-    const next = vi.fn();
-
-    requireProjectEditor(req, res, next);
-
-    expect(next).toHaveBeenCalled();
-  });
-});
-
-describe('requireProviderRead', () => {
-  it('el editor siempre pasa, tenga la obra el switch prendido o no', () => {
-    const req = {
-      isProjectEditor: true,
-      project: { providersVisibleToClient: false },
-    } as unknown as Request;
-    const next = vi.fn();
-
-    requireProviderRead(req, mockRes(), next);
-
-    expect(next).toHaveBeenCalled();
-  });
-
-  it('403 al cliente cuando la obra NO habilitó ver proveedores', () => {
-    const req = {
-      isProjectEditor: false,
-      project: { providersVisibleToClient: false },
-    } as unknown as Request;
-    const res = mockRes();
-    const next = vi.fn();
-
-    requireProviderRead(req, res, next);
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(next).not.toHaveBeenCalled();
-  });
-
-  it('deja pasar al cliente cuando la obra SÍ lo habilitó', () => {
-    const req = {
-      isProjectEditor: false,
-      project: { providersVisibleToClient: true },
-    } as unknown as Request;
-    const next = vi.fn();
-
-    requireProviderRead(req, mockRes(), next);
-
-    expect(next).toHaveBeenCalled();
   });
 });

@@ -10,8 +10,13 @@ import type { ProviderEngagementStatus, ProviderRequirementType } from '@luma/sh
  * contrata para las aberturas en marzo y para los muebles en agosto, y son
  * dos acuerdos distintos con su propia cotización.
  *
- * Los montos son COMPROMISO contra el presupuesto, no contabilidad: acá no
- * hay cuentas por pagar ni flujo de caja (ver documento funcional, regla 8).
+ * Los montos son COMPROMISO contra el presupuesto, no plata que salió. Lo que
+ * efectivamente se pagó vive en `Expense`, y las dos cifras no se suman: el
+ * compromiso es el total de la contratación y el gasto es lo que se pagó de
+ * ella. Ver `commitment.service.ts` para por qué conviven.
+ *
+ * `advanceAmount` es el adelanto ACORDADO, no uno registrado: cuando se paga
+ * de verdad, se carga como un `Expense` con su fecha y su comprobante.
  */
 export interface IProviderRequirement {
   _id?: mongoose.Types.ObjectId;

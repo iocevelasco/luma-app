@@ -51,7 +51,7 @@ async function activityBelongsToProject(
 export async function listMaterials(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
-    const viewerCanSeeDetail = Boolean(req.isProjectEditor);
+    const viewerCanSeeDetail = Boolean(req.can?.('material.write'));
     const materials = await MaterialItem.find({ project: project._id }).sort({ createdAt: -1 });
 
     return res.json({
@@ -64,7 +64,7 @@ export async function listMaterials(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function createMaterial(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -97,7 +97,7 @@ export async function createMaterial(req: Request, res: Response) {
         : {}),
     });
 
-    // Requiere `requireProjectEditor` — quien la llama siempre puede ver el
+    // Exige una capacidad de escritura — quien la llama siempre puede ver el
     // detalle completo de lo que acaba de crear.
     return res.status(201).json({ success: true, data: { material: toMaterialDTO(material, true) } });
   } catch (error) {
@@ -106,7 +106,7 @@ export async function createMaterial(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function updateMaterial(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -150,7 +150,7 @@ export async function updateMaterial(req: Request, res: Response) {
 
     const material = await MaterialItem.findByIdAndUpdate(existing._id, update, { new: true });
 
-    // Requiere `requireProjectEditor` — quien la llama siempre puede ver el
+    // Exige una capacidad de escritura — quien la llama siempre puede ver el
     // detalle completo de lo que acaba de actualizar.
     return res.json({
       success: true,
@@ -162,7 +162,7 @@ export async function updateMaterial(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. Borrado DURO. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Borrado DURO. */
 export async function deleteMaterial(req: Request, res: Response) {
   try {
     const project = req.project as IProject;

@@ -15,6 +15,7 @@ import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/resp
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Button } from '@/components/ui/button';
+import { FormShell } from '@/components/common/form-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -146,16 +147,22 @@ function NewBudgetForm({ projectId, currency }: { projectId: string; currency: s
   }
 
   return (
-    <Card>
+    /*
+      Alto acotado: el presupuesto crece línea por línea y sin esto el botón
+      de guardar queda al final de una lista de treinta ítems. Ver `FormShell`.
+    */
+    <Card className="flex h-[calc(100dvh-12rem)] min-h-0 flex-col">
       <CardHeader>
         <CardTitle>{t('budget.form.title')}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form
-          className="flex flex-col gap-4"
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <FormShell
           onSubmit={handleSubmit((values) =>
             createBudget.mutate({ ...values, totalAmount: computedTotal }),
           )}
+          submitLabel={t('budget.form.submit')}
+          isSubmitting={createBudget.isPending}
+          error={createBudget.error}
         >
           <div className="flex flex-col gap-3">
             {fields.map((field, index) => (
@@ -198,12 +205,7 @@ function NewBudgetForm({ projectId, currency }: { projectId: string; currency: s
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={createBudget.isPending}>
-              {createBudget.isPending ? t('common.loading') : t('budget.form.submit')}
-            </Button>
-          </div>
-        </form>
+        </FormShell>
       </CardContent>
     </Card>
   );

@@ -8,16 +8,12 @@ import type {
   UpdateCrewMemberInput,
 } from '@luma/shared';
 import { crewApi } from '@/api/crew';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-provider-queries.ts`. */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 /** Personal fijo de la Empresa más el contratado para esta obra. */
 export function useCrewMembers(projectId: string | undefined) {
@@ -51,7 +47,7 @@ export function useCreateCrewMember(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewMembers, projectId] });
       toast.success(t('crew.list.created'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('crew.errors.create'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -71,7 +67,7 @@ export function useUpdateCrewMember(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewMembers, projectId] });
       toast.success(t('crew.list.updated'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('crew.errors.update'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -88,7 +84,7 @@ export function useDeactivateCrewMember(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewGoals, projectId] });
       toast.success(t('crew.list.deactivated'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('crew.errors.deactivate'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -102,7 +98,7 @@ export function useCreateCrewGoal(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewGoals, projectId] });
       toast.success(t('crew.goals.created'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('crew.errors.createGoal'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -117,7 +113,7 @@ export function useUpdateCrewGoal(projectId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewGoals, projectId] });
     },
-    onError: (error) => toast.error(errorMessage(error, t('crew.errors.updateGoal'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -131,6 +127,6 @@ export function useDeleteCrewGoal(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewGoals, projectId] });
       toast.success(t('crew.goals.deleted'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('crew.errors.deleteGoal'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

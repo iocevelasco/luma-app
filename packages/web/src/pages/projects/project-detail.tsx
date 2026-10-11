@@ -1,22 +1,18 @@
-import { useMemo, useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useMemo } from 'react';
 import { format } from 'date-fns';
-import { inviteClientSchema, type InviteClientInput } from '@luma/shared';
-import { Gauge, ListChecks, Package, UserPlus, Users, Wallet, Wrench } from 'lucide-react';
+import type { Capability } from '@luma/shared';
+import { Gauge, ListChecks, Package, Users, Wallet, Wrench } from 'lucide-react';
 import type { ComponentType } from 'react';
-import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { Can } from '@/components/permissions/can';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormDrawer } from '@/components/common/form-drawer';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import { useBudget } from '@/hooks/budget/use-budget-queries';
@@ -24,7 +20,7 @@ import { useLaborRecords } from '@/hooks/labor/use-labor-queries';
 import { useMaterials } from '@/hooks/materials/use-material-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { useInviteClient, useProject, useUpdateProject } from '@/hooks/projects/use-project-queries';
+import { useProject, useUpdateProject } from '@/hooks/projects/use-project-queries';
 import { Switch } from '@/components/ui/switch';
 import { formatMoney } from '@/lib/format-money';
 import { iconForSpecialty } from '@/lib/specialty-icons';
@@ -35,6 +31,7 @@ import {
   projectLaborPath,
   projectMaterialsPath,
   projectProvidersPath,
+  projectTeamPath,
 } from '@/lib/routes';
 
 const MATERIAL_STATUS_PRIORITY = { pendiente: 0, solicitado: 1, comprado: 2, en_obra: 3 } as const;
@@ -52,54 +49,6 @@ function CardIcon({ icon: Icon }: { icon: ComponentType<{ className?: string }> 
     <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
       <Icon className="size-4" />
     </div>
-  );
-}
-
-function InviteClientDialog({ projectId }: { projectId: string }) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const inviteClient = useInviteClient(projectId);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<InviteClientInput>({ resolver: zodResolver(inviteClientSchema) });
-
-  return (
-    <>
-      <Button size="sm" onClick={() => setOpen(true)}>
-        <UserPlus className="size-4" />
-        {t('project.detail.invite')}
-      </Button>
-
-      <FormDrawer
-        open={open}
-        onOpenChange={(next) => {
-          setOpen(next);
-          if (!next) reset();
-        }}
-        title={t('project.detail.inviteTitle')}
-        fieldCount={1}
-        submitLabel={t('project.detail.inviteSubmit')}
-        isSubmitting={inviteClient.isPending}
-        onSubmit={handleSubmit((values) =>
-          inviteClient.mutate(values, {
-            onSuccess: () => {
-              setOpen(false);
-              reset();
-            },
-          }),
-        )}
-      >
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="client-email">{t('project.detail.inviteEmail')}</Label>
-          <Input id="client-email" type="email" autoComplete="email" {...register('email')} />
-          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-        </div>
-      </FormDrawer>
-    </>
   );
 }
 
@@ -343,9 +292,9 @@ function LaborCard({ projectId }: { projectId: string }) {
 
 
 /**
- * Dueño o Asistente de Obra — el cliente no ve este módulo (regla 4:
- * información operativa interna). Igual que en `project-tabs.tsx`, se
- * condiciona con `isEditor`, no con `isOwner`.
+ * Se muestra con `provider.read`: gerente y supervisor siempre, el cliente
+ * sólo si la obra lo habilitó (regla 4 — información operativa interna). La
+ * excepción vive en la grilla, no acá.
  */
 function ProvidersCard({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
@@ -479,7 +428,9 @@ export function ProjectDetailPage() {
   if (isError) return <RouteError />;
   if (isLoading || !data) return <RouteLoading />;
 
-  const { project, clients } = data;
+  const { project, members } = data;
+  const capabilities = new Set<Capability>(project.capabilities);
+  const can = (capability: Capability) => capabilities.has(capability);
 
   return (
     /*
@@ -502,7 +453,7 @@ export function ProjectDetailPage() {
     <div className="columns-1 gap-4 p-3 md:p-4 lg:columns-2 xl:columns-3 [&>*]:mb-4 [&>*]:break-inside-avoid">
       {/* Cómo viene la obra: las dos cifras que se miran primero. */}
       <ProgressCard projectId={project.id} />
-      {project.isOwner && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
+      {can('budget.read') && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
 
       {/* Qué requiere atención hoy. */}
       <PendingTasksCard projectId={project.id} />
@@ -542,7 +493,7 @@ export function ProjectDetailPage() {
               </div>
             </dl>
 
-            {project.isOwner && (
+            {can('project.update') && (
               <div className="flex items-start justify-between gap-4 border-t border-border pt-4">
                 <div>
                   <h3 className="text-sm font-medium">
@@ -562,35 +513,37 @@ export function ProjectDetailPage() {
           </CardContent>
         </Card>
 
-      {(project.isEditor || project.providersVisibleToClient) && (
-        <ProvidersCard projectId={project.id} />
-      )}
+      {can('provider.read') && <ProvidersCard projectId={project.id} />}
 
-      {/* Los clientes, en su propia tarjeta al final: es gente invitada, no
-          una propiedad de la obra, y adentro de la ficha la estiraba. */}
+      {/* El equipo, resumido. Dar y sacar accesos vive en su propia pantalla:
+          es una tarea con su propio momento, no algo con lo que uno se
+          tropieza mientras mira cómo viene la obra. */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <CardIcon icon={Users} />
-            <CardTitle className="text-base">{t('project.detail.clients')}</CardTitle>
+            <CardTitle className="text-base">{t('project.detail.team')}</CardTitle>
           </div>
-          {project.isOwner && <InviteClientDialog projectId={project.id} />}
+          <Can I="project.invite">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to={projectTeamPath(project.id)}>{t('project.team.manage')}</Link>
+            </Button>
+          </Can>
         </CardHeader>
         <CardContent>
-          {clients.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('project.detail.noClients')}</p>
-          ) : (
-            // Scroll propio: una obra con muchos invitados no puede estirar
-            // la tarjeta y desbalancear la columna del masonry.
-            <ul className="flex max-h-56 flex-col gap-2 overflow-y-auto">
-              {clients.map((client) => (
-                <li key={client.id} className="flex flex-col text-sm">
-                  <span className="font-medium">{client.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">{client.email}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul className="flex max-h-56 flex-col gap-2 overflow-y-auto">
+            {members.map((member) => (
+              <li key={member.id} className="flex items-center justify-between gap-2 text-sm">
+                <div className="flex min-w-0 flex-col">
+                  <span className="font-medium">{member.name}</span>
+                  <span className="truncate text-xs text-muted-foreground">{member.email}</span>
+                </div>
+                <Badge variant="secondary" className="shrink-0">
+                  {t(`project.role.${member.role}`)}
+                </Badge>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
     </div>

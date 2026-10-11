@@ -21,7 +21,7 @@ const SYSTEM_PROMPT =
 /**
  * El `projectId` queda cerrado en el closure de cada tool, nunca es un
  * parámetro que el modelo pueda elegir — la autorización ya se resolvió en
- * `requireProjectAccess`/`requireProjectOwner` antes de llegar acá, y no hay
+ * `requireProjectAccess` + el `requireCapability(...)` que declara el router antes de llegar acá, y no hay
  * forma de que una pregunta del chat la esquive.
  */
 const emptySchema = { type: 'object', properties: {}, additionalProperties: false } as const;

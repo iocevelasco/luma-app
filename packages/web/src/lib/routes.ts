@@ -14,6 +14,7 @@ export const ROUTES = {
   CONFIRM_EMAIL_CHANGE: '/confirm-email-change',
 
   ADMIN: '/admin',
+  COMPANY: '/admin/empresa',
   ACCOUNT_SETTINGS: '/admin/settings/account',
   PROJECT_NEW: '/admin/proyectos/nuevo',
   PROJECT_DETAIL: '/admin/proyectos/:projectId',
@@ -21,6 +22,11 @@ export const ROUTES = {
   PROJECT_MATERIALS: '/admin/proyectos/:projectId/materiales',
   PROJECT_LABOR: '/admin/proyectos/:projectId/personal',
   PROJECT_PROVIDERS: '/admin/proyectos/:projectId/proveedores',
+  PROJECT_DOCUMENTS: '/admin/proyectos/:projectId/documentacion',
+  PROJECT_MILESTONES: '/admin/proyectos/:projectId/hitos',
+  PROJECT_TEAM: '/admin/proyectos/:projectId/equipo',
+  PROJECT_PAYMENTS: '/admin/proyectos/:projectId/pagos',
+  PROJECT_EXPENSES: '/admin/proyectos/:projectId/gastos',
   PROJECT_BUDGET: '/admin/proyectos/:projectId/presupuesto',
   PROJECT_ADVISOR: '/admin/proyectos/:projectId/consultor-ia',
 
@@ -47,6 +53,31 @@ export function projectMaterialsPath(projectId: string): string {
 /** `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. */
 export function projectLaborPath(projectId: string): string {
   return ROUTES.PROJECT_LABOR.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_PAYMENTS` con el `:projectId` resuelto, para armar links. */
+export function projectPaymentsPath(projectId: string): string {
+  return ROUTES.PROJECT_PAYMENTS.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_EXPENSES` con el `:projectId` resuelto, para armar links. */
+export function projectExpensesPath(projectId: string): string {
+  return ROUTES.PROJECT_EXPENSES.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_TEAM` con el `:projectId` resuelto, para armar links. */
+export function projectTeamPath(projectId: string): string {
+  return ROUTES.PROJECT_TEAM.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_MILESTONES` con el `:projectId` resuelto, para armar links. */
+export function projectMilestonesPath(projectId: string): string {
+  return ROUTES.PROJECT_MILESTONES.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_DOCUMENTS` con el `:projectId` resuelto, para armar links. */
+export function projectDocumentsPath(projectId: string): string {
+  return ROUTES.PROJECT_DOCUMENTS.replace(':projectId', projectId);
 }
 
 /** `ROUTES.PROJECT_PROVIDERS` con el `:projectId` resuelto, para armar links. */

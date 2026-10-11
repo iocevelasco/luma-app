@@ -278,6 +278,7 @@ function NewProviderDialog({ projectId }: { projectId: string }) {
         fieldCount={8}
         submitLabel={t('provider.list.newSubmit')}
         isSubmitting={createProvider.isPending}
+        error={createProvider.error}
         onSubmit={handleSubmit((values) =>
           createProvider.mutate(values, {
             onSuccess: (data) => {
@@ -356,6 +357,7 @@ function EditProviderDialog({
       title={t('provider.list.editTitle')}
       fieldCount={7}
       isSubmitting={updateProvider.isPending}
+      error={updateProvider.error}
       onSubmit={handleSubmit((values) =>
         updateProvider.mutate(
           { providerId: provider.id, payload: values },
