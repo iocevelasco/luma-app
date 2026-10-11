@@ -24,7 +24,7 @@ function requireEnv(name: string): string {
  * resuelve contra el ORIGEN y pierde el `/app`. Por eso se arma la URL entera.
  */
 export function appUrl(path: string): string {
-  const base = (process.env.E2E_BASE_URL ?? 'http://localhost:5173').replace(/\/$/, '');
+  const base = (process.env.E2E_BASE_URL ?? 'http://localhost:6173').replace(/\/$/, '');
   return `${base}${path}`;
 }
 

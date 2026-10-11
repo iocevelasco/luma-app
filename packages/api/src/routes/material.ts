@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
-import { requireProjectAccess, requireProjectOwner } from '../middleware/project.middleware.js';
+import { requireProjectAccess, requireProjectEditor } from '../middleware/project.middleware.js';
 import {
   createMaterial,
   deleteMaterial,
@@ -8,14 +8,18 @@ import {
   updateMaterial,
 } from '../controllers/index.js';
 
-/** Anidado bajo `/api/projects/:projectId/materials` — ver routes/project.ts. */
+/**
+ * Anidado bajo `/api/projects/:projectId/materials` — ver routes/project.ts.
+ * `requireProjectEditor`: el Asistente de Obra registra materiales, es el
+ * principal generador de datos del sistema.
+ */
 export const materialRouter = Router({ mergeParams: true });
 
 materialRouter.use(isAuthenticated, requireProjectAccess);
 
 materialRouter.get('/', listMaterials);
-materialRouter.post('/', requireProjectOwner, createMaterial);
-materialRouter.patch('/:materialId', requireProjectOwner, updateMaterial);
-materialRouter.delete('/:materialId', requireProjectOwner, deleteMaterial);
+materialRouter.post('/', requireProjectEditor, createMaterial);
+materialRouter.patch('/:materialId', requireProjectEditor, updateMaterial);
+materialRouter.delete('/:materialId', requireProjectEditor, deleteMaterial);
 
 export default materialRouter;

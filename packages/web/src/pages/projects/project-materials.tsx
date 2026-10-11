@@ -6,7 +6,7 @@ import {
   type MaterialItem,
   type MaterialStatus,
 } from '@luma/shared';
-import { Copy, Share2 } from 'lucide-react';
+import { Copy, Plus, Share2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -21,9 +21,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { FormDrawer } from '@/components/common/form-drawer';
+import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -64,8 +65,15 @@ function copyText(text: string) {
   return Promise.resolve();
 }
 
-function NewMaterialForm({ projectId }: { projectId: string }) {
+/**
+ * El alta vive en el drawer lateral, no en la cabecera de la página: como
+ * formulario fijo se comía media pantalla y empujaba la lista —que es lo que
+ * se viene a leer— abajo del pliegue. Se entra muchas más veces a mirar la
+ * lista que a cargar un material.
+ */
+function NewMaterialDrawer({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
   const createMaterial = useCreateMaterial(projectId);
   const { data: activitiesData } = useAllActivities(projectId);
 
@@ -78,18 +86,32 @@ function NewMaterialForm({ projectId }: { projectId: string }) {
   } = useForm<CreateMaterialInput>({ resolver: zodResolver(createMaterialSchema) });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t('material.list.newTitle')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) =>
-            createMaterial.mutate(values, { onSuccess: () => reset() }),
-          )}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="size-4" />
+        {t('material.list.newTitle')}
+      </Button>
+
+      <FormDrawer
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) reset();
+        }}
+        title={t('material.list.newTitle')}
+        fieldCount={6}
+        submitLabel={t('material.list.newSubmit')}
+        isSubmitting={createMaterial.isPending}
+        onSubmit={handleSubmit((values) =>
+          createMaterial.mutate(values, {
+            onSuccess: () => {
+              reset();
+              setOpen(false);
+            },
+          }),
+        )}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="material-name">{t('material.fields.name')}</Label>
               <Input id="material-name" {...register('name')} />
@@ -158,24 +180,22 @@ function NewMaterialForm({ projectId }: { projectId: string }) {
               <Input
                 id="material-cost"
                 inputMode="decimal"
-                {...register('estimatedCost', { valueAsNumber: true })}
+                {...register('estimatedCost', {
+                  setValueAs: (value) => (value === '' ? undefined : Number(value)),
+                })}
               />
+              {errors.estimatedCost && (
+                <p className="text-sm text-destructive">{errors.estimatedCost.message}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="material-supplier">{t('material.fields.supplier')}</Label>
               <Input id="material-supplier" {...register('supplier')} />
             </div>
-          </div>
-
-          <div className="flex justify-end">
-            <Button type="submit" disabled={createMaterial.isPending}>
-              {createMaterial.isPending ? t('common.loading') : t('material.list.newSubmit')}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </FormDrawer>
+    </>
   );
 }
 
@@ -259,10 +279,11 @@ export function ProjectMaterialsPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const { data: projectData } = useProject(projectId);
-  const { data: materialsData, isLoading } = useMaterials(projectId);
+  const { data: materialsData, isLoading, isError } = useMaterials(projectId);
   const { data: activitiesData } = useAllActivities(projectId);
 
-  const isOwner = Boolean(projectData?.project.isOwner);
+  // Dueño o Asistente de Obra — ambos gestionan materiales operativamente.
+  const isEditor = Boolean(projectData?.project.isEditor);
 
   const activityNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -309,31 +330,32 @@ export function ProjectMaterialsPage() {
     }
   }
 
+  if (isError) return <RouteError />;
   if (isLoading || !materialsData) return <RouteLoading />;
 
   const canShare = typeof navigator.share === 'function';
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 md:p-6">
-      {isOwner && <NewMaterialForm projectId={projectId!} />}
-
-      <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-base">{t('material.list.title')}</CardTitle>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleCopy}>
-              <Copy className="size-4" />
-              {t('material.list.copyList')}
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-3 md:p-4">
+      <div className="flex flex-row flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-medium">{t('material.list.title')}</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={handleCopy}>
+            <Copy className="size-4" />
+            {t('material.list.copyList')}
+          </Button>
+          {canShare && (
+            <Button variant="outline" size="sm" onClick={handleShare}>
+              <Share2 className="size-4" />
+              {t('material.list.share')}
             </Button>
-            {canShare && (
-              <Button variant="outline" size="sm" onClick={handleShare}>
-                <Share2 className="size-4" />
-                {t('material.list.share')}
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
+          )}
+          {isEditor && <NewMaterialDrawer projectId={projectId!} />}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
           {MATERIAL_STATUSES.map((status) => {
             const items = grouped[status];
             if (items.length === 0) return null;
@@ -349,7 +371,7 @@ export function ProjectMaterialsPage() {
                     <p className="text-xs text-muted-foreground">
                       {activityNameById.get(material.activityId!) ?? ''}
                     </p>
-                    <MaterialRow material={material} projectId={projectId!} canEdit={isOwner} />
+                    <MaterialRow material={material} projectId={projectId!} canEdit={isEditor} />
                   </div>
                 ))}
                 {withoutActivity.length > 0 && (
@@ -362,7 +384,7 @@ export function ProjectMaterialsPage() {
                         key={material.id}
                         material={material}
                         projectId={projectId!}
-                        canEdit={isOwner}
+                        canEdit={isEditor}
                       />
                     ))}
                   </div>
@@ -373,8 +395,8 @@ export function ProjectMaterialsPage() {
           {materialsData.materials.length === 0 && (
             <p className="text-sm text-muted-foreground">{t('material.list.empty')}</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -65,6 +65,22 @@ export function useUpdateActivity(projectId: string) {
   });
 }
 
+/** El supervisor devuelve el trabajo reportado, con motivo. */
+export function useRejectActivity(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: ({ activityId, reason }: { activityId: string; reason: string }) =>
+      activitiesApi.reject(projectId, activityId, reason),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
+      toast.success(t('activity.review.rejected'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t('activity.errors.reject'))),
+  });
+}
+
 export function useDeleteActivity(projectId: string) {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -77,5 +93,32 @@ export function useDeleteActivity(projectId: string) {
       toast.success(t('activity.list.deleted'));
     },
     onError: (error) => toast.error(errorMessage(error, t('activity.errors.delete'))),
+  });
+}
+
+export function useUploadActivityEvidence(projectId: string, activityId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (file: File) => activitiesApi.uploadEvidence(projectId, activityId, file),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
+    },
+    onError: (error) => toast.error(errorMessage(error, t('activity.errors.uploadEvidence'))),
+  });
+}
+
+export function useDeleteActivityEvidence(projectId: string, activityId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (evidenceId: string) =>
+      activitiesApi.removeEvidence(projectId, activityId, evidenceId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
+    },
+    onError: (error) => toast.error(errorMessage(error, t('activity.errors.removeEvidence'))),
   });
 }

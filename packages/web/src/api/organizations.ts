@@ -1,4 +1,10 @@
-import type { ApiResponse, OrganizationResponse } from '@luma/shared';
+import type {
+  ApiResponse,
+  InviteMemberInput,
+  InviteMemberResponse,
+  OrganizationMembersResponse,
+  OrganizationResponse,
+} from '@luma/shared';
 import { apiClient } from '@/lib/api-client';
 
 /**
@@ -19,4 +25,10 @@ export const organizationsApi = {
 
   rename: (name: string) =>
     unwrap<OrganizationResponse>(apiClient.patch('/api/organizations/me', { name })),
+
+  listMembers: () =>
+    unwrap<OrganizationMembersResponse>(apiClient.get('/api/organizations/me/members')),
+
+  inviteMember: (payload: InviteMemberInput) =>
+    unwrap<InviteMemberResponse>(apiClient.post('/api/organizations/me/members', payload)),
 };

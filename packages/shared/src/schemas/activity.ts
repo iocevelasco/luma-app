@@ -7,7 +7,47 @@ import { z } from 'zod';
 
 const dayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida');
 
-export const activityStatusSchema = z.enum(['pendiente', 'en_curso', 'completada', 'cancelada']);
+export const activityStatusSchema = z.enum([
+  'pendiente',
+  'en_curso',
+  'en_revision',
+  'completada',
+  'cancelada',
+]);
+
+/**
+ * Duplica el catálogo de `providerSpecialtySchema` (los schemas de dominio no
+ * se importan entre sí). Hay un test que falla si se desincronizan.
+ */
+export const activitySpecialtySchema = z.enum([
+  'electricidad',
+  'plomeria',
+  'gas',
+  'carpinteria',
+  'cristaleria',
+  'albanileria',
+  'herreria',
+  'redes',
+  'mecanicas',
+  'estructura',
+  'acabados',
+  'pintura',
+  'climatizacion',
+  'techos',
+  'pisos_revestimientos',
+  'jardineria',
+  'demolicion',
+  'otra',
+]);
+
+/** El supervisor devuelve el trabajo: el motivo es obligatorio a propósito. */
+export const rejectActivitySchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(1, 'Escribí por qué lo devolvés')
+    .max(500, 'Es demasiado largo'),
+});
 
 const activityResponsibleSchema = z.object({
   name: z
@@ -30,6 +70,7 @@ export const createActivitySchema = z
     endDate: dayKeySchema,
     responsible: activityResponsibleSchema,
     status: activityStatusSchema.default('pendiente'),
+    specialty: activitySpecialtySchema.optional(),
     notes: z.string().trim().max(2000, 'Es demasiado largo').optional(),
   })
   .refine((data) => data.endDate >= data.startDate, {
@@ -45,6 +86,7 @@ export const updateActivitySchema = z
     endDate: dayKeySchema.optional(),
     responsible: activityResponsibleSchema.optional(),
     status: activityStatusSchema.optional(),
+    specialty: activitySpecialtySchema.optional(),
     notes: z.string().trim().max(2000).optional(),
   })
   .refine(
@@ -57,3 +99,4 @@ export const updateActivitySchema = z
 
 export type CreateActivityInput = z.infer<typeof createActivitySchema>;
 export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;
+export type RejectActivityInput = z.infer<typeof rejectActivitySchema>;

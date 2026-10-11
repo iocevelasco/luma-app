@@ -1,21 +1,90 @@
+import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
+import multer from 'multer';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
-import { requireProjectAccess, requireProjectOwner } from '../middleware/project.middleware.js';
 import {
+  requireProjectAccess,
+  requireProjectEditor,
+  requireProjectOwner,
+  requireProviderRead,
+} from '../middleware/project.middleware.js';
+import {
+  assignCrewToActivity,
+  assignProvider,
   createActivity,
   deleteActivity,
+  deleteActivityEvidence,
   listActivities,
+  listActivityCrew,
+  listActivityProviders,
+  rejectActivity,
+  unassignCrewFromActivity,
+  unassignProvider,
   updateActivity,
+  uploadActivityEvidence,
 } from '../controllers/index.js';
 
-/** Anidado bajo `/api/projects/:projectId/activities` — ver routes/project.ts. */
+/**
+ * Memoria, no disco: el archivo va directo al storage S3-compatible en el
+ * controller — no hay filesystem persistente en el VPS entre deploys.
+ */
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+
+/** El límite de tamaño de multer llega como error acá, antes del errorHandler global. */
+function handleUploadError(err: unknown, _req: Request, res: Response, next: NextFunction) {
+  if (err instanceof multer.MulterError) {
+    return res
+      .status(400)
+      .json({ success: false, error: 'El archivo es demasiado grande (máximo 8MB)' });
+  }
+  next(err);
+}
+
+/**
+ * Anidado bajo `/api/projects/:projectId/activities` — ver routes/project.ts.
+ * `requireProjectEditor` (no `requireProjectOwner`): el Asistente de Obra
+ * también planifica y actualiza actividades, sólo presupuesto e
+ * invitaciones quedan exclusivas del dueño.
+ */
 export const activityRouter = Router({ mergeParams: true });
 
 activityRouter.use(isAuthenticated, requireProjectAccess);
 
 activityRouter.get('/', listActivities);
-activityRouter.post('/', requireProjectOwner, createActivity);
-activityRouter.patch('/:activityId', requireProjectOwner, updateActivity);
-activityRouter.delete('/:activityId', requireProjectOwner, deleteActivity);
+activityRouter.post('/', requireProjectEditor, createActivity);
+activityRouter.patch('/:activityId', requireProjectEditor, updateActivity);
+// Devolver el trabajo es del supervisor, igual que cerrarlo — cerrar se gatea
+// dentro de `updateActivity`, que necesita distinguir el estado pedido.
+activityRouter.post('/:activityId/reject', requireProjectOwner, rejectActivity);
+activityRouter.delete('/:activityId', requireProjectEditor, deleteActivity);
+activityRouter.post(
+  '/:activityId/evidence',
+  requireProjectEditor,
+  upload.single('photo'),
+  handleUploadError,
+  uploadActivityEvidence,
+);
+activityRouter.delete(
+  '/:activityId/evidence/:evidenceId',
+  requireProjectEditor,
+  deleteActivityEvidence,
+);
+
+// Proveedores asignados (RF nuevo, directorio de la Empresa — ver routes/provider.ts).
+// `requireProjectEditor`, no `requireProjectOwner`: el Asistente de Obra
+// también asigna proveedores a las actividades que gestiona.
+activityRouter.get('/:activityId/providers', requireProviderRead, listActivityProviders);
+activityRouter.post('/:activityId/providers', requireProjectEditor, assignProvider);
+activityRouter.delete('/:activityId/providers/:providerId', requireProjectEditor, unassignProvider);
+
+// Cuadrilla fija de la actividad: quiénes se esperan todos los días. El parte
+// diario (`/labor`) sólo confirma quién de ellos vino.
+activityRouter.get('/:activityId/crew', requireProjectEditor, listActivityCrew);
+activityRouter.post('/:activityId/crew', requireProjectEditor, assignCrewToActivity);
+activityRouter.delete(
+  '/:activityId/crew/:crewMemberId',
+  requireProjectEditor,
+  unassignCrewFromActivity,
+);
 
 export default activityRouter;

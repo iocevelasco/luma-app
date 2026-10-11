@@ -15,7 +15,15 @@
       "runtimeArgs": [
         "dev:web"
       ],
-      "port": 5173
+      "port": 6173
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "dev:api"
+      ],
+      "port": 8080
     }
   ]
 }

@@ -2,12 +2,14 @@ import type { Request, Response } from 'express';
 import {
   createProjectSchema,
   inviteClientSchema,
+  updateProjectSchema,
   type Project as ProjectDTO,
   type ProjectClientSummary,
 } from '@luma/shared';
 import { User } from '../models/User.js';
 import { Project, type IProject } from '../models/Project.js';
 import { ProjectClient } from '../models/ProjectClient.js';
+import { OrganizationMember } from '../models/OrganizationMember.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
 import { EmailService } from '../services/email.service.js';
 import { ACTIVATION_TOKEN_TTL_MS, randomToken } from './auth.controller.js';
@@ -30,9 +32,36 @@ function toProjectDTO(project: IProject): ProjectDTO {
     currency: project.currency,
     budgetType: project.budgetType,
     status: project.status,
+    providersVisibleToClient: Boolean(project.providersVisibleToClient),
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };
+}
+
+/**
+ * Requiere `requireProjectAccess` + `requireProjectOwner` antes. Ajustes de
+ * una obra ya creada — hoy sólo la visibilidad de proveedores para el cliente.
+ */
+export async function updateProject(req: Request, res: Response) {
+  try {
+    const parsed = updateProjectSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
+    }
+
+    const current = req.project as IProject;
+    const project = await Project.findByIdAndUpdate(current._id, parsed.data, { new: true });
+    if (!project) {
+      return res.status(404).json({ success: false, error: 'Obra no encontrada' });
+    }
+
+    return res.json({ success: true, data: { project: toProjectDTO(project) } });
+  } catch (error) {
+    console.error('❌ [PROJECT] updateProject:', error);
+    return res.status(500).json({ success: false, error: errMsg(error) });
+  }
 }
 
 export async function createProject(req: Request, res: Response) {
@@ -66,7 +95,10 @@ export async function createProject(req: Request, res: Response) {
   }
 }
 
-/** Obras donde el usuario es dueño o tiene acceso como cliente. Sin paginación en v1, tope 100. */
+/**
+ * Obras donde el usuario es dueño, Asistente de Obra (miembro de la Empresa)
+ * o tiene acceso como cliente. Sin paginación en v1, tope 100.
+ */
 export async function listProjects(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -75,9 +107,16 @@ export async function listProjects(req: Request, res: Response) {
   try {
     const userId = req.user.sub;
     const clientProjectIds = await ProjectClient.find({ user: userId }).distinct('project');
+    const memberOrgIds = await OrganizationMember.find({ user: userId, role: 'member' }).distinct(
+      'organization',
+    );
 
     const projects = await Project.find({
-      $or: [{ createdBy: userId }, { _id: { $in: clientProjectIds } }],
+      $or: [
+        { createdBy: userId },
+        { _id: { $in: clientProjectIds } },
+        { organization: { $in: memberOrgIds } },
+      ],
     })
       .sort({ updatedAt: -1 })
       .limit(100);
@@ -109,7 +148,11 @@ export async function getProject(req: Request, res: Response) {
     return res.json({
       success: true,
       data: {
-        project: { ...toProjectDTO(project), isOwner: Boolean(req.isProjectOwner) },
+        project: {
+          ...toProjectDTO(project),
+          isOwner: Boolean(req.isProjectOwner),
+          isEditor: Boolean(req.isProjectEditor),
+        },
         clients,
       },
     });

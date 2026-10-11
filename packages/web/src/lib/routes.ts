@@ -19,6 +19,10 @@ export const ROUTES = {
   PROJECT_DETAIL: '/admin/proyectos/:projectId',
   PROJECT_ACTIVITIES: '/admin/proyectos/:projectId/actividades',
   PROJECT_MATERIALS: '/admin/proyectos/:projectId/materiales',
+  PROJECT_LABOR: '/admin/proyectos/:projectId/personal',
+  PROJECT_PROVIDERS: '/admin/proyectos/:projectId/proveedores',
+  PROJECT_BUDGET: '/admin/proyectos/:projectId/presupuesto',
+  PROJECT_ADVISOR: '/admin/proyectos/:projectId/consultor-ia',
 
   NOT_FOUND: '*',
 } as const;
@@ -38,4 +42,24 @@ export function projectActivitiesPath(projectId: string): string {
 /** `ROUTES.PROJECT_MATERIALS` con el `:projectId` resuelto, para armar links. */
 export function projectMaterialsPath(projectId: string): string {
   return ROUTES.PROJECT_MATERIALS.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. */
+export function projectLaborPath(projectId: string): string {
+  return ROUTES.PROJECT_LABOR.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_PROVIDERS` con el `:projectId` resuelto, para armar links. */
+export function projectProvidersPath(projectId: string): string {
+  return ROUTES.PROJECT_PROVIDERS.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_BUDGET` con el `:projectId` resuelto, para armar links. */
+export function projectBudgetPath(projectId: string): string {
+  return ROUTES.PROJECT_BUDGET.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_ADVISOR` con el `:projectId` resuelto, para armar links. */
+export function projectAdvisorPath(projectId: string): string {
+  return ROUTES.PROJECT_ADVISOR.replace(':projectId', projectId);
 }

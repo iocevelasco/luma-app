@@ -8,7 +8,12 @@ export type BudgetType = 'cerrado' | 'abierto' | 'con_margen';
 
 export type ProjectStatus = 'active' | 'archived';
 
-/** En v1 sólo se crea `'owner'` — no hay todavía forma de sumar gente a una Empresa. */
+/**
+ * `'member'` es el Asistente de Obra (RF-13, sección 2.3): acceso operativo
+ * a todas las obras de la Empresa que lo invitó, sin ver presupuesto ni
+ * poder invitar gente. `'owner'` es quien la Empresa crea sola al
+ * registrarse — sigue siendo el único rol que se auto-asigna.
+ */
 export type OrganizationRole = 'owner' | 'member';
 
 /** Empresa del ejecutante. Se auto-crea con cada usuario nuevo, nunca la crea a mano. */
@@ -42,13 +47,28 @@ export interface Project {
   currency: string;
   budgetType: BudgetType;
   status: ProjectStatus;
+  /**
+   * Si el cliente final ve el directorio de proveedores de esta obra y quién
+   * está asignado a cada actividad. Por obra y no por proveedor: en algunas
+   * obras el cliente conoce a todos los subcontratistas y en otras no tiene
+   * por qué, pero rara vez es una decisión contacto por contacto.
+   */
+  providersVisibleToClient: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-/** `GET /api/projects/:id`: la ficha más si quien la pide es su dueño. */
+/**
+ * `GET /api/projects/:id`: la ficha más si quien la pide es su dueño.
+ *
+ * `isOwner` es estricto — sólo quien creó la obra (gatea presupuesto e
+ * invitaciones). `isEditor` es dueño **o** Asistente de Obra (un miembro de
+ * la misma Empresa) — gatea la escritura operativa (actividades, materiales,
+ * personal). Todo dueño es editor; no todo editor es dueño.
+ */
 export interface ProjectDetail extends Project {
   isOwner: boolean;
+  isEditor: boolean;
 }
 
 /** Fila de acceso de un cliente a una obra puntual — no un rol genérico. */
@@ -88,4 +108,22 @@ export interface InviteClientResponse {
 
 export interface OrganizationResponse {
   organization: Organization;
+}
+
+/** Asistente de Obra de la Empresa, con los datos de contacto ya resueltos server-side. */
+export interface OrganizationMemberSummary {
+  id: string;
+  userId: string;
+  email: string;
+  name: string;
+  role: OrganizationRole;
+  createdAt: string;
+}
+
+export interface OrganizationMembersResponse {
+  members: OrganizationMemberSummary[];
+}
+
+export interface InviteMemberResponse {
+  member: OrganizationMemberSummary;
 }

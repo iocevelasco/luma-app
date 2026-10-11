@@ -22,14 +22,14 @@ export const SERVER_CONFIG = {
   HOST: process.env.HOST ?? '0.0.0.0',
   NODE_ENV,
   /** Origen del frontend, para CORS y para los redirects. */
-  FRONTEND_URL: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  FRONTEND_URL: process.env.FRONTEND_URL ?? 'http://localhost:6173',
   /**
    * Raíz del SPA, **incluyendo el subpath**: en producción la SPA se monta en
    * `/app`, así que esto es `https://<DOMINIO>/app`. Los links de los mails se
    * arman sobre esta variable (`utils/app-url.ts`); si apunta al dominio pelado,
    * cada link de verificación cae en la landing.
    */
-  APP_URL: process.env.APP_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  APP_URL: process.env.APP_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:6173',
   /** Hostname interno de la landing en la red de Docker. */
   LANDING_URL: process.env.LANDING_URL ?? 'http://landing:8080',
 } as const;
@@ -80,6 +80,40 @@ export const EMAIL_CONFIG = {
   FROM: process.env.EMAIL_FROM ?? 'onboarding@resend.dev',
   APP_NAME: process.env.APP_NAME ?? 'Luma',
   ENABLED: Boolean(process.env.RESEND_API_KEY),
+} as const;
+
+/**
+ * Storage de archivos (RF-04: registro fotográfico de evidencia). Cualquier
+ * proveedor compatible con S3 sirve — Backblaze B2, Cloudflare R2, AWS S3 —
+ * cambiando sólo `STORAGE_ENDPOINT`. Sin credenciales el feature queda
+ * deshabilitado (`ENABLED: false`): no vale la pena que la app entera no
+ * arranque por un storage que todavía nadie configuró.
+ */
+export const STORAGE_CONFIG = {
+  ENDPOINT: process.env.STORAGE_ENDPOINT,
+  REGION: process.env.STORAGE_REGION ?? 'auto',
+  BUCKET: process.env.STORAGE_BUCKET,
+  ACCESS_KEY_ID: process.env.STORAGE_ACCESS_KEY_ID,
+  SECRET_ACCESS_KEY: process.env.STORAGE_SECRET_ACCESS_KEY,
+  /** Segundos de vida de cada URL firmada de lectura. */
+  SIGNED_URL_TTL: Number(process.env.STORAGE_SIGNED_URL_TTL ?? 3600),
+  ENABLED: Boolean(
+    process.env.STORAGE_ENDPOINT &&
+      process.env.STORAGE_BUCKET &&
+      process.env.STORAGE_ACCESS_KEY_ID &&
+      process.env.STORAGE_SECRET_ACCESS_KEY,
+  ),
+} as const;
+
+/**
+ * Consultor IA de obra: chat de sólo lectura sobre UNA obra puntual (ver
+ * `services/project-advisor.service.ts`). Sin API key el feature queda
+ * deshabilitado — no justifica que el resto de la app no arranque.
+ */
+export const ANTHROPIC_CONFIG = {
+  API_KEY: process.env.ANTHROPIC_API_KEY,
+  MODEL: 'claude-sonnet-5',
+  ENABLED: Boolean(process.env.ANTHROPIC_API_KEY),
 } as const;
 
 /**
@@ -145,6 +179,14 @@ export function validateConfig(): void {
   // Avisos que no justifican abortar: la app funciona, sólo que sin esa pieza.
   if (!EMAIL_CONFIG.ENABLED) {
     console.warn('⚠️  [CONFIG] Sin RESEND_API_KEY: los mails quedan deshabilitados.');
+  }
+  if (!STORAGE_CONFIG.ENABLED) {
+    console.warn(
+      '⚠️  [CONFIG] Sin STORAGE_*: el registro fotográfico de evidencia queda deshabilitado.',
+    );
+  }
+  if (!ANTHROPIC_CONFIG.ENABLED) {
+    console.warn('⚠️  [CONFIG] Sin ANTHROPIC_API_KEY: el Consultor IA queda deshabilitado.');
   }
   if (isProduction && !process.env.APP_URL) {
     console.warn('⚠️  [CONFIG] Sin APP_URL: los links de los mails pueden apuntar mal.');

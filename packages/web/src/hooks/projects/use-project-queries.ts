@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import type { CreateProjectInput, InviteClientInput } from '@luma/shared';
+import type { CreateProjectInput, InviteClientInput, UpdateProjectInput } from '@luma/shared';
 import { projectsApi } from '@/api/projects';
 import { isApiError } from '@/lib/api-client';
 import { QueryKeys } from '@/lib/query-keys';
@@ -49,6 +49,23 @@ export function useCreateProject() {
       navigate(projectDetailPath(project.id));
     },
     onError: (error) => toast.error(errorMessage(error, t('project.errors.create'))),
+  });
+}
+
+export function useUpdateProject(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: UpdateProjectInput) => projectsApi.update(projectId, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
+      // El directorio cambia de visibilidad para el cliente: su caché de
+      // proveedores tiene que volver a pedirse con el permiso nuevo.
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.providers, projectId] });
+      toast.success(t('project.detail.settingsSaved'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t('project.errors.update'))),
   });
 }
 

@@ -67,7 +67,7 @@ placeholder), `scripts/mongo-backup.sh`, `.github/workflows/e2e.yml`, y un
 - El `Dockerfile` raíz instala con `--prod=false` en el stage de build: sin devDeps no
   hay `tsc` y el build falla. El stage final copia `packages/web/dist` a
   `packages/api/public`.
-- `playwright.config.ts` levanta `dev:web` (5173) y `dev:landing` (5174); CI corre
+- `playwright.config.ts` levanta `dev:web` (6173) y `dev:landing` (5174); CI corre
   **sólo chromium**, `test:e2e:cross` corre chromium + webkit a mano. Firefox no se testea.
 
 **Crear lo que en Pantera falta:** `eslint.config.js` (Pantera declara scripts `lint`

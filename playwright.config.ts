@@ -4,9 +4,9 @@ import path from 'path';
 const authFile = path.join(process.cwd(), '.auth/admin.json');
 
 // E2E_BASE_URL apunta la suite a un entorno remoto.
-// Local: (default) http://localhost:5173
+// Local: (default) http://localhost:6173
 // Producción: E2E_BASE_URL=https://<DOMINIO>/app pnpm test:e2e
-const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:5173';
+const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:6173';
 const IS_REMOTE = !/localhost/.test(BASE_URL);
 const IS_CI     = !!process.env.CI;
 
@@ -61,7 +61,7 @@ export default defineConfig({
   webServer: IS_REMOTE ? [] : [
     {
       command: 'pnpm dev:web',
-      url: 'http://localhost:5173',
+      url: 'http://localhost:6173',
       reuseExistingServer: true, // siempre reusar: nunca matar y rearrancar a mitad de suite
       timeout: 120_000,
     },

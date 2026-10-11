@@ -8,14 +8,14 @@ interface CardProps extends React.ComponentProps<'div'> {
 
 function Card({ className, variant = 'default', ...props }: CardProps) {
   const interactiveStyles = variant === 'interactive'
-    ? 'cursor-pointer transition-all duration-300 relative overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.08),0_8px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.08)] before:absolute before:inset-0 before:rounded-lg before:bg-[linear-gradient(to_bottom_right,rgba(255,255,255,0.05),transparent,rgba(0,0,0,0.05))] before:pointer-events-none before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300'
+    ? 'cursor-pointer transition-all duration-300 relative overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.08),0_8px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.08)] before:absolute before:inset-0 before:rounded-3xl before:bg-[linear-gradient(to_bottom_right,rgba(255,255,255,0.05),transparent,rgba(0,0,0,0.05))] before:pointer-events-none before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300'
     : ''
 
   return (
     <div
       data-slot="card"
       className={cn(
-        'bg-card text-card-foreground flex flex-col gap-4 sm:gap-6 rounded-lg border py-4 sm:py-6 shadow-sm',
+        'bg-card text-card-foreground flex flex-col gap-4 sm:gap-6 rounded-3xl border py-4 sm:py-6 shadow-surface',
         interactiveStyles,
         className,
       )}

@@ -1,4 +1,5 @@
 import type {
+  ActivityCrewResponse,
   ActivityListResponse,
   ActivityResponse,
   ApiResponse,
@@ -35,8 +36,45 @@ export const activitiesApi = {
       apiClient.patch(`/api/projects/${projectId}/activities/${activityId}`, payload),
     ),
 
+  /** Cuadrilla fija de la actividad: quiénes se esperan todos los días. */
+  listCrew: (projectId: string, activityId: string) =>
+    unwrap<ActivityCrewResponse>(
+      apiClient.get(`/api/projects/${projectId}/activities/${activityId}/crew`),
+    ),
+
+  assignCrew: (projectId: string, activityId: string, crewMemberId: string) =>
+    unwrap<{ crewMember: ActivityCrewResponse['crew'][number] }>(
+      apiClient.post(`/api/projects/${projectId}/activities/${activityId}/crew`, { crewMemberId }),
+    ),
+
+  unassignCrew: (projectId: string, activityId: string, crewMemberId: string) =>
+    unwrap<{ crewMemberId: string }>(
+      apiClient.delete(
+        `/api/projects/${projectId}/activities/${activityId}/crew/${crewMemberId}`,
+      ),
+    ),
+
+  /** El supervisor devuelve el trabajo con un motivo; vuelve a `en_curso`. */
+  reject: (projectId: string, activityId: string, reason: string) =>
+    unwrap<ActivityResponse>(
+      apiClient.post(`/api/projects/${projectId}/activities/${activityId}/reject`, { reason }),
+    ),
+
   remove: (projectId: string, activityId: string) =>
     unwrap<{ activityId: string }>(
       apiClient.delete(`/api/projects/${projectId}/activities/${activityId}`),
+    ),
+
+  uploadEvidence: (projectId: string, activityId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return unwrap<ActivityResponse>(
+      apiClient.post(`/api/projects/${projectId}/activities/${activityId}/evidence`, formData),
+    );
+  },
+
+  removeEvidence: (projectId: string, activityId: string, evidenceId: string) =>
+    unwrap<ActivityResponse>(
+      apiClient.delete(`/api/projects/${projectId}/activities/${activityId}/evidence/${evidenceId}`),
     ),
 };

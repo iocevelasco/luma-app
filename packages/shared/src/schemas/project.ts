@@ -49,6 +49,14 @@ export const createProjectSchema = z
     path: ['estimatedEndDate'],
   });
 
+/**
+ * Ajustes de una obra ya creada. Parcial a propósito: hoy sólo se toca la
+ * visibilidad de proveedores, y el resto de la ficha se edita al crearla.
+ */
+export const updateProjectSchema = z.object({
+  providersVisibleToClient: z.boolean().optional(),
+});
+
 export const inviteClientSchema = z.object({
   email: z
     .string()
@@ -58,6 +66,11 @@ export const inviteClientSchema = z.object({
     .email('Email inválido'),
 });
 
+/** Mismo shape que invitar cliente — invitar Asistente de Obra es "un email más". */
+export const inviteMemberSchema = inviteClientSchema;
+
 export type RenameOrganizationInput = z.infer<typeof renameOrganizationSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type InviteClientInput = z.infer<typeof inviteClientSchema>;
+export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;

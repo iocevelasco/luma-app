@@ -141,7 +141,9 @@ app.use(
   }),
 );
 
-app.use(express.json());
+// El default (100kb) alcanza para casi todo, pero el import de presupuesto
+// manda hasta 2000 filas de planilla como JSON — eso solo ya pasa los 100kb.
+app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 

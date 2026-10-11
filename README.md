@@ -18,11 +18,11 @@ pnpm install
 cp .env.example .env            # y completá al menos MONGODB_URI y JWT_SECRET
 cp .env packages/api/.env
 pnpm --filter @luma/api seed:admin   # crea el primer admin desde ADMIN_EMAIL/PASSWORD
-pnpm dev                             # api (8080) + web (5173)
+pnpm dev                             # api (8080) + web (6173)
 pnpm dev:landing                     # landing (5174)
 ```
 
-Entrá en `http://localhost:5173/login` con las credenciales que sembraste.
+Entrá en `http://localhost:6173/login` con las credenciales que sembraste.
 
 ## Comandos
 

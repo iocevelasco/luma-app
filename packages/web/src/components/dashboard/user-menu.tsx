@@ -1,5 +1,4 @@
-import { LogOut, Moon, Settings, Sun, User } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { LogOut, Settings, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,7 +19,6 @@ export function UserMenu() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const logout = useLogout();
-  const { resolvedTheme, setTheme } = useTheme();
 
   const initials = (user?.name ?? user?.email ?? '?').slice(0, 2).toUpperCase();
 
@@ -47,11 +45,6 @@ export function UserMenu() {
             <User className="size-4" />
             {t('userMenu.account')}
           </Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem onSelect={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}>
-          {resolvedTheme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
-          {t('userMenu.theme')}
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>

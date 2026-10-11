@@ -49,6 +49,20 @@ const ProjectActivitiesPage = lazy(() =>
 const ProjectMaterialsPage = lazy(() =>
   import('./pages/projects/project-materials').then((m) => ({ default: m.ProjectMaterialsPage })),
 );
+const ProjectLaborPage = lazy(() =>
+  import('./pages/projects/project-labor').then((m) => ({ default: m.ProjectLaborPage })),
+);
+const ProjectProvidersPage = lazy(() =>
+  import('./pages/projects/project-providers').then((m) => ({
+    default: m.ProjectProvidersPage,
+  })),
+);
+const ProjectBudgetPage = lazy(() =>
+  import('./pages/projects/project-budget').then((m) => ({ default: m.ProjectBudgetPage })),
+);
+const ProjectAdvisorPage = lazy(() =>
+  import('./pages/projects/project-advisor').then((m) => ({ default: m.ProjectAdvisorPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -105,6 +119,22 @@ export function AppRoutes() {
           <Route
             path={ROUTES.PROJECT_MATERIALS}
             element={<LazyRoute><ProjectMaterialsPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_LABOR}
+            element={<LazyRoute><ProjectLaborPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_PROVIDERS}
+            element={<LazyRoute><ProjectProvidersPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_BUDGET}
+            element={<LazyRoute><ProjectBudgetPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_ADVISOR}
+            element={<LazyRoute><ProjectAdvisorPage /></LazyRoute>}
           />
         </Route>
       </Route>
