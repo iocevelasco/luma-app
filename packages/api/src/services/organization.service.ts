@@ -4,7 +4,7 @@ import { OrganizationMember } from '../models/OrganizationMember.js';
 /**
  * Todo usuario nuevo tiene su empresa personal desde que existe, se haya
  * registrado solo (`register()`) o llegado como cliente invitado
- * (`inviteClient()`) — así nunca hace falta preguntar "¿tenés empresa?" antes
+ * (`inviteProjectMember()`) — así nunca hace falta preguntar "¿tenés empresa?" antes
  * de dejarlo crear su primera obra.
  */
 export async function createPersonalOrganization(userId: string, name: string) {

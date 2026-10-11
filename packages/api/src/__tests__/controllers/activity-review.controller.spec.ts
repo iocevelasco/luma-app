@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { canInProject, type Capability, type ProjectRole } from '@luma/shared';
 import type { Request, Response } from 'express';
 
 /**
@@ -9,6 +10,9 @@ import type { Request, Response } from 'express';
 vi.mock('../../models/Activity.js', () => ({
   Activity: { findOne: vi.fn(), findOneAndUpdate: vi.fn(), findByIdAndDelete: vi.fn() },
 }));
+vi.mock('../../services/notification.service.js', () => ({
+  notifyProject: vi.fn(),
+}));
 vi.mock('../../models/MaterialItem.js', () => ({ MaterialItem: { updateMany: vi.fn() } }));
 vi.mock('../../services/storage.service.js', () => ({
   StorageNotConfiguredError: class extends Error {},
@@ -17,6 +21,7 @@ vi.mock('../../services/storage.service.js', () => ({
   uploadEvidencePhoto: vi.fn(),
 }));
 
+const { notifyProject } = await import('../../services/notification.service.js');
 const { Activity } = await import('../../models/Activity.js');
 const { updateActivity, rejectActivity } = await import(
   '../../controllers/activity.controller.js'
@@ -56,14 +61,23 @@ function mockActivity(overrides: Record<string, unknown> = {}) {
   return doc;
 }
 
-describe('updateActivity — cerrar es del supervisor', () => {
+/**
+ * `can` armado contra la grilla real de `@luma/shared`, no un booleano a mano:
+ * si un permiso cambia en la grilla, este test lo nota.
+ */
+function canFor(role: ProjectRole) {
+  return (capability: Capability) =>
+    canInProject(role, capability, { providersVisibleToClient: false });
+}
+
+describe('updateActivity — reportar es del supervisor, cerrar del gerente', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('403 si el Asistente intenta marcar completada', async () => {
+  it('403 si el supervisor intenta marcar completada', async () => {
     const req = {
-      user: { sub: 'assistant-1' },
+      user: { sub: 'supervisor-1' },
       project: { _id: 'project-1' },
-      isProjectOwner: false,
+      can: canFor('supervisor'),
       params: { activityId: 'activity-1' },
       body: { status: 'completada' },
     } as unknown as Request;
@@ -75,13 +89,13 @@ describe('updateActivity — cerrar es del supervisor', () => {
     expect(Activity.findOne).not.toHaveBeenCalled();
   });
 
-  it('el Asistente sí puede reportar terminado (en_revision)', async () => {
+  it('el supervisor sí puede reportar terminado (en_revision)', async () => {
     const activity = mockActivity();
     vi.mocked(Activity.findOne).mockResolvedValue(activity as never);
     const req = {
-      user: { sub: 'assistant-1' },
+      user: { sub: 'supervisor-1' },
       project: { _id: 'project-1' },
-      isProjectOwner: false,
+      can: canFor('supervisor'),
       params: { activityId: 'activity-1' },
       body: { status: 'en_revision' },
     } as unknown as Request;
@@ -91,21 +105,21 @@ describe('updateActivity — cerrar es del supervisor', () => {
 
     expect(activity.set).toHaveBeenCalledWith(
       'review',
-      expect.objectContaining({ reportedBy: 'assistant-1' }),
+      expect.objectContaining({ reportedBy: 'supervisor-1' }),
     );
     expect(activity.save).toHaveBeenCalled();
   });
 
-  it('el dueño cierra y queda registrado quién aprobó', async () => {
+  it('el gerente cierra y queda registrado quién aprobó', async () => {
     const activity = mockActivity({
       status: 'en_revision',
-      review: { reportedBy: 'assistant-1', reportedAt: new Date() },
+      review: { reportedBy: 'supervisor-1', reportedAt: new Date() },
     });
     vi.mocked(Activity.findOne).mockResolvedValue(activity as never);
     const req = {
       user: { sub: 'owner-1' },
       project: { _id: 'project-1' },
-      isProjectOwner: true,
+      can: canFor('gerente'),
       params: { activityId: 'activity-1' },
       body: { status: 'completada' },
     } as unknown as Request;
@@ -117,15 +131,17 @@ describe('updateActivity — cerrar es del supervisor', () => {
     expect(activity.save).toHaveBeenCalled();
   });
 
-  it('editar otros campos no necesita ser dueño', async () => {
+  it('el supervisor anota novedades sin ser gerente', async () => {
     const activity = mockActivity();
     vi.mocked(Activity.findOne).mockResolvedValue(activity as never);
     const req = {
-      user: { sub: 'assistant-1' },
+      user: { sub: 'supervisor-1' },
       project: { _id: 'project-1' },
-      isProjectOwner: false,
+      can: canFor('supervisor'),
       params: { activityId: 'activity-1' },
-      body: { notes: 'Se retrasó por lluvia', specialty: 'albanileria' },
+      // `notes` y `status` son reporte. `specialty` sería replanificar — ver
+      // el test de abajo.
+      body: { notes: 'Se retrasó por lluvia' },
     } as unknown as Request;
     const res = mockRes();
 
@@ -133,6 +149,33 @@ describe('updateActivity — cerrar es del supervisor', () => {
 
     expect(activity.save).toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalledWith(403);
+  });
+
+  it('el supervisor no puede replanificar: fechas, alcance ni responsable', async () => {
+    // La matriz le da "cargar planificación de obra" al gerente y al
+    // supervisor sólo "reportar avance". Mover una fecha de entrega no es
+    // reportar.
+    for (const body of [
+      { endDate: '2026-12-31' },
+      { name: 'Otra cosa' },
+      { responsible: { name: 'Otro' } },
+      { specialty: 'albanileria' },
+    ]) {
+      vi.clearAllMocks();
+      const req = {
+        user: { sub: 'supervisor-1' },
+        project: { _id: 'project-1' },
+        can: canFor('supervisor'),
+        params: { activityId: 'activity-1' },
+        body,
+      } as unknown as Request;
+      const res = mockRes();
+
+      await updateActivity(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(Activity.findOne).not.toHaveBeenCalled();
+    }
   });
 });
 
@@ -182,5 +225,88 @@ describe('rejectActivity — devolver el trabajo con motivo', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(jsonBody(res).error).toMatch(/revisión/i);
+  });
+});
+
+describe('avisos por cambio de estado', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('arrancar una actividad le avisa al cliente', async () => {
+    // "Recibir notificaciones de actividad iniciada" — fila del cliente.
+    const activity = mockActivity({ status: 'pendiente' });
+    vi.mocked(Activity.findOne).mockResolvedValue(activity as never);
+
+    await updateActivity(
+      {
+        user: { sub: 'gerente-1' },
+        project: { _id: 'project-1' },
+        can: canFor('gerente'),
+        params: { activityId: 'activity-1' },
+        body: { status: 'en_curso' },
+      } as unknown as Request,
+      mockRes(),
+    );
+
+    const call = vi.mocked(notifyProject).mock.calls[0][0];
+    expect(call.type).toBe('actividad_iniciada');
+    expect(call.audience).toContain('cliente');
+  });
+
+  it('reportar terminado avisa sólo al gerente, no al cliente', async () => {
+    // `en_revision` puede volver atrás: anunciarlo como avance al cliente
+    // sería anunciar algo que todavía no pasó.
+    const activity = mockActivity({ status: 'en_curso' });
+    vi.mocked(Activity.findOne).mockResolvedValue(activity as never);
+
+    await updateActivity(
+      {
+        user: { sub: 'supervisor-1' },
+        project: { _id: 'project-1' },
+        can: canFor('supervisor'),
+        params: { activityId: 'activity-1' },
+        body: { status: 'en_revision' },
+      } as unknown as Request,
+      mockRes(),
+    );
+
+    const call = vi.mocked(notifyProject).mock.calls[0][0];
+    expect(call.type).toBe('actividad_en_revision');
+    expect(call.audience).toEqual(['gerente']);
+  });
+
+  it('no avisa si el estado no cambió', async () => {
+    const activity = mockActivity({ status: 'en_curso' });
+    vi.mocked(Activity.findOne).mockResolvedValue(activity as never);
+
+    await updateActivity(
+      {
+        user: { sub: 'supervisor-1' },
+        project: { _id: 'project-1' },
+        can: canFor('supervisor'),
+        params: { activityId: 'activity-1' },
+        body: { status: 'en_curso', notes: 'Sigue igual' },
+      } as unknown as Request,
+      mockRes(),
+    );
+
+    expect(notifyProject).not.toHaveBeenCalled();
+  });
+
+  it('editar sin tocar el estado no avisa nada', async () => {
+    const activity = mockActivity({ status: 'en_curso' });
+    vi.mocked(Activity.findOne).mockResolvedValue(activity as never);
+
+    await updateActivity(
+      {
+        user: { sub: 'supervisor-1' },
+        project: { _id: 'project-1' },
+        can: canFor('supervisor'),
+        params: { activityId: 'activity-1' },
+        body: { notes: 'Llovió' },
+      } as unknown as Request,
+      mockRes(),
+    );
+
+    expect(notifyProject).not.toHaveBeenCalled();
   });
 });

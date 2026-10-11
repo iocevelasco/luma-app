@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { canInProject, type Capability, type ProjectRole } from '@luma/shared';
 import type { Request, Response } from 'express';
 
 /**
@@ -103,6 +104,16 @@ describe('createMaterial — pertenencia de activity al project', () => {
   });
 });
 
+
+/**
+ * `can` armado contra la grilla real de `@luma/shared`, no un booleano a mano:
+ * si un permiso cambia en la grilla, este test lo nota.
+ */
+function canFor(role: ProjectRole, project: { providersVisibleToClient?: boolean } = {}) {
+  return (capability: Capability) =>
+    canInProject(role, capability, { providersVisibleToClient: false, ...project });
+}
+
 describe('listMaterials — estimatedCost sólo para quien puede editar', () => {
   const material = {
     _id: 'm1',
@@ -125,7 +136,7 @@ describe('listMaterials — estimatedCost sólo para quien puede editar', () => 
   });
 
   it('el dueño ve estimatedCost', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectEditor: true } as unknown as Request;
+    const req = { project: { _id: 'project-1' }, can: canFor('gerente') } as unknown as Request;
     const res = mockRes();
 
     await listMaterials(req, res);
@@ -136,8 +147,8 @@ describe('listMaterials — estimatedCost sólo para quien puede editar', () => 
     expect(materials[0]).toMatchObject({ estimatedCost: 5000 });
   });
 
-  it('el Asistente de Obra también ve estimatedCost (isProjectEditor, no dueño)', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectEditor: true } as unknown as Request;
+  it('el supervisor también ve estimatedCost', async () => {
+    const req = { project: { _id: 'project-1' }, can: canFor('supervisor') } as unknown as Request;
     const res = mockRes();
 
     await listMaterials(req, res);
@@ -149,7 +160,7 @@ describe('listMaterials — estimatedCost sólo para quien puede editar', () => 
   });
 
   it('el cliente invitado no recibe estimatedCost', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectEditor: false } as unknown as Request;
+    const req = { project: { _id: 'project-1' }, can: canFor('cliente') } as unknown as Request;
     const res = mockRes();
 
     await listMaterials(req, res);

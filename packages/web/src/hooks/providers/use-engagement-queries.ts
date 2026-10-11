@@ -6,17 +6,13 @@ import type {
   UpdateProviderEngagementInput,
 } from '@luma/shared';
 import { providersApi } from '@/api/providers';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2 de la contratación del proveedor. Archivo aparte de
  *  `use-provider-queries.ts`: es otro dominio (lo comercial, no el contacto). */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 export function useProviderEngagements(
   projectId: string | undefined,
@@ -51,7 +47,9 @@ export function useCreateEngagement(projectId: string, providerId: string) {
       invalidate();
       toast.success(t('engagement.created'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('engagement.errors.create'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }
 
@@ -71,7 +69,9 @@ export function useUpdateEngagement(projectId: string, providerId: string) {
       invalidate();
       toast.success(t('engagement.updated'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('engagement.errors.update'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }
 
@@ -86,7 +86,7 @@ export function useDeleteEngagement(projectId: string, providerId: string) {
       invalidate();
       toast.success(t('engagement.deleted'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('engagement.errors.delete'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -106,6 +106,6 @@ export function useSetRequirementMet(projectId: string, providerId: string) {
       met: boolean;
     }) => providersApi.setRequirementMet(projectId, providerId, engagementId, requirementId, met),
     onSuccess: invalidate,
-    onError: (error) => toast.error(errorMessage(error, t('engagement.errors.requirement'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

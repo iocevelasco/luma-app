@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
-import { requireProjectAccess, requireProjectEditor } from '../middleware/project.middleware.js';
+import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
 import {
   createMaterial,
   deleteMaterial,
@@ -10,16 +10,18 @@ import {
 
 /**
  * Anidado bajo `/api/projects/:projectId/materials` — ver routes/project.ts.
- * `requireProjectEditor`: el Asistente de Obra registra materiales, es el
- * principal generador de datos del sistema.
+ * `material.write`: el supervisor registra materiales y herramientas, es el
+ * principal generador de datos del sistema. La lectura es interna — las
+ * "fotos de compras" que la matriz le promete al cliente son otra superficie,
+ * todavía sin construir, y no este inventario.
  */
 export const materialRouter = Router({ mergeParams: true });
 
 materialRouter.use(isAuthenticated, requireProjectAccess);
 
-materialRouter.get('/', listMaterials);
-materialRouter.post('/', requireProjectEditor, createMaterial);
-materialRouter.patch('/:materialId', requireProjectEditor, updateMaterial);
-materialRouter.delete('/:materialId', requireProjectEditor, deleteMaterial);
+materialRouter.get('/', requireCapability('material.read'), listMaterials);
+materialRouter.post('/', requireCapability('material.write'), createMaterial);
+materialRouter.patch('/:materialId', requireCapability('material.write'), updateMaterial);
+materialRouter.delete('/:materialId', requireCapability('material.write'), deleteMaterial);
 
 export default materialRouter;

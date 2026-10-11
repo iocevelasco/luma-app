@@ -65,7 +65,7 @@ function toProviderDTO(provider: IProvider): ProviderDTO {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProviderRead` antes.
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes.
  *
  * Devuelve la libreta de la Empresa MÁS los proveedores propios de esta obra
  * (los que trae el cliente para un rubro puntual). Es la unión a propósito:
@@ -91,7 +91,7 @@ export async function listProviders(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectOwner` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function createProvider(req: Request, res: Response) {
   try {
     const parsed = createProviderSchema.safeParse(req.body);
@@ -117,7 +117,7 @@ export async function createProvider(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectOwner` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function updateProvider(req: Request, res: Response) {
   try {
     const parsed = updateProviderSchema.safeParse(req.body);
@@ -146,7 +146,7 @@ export async function updateProvider(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectOwner` antes. Baja
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Baja
  * lógica: nunca se borra el documento (ver comentario en `models/Provider.ts`).
  */
 export async function deactivateProvider(req: Request, res: Response) {
@@ -170,7 +170,7 @@ export async function deactivateProvider(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes. Incluye
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Incluye
  * proveedores inactivos a propósito: si ya trabajó en esta actividad, sigue
  * apareciendo acá aunque se haya dado de baja del directorio general.
  */
@@ -200,7 +200,7 @@ export async function listActivityProviders(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function assignProvider(req: Request, res: Response) {
   try {
     const parsed = assignProviderSchema.safeParse(req.body);
@@ -246,7 +246,7 @@ export async function assignProvider(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function unassignProvider(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
@@ -275,7 +275,7 @@ export async function unassignProvider(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes. Misma
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Misma
  * relación N:N que `listActivityProviders`, vista desde el lado del
  * proveedor — para el listado de Proveedores, que hasta ahora sólo permitía
  * asignar desde el detalle de la Actividad.
@@ -311,7 +311,7 @@ export async function listProviderActivities(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function assignActivityToProvider(req: Request, res: Response) {
   try {
     const parsed = assignActivitySchema.safeParse(req.body);
@@ -359,7 +359,7 @@ export async function assignActivityToProvider(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function unassignActivityFromProvider(req: Request, res: Response) {
   try {
     const project = req.project as IProject;

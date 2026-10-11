@@ -4,16 +4,12 @@ import { toast } from 'sonner';
 import type { LaborRecordInput } from '@luma/shared';
 import { activitiesApi } from '@/api/activities';
 import { laborApi } from '@/api/labor';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-activity-queries.ts`. */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 export function useLaborRecords(projectId: string | undefined, date: string | undefined) {
   const { isAuthenticated } = useAuth();
@@ -39,7 +35,7 @@ export function useUpsertLaborRecord(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.laborRecords, projectId] });
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activityCrew, projectId] });
     },
-    onError: (error) => toast.error(errorMessage(error, t('labor.errors.save'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -69,7 +65,7 @@ export function useAssignCrewToActivity(projectId: string, activityId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activityCrew, projectId] });
       toast.success(t('labor.crew.assigned'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('labor.errors.assignCrew'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -85,6 +81,6 @@ export function useUnassignCrewFromActivity(projectId: string, activityId: strin
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.laborRecords, projectId] });
       toast.success(t('labor.crew.unassigned'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('labor.errors.unassignCrew'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

@@ -42,7 +42,7 @@ async function findActivityInProject(project: IProject, activityId: string) {
   return Activity.findOne({ _id: activityId, project: project._id });
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function listActivityCrew(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
@@ -57,7 +57,7 @@ export async function listActivityCrew(req: Request, res: Response) {
 
     const crew = links
       .filter((link) => link.crewMember)
-      .map((link) => toCrewMemberDTO(link.crewMember, Boolean(req.isProjectEditor)));
+      .map((link) => toCrewMemberDTO(link.crewMember, Boolean(req.can?.('crew.attendance.write'))));
 
     return res.json({ success: true, data: { crew } });
   } catch (error) {
@@ -82,7 +82,7 @@ export async function listDayAttendance(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: 'Falta la fecha' });
     }
 
-    const viewerCanSeeDetail = Boolean(req.isProjectEditor);
+    const viewerCanSeeDetail = Boolean(req.can?.('crew.attendance.write'));
 
     // Vigentes ese día: la misma regla que usa la pantalla para listarlas.
     const activities = await Activity.find({
@@ -131,7 +131,7 @@ export async function listDayAttendance(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function assignCrewToActivity(req: Request, res: Response) {
   try {
     const parsed = assignCrewToActivitySchema.safeParse(req.body);
@@ -173,7 +173,7 @@ export async function assignCrewToActivity(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
 export async function unassignCrewFromActivity(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
@@ -228,7 +228,7 @@ export async function listLaborRecords(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const { date } = req.query as { date?: string };
-    const viewerCanSeeDetail = Boolean(req.isProjectEditor);
+    const viewerCanSeeDetail = Boolean(req.can?.('crew.attendance.write'));
 
     const filter: Record<string, unknown> = { project: project._id };
     if (date) filter.date = date;
@@ -246,7 +246,7 @@ export async function listLaborRecords(req: Request, res: Response) {
 }
 
 /**
- * Requiere `requireProjectAccess` + `requireProjectEditor` antes. Upsert por
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Upsert por
  * (activity, date) — ver LaborRecord.ts. `createdBy` sólo se fija al crear,
  * nunca se pisa en una actualización posterior del mismo día.
  */
@@ -297,7 +297,7 @@ export async function upsertLaborRecord(req: Request, res: Response) {
       { new: true, upsert: true },
     );
 
-    // Esta ruta requiere `requireProjectEditor` — quien la llama siempre puede
+    // Esta ruta exige una capacidad de escritura — quien la llama siempre puede
     // ver el detalle completo de lo que acaba de escribir.
     return res
       .status(200)

@@ -1,28 +1,50 @@
 import mongoose from 'mongoose';
 import type { NextFunction, Request, Response } from 'express';
+import {
+  canInProject,
+  capabilitiesInProject,
+  type Capability,
+  type ProjectRole,
+} from '@luma/shared';
 import { Project, type IProject } from '../models/Project.js';
-import { ProjectClient } from '../models/ProjectClient.js';
-import { OrganizationMember } from '../models/OrganizationMember.js';
+import { ProjectMembership } from '../models/ProjectMembership.js';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       project?: IProject;
-      /** Estricto: sólo quien creó la obra. Gatea presupuesto e invitaciones. */
+      /** Rol de quien hace la request **en esta obra**, resuelto una sola vez. */
+      projectRole?: ProjectRole;
+      /**
+       * ¿Puede hacer esto acá? Única forma de preguntar por un permiso en un
+       * controller. Pregunta por capacidad, nunca por rol: cuando entre un
+       * rol nuevo, la grilla de `@luma/shared` es el único lugar a tocar.
+       */
+      can?: (capability: Capability) => boolean;
+      /** @deprecated Derivado de `projectRole === 'gerente'`. Usá `req.can`. */
       isProjectOwner?: boolean;
-      /** Dueño **o** Asistente de Obra. Gatea la escritura operativa. */
+      /** @deprecated Derivado de la grilla. Usá `req.can`. */
       isProjectEditor?: boolean;
     }
   }
 }
 
 /**
- * Carga la obra de `:projectId` y confirma acceso: dueño, Asistente de Obra
- * (miembro de la misma Empresa) o cliente invitado. Siempre 404 si no hay
- * acceso, nunca 403 — un 403 confirma que la obra existe, y el NFR de
- * aislamiento entre clientes distintos pide justo lo contrario. Ir siempre
- * después de `isAuthenticated`.
+ * Carga la obra de `:projectId` y resuelve el rol de quien la pide: `gerente`
+ * si la creó, o lo que diga su fila de `ProjectMembership`.
+ *
+ * Siempre 404 si no hay acceso, nunca 403 — un 403 confirma que la obra
+ * existe, y el NFR de aislamiento entre clientes distintos pide justo lo
+ * contrario. Ir siempre después de `isAuthenticated`.
+ *
+ * Ya no hay acceso por ser miembro de la Empresa: el Asistente de Obra de la
+ * v1 entraba a todas las obras de su Empresa, y el supervisor de la matriz de
+ * roles es supervisor de UNA obra. La migración
+ * `scripts/migrate-project-memberships.ts` convierte a cada Asistente en una
+ * membresía explícita por obra, así que nadie pierde acceso — pero si no
+ * corrió, los Asistentes quedan afuera. Es a propósito: preferimos que falte
+ * un permiso a que sobre.
  */
 export async function requireProjectAccess(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
@@ -35,28 +57,12 @@ export async function requireProjectAccess(req: Request, res: Response, next: Ne
       return res.status(404).json({ success: false, error: 'Obra no encontrada' });
     }
 
-    const isOwner = String(project.createdBy) === req.user.sub;
-    const isAssistant =
-      !isOwner &&
-      Boolean(
-        await OrganizationMember.exists({
-          organization: project.organization,
-          user: req.user.sub,
-          role: 'member',
-        }),
-      );
-    const hasClientAccess =
-      !isOwner &&
-      !isAssistant &&
-      Boolean(await ProjectClient.exists({ project: project._id, user: req.user.sub }));
-
-    if (!isOwner && !isAssistant && !hasClientAccess) {
+    const role = await resolveProjectRole(project, req.user.sub);
+    if (!role) {
       return res.status(404).json({ success: false, error: 'Obra no encontrada' });
     }
 
-    req.project = project;
-    req.isProjectOwner = isOwner;
-    req.isProjectEditor = isOwner || isAssistant;
+    attachProjectRole(req, project, role);
     next();
   } catch (error) {
     // Un id con formato inválido también "no existe" — no es un 500.
@@ -68,37 +74,51 @@ export async function requireProjectAccess(req: Request, res: Response, next: Ne
   }
 }
 
-/** Sólo quien gestiona la obra: presupuesto, invitar cliente. Ir siempre después de `requireProjectAccess`. */
-export function requireProjectOwner(req: Request, res: Response, next: NextFunction) {
-  if (!req.isProjectOwner) {
-    return res
-      .status(403)
-      .json({ success: false, error: 'Sólo el dueño de la obra puede hacer esto' });
-  }
-  next();
+/** El rol de esta persona en esta obra, o `null` si no tiene ninguno. */
+export async function resolveProjectRole(
+  project: IProject,
+  userId: string,
+): Promise<ProjectRole | null> {
+  if (String(project.createdBy) === userId) return 'gerente';
+
+  const membership = await ProjectMembership.findOne({
+    project: project._id,
+    user: userId,
+  }).select('role');
+
+  return membership?.role ?? null;
 }
 
-/** Dueño o Asistente de Obra: escritura operativa (actividades, materiales, personal). */
-export function requireProjectEditor(req: Request, res: Response, next: NextFunction) {
-  if (!req.isProjectEditor) {
-    return res
-      .status(403)
-      .json({ success: false, error: 'No tenés permiso para editar esta obra' });
-  }
-  next();
+/** Deja el rol, el `can` y los flags deprecados colgados de la request. */
+function attachProjectRole(req: Request, project: IProject, role: ProjectRole) {
+  const can = (capability: Capability) => canInProject(role, capability, project);
+
+  req.project = project;
+  req.projectRole = role;
+  req.can = can;
+  req.isProjectOwner = role === 'gerente';
+  req.isProjectEditor = can('activity.evidence.write');
+}
+
+/** Todo lo que esta persona puede hacer en esta obra, flags ya aplicados. */
+export function projectCapabilitiesFor(project: IProject, role: ProjectRole): Capability[] {
+  return capabilitiesInProject(role, project);
 }
 
 /**
- * Lectura del directorio de proveedores y de quién está asignado a cada
- * actividad. Dueño y Asistente siempre; el cliente sólo si esa obra lo
- * habilitó (`providersVisibleToClient`) — en algunas obras conoce a todos los
- * subcontratistas y en otras no tiene por qué. Ir después de
- * `requireProjectAccess`.
+ * Gate por capacidad. Reemplaza a `requireProjectOwner`/`requireProjectEditor`:
+ * el router pasa a declarar **qué acción es**, y quién puede hacerla lo
+ * decide la grilla. Ir siempre después de `requireProjectAccess`.
  */
-export function requireProviderRead(req: Request, res: Response, next: NextFunction) {
-  if (req.isProjectEditor || req.project?.providersVisibleToClient) return next();
+export function requireCapability(capability: Capability) {
+  return function capabilityGate(req: Request, res: Response, next: NextFunction) {
+    if (req.can?.(capability)) return next();
 
-  return res
-    .status(403)
-    .json({ success: false, error: 'No tenés permiso para ver los proveedores de esta obra' });
+    return res.status(403).json({
+      success: false,
+      error: 'No tenés permiso para hacer esto en esta obra',
+      code: 'FORBIDDEN_CAPABILITY',
+      details: { capability },
+    });
+  };
 }

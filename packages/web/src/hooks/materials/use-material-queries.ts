@@ -3,16 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { CreateMaterialInput, UpdateMaterialInput } from '@luma/shared';
 import { materialsApi } from '@/api/materials';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 export function useMaterials(projectId: string | undefined) {
   const { isAuthenticated } = useAuth();
@@ -34,7 +30,9 @@ export function useCreateMaterial(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
       toast.success(t('material.list.created'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('material.errors.create'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }
 
@@ -49,7 +47,7 @@ export function useUpdateMaterial(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
       toast.success(t('material.list.updated'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('material.errors.update'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -63,6 +61,6 @@ export function useDeleteMaterial(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
       toast.success(t('material.list.deleted'));
     },
-    onError: (error) => toast.error(errorMessage(error, t('material.errors.delete'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

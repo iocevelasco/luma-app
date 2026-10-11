@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { ChatMessage } from '@luma/shared';
 import { advisorApi } from '@/api/advisor';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 
 /**
  * Capa 2: mismo patrón que `use-budget-queries.ts`, pero sin `useQuery` — el
@@ -12,10 +12,6 @@ import { isApiError } from '@/lib/api-client';
  * invalidar acá.
  */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 export function useAdvisorChat(projectId: string) {
   const { t } = useTranslation();
@@ -23,6 +19,6 @@ export function useAdvisorChat(projectId: string) {
   return useMutation({
     mutationFn: ({ message, history }: { message: string; history: ChatMessage[] }) =>
       advisorApi.sendMessage(projectId, message, history),
-    onError: (error) => toast.error(errorMessage(error, t('advisor.errors.send'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

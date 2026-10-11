@@ -10,7 +10,7 @@ import type {
   ResetPasswordRequest,
 } from '@luma/shared';
 import { authApi } from '@/api/auth';
-import { isApiError } from '@/lib/api-client';
+import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
@@ -24,10 +24,6 @@ import { useAuth } from '@/providers/auth-provider';
  * StrictMode.
  */
 
-function errorMessage(error: unknown, fallback: string): string {
-  if (isApiError(error)) return error.message;
-  return error instanceof Error ? error.message : fallback;
-}
 
 /** El perfil del usuario logueado. */
 export function useCurrentUser() {
@@ -53,7 +49,7 @@ export function useLogin() {
       login(data.accessToken, data.user);
       navigate(ROUTES.ADMIN);
     },
-    onError: (error) => toast.error(errorMessage(error, t('auth.errors.login'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -64,7 +60,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: (credentials: RegisterCredentials) => authApi.register(credentials),
     onSuccess: () => navigate(ROUTES.CHECK_EMAIL),
-    onError: (error) => toast.error(errorMessage(error, t('auth.errors.register'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -89,7 +85,7 @@ export function useForgotPassword() {
   return useMutation({
     mutationFn: (email: string) => authApi.forgotPassword({ email }),
     onSuccess: () => toast.success(t('auth.forgotPassword.sent')),
-    onError: (error) => toast.error(errorMessage(error, t('auth.errors.generic'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -103,7 +99,7 @@ export function useResetPassword() {
       toast.success(t('auth.resetPassword.done'));
       navigate(ROUTES.LOGIN);
     },
-    onError: (error) => toast.error(errorMessage(error, t('auth.errors.generic'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -119,7 +115,7 @@ export function useSetPassword() {
       login(data.accessToken, data.user);
       navigate(ROUTES.ADMIN);
     },
-    onError: (error) => toast.error(errorMessage(error, t('auth.errors.generic'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -150,7 +146,7 @@ export function useResendVerification() {
   return useMutation({
     mutationFn: (email: string) => authApi.resendVerification(email),
     onSuccess: () => toast.success(t('auth.checkEmail.resent')),
-    onError: (error) => toast.error(errorMessage(error, t('auth.errors.generic'))),
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
@@ -160,7 +156,9 @@ export function useChangePassword() {
   return useMutation({
     mutationFn: (payload: ChangePasswordRequest) => authApi.changePassword(payload),
     onSuccess: () => toast.success(t('auth.account.passwordChanged')),
-    onError: (error) => toast.error(errorMessage(error, t('auth.errors.generic'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }
 
@@ -170,6 +168,8 @@ export function useChangeEmail() {
   return useMutation({
     mutationFn: (payload: ChangeEmailRequest) => authApi.changeEmail(payload),
     onSuccess: () => toast.success(t('auth.account.emailChangeSent')),
-    onError: (error) => toast.error(errorMessage(error, t('auth.errors.generic'))),
+      // Sin `onError`: esta mutación se envía desde un formulario y el banner
+      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+      // mensaje dos veces, en dos lugares distintos de la pantalla.
   });
 }

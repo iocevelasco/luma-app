@@ -228,6 +228,7 @@ function NewActivityDialog({ projectId, isOwner }: { projectId: string; isOwner:
         fieldCount={8}
         submitLabel={t('activity.list.newSubmit')}
         isSubmitting={createActivity.isPending}
+        error={createActivity.error}
         onSubmit={handleSubmit((values) =>
           createActivity.mutate(values, {
             onSuccess: () => {
@@ -291,6 +292,7 @@ function EditActivityDialog({
       title={t('activity.detail.editTitle')}
       fieldCount={8}
       isSubmitting={updateActivity.isPending}
+      error={updateActivity.error}
       onSubmit={handleSubmit((values) =>
         updateActivity.mutate(
           { activityId: activity.id, payload: values },
@@ -441,7 +443,7 @@ function ActivityReviewSection({
  * Proveedores asignados a la actividad — directorio de la Empresa (no de la
  * obra), ver RF nuevo. Dueño y Asistente de Obra asignan/desasignan por
  * igual; el cliente ni siquiera ve esta sección (se oculta desde el tab de
- * navegación — ver `project-tabs.tsx`).
+ * navegación — ver `project-sidebar.tsx`).
  */
 function ActivityProvidersSection({
   projectId,

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { canInProject, type Capability, type ProjectRole } from '@luma/shared';
 import type { Request, Response } from 'express';
 
 /**
@@ -121,6 +122,16 @@ describe('upsertLaborRecord', () => {
   });
 });
 
+
+/**
+ * `can` armado contra la grilla real de `@luma/shared`, no un booleano a mano:
+ * si un permiso cambia en la grilla, este test lo nota.
+ */
+function canFor(role: ProjectRole, project: { providersVisibleToClient?: boolean } = {}) {
+  return (capability: Capability) =>
+    canInProject(role, capability, { providersVisibleToClient: false, ...project });
+}
+
 describe('listLaborRecords', () => {
   const record = {
     _id: 'lr1',
@@ -142,7 +153,7 @@ describe('listLaborRecords', () => {
   });
 
   it('el dueño ve los nombres individuales', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectEditor: true, query: {} } as unknown as Request;
+    const req = { project: { _id: 'project-1' }, can: canFor('gerente'), query: {} } as unknown as Request;
     const res = mockRes();
 
     await listLaborRecords(req, res);
@@ -153,8 +164,8 @@ describe('listLaborRecords', () => {
     expect(laborRecords[0]).toMatchObject({ presentNames: ['Juan Pérez', 'María Gómez'], presentCount: 2 });
   });
 
-  it('el Asistente de Obra también ve los nombres individuales (isProjectEditor, no dueño)', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectEditor: true, query: {} } as unknown as Request;
+  it('el supervisor también ve los nombres individuales', async () => {
+    const req = { project: { _id: 'project-1' }, can: canFor('supervisor'), query: {} } as unknown as Request;
     const res = mockRes();
 
     await listLaborRecords(req, res);
@@ -166,7 +177,7 @@ describe('listLaborRecords', () => {
   });
 
   it('el cliente invitado no recibe los nombres, pero sí la cuenta', async () => {
-    const req = { project: { _id: 'project-1' }, isProjectEditor: false, query: {} } as unknown as Request;
+    const req = { project: { _id: 'project-1' }, can: canFor('cliente'), query: {} } as unknown as Request;
     const res = mockRes();
 
     await listLaborRecords(req, res);

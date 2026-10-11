@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createProjectSchema, type CreateProjectInput } from '@luma/shared';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { FormShell } from '@/components/common/form-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,8 +27,22 @@ const CURRENCY_OPTIONS = ['ARS', 'USD', 'MXN', 'COP', 'CLP', 'PEN'];
 
 const BUDGET_TYPES = ['cerrado', 'abierto', 'con_margen'] as const;
 
+/**
+ * Separador con título entre bloques del formulario. Es un `<h2>` y no un
+ * `<p>` con estilo: para quien navega con lector de pantalla, la estructura
+ * del formulario es la única pista de cuántas partes tiene.
+ */
+function FieldGroup({ title }: { title: string }) {
+  return (
+    <h2 className="border-b border-border pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground first:pt-0">
+      {title}
+    </h2>
+  );
+}
+
 export function ProjectNewPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const createProject = useCreateProject();
 
   const {
@@ -39,16 +53,36 @@ export function ProjectNewPage() {
   } = useForm<CreateProjectInput>({ resolver: zodResolver(createProjectSchema) });
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-4 p-4 md:p-6">
-      <Card>
+    /*
+      Alto acotado y no `min-h`: el pie pegajoso necesita un contenedor con
+      altura definida contra la cual pegarse. Si la caja crece con el
+      contenido, "sticky bottom-0" no tiene fondo al que agarrarse y el botón
+      vuelve a irse con el scroll.
+    */
+    <div className="mx-auto flex h-[calc(100dvh-7rem)] max-w-xl flex-col p-4 md:p-6">
+      <Card className="flex min-h-0 flex-1 flex-col">
         <CardHeader>
           <CardTitle>{t('project.new.title')}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form
-            className="flex flex-col gap-4"
+        <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <FormShell
             onSubmit={handleSubmit((values) => createProject.mutate(values))}
+            submitLabel={t('project.new.submit')}
+            onCancel={() => navigate(ROUTES.ADMIN)}
+            isSubmitting={createProject.isPending}
+            error={createProject.error}
           >
+            {/*
+              Tres bloques en una sola pantalla, no tres pasos.
+              Ocho campos entran de sobra en una vista, ninguno depende de una
+              respuesta anterior y todos son obligatorios salvo el metraje: un
+              asistente agregaría dos clicks y le sacaría a la persona la
+              posibilidad de ver de una el compromiso completo antes de
+              empezar a escribir. Los subtítulos resuelven lo que molestaba
+              —que se leía como una pared— sin ese costo.
+            */}
+            <FieldGroup title={t('project.new.sections.what')} />
+
             <div className="flex flex-col gap-2">
               <Label htmlFor="name">{t('project.fields.name')}</Label>
               <Input id="name" {...register('name')} />
@@ -76,6 +110,8 @@ export function ProjectNewPage() {
               <Input id="size" {...register('size')} />
             </div>
 
+            <FieldGroup title={t('project.new.sections.when')} />
+
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="estimatedStartDate">{t('project.fields.startDate')}</Label>
@@ -92,6 +128,8 @@ export function ProjectNewPage() {
                 )}
               </div>
             </div>
+
+            <FieldGroup title={t('project.new.sections.money')} />
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
@@ -145,15 +183,7 @@ export function ProjectNewPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2">
-              <Button type="button" variant="ghost" asChild>
-                <Link to={ROUTES.ADMIN}>{t('common.cancel')}</Link>
-              </Button>
-              <Button type="submit" disabled={createProject.isPending}>
-                {createProject.isPending ? t('common.loading') : t('project.new.submit')}
-              </Button>
-            </div>
-          </form>
+          </FormShell>
         </CardContent>
       </Card>
     </div>

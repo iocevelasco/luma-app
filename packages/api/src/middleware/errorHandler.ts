@@ -1,56 +1,124 @@
-import { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import mongoose from 'mongoose';
+import { errorCodeForStatus, type ApiErrorBody, type ApiErrorCode } from '@luma/shared';
+import { isProduction } from '../config/app.config.js';
+import { isAppError } from '../utils/errors.js';
 
+/**
+ * El único lugar donde un error se convierte en respuesta.
+ *
+ * Todo sale con la misma forma —`{ success, error, code, details? }`— para
+ * que el frontend pueda reaccionar por `code` en vez de comparar textos que
+ * cambian cuando alguien edita un mensaje.
+ *
+ * Dos reglas que antes no se cumplían:
+ *
+ * 1. **Los mensajes van en castellano.** Decían "Validation error" y "Invalid
+ *    ID format" en una app que está entera en castellano, y eso llegaba tal
+ *    cual a la pantalla.
+ * 2. **Un 500 nunca cuenta qué pasó adentro.** Antes devolvía
+ *    `error.message`, que en un fallo de Mongoose es la consulta, el nombre
+ *    de la colección y a veces el valor que chocó. Eso se loguea, no se
+ *    manda.
+ */
 export function errorHandler(
-  error: Error | ZodError,
-  req: Request,
+  error: unknown,
+  _req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ) {
-  if (error instanceof ZodError) {
-    return res.status(400).json({
+  const body = toErrorBody(error);
+
+  // Sólo lo inesperado va al log: un 404 o un 403 son respuestas normales y
+  // llenar el log con ellos esconde los errores de verdad.
+  if (body.code === 'INTERNAL') {
+    console.error('❌ [API]', error);
+  }
+
+  return res.status(STATUS_FOR[body.code]).json(body);
+}
+
+const STATUS_FOR: Record<ApiErrorCode, number> = {
+  VALIDATION: 400,
+  UNAUTHENTICATED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  PAYLOAD_TOO_LARGE: 413,
+  RATE_LIMITED: 429,
+  SERVICE_UNAVAILABLE: 503,
+  INTERNAL: 500,
+};
+
+function toErrorBody(error: unknown): ApiErrorBody {
+  if (isAppError(error)) {
+    return {
       success: false,
-      error: 'Validation error',
-      details: error.errors,
-    });
+      error: error.message,
+      code: error.code,
+      ...(error.details !== undefined ? { details: error.details } : {}),
+    };
+  }
+
+  if (error instanceof ZodError) {
+    return {
+      success: false,
+      error: 'Revisá los datos: hay campos con errores.',
+      code: 'VALIDATION',
+      // El detalle por campo es lo que deja al formulario marcar cuál falló.
+      details: error.issues,
+    };
   }
 
   if (error instanceof mongoose.Error.CastError) {
-    return res.status(400).json({ success: false, error: 'Invalid ID format' });
+    // Un id con formato inválido es un 400 y no un 500: lo mandó mal quien
+    // llamó, no se rompió nada del lado del servidor.
+    return { success: false, error: 'El identificador no es válido.', code: 'VALIDATION' };
   }
 
   if (error instanceof mongoose.Error.ValidationError) {
-    return res.status(400).json({
+    return {
       success: false,
-      error: 'Validation error',
-      details: Object.values(error.errors).map((e) => e.message),
-    });
+      error: 'Revisá los datos: hay campos con errores.',
+      code: 'VALIDATION',
+      details: Object.values(error.errors).map((issue) => issue.message),
+    };
   }
 
-  // Mongoose duplicate key error
-  if ((error as any).code === 11000) {
-    const field = Object.keys((error as any).keyPattern ?? {})[0] ?? 'field';
-    return res.status(409).json({ success: false, error: `Duplicate value for ${field}` });
+  if (isDuplicateKey(error)) {
+    return {
+      success: false,
+      error: 'Ya existe un registro con esos datos.',
+      code: 'CONFLICT',
+    };
   }
 
-  // Errores de servicio con status HTTP explícito (ej. el guard de billing
-  // lanza 402 con code MEMBER_CAP_REACHED). Mismo contrato que handleSvcError
-  // en routes/teams.ts, pero centralizado.
-  const status = (error as { status?: unknown }).status;
+  // Errores con status explícito que vienen de servicios o de librerías.
+  const status = (error as { status?: unknown })?.status;
   if (typeof status === 'number' && status >= 400 && status < 600) {
-    return res.status(status).json({
+    const code = errorCodeForStatus(status);
+    return {
       success: false,
-      error: error.message,
-      ...((error as { code?: string }).code ? { code: (error as { code?: string }).code } : {}),
-    });
+      error: code === 'INTERNAL' ? GENERIC_MESSAGE : asMessage(error),
+      code,
+    };
   }
 
-  console.error('Error:', error);
-
-  res.status(500).json({
+  return {
     success: false,
-    error: error.message || 'Internal server error',
-  });
+    // En desarrollo el mensaje real ahorra ir al log; en producción no sale.
+    error: isProduction ? GENERIC_MESSAGE : asMessage(error),
+    code: 'INTERNAL',
+  };
 }
 
+const GENERIC_MESSAGE = 'Algo falló de nuestro lado. Probá de nuevo en un momento.';
+
+function asMessage(error: unknown): string {
+  return error instanceof Error && error.message ? error.message : GENERIC_MESSAGE;
+}
+
+function isDuplicateKey(error: unknown): boolean {
+  return (error as { code?: unknown })?.code === 11000;
+}

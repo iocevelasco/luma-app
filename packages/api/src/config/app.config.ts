@@ -18,7 +18,16 @@ export const isDevelopment = !isProduction;
 export const isTest = NODE_ENV === 'test';
 
 export const SERVER_CONFIG = {
-  PORT: Number(process.env.PORT ?? 8080),
+  /**
+   * 8081 en desarrollo. **En producción NO manda este default**: el Dockerfile
+   * fija `ENV PORT=8080` y Coolify mapea ese puerto, así que ahí sigue siendo
+   * 8080 y cambiarlo acá no lo toca.
+   *
+   * El 8081 es local y deliberado: el 8080 de esta máquina lo ocupa otro
+   * proyecto, y dos APIs peleando por un puerto producen el peor error de
+   * todos — una contesta, así que no parece caída, pero es la equivocada.
+   */
+  PORT: Number(process.env.PORT ?? 8081),
   HOST: process.env.HOST ?? '0.0.0.0',
   NODE_ENV,
   /** Origen del frontend, para CORS y para los redirects. */
@@ -83,26 +92,19 @@ export const EMAIL_CONFIG = {
 } as const;
 
 /**
- * Storage de archivos (RF-04: registro fotográfico de evidencia). Cualquier
- * proveedor compatible con S3 sirve — Backblaze B2, Cloudflare R2, AWS S3 —
- * cambiando sólo `STORAGE_ENDPOINT`. Sin credenciales el feature queda
- * deshabilitado (`ENABLED: false`): no vale la pena que la app entera no
- * arranque por un storage que todavía nadie configuró.
+ * Storage de archivos (evidencia fotográfica RF-04 y documentación de obra).
+ * Lo provee el microservicio `media-service` por HTTP: esta app no habla S3 ni
+ * conoce el bucket; sólo guarda el `id` que el servicio le devuelve. Sin URL o
+ * API key el feature queda deshabilitado (`ENABLED: false`): no vale la pena
+ * que la app entera no arranque por un storage que todavía nadie configuró.
  */
 export const STORAGE_CONFIG = {
-  ENDPOINT: process.env.STORAGE_ENDPOINT,
-  REGION: process.env.STORAGE_REGION ?? 'auto',
-  BUCKET: process.env.STORAGE_BUCKET,
-  ACCESS_KEY_ID: process.env.STORAGE_ACCESS_KEY_ID,
-  SECRET_ACCESS_KEY: process.env.STORAGE_SECRET_ACCESS_KEY,
-  /** Segundos de vida de cada URL firmada de lectura. */
+  /** Raíz del media-service, sin `/` final. Ej. `https://media.matflow.site`. */
+  BASE_URL: process.env.MEDIA_SERVICE_URL?.replace(/\/+$/, ''),
+  API_KEY: process.env.MEDIA_SERVICE_API_KEY,
+  /** Segundos de vida de cada URL firmada de lectura (el servicio admite hasta 3600). */
   SIGNED_URL_TTL: Number(process.env.STORAGE_SIGNED_URL_TTL ?? 3600),
-  ENABLED: Boolean(
-    process.env.STORAGE_ENDPOINT &&
-      process.env.STORAGE_BUCKET &&
-      process.env.STORAGE_ACCESS_KEY_ID &&
-      process.env.STORAGE_SECRET_ACCESS_KEY,
-  ),
+  ENABLED: Boolean(process.env.MEDIA_SERVICE_URL && process.env.MEDIA_SERVICE_API_KEY),
 } as const;
 
 /**
@@ -123,7 +125,7 @@ export const ANTHROPIC_CONFIG = {
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    PORT: z.coerce.number().int().positive().default(8080),
+    PORT: z.coerce.number().int().positive().default(8081),
     MONGODB_URI: z.string().min(1, 'MONGODB_URI es obligatorio'),
     JWT_SECRET: z.string().min(16).optional(),
     JWT_PRIVATE_KEY_PEM: z.string().optional(),
@@ -182,7 +184,7 @@ export function validateConfig(): void {
   }
   if (!STORAGE_CONFIG.ENABLED) {
     console.warn(
-      '⚠️  [CONFIG] Sin STORAGE_*: el registro fotográfico de evidencia queda deshabilitado.',
+      '⚠️  [CONFIG] Sin MEDIA_SERVICE_URL/MEDIA_SERVICE_API_KEY: la evidencia fotográfica y la documentación quedan deshabilitadas.',
     );
   }
   if (!ANTHROPIC_CONFIG.ENABLED) {

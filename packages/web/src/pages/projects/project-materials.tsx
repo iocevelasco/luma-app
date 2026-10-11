@@ -102,6 +102,7 @@ function NewMaterialDrawer({ projectId }: { projectId: string }) {
         fieldCount={6}
         submitLabel={t('material.list.newSubmit')}
         isSubmitting={createMaterial.isPending}
+        error={createMaterial.error}
         onSubmit={handleSubmit((values) =>
           createMaterial.mutate(values, {
             onSuccess: () => {
