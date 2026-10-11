@@ -81,6 +81,8 @@ test.describe('planificación semanal y materiales', () => {
     await page.getByRole('link', { name: /^materiales$/i }).click();
     await expect(page).toHaveURL(/\/materiales$/);
 
+    // El alta vive en el drawer lateral, no en la cabecera de la página.
+    await page.getByRole('button', { name: /agregar material/i }).click();
     await page.locator('#material-name').fill(MATERIAL_NAME);
     await page.locator('#material-quantity').fill('10');
     await page.locator('#material-unit').click();

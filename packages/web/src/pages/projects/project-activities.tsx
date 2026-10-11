@@ -6,25 +6,23 @@ import {
   type Activity,
   type CreateActivityInput,
   type MaterialItem,
+  type ProviderSpecialty,
 } from '@luma/shared';
-import { ArrowLeft, Camera, PackageX, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Camera, Check, PackageX, Pencil, Plus, Trash2, Undo2, X } from 'lucide-react';
 import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ActivityGantt } from '@/components/activities/activity-gantt';
+import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { DateRangeFilter, fromDayKey, presetRange } from '@/components/common/date-range-filter';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { FormDrawer } from '@/components/common/form-drawer';
+// El detalle de la actividad sigue siendo un Dialog a pantalla completa: es
+// una vista de lectura, no un formulario.
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -41,15 +39,50 @@ import {
   useActivities,
   useCreateActivity,
   useDeleteActivityEvidence,
+  useRejectActivity,
   useUpdateActivity,
   useUploadActivityEvidence,
 } from '@/hooks/activities/use-activity-queries';
 import { useMaterials } from '@/hooks/materials/use-material-queries';
+import {
+  useActivityProviders,
+  useAssignProvider,
+  useProviders,
+  useUnassignProvider,
+} from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProject } from '@/hooks/projects/use-project-queries';
-import { isActivityOverdue, isWithinNextDays } from '@/lib/week';
+import { isWithinNextDays } from '@/lib/week';
 
-const ACTIVITY_STATUSES = ['pendiente', 'en_curso', 'completada', 'cancelada'] as const;
+const ACTIVITY_STATUSES = [
+  'pendiente',
+  'en_curso',
+  'en_revision',
+  'completada',
+  'cancelada',
+] as const;
+
+/** Mismo catálogo que proveedores y personal (test de sincronía en `@luma/shared`). */
+const ACTIVITY_SPECIALTIES: ProviderSpecialty[] = [
+  'electricidad',
+  'plomeria',
+  'gas',
+  'carpinteria',
+  'cristaleria',
+  'albanileria',
+  'herreria',
+  'redes',
+  'mecanicas',
+  'estructura',
+  'acabados',
+  'pintura',
+  'climatizacion',
+  'techos',
+  'pisos_revestimientos',
+  'jardineria',
+  'demolicion',
+  'otra',
+];
 const MATERIAL_STATUSES_BLOCKING = new Set(['pendiente', 'solicitado']);
 
 /**
@@ -61,13 +94,19 @@ function ActivityFormFields({
   register,
   control,
   errors,
+  isOwner = false,
 }: {
   idPrefix: string;
   register: UseFormRegister<CreateActivityInput>;
   control: Control<CreateActivityInput>;
   errors: FieldErrors<CreateActivityInput>;
+  /** Cerrar es del supervisor: al resto ni se le ofrece "Completada". */
+  isOwner?: boolean;
 }) {
   const { t } = useTranslation();
+  const statuses = isOwner
+    ? ACTIVITY_STATUSES
+    : ACTIVITY_STATUSES.filter((status) => status !== 'completada');
 
   return (
     <>
@@ -115,9 +154,31 @@ function ActivityFormFields({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ACTIVITY_STATUSES.map((status) => (
+                {statuses.map((status) => (
                   <SelectItem key={status} value={status}>
                     {t(`activity.status.${status}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={`${idPrefix}-specialty`}>{t('activity.fields.specialty')}</Label>
+        <Controller
+          control={control}
+          name="specialty"
+          render={({ field }) => (
+            <Select value={field.value ?? undefined} onValueChange={field.onChange}>
+              <SelectTrigger id={`${idPrefix}-specialty`}>
+                <SelectValue placeholder={t('activity.fields.specialtyPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {ACTIVITY_SPECIALTIES.map((specialty) => (
+                  <SelectItem key={specialty} value={specialty}>
+                    {t(`provider.specialty.${specialty}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -134,7 +195,7 @@ function ActivityFormFields({
   );
 }
 
-function NewActivityDialog({ projectId }: { projectId: string }) {
+function NewActivityDialog({ projectId, isOwner }: { projectId: string; isOwner: boolean }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const createActivity = useCreateActivity(projectId);
@@ -151,54 +212,53 @@ function NewActivityDialog({ projectId }: { projectId: string }) {
   });
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) reset();
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="size-4" />
-          {t('activity.list.new')}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('activity.list.newTitle')}</DialogTitle>
-        </DialogHeader>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) =>
-            createActivity.mutate(values, {
-              onSuccess: () => {
-                setOpen(false);
-                reset();
-              },
-            }),
-          )}
-        >
-          <ActivityFormFields idPrefix="activity" register={register} control={control} errors={errors} />
-          <DialogFooter>
-            <Button type="submit" disabled={createActivity.isPending}>
-              {createActivity.isPending ? t('common.loading') : t('activity.list.newSubmit')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="size-4" />
+        {t('activity.list.new')}
+      </Button>
+
+      <FormDrawer
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) reset();
+        }}
+        title={t('activity.list.newTitle')}
+        fieldCount={8}
+        submitLabel={t('activity.list.newSubmit')}
+        isSubmitting={createActivity.isPending}
+        onSubmit={handleSubmit((values) =>
+          createActivity.mutate(values, {
+            onSuccess: () => {
+              setOpen(false);
+              reset();
+            },
+          }),
+        )}
+      >
+        <ActivityFormFields
+          idPrefix="activity"
+          register={register}
+          control={control}
+          errors={errors}
+          isOwner={isOwner}
+        />
+      </FormDrawer>
+    </>
   );
 }
 
 function EditActivityDialog({
   projectId,
   activity,
+  isOwner,
   open,
   onOpenChange,
 }: {
   projectId: string;
   activity: Activity;
+  isOwner: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -219,34 +279,33 @@ function EditActivityDialog({
       endDate: activity.endDate,
       responsible: activity.responsible,
       status: activity.status,
+      specialty: activity.specialty,
       notes: activity.notes,
     },
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('activity.detail.editTitle')}</DialogTitle>
-        </DialogHeader>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handleSubmit((values) =>
-            updateActivity.mutate(
-              { activityId: activity.id, payload: values },
-              { onSuccess: () => onOpenChange(false) },
-            ),
-          )}
-        >
-          <ActivityFormFields idPrefix="edit-activity" register={register} control={control} errors={errors} />
-          <DialogFooter>
-            <Button type="submit" disabled={updateActivity.isPending}>
-              {updateActivity.isPending ? t('common.loading') : t('common.save')}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('activity.detail.editTitle')}
+      fieldCount={8}
+      isSubmitting={updateActivity.isPending}
+      onSubmit={handleSubmit((values) =>
+        updateActivity.mutate(
+          { activityId: activity.id, payload: values },
+          { onSuccess: () => onOpenChange(false) },
+        ),
+      )}
+    >
+      <ActivityFormFields
+        idPrefix="edit-activity"
+        register={register}
+        control={control}
+        errors={errors}
+        isOwner={isOwner}
+      />
+    </FormDrawer>
   );
 }
 
@@ -270,6 +329,216 @@ function ActivityMaterialsList({ materials }: { materials: MaterialItem[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * El paso de validación: quien hizo el trabajo lo reporta (`en_revision`) y
+ * el supervisor cierra o lo devuelve con motivo. El motivo sobrevive al
+ * rechazo y queda visible mientras la actividad está `en_curso` — es lo que
+ * tiene que leer quien vuelve a corregirla.
+ */
+function ActivityReviewSection({
+  projectId,
+  activity,
+  isOwner,
+}: {
+  projectId: string;
+  activity: Activity;
+  isOwner: boolean;
+}) {
+  const { t } = useTranslation();
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState('');
+  const updateActivity = useUpdateActivity(projectId);
+  const rejectActivity = useRejectActivity(projectId);
+
+  const rejection = activity.review?.rejectionReason;
+  const showRejection = Boolean(rejection) && activity.status !== 'en_revision';
+
+  if (activity.status !== 'en_revision' && !showRejection) return null;
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-border pt-6">
+      <h3 className="text-sm font-medium">{t('activity.review.title')}</h3>
+
+      {showRejection && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3">
+          <p className="text-sm font-medium text-destructive">
+            {t('activity.review.returnedTitle')}
+          </p>
+          <p className="text-sm">{rejection}</p>
+        </div>
+      )}
+
+      {activity.status === 'en_revision' &&
+        (isOwner ? (
+          rejecting ? (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="reject-reason">{t('activity.review.reasonLabel')}</Label>
+              <Textarea
+                id="reject-reason"
+                rows={2}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder={t('activity.review.reasonPlaceholder')}
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={!reason.trim() || rejectActivity.isPending}
+                  onClick={() =>
+                    rejectActivity.mutate(
+                      { activityId: activity.id, reason: reason.trim() },
+                      {
+                        onSuccess: () => {
+                          setReason('');
+                          setRejecting(false);
+                        },
+                      },
+                    )
+                  }
+                >
+                  {t('activity.review.confirmReturn')}
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setRejecting(false)}>
+                  {t('common.cancel')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                disabled={updateActivity.isPending}
+                onClick={() =>
+                  updateActivity.mutate({
+                    activityId: activity.id,
+                    payload: { status: 'completada' },
+                  })
+                }
+              >
+                <Check className="size-4" />
+                {t('activity.review.approve')}
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setRejecting(true)}>
+                <Undo2 className="size-4" />
+                {t('activity.review.return')}
+              </Button>
+            </div>
+          )
+        ) : (
+          <p className="text-sm text-muted-foreground">{t('activity.review.waiting')}</p>
+        ))}
+    </div>
+  );
+}
+
+/**
+ * Proveedores asignados a la actividad — directorio de la Empresa (no de la
+ * obra), ver RF nuevo. Dueño y Asistente de Obra asignan/desasignan por
+ * igual; el cliente ni siquiera ve esta sección (se oculta desde el tab de
+ * navegación — ver `project-tabs.tsx`).
+ */
+function ActivityProvidersSection({
+  projectId,
+  activityId,
+  isEditor,
+  canRead,
+}: {
+  projectId: string;
+  activityId: string;
+  isEditor: boolean;
+  /** Dueño/Asistente siempre; el cliente sólo si la obra lo habilitó. */
+  canRead: boolean;
+}) {
+  const { t } = useTranslation();
+  const [selectedProviderId, setSelectedProviderId] = useState('');
+  // Sin permiso de lectura no se piden los endpoints: para ese rol son 403.
+  const { data: assignedData } = useActivityProviders(
+    canRead ? projectId : undefined,
+    canRead ? activityId : undefined,
+  );
+  // El directorio completo sólo lo necesita quien puede asignar.
+  const { data: directoryData } = useProviders(isEditor ? projectId : undefined);
+  const assignProvider = useAssignProvider(projectId, activityId);
+  const unassignProvider = useUnassignProvider(projectId, activityId);
+
+  if (!canRead) return null;
+
+  const assigned = assignedData?.providers ?? [];
+  const assignedIds = new Set(assigned.map((provider) => provider.id));
+  const available = (directoryData?.providers ?? []).filter(
+    (provider) => !assignedIds.has(provider.id),
+  );
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-border pt-6">
+      <h3 className="text-sm font-medium">{t('activity.detail.providers')}</h3>
+
+      {assigned.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('activity.detail.noProviders')}</p>
+      ) : (
+        <ul className="flex flex-wrap gap-2">
+          {assigned.map((provider) => (
+            <li
+              key={provider.id}
+              className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-sm"
+            >
+              <span>{provider.name}</span>
+              <span className="text-muted-foreground">
+                · {provider.specialty === 'otra' ? provider.customSpecialty : t(`provider.specialty.${provider.specialty}`)}
+              </span>
+              {isEditor && (
+                <button
+                  type="button"
+                  onClick={() => unassignProvider.mutate(provider.id)}
+                  aria-label={t('activity.detail.unassignProvider')}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-3" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {isEditor && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder={t('activity.detail.assignProviderPlaceholder')} />
+            </SelectTrigger>
+            <SelectContent>
+              {available.map((provider) => (
+                <SelectItem key={provider.id} value={provider.id}>
+                  {provider.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!selectedProviderId || assignProvider.isPending}
+            onClick={() => {
+              assignProvider.mutate(
+                { providerId: selectedProviderId },
+                { onSuccess: () => setSelectedProviderId('') },
+              );
+            }}
+          >
+            <Plus className="size-4" />
+            {t('activity.detail.assignProvider')}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -362,6 +631,8 @@ function ActivityDetailModal({
   materials,
   missingMaterials,
   isEditor,
+  isOwner,
+  canReadProviders,
   onClose,
 }: {
   projectId: string;
@@ -369,6 +640,8 @@ function ActivityDetailModal({
   materials: MaterialItem[];
   missingMaterials: boolean;
   isEditor: boolean;
+  isOwner: boolean;
+  canReadProviders: boolean;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -405,7 +678,12 @@ function ActivityDetailModal({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-3xl">{activity.name}</h2>
-                  <p className="text-muted-foreground">{activity.area}</p>
+                  <p className="text-muted-foreground">
+                    {activity.area}
+                    {activity.specialty
+                      ? ` · ${t(`provider.specialty.${activity.specialty}`)}`
+                      : ''}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   {missingMaterials && (
@@ -419,11 +697,7 @@ function ActivityDetailModal({
                       <TooltipContent>{t('activity.list.missingMaterials')}</TooltipContent>
                     </Tooltip>
                   )}
-                  <Badge
-                    variant={isActivityOverdue(activity.endDate, activity.status) ? 'destructive' : 'secondary'}
-                  >
-                    {t(`activity.status.${activity.status}`)}
-                  </Badge>
+                  <ActivityStatusBadge status={activity.status} endDate={activity.endDate} />
                 </div>
               </div>
 
@@ -446,10 +720,23 @@ function ActivityDetailModal({
                 </div>
               </dl>
 
+              <ActivityReviewSection
+                projectId={projectId}
+                activity={activity}
+                isOwner={isOwner}
+              />
+
               <div className="flex flex-col gap-3 border-t border-border pt-6">
                 <h3 className="text-sm font-medium">{t('activity.detail.materials')}</h3>
                 <ActivityMaterialsList materials={materials} />
               </div>
+
+              <ActivityProvidersSection
+                projectId={projectId}
+                activityId={activity.id}
+                isEditor={isEditor}
+                canRead={canReadProviders}
+              />
 
               <ActivityEvidenceSection projectId={projectId} activity={activity} isEditor={isEditor} />
 
@@ -465,6 +752,7 @@ function ActivityDetailModal({
               <EditActivityDialog
                 projectId={projectId}
                 activity={activity}
+                isOwner={isOwner}
                 open={editing}
                 onOpenChange={setEditing}
               />
@@ -500,6 +788,7 @@ export function ProjectActivitiesPage() {
   const { data: materialsData } = useMaterials(projectId);
 
   const isEditor = Boolean(projectData?.project.isEditor);
+  const canReadProviders = isEditor || Boolean(projectData?.project.providersVisibleToClient);
 
   const missingByActivity = useMemo(() => {
     const map = new Set<string>();
@@ -536,7 +825,12 @@ export function ProjectActivitiesPage() {
     <div className="flex h-[calc(100dvh-3.5rem)] min-w-0 flex-col gap-3 p-3 md:p-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateRangeFilter value={range} onChange={setRange} disableFuture={false} />
-        {isEditor && <NewActivityDialog projectId={projectId!} />}
+        {isEditor && (
+          <NewActivityDialog
+            projectId={projectId!}
+            isOwner={Boolean(projectData?.project.isOwner)}
+          />
+        )}
       </div>
 
       <div className="min-h-0 min-w-0 flex-1">
@@ -560,6 +854,8 @@ export function ProjectActivitiesPage() {
         materials={selectedActivityMaterials}
         missingMaterials={Boolean(selectedActivityId && activitiesWithAlert.has(selectedActivityId))}
         isEditor={isEditor}
+        isOwner={Boolean(projectData?.project.isOwner)}
+        canReadProviders={canReadProviders}
         onClose={() => setSelectedActivityId(null)}
       />
     </div>

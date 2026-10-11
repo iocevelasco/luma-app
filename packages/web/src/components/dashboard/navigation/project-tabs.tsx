@@ -9,6 +9,7 @@ import {
   projectDetailPath,
   projectLaborPath,
   projectMaterialsPath,
+  projectProvidersPath,
 } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 
@@ -31,12 +32,19 @@ export function ProjectTabs() {
   if (!projectId) return null;
 
   const isOwner = Boolean(projectData?.project.isOwner);
+  const isEditor = Boolean(projectData?.project.isEditor);
 
   const items = [
     { to: projectDetailPath(projectId), label: t('project.nav.detail') },
     { to: projectActivitiesPath(projectId), label: t('project.nav.gantt') },
     { to: projectMaterialsPath(projectId), label: t('project.nav.materials') },
     { to: projectLaborPath(projectId), label: t('project.nav.labor') },
+    // Proveedores es información operativa interna (regla 4): dueño y
+    // Asistente siempre, y el cliente sólo si esta obra lo habilitó — hay
+    // obras donde conoce a todos los subcontratistas y otras donde no.
+    ...(isEditor || projectData?.project.providersVisibleToClient
+      ? [{ to: projectProvidersPath(projectId), label: t('project.nav.providers') }]
+      : []),
     // Presupuesto y Consultor IA son owner-only en este corte (regla 13): la
     // utilidad del ejecutante nunca es visible para el cliente, y el
     // Consultor IA responde con datos de presupuesto entre sus herramientas.

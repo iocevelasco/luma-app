@@ -4,10 +4,11 @@ import type { ChatMessage } from '@luma/shared';
 import mongoose from 'mongoose';
 import { ANTHROPIC_CONFIG } from '../config/app.config.js';
 import { Activity } from '../models/Activity.js';
+import { ActivityCrew } from '../models/ActivityCrew.js';
 import { Budget } from '../models/Budget.js';
-import { BudgetLine } from '../models/BudgetLine.js';
 import { LaborRecord } from '../models/LaborRecord.js';
 import { Project } from '../models/Project.js';
+import { committedForProject } from './commitment.service.js';
 
 const client = new Anthropic({ apiKey: ANTHROPIC_CONFIG.API_KEY });
 
@@ -31,15 +32,22 @@ function buildTools(projectId: mongoose.Types.ObjectId) {
       name: 'resumen_obra',
       description:
         'Devuelve el resumen general de la obra: datos básicos y estado del presupuesto ' +
-        '(total, contingencia, monto comprometido en ítems de presupuesto).',
+        '(total, contingencia, lo comprometido en contrataciones de proveedores aprobadas y el saldo disponible).',
       inputSchema: emptySchema,
       run: async () => {
         const project = await Project.findById(projectId);
         if (!project) return JSON.stringify({ error: 'La obra no existe.' });
 
         const budget = await Budget.findOne({ project: projectId }).sort({ version: -1 });
-        const lines = budget ? await BudgetLine.find({ budget: budget._id }) : [];
-        const comprometido = lines.reduce((sum, line) => sum + line.total, 0);
+        /*
+         * `comprometido` NO es la suma de las líneas del presupuesto: ésas
+         * están validadas para sumar exactamente `totalAmount` al cargarlas,
+         * así que como "comprometido" daban siempre el 100% y el Consultor
+         * informaba ese número a quien le preguntara por la plata.
+         *
+         * Lo comprometido de verdad son las contrataciones aprobadas.
+         */
+        const comprometido = await committedForProject(projectId);
 
         return JSON.stringify({
           nombre: project.name,
@@ -52,11 +60,15 @@ function buildTools(projectId: mongoose.Types.ObjectId) {
             ? {
                 total: budget.totalAmount,
                 contingencia: budget.contingencyAmount,
-                comprometidoEnLineas: comprometido,
+                comprometidoConProveedores: comprometido,
+                disponible: budget.totalAmount - comprometido,
                 porcentajeComprometido:
                   budget.totalAmount > 0 ? comprometido / budget.totalAmount : null,
               }
-            : null,
+            : // Sin presupuesto cargado igual se informa lo comprometido: es
+              // plata ya asignada, aunque no haya línea base contra la cual
+              // compararla.
+              { comprometidoConProveedores: comprometido },
         });
       },
     }),
@@ -76,9 +88,13 @@ function buildTools(projectId: mongoose.Types.ObjectId) {
 
         return JSON.stringify({
           total: activities.length,
+          // `en_revision` incluido: sin él las actividades reportadas como
+          // terminadas pero sin validar no caían en ningún balde y el total
+          // no cerraba con la suma.
           porEstado: {
             pendiente: activities.filter((a) => a.status === 'pendiente').length,
             en_curso: activities.filter((a) => a.status === 'en_curso').length,
+            en_revision: activities.filter((a) => a.status === 'en_revision').length,
             completada: activities.filter((a) => a.status === 'completada').length,
             cancelada: activities.filter((a) => a.status === 'cancelada').length,
           },
@@ -111,11 +127,41 @@ function buildTools(projectId: mongoose.Types.ObjectId) {
           .toISOString()
           .slice(0, 10);
         const registros = await LaborRecord.find({ project: projectId, date: { $gte: desde } });
-        const esperado = registros.reduce((sum, record) => sum + record.expectedCount, 0);
-        const presente = registros.reduce((sum, record) => sum + record.presentNames.length, 0);
+
+        /*
+         * Lo esperado ya no vive en el parte: es la cuadrilla asignada a cada
+         * actividad (`ActivityCrew`). Leerlo del viejo `expectedCount` daría
+         * cero en todo parte nuevo, y la tasa de asistencia sería siempre
+         * nula justo cuando hay datos.
+         */
+        const crewByActivity = new Map<string, number>();
+        const activityIds = [...new Set(registros.map((record) => String(record.activity)))];
+        if (activityIds.length > 0) {
+          const links = await ActivityCrew.find({ activity: { $in: activityIds } }).select(
+            'activity',
+          );
+          for (const link of links) {
+            const key = String(link.activity);
+            crewByActivity.set(key, (crewByActivity.get(key) ?? 0) + 1);
+          }
+        }
+
+        let esperado = 0;
+        let presente = 0;
+        for (const record of registros) {
+          const asignados = crewByActivity.get(String(record.activity)) ?? 0;
+          // Partes viejos: su cuenta sigue saliendo de los campos de entonces.
+          esperado += asignados > 0 ? asignados : record.expectedCount;
+          presente +=
+            record.presentCrewMembers.length > 0
+              ? record.presentCrewMembers.length
+              : record.presentNames.length;
+        }
 
         return JSON.stringify({
           partesDiarios: registros.length,
+          esperado,
+          presente,
           tasaAsistencia: esperado > 0 ? presente / esperado : null,
         });
       },

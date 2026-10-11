@@ -72,6 +72,7 @@
       "gantt": "Cronograma",
       "materials": "Materiais",
       "labor": "Pessoal",
+      "providers": "Fornecedores",
       "budget": "Orçamento",
       "advisor": "Consultor IA"
     },
@@ -83,7 +84,10 @@
       "inviteEmail": "E-mail",
       "inviteSubmit": "Convidar",
       "clientInvited": "Convite enviado",
-      "noClients": "Você ainda não convidou ninguém."
+      "noClients": "Você ainda não convidou ninguém.",
+      "providersVisibleToClient": "O cliente vê os fornecedores",
+      "providersVisibleToClientHint": "Se ativar, o cliente vê o diretório desta obra e quem está atribuído a cada atividade.",
+      "settingsSaved": "Ajuste salvo"
     },
     "dashboard": {
       "progress": "Avanço geral",
@@ -95,12 +99,15 @@
       "labor": "Pessoal",
       "noActivitiesToday": "Não há atividades programadas para hoje.",
       "laborCount": "presentes",
+      "providers": "Fornecedores",
+      "noProviders": "Você ainda não adicionou fornecedores.",
       "budget": "Orçamento",
       "noBudget": "Você ainda não carregou o orçamento.",
       "viewAll": "Ver tudo"
     },
     "errors": {
       "create": "Não conseguimos criar a obra.",
+      "update": "Não conseguimos salvar o ajuste.",
       "invite": "Não conseguimos convidar essa pessoa."
     }
   },
@@ -208,13 +215,27 @@
       "endDate": "Fim",
       "responsible": "Responsável",
       "status": "Status",
+      "specialty": "Especialidade (opcional)",
+      "specialtyPlaceholder": "Sem especialidade",
       "notes": "Notas (opcional)"
     },
     "status": {
       "pendiente": "Pendente",
       "en_curso": "Em andamento",
+      "en_revision": "Em revisão",
       "completada": "Concluída",
       "cancelada": "Cancelada"
+    },
+    "review": {
+      "title": "Validação do supervisor",
+      "approve": "Aprovar e fechar",
+      "return": "Devolver",
+      "confirmReturn": "Devolver com este motivo",
+      "reasonLabel": "Por que está devolvendo?",
+      "reasonPlaceholder": "Ex: falta terminar a borda do rodapé",
+      "returnedTitle": "O supervisor devolveu esta atividade",
+      "waiting": "Reportada como concluída. Aguarda a validação do supervisor.",
+      "rejected": "Atividade devolvida"
     },
     "emptyState": {
       "title": "Não há atividades planejadas para esta semana."
@@ -224,7 +245,8 @@
       "update": "Não conseguimos atualizar a atividade.",
       "delete": "Não conseguimos excluir a atividade.",
       "uploadEvidence": "Não conseguimos enviar a foto.",
-      "removeEvidence": "Não conseguimos remover a foto."
+      "removeEvidence": "Não conseguimos remover a foto.",
+      "reject": "Não conseguimos devolver a atividade."
     },
     "gantt": {
       "emptyState": "Não há atividades planejadas neste período."
@@ -236,6 +258,11 @@
       "editTitle": "Editar atividade",
       "materials": "Materiais associados",
       "noMaterials": "Não há materiais associados a esta atividade.",
+      "providers": "Fornecedores atribuídos",
+      "noProviders": "Você ainda não atribuiu fornecedores a esta atividade.",
+      "assignProvider": "Atribuir",
+      "assignProviderPlaceholder": "Escolha um fornecedor",
+      "unassignProvider": "Remover fornecedor",
       "notes": "Notas",
       "evidence": "Evidência fotográfica",
       "addEvidence": "Adicionar foto",
@@ -294,7 +321,178 @@
       "copy": "Não conseguimos copiar a lista."
     }
   },
+  "provider": {
+    "list": {
+      "navLink": "Fornecedores",
+      "title": "Fornecedores",
+      "new": "Novo fornecedor",
+      "newTitle": "Novo fornecedor",
+      "newSubmit": "Criar fornecedor",
+      "editTitle": "Editar fornecedor",
+      "deactivate": "Desativar",
+      "created": "Fornecedor adicionado",
+      "updated": "Fornecedor atualizado",
+      "deactivated": "Fornecedor desativado",
+      "assigned": "Fornecedor atribuído",
+      "unassigned": "Fornecedor removido",
+      "empty": "Você ainda não adicionou fornecedores.",
+      "emptyOwnerHint": "Adicione seu primeiro contato para poder atribuí-lo a uma atividade.",
+      "confirmDeactivateTitle": "Desativar o fornecedor",
+      "confirmDeactivateBody": "\"{{name}}\" não vai mais aparecer para atribuir a novas atividades. As atividades onde já está atribuído não mudam.",
+      "activitiesTitle": "Atividades de {{name}}",
+      "noActivities": "Você ainda não atribuiu este fornecedor a nenhuma atividade desta obra.",
+      "assignActivity": "Atribuir",
+      "assignActivityPlaceholder": "Escolha uma atividade",
+      "unassignActivity": "Remover atividade"
+    },
+    "fields": {
+      "name": "Nome",
+      "companyName": "Empresa (opcional)",
+      "specialty": "Especialidade",
+      "customSpecialty": "Especifique a especialidade",
+      "phone": "Telefone",
+      "email": "Email (opcional)",
+      "notes": "Notas (opcional)",
+      "assignActivities": "Atribuir a atividades (opcional)",
+      "customSpecialtyAcabados": "Qual acabamento faz (opcional)",
+      "scope": "Disponível em",
+      "scopeHint": "Os de \"Todas as minhas obras\" ficam na sua agenda e aparecem em qualquer obra. Use \"Somente esta obra\" para o fornecedor que o cliente traz."
+    },
+    "specialty": {
+      "electricidad": "Eletricidade",
+      "plomeria": "Encanamento",
+      "gas": "Gás",
+      "carpinteria": "Carpintaria",
+      "cristaleria": "Vidraçaria",
+      "albanileria": "Alvenaria",
+      "herreria": "Serralheria",
+      "redes": "Redes (CFTV, internet, automação)",
+      "mecanicas": "Mecânicas (ar-condicionado, elevadores, escadas)",
+      "estructura": "Estrutura (pilares, vigas, lajes)",
+      "acabados": "Acabamentos",
+      "pintura": "Pintura",
+      "climatizacion": "Climatização",
+      "techos": "Telhados e impermeabilização",
+      "pisos_revestimientos": "Pisos e revestimentos",
+      "jardineria": "Jardinagem",
+      "demolicion": "Demolição",
+      "otra": "Outra"
+    },
+    "scope": {
+      "organization": "Todas as minhas obras",
+      "project": "Somente esta obra",
+      "projectBadge": "Somente esta obra"
+    },
+    "errors": {
+      "create": "Não conseguimos adicionar o fornecedor.",
+      "update": "Não conseguimos atualizar o fornecedor.",
+      "deactivate": "Não conseguimos desativar o fornecedor.",
+      "assign": "Não conseguimos atribuir o fornecedor.",
+      "unassign": "Não conseguimos remover o fornecedor."
+    }
+  },
+  "engagement": {
+    "title": "Contratação — {{name}}",
+    "new": "Nova contratação",
+    "createSubmit": "Criar contratação",
+    "edit": "Editar contratação",
+    "delete": "Excluir contratação",
+    "empty": "Você ainda não registrou uma contratação com este fornecedor nesta obra.",
+    "created": "Contratação registrada",
+    "updated": "Contratação atualizada",
+    "deleted": "Contratação excluída",
+    "requirementsReady": "Tudo pronto para começar",
+    "requirementsPending": "Falta {{count}} requisito para começar",
+    "requirementsPending_other": "Faltam {{count}} requisitos para começar",
+    "fields": {
+      "status": "Status",
+      "quotedAmount": "Cotado",
+      "advanceAmount": "Adiantamento",
+      "amountsHint": "Registrados como comprometido contra o orçamento. O Luma não controla pagamentos nem faturamento.",
+      "estimatedStartDate": "Início estimado",
+      "requirements": "O que precisa estar pronto para começar?",
+      "notes": "Notas (opcional)"
+    },
+    "status": {
+      "solicitada": "Cotação solicitada",
+      "cotizada": "Cotada",
+      "aprobada": "Aprovada",
+      "rechazada": "Recusada"
+    },
+    "requirement": {
+      "materiales_en_obra": "Materiais na obra",
+      "personal_libre": "Pessoal disponível",
+      "area_desocupada": "Área de trabalho desocupada",
+      "actividad_previa": "Atividade anterior concluída",
+      "otro": "Outro"
+    },
+    "errors": {
+      "create": "Não conseguimos registrar a contratação.",
+      "update": "Não conseguimos atualizar a contratação.",
+      "delete": "Não conseguimos excluir a contratação.",
+      "requirement": "Não conseguimos atualizar o requisito."
+    }
+  },
+  "crew": {
+    "list": {
+      "title": "Pessoal fixo",
+      "add": "Adicionar",
+      "empty": "Você ainda não cadastrou pessoal fixo de obra.",
+      "lead": "Encarregado",
+      "deactivate": "Desativar",
+      "created": "Pessoal adicionado",
+      "updated": "Pessoal atualizado",
+      "deactivated": "Pessoal desativado"
+    },
+    "fields": {
+      "name": "Nome",
+      "kind": "Tipo",
+      "specialty": "Especialidade (opcional)",
+      "specialtyPlaceholder": "Sem especialidade",
+      "isLead": "É o encarregado da sua especialidade",
+      "onlyThisProject": "Somente para esta obra",
+      "phone": "Telefone (opcional)"
+    },
+    "kind": {
+      "persona": "Pessoa",
+      "equipo": "Equipe"
+    },
+    "goals": {
+      "assignee": "De quem é a meta?",
+      "assigneePlaceholder": "Escolha pessoa ou equipe",
+      "activity": "Atividade (opcional)",
+      "activityPlaceholder": "Sem atividade associada",
+      "description": "Meta da semana",
+      "descriptionPlaceholder": "Ex: terminar o reboco do segundo andar",
+      "add": "Adicionar meta",
+      "delete": "Excluir meta",
+      "created": "Meta adicionada",
+      "deleted": "Meta excluída",
+      "empty": "Não há metas cadastradas para esta semana.",
+      "needRoster": "Cadastre primeiro o pessoal fixo de obra para poder atribuir metas.",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Próxima semana",
+      "currentWeek": "Semana atual"
+    },
+    "goalStatus": {
+      "pendiente": "Pendente",
+      "cumplida": "Cumprida",
+      "no_cumplida": "Não cumprida"
+    },
+    "errors": {
+      "create": "Não conseguimos adicionar o pessoal.",
+      "update": "Não conseguimos atualizar o pessoal.",
+      "deactivate": "Não conseguimos desativar o pessoal.",
+      "createGoal": "Não conseguimos adicionar a meta.",
+      "updateGoal": "Não conseguimos atualizar a meta.",
+      "deleteGoal": "Não conseguimos excluir a meta."
+    }
+  },
   "labor": {
+    "tabs": {
+      "attendance": "Presença do dia",
+      "goals": "Metas da semana"
+    },
     "prevDay": "Dia anterior",
     "nextDay": "Próximo dia",
     "today": "Hoje",
@@ -314,8 +512,29 @@
       "saved": "Registro salvo"
     },
     "errors": {
-      "save": "Não conseguimos salvar o registro."
-    }
+      "save": "Não conseguimos salvar o registro.",
+      "assignCrew": "Não conseguimos atribuir essa pessoa.",
+      "unassignCrew": "Não conseguimos remover essa pessoa."
+    },
+    "summary": {
+      "present": "Presentes",
+      "missing": "Faltam",
+      "activities": "Atividades hoje"
+    },
+    "crew": {
+      "empty": "Você ainda não atribuiu pessoal a esta atividade.",
+      "assign": "Atribuir pessoal",
+      "pickPerson": "Escolha quem atribuir",
+      "assigned": "Pessoal atribuído",
+      "unassigned": "Pessoal removido",
+      "unassign": "Remover da equipe",
+      "call": "Ligar",
+      "cover": "Cobrir",
+      "pickCover": "Quem cobre?",
+      "covering": "Cobrindo hoje",
+      "removeCover": "Remover substituto"
+    },
+    "legacyNotice": "Registro feito antes do roster: nomes digitados à mão."
   },
   "budget": {
     "list": {
@@ -328,6 +547,9 @@
     "summary": {
       "total": "Total",
       "contingency": "Contingência",
+      "available": "Disponível",
+      "committed": "Comprometido",
+      "committedHint": "Cotações de fornecedores já aprovadas.",
       "sourceImport": "Importado de {{fileName}}",
       "sourceManual": "Carregado manualmente"
     },

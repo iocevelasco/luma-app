@@ -6,7 +6,7 @@ import {
   type MaterialItem,
   type MaterialStatus,
 } from '@luma/shared';
-import { Copy, Share2 } from 'lucide-react';
+import { Copy, Plus, Share2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { FormDrawer } from '@/components/common/form-drawer';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Button } from '@/components/ui/button';
@@ -64,8 +65,15 @@ function copyText(text: string) {
   return Promise.resolve();
 }
 
-function NewMaterialForm({ projectId }: { projectId: string }) {
+/**
+ * El alta vive en el drawer lateral, no en la cabecera de la página: como
+ * formulario fijo se comía media pantalla y empujaba la lista —que es lo que
+ * se viene a leer— abajo del pliegue. Se entra muchas más veces a mirar la
+ * lista que a cargar un material.
+ */
+function NewMaterialDrawer({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
   const createMaterial = useCreateMaterial(projectId);
   const { data: activitiesData } = useAllActivities(projectId);
 
@@ -78,12 +86,29 @@ function NewMaterialForm({ projectId }: { projectId: string }) {
   } = useForm<CreateMaterialInput>({ resolver: zodResolver(createMaterialSchema) });
 
   return (
-    <div className="flex flex-col gap-4">
-      <h3 className="text-sm font-medium">{t('material.list.newTitle')}</h3>
-      <form
-        className="flex flex-col gap-4"
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="size-4" />
+        {t('material.list.newTitle')}
+      </Button>
+
+      <FormDrawer
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) reset();
+        }}
+        title={t('material.list.newTitle')}
+        fieldCount={6}
+        submitLabel={t('material.list.newSubmit')}
+        isSubmitting={createMaterial.isPending}
         onSubmit={handleSubmit((values) =>
-          createMaterial.mutate(values, { onSuccess: () => reset() }),
+          createMaterial.mutate(values, {
+            onSuccess: () => {
+              reset();
+              setOpen(false);
+            },
+          }),
         )}
       >
         <div className="grid gap-4 sm:grid-cols-2">
@@ -168,15 +193,9 @@ function NewMaterialForm({ projectId }: { projectId: string }) {
               <Label htmlFor="material-supplier">{t('material.fields.supplier')}</Label>
               <Input id="material-supplier" {...register('supplier')} />
             </div>
-          </div>
-
-          <div className="flex justify-end">
-            <Button type="submit" disabled={createMaterial.isPending}>
-              {createMaterial.isPending ? t('common.loading') : t('material.list.newSubmit')}
-            </Button>
-          </div>
-      </form>
-    </div>
+        </div>
+      </FormDrawer>
+    </>
   );
 }
 
@@ -317,25 +336,25 @@ export function ProjectMaterialsPage() {
   const canShare = typeof navigator.share === 'function';
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 p-3 md:p-4">
-      {isEditor && <NewMaterialForm projectId={projectId!} />}
-
-      <div className="flex flex-col gap-6 border-t border-border pt-6">
-        <div className="flex flex-row flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-medium">{t('material.list.title')}</h3>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleCopy}>
-              <Copy className="size-4" />
-              {t('material.list.copyList')}
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-3 md:p-4">
+      <div className="flex flex-row flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-medium">{t('material.list.title')}</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={handleCopy}>
+            <Copy className="size-4" />
+            {t('material.list.copyList')}
+          </Button>
+          {canShare && (
+            <Button variant="outline" size="sm" onClick={handleShare}>
+              <Share2 className="size-4" />
+              {t('material.list.share')}
             </Button>
-            {canShare && (
-              <Button variant="outline" size="sm" onClick={handleShare}>
-                <Share2 className="size-4" />
-                {t('material.list.share')}
-              </Button>
-            )}
-          </div>
+          )}
+          {isEditor && <NewMaterialDrawer projectId={projectId!} />}
         </div>
+      </div>
+
+      <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-6">
           {MATERIAL_STATUSES.map((status) => {
             const items = grouped[status];

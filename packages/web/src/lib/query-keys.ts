@@ -15,4 +15,11 @@ export enum QueryKeys {
   materials = 'materials',
   laborRecords = 'labor-records',
   budget = 'budget',
+  providers = 'providers',
+  activityProviders = 'activity-providers',
+  providerActivities = 'provider-activities',
+  providerEngagements = 'provider-engagements',
+  crewMembers = 'crew-members',
+  crewGoals = 'crew-goals',
+  activityCrew = 'activity-crew',
 }

@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import type {} from 'multer';
 import {
   createActivitySchema,
+  rejectActivitySchema,
   updateActivitySchema,
   type Activity as ActivityDTO,
   type ActivityEvidencePhoto,
@@ -61,6 +62,18 @@ async function toActivityDTO(activity: IActivity): Promise<ActivityDTO> {
       user: activity.responsible.user ? String(activity.responsible.user) : undefined,
     },
     status: activity.status,
+    specialty: activity.specialty,
+    review: activity.review
+      ? {
+          reportedBy: String(activity.review.reportedBy),
+          reportedAt: activity.review.reportedAt.toISOString(),
+          approvedBy: activity.review.approvedBy ? String(activity.review.approvedBy) : undefined,
+          approvedAt: activity.review.approvedAt?.toISOString(),
+          rejectedBy: activity.review.rejectedBy ? String(activity.review.rejectedBy) : undefined,
+          rejectedAt: activity.review.rejectedAt?.toISOString(),
+          rejectionReason: activity.review.rejectionReason,
+        }
+      : undefined,
     notes: activity.notes,
     evidence: signedEvidence.filter((photo): photo is ActivityEvidencePhoto => photo !== null),
     createdBy: String(activity.createdBy),
@@ -122,8 +135,18 @@ export async function createActivity(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + `requireProjectEditor` antes. */
+/**
+ * Requiere `requireProjectAccess` + `requireProjectEditor` antes.
+ *
+ * Cerrar a `completada` es exclusivo del dueño de la obra: el Asistente llega
+ * hasta `en_revision` (reportar terminado) y el supervisor confirma. Nadie
+ * cierra su propio trabajo.
+ */
 export async function updateActivity(req: Request, res: Response) {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'Authentication required' });
+  }
+
   try {
     const parsed = updateActivitySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -132,20 +155,90 @@ export async function updateActivity(req: Request, res: Response) {
         .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
     }
 
+    if (parsed.data.status === 'completada' && !req.isProjectOwner) {
+      return res.status(403).json({
+        success: false,
+        error: 'Sólo el supervisor de la obra puede dar una actividad por terminada',
+      });
+    }
+
     const project = req.project as IProject;
-    const activity = await Activity.findOneAndUpdate(
-      { _id: req.params.activityId, project: project._id },
-      parsed.data,
-      { new: true },
-    );
+    const activity = await Activity.findOne({
+      _id: req.params.activityId,
+      project: project._id,
+    });
 
     if (!activity) {
       return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
     }
 
+    const now = new Date();
+    activity.set(parsed.data);
+
+    // Reportar terminado abre un ciclo de revisión nuevo y limpia el rechazo
+    // anterior: el motivo viejo ya no aplica a lo que se acaba de reportar.
+    if (parsed.data.status === 'en_revision') {
+      activity.set('review', { reportedBy: req.user.sub, reportedAt: now });
+    }
+
+    if (parsed.data.status === 'completada' && activity.review) {
+      activity.set('review.approvedBy', req.user.sub);
+      activity.set('review.approvedAt', now);
+    }
+
+    await activity.save();
+
     return res.json({ success: true, data: { activity: await toActivityDTO(activity) } });
   } catch (error) {
     console.error('❌ [ACTIVITY] updateActivity:', error);
+    return res.status(500).json({ success: false, error: errMsg(error) });
+  }
+}
+
+/**
+ * Requiere `requireProjectAccess` + `requireProjectOwner` antes. El supervisor
+ * devuelve el trabajo: vuelve a `en_curso` con el motivo visible para quien
+ * lo reportó. Sin este camino, no aprobar deja la actividad en un limbo donde
+ * nadie sabe si está trabada o si el supervisor todavía no la miró.
+ */
+export async function rejectActivity(req: Request, res: Response) {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'Authentication required' });
+  }
+
+  try {
+    const parsed = rejectActivitySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
+    }
+
+    const project = req.project as IProject;
+    const activity = await Activity.findOne({
+      _id: req.params.activityId,
+      project: project._id,
+    });
+
+    if (!activity) {
+      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+    }
+
+    if (activity.status !== 'en_revision') {
+      return res
+        .status(400)
+        .json({ success: false, error: 'Sólo se puede devolver una actividad en revisión' });
+    }
+
+    activity.set('status', 'en_curso');
+    activity.set('review.rejectedBy', req.user.sub);
+    activity.set('review.rejectedAt', new Date());
+    activity.set('review.rejectionReason', parsed.data.reason);
+    await activity.save();
+
+    return res.json({ success: true, data: { activity: await toActivityDTO(activity) } });
+  } catch (error) {
+    console.error('❌ [ACTIVITY] rejectActivity:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }
 }

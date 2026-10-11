@@ -9,6 +9,19 @@ export interface ILaborRecord extends Document {
   project: mongoose.Types.ObjectId;
   activity: mongoose.Types.ObjectId;
   date: string;
+  /**
+   * Quiénes estuvieron hoy. Lo esperado NO se guarda acá: sale de
+   * `ActivityCrew`, que es la asignación vigente. Con los dos conjuntos se
+   * derivan las dos preguntas del día sin guardar nada más:
+   * ausentes = esperados − presentes, y reemplazos = presentes − esperados.
+   */
+  presentCrewMembers: mongoose.Types.ObjectId[];
+  /**
+   * Partes viejos, de cuando la asistencia era un número y nombres tipeados a
+   * mano. Se conservan en sólo lectura: no hay forma honesta de adivinar a qué
+   * persona del roster correspondía cada texto, y borrarlos perdería el
+   * historial de quién estuvo en la obra.
+   */
   expectedCount: number;
   presentNames: string[];
   createdBy: mongoose.Types.ObjectId;
@@ -21,7 +34,12 @@ const laborRecordSchema = new Schema<ILaborRecord>(
     project: { type: Schema.Types.ObjectId, ref: 'Project', required: true, index: true },
     activity: { type: Schema.Types.ObjectId, ref: 'Activity', required: true, index: true },
     date: { type: String, required: true },
-    expectedCount: { type: Number, required: true, min: 0 },
+    presentCrewMembers: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'CrewMember' }],
+      default: [],
+    },
+    // Legado: ya no se escriben, sólo se leen en los partes viejos.
+    expectedCount: { type: Number, default: 0, min: 0 },
     presentNames: { type: [String], default: [] },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },

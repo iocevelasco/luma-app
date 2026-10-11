@@ -18,6 +18,9 @@ import { isActivityOverdue } from '@/lib/week';
 const STATUS_PROGRESS: Record<ActivityStatus, number> = {
   pendiente: 0,
   en_curso: 50,
+  // Reportada como terminada pero sin validar: casi llena, no llena. La barra
+  // no puede decir 100% de algo que el supervisor todavía no aprobó.
+  en_revision: 90,
   completada: 100,
   cancelada: 0,
 };

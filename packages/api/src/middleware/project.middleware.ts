@@ -87,3 +87,18 @@ export function requireProjectEditor(req: Request, res: Response, next: NextFunc
   }
   next();
 }
+
+/**
+ * Lectura del directorio de proveedores y de quién está asignado a cada
+ * actividad. Dueño y Asistente siempre; el cliente sólo si esa obra lo
+ * habilitó (`providersVisibleToClient`) — en algunas obras conoce a todos los
+ * subcontratistas y en otras no tiene por qué. Ir después de
+ * `requireProjectAccess`.
+ */
+export function requireProviderRead(req: Request, res: Response, next: NextFunction) {
+  if (req.isProjectEditor || req.project?.providersVisibleToClient) return next();
+
+  return res
+    .status(403)
+    .json({ success: false, error: 'No tenés permiso para ver los proveedores de esta obra' });
+}

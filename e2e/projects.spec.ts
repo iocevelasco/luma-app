@@ -73,7 +73,10 @@ test.describe('empresa, obra e invitación del cliente', () => {
     await loginWith(clientPage, CLIENT_EMAIL, PASSWORD);
     await expect(clientPage).toHaveURL(/\/admin$/);
     await clientPage.getByRole('link', { name: PROJECT_NAME }).click();
-    await expect(clientPage.getByText(PROJECT_NAME)).toBeVisible();
+    // `.first()`: el nombre de la obra aparece dos veces una vez adentro —en
+    // el breadcrumb del header y en el contenido—, y sin acotar el modo
+    // estricto de Playwright lo toma como ambigüedad.
+    await expect(clientPage.getByText(PROJECT_NAME).first()).toBeVisible();
     await expect(clientPage.getByRole('button', { name: /invitar cliente/i })).toHaveCount(0);
 
     await clientContext.close();

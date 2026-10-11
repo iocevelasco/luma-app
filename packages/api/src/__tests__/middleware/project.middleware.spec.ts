@@ -19,7 +19,12 @@ vi.mock('../../models/OrganizationMember.js', () => ({
 const { Project } = await import('../../models/Project.js');
 const { ProjectClient } = await import('../../models/ProjectClient.js');
 const { OrganizationMember } = await import('../../models/OrganizationMember.js');
-const { requireProjectAccess, requireProjectOwner, requireProjectEditor } = await import(
+const {
+  requireProjectAccess,
+  requireProjectOwner,
+  requireProjectEditor,
+  requireProviderRead,
+} = await import(
   '../../middleware/project.middleware.js'
 );
 
@@ -171,6 +176,46 @@ describe('requireProjectEditor', () => {
     const next = vi.fn();
 
     requireProjectEditor(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+});
+
+describe('requireProviderRead', () => {
+  it('el editor siempre pasa, tenga la obra el switch prendido o no', () => {
+    const req = {
+      isProjectEditor: true,
+      project: { providersVisibleToClient: false },
+    } as unknown as Request;
+    const next = vi.fn();
+
+    requireProviderRead(req, mockRes(), next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('403 al cliente cuando la obra NO habilitó ver proveedores', () => {
+    const req = {
+      isProjectEditor: false,
+      project: { providersVisibleToClient: false },
+    } as unknown as Request;
+    const res = mockRes();
+    const next = vi.fn();
+
+    requireProviderRead(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('deja pasar al cliente cuando la obra SÍ lo habilitó', () => {
+    const req = {
+      isProjectEditor: false,
+      project: { providersVisibleToClient: true },
+    } as unknown as Request;
+    const next = vi.fn();
+
+    requireProviderRead(req, mockRes(), next);
 
     expect(next).toHaveBeenCalled();
   });

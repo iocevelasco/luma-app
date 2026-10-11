@@ -2,12 +2,24 @@ import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
 import multer from 'multer';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
-import { requireProjectAccess, requireProjectEditor } from '../middleware/project.middleware.js';
 import {
+  requireProjectAccess,
+  requireProjectEditor,
+  requireProjectOwner,
+  requireProviderRead,
+} from '../middleware/project.middleware.js';
+import {
+  assignCrewToActivity,
+  assignProvider,
   createActivity,
   deleteActivity,
   deleteActivityEvidence,
   listActivities,
+  listActivityCrew,
+  listActivityProviders,
+  rejectActivity,
+  unassignCrewFromActivity,
+  unassignProvider,
   updateActivity,
   uploadActivityEvidence,
 } from '../controllers/index.js';
@@ -41,6 +53,9 @@ activityRouter.use(isAuthenticated, requireProjectAccess);
 activityRouter.get('/', listActivities);
 activityRouter.post('/', requireProjectEditor, createActivity);
 activityRouter.patch('/:activityId', requireProjectEditor, updateActivity);
+// Devolver el trabajo es del supervisor, igual que cerrarlo — cerrar se gatea
+// dentro de `updateActivity`, que necesita distinguir el estado pedido.
+activityRouter.post('/:activityId/reject', requireProjectOwner, rejectActivity);
 activityRouter.delete('/:activityId', requireProjectEditor, deleteActivity);
 activityRouter.post(
   '/:activityId/evidence',
@@ -53,6 +68,23 @@ activityRouter.delete(
   '/:activityId/evidence/:evidenceId',
   requireProjectEditor,
   deleteActivityEvidence,
+);
+
+// Proveedores asignados (RF nuevo, directorio de la Empresa — ver routes/provider.ts).
+// `requireProjectEditor`, no `requireProjectOwner`: el Asistente de Obra
+// también asigna proveedores a las actividades que gestiona.
+activityRouter.get('/:activityId/providers', requireProviderRead, listActivityProviders);
+activityRouter.post('/:activityId/providers', requireProjectEditor, assignProvider);
+activityRouter.delete('/:activityId/providers/:providerId', requireProjectEditor, unassignProvider);
+
+// Cuadrilla fija de la actividad: quiénes se esperan todos los días. El parte
+// diario (`/labor`) sólo confirma quién de ellos vino.
+activityRouter.get('/:activityId/crew', requireProjectEditor, listActivityCrew);
+activityRouter.post('/:activityId/crew', requireProjectEditor, assignCrewToActivity);
+activityRouter.delete(
+  '/:activityId/crew/:crewMemberId',
+  requireProjectEditor,
+  unassignCrewFromActivity,
 );
 
 export default activityRouter;
