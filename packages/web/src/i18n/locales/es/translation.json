@@ -722,7 +722,22 @@
       "fileRequired": "Elegí un archivo.",
       "fileType": "Formato no soportado. Subí un PDF o una imagen .jpg, .png o .webp.",
       "fileSize": "El archivo es demasiado grande (máximo 20MB)."
-    }
+    },
+    "filters": {
+      "category": "Tipo",
+      "allCategories": "Todos los tipos",
+      "uploader": "Subido por",
+      "allUploaders": "Todas las personas",
+      "groupBy": "Agrupar por",
+      "groupNone": "Sin agrupar",
+      "groupCategory": "Tipo",
+      "groupUploader": "Quién lo subió",
+      "noResults": "Ningún documento coincide con estos filtros.",
+      "clear": "Limpiar filtros"
+    },
+    "pdf": "PDF",
+    "uploadedOn": "Subido el {{date}}",
+    "previewUnavailable": "Vista previa no disponible"
   },
   "milestone": {
     "list": {
