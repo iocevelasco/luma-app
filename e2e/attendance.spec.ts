@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
-import { pickActivitySpecialty } from './helpers/activity';
+import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 
 /**
  * Asistencia del día contra la cuadrilla asignada: lo que la vista vieja no
@@ -51,7 +51,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     await page
       .locator('#activity-end')
       .fill(toDayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5)));
-    await page.locator('#activity-responsible').fill('Juan Pérez');
+    await pickActivityResponsible(page);
     await page.getByRole('button', { name: /crear actividad/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 

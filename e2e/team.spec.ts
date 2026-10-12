@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
-import { pickActivitySpecialty } from './helpers/activity';
+import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 
 /**
  * Flujo del Supervisor de obra: se invita **a una obra puntual**, no a la
@@ -58,7 +58,7 @@ test.describe('Supervisor de obra', () => {
     await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill('2026-09-05');
     await page.locator('#activity-end').fill('2026-09-10');
-    await page.locator('#activity-responsible').fill('Cuadrilla 1');
+    await pickActivityResponsible(page);
     await page.getByRole('button', { name: /crear actividad/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 

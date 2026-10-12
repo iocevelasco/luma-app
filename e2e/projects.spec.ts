@@ -42,7 +42,13 @@ test.describe('empresa, obra e invitación del cliente', () => {
     await page.goto(appUrl('/admin/settings/account'));
     await expect(page.locator('#org-name')).toHaveValue(OWNER_NAME);
     await page.locator('#org-name').fill(NEW_ORG_NAME);
-    await page.getByRole('button', { name: /^guardar$/i }).click();
+    // En Mi cuenta hay tres "Guardar" (Empresa, contraseña y correo): el de la
+    // Empresa es el del formulario que contiene su nombre.
+    await page
+      .locator('form')
+      .filter({ has: page.locator('#org-name') })
+      .getByRole('button', { name: /^guardar$/i })
+      .click();
     await expect(page.getByText(/datos de la empresa guardados/i)).toBeVisible();
     await expect(page.locator('#org-name')).toHaveValue(NEW_ORG_NAME);
 
