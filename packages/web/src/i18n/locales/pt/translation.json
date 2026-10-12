@@ -20,7 +20,9 @@
     "errorTitle": "Algo deu errado",
     "notFoundTitle": "Página não encontrada",
     "notFoundBody": "O endereço que você abriu não existe ou mudou.",
-    "goHome": "Ir para o início"
+    "goHome": "Ir para o início",
+    "showPassword": "Mostrar senha",
+    "hidePassword": "Ocultar senha"
   },
   "layout": {
     "projects": "Obras",
@@ -164,7 +166,9 @@
       "subtitle": "Preencha seus dados para começar.",
       "submit": "Criar conta",
       "hasAccount": "Já tem conta?",
-      "login": "Entre"
+      "login": "Entre",
+      "confirmPassword": "Repetir senha",
+      "mismatch": "As senhas não coincidem."
     },
     "forgotPassword": {
       "title": "Recuperar senha",

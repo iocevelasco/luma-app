@@ -3,16 +3,25 @@ import { registerCredentialsSchema } from '@luma/shared';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PasswordInput } from '@/components/auth/password-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRegister } from '@/hooks/auth/use-auth-queries';
+import { errorMessage } from '@/lib/error-message';
 import { ROUTES } from '@/lib/routes';
 
-type RegisterForm = z.infer<typeof registerCredentialsSchema>;
+const registerFormSchema = registerCredentialsSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'mismatch',
+  });
+
+type RegisterForm = z.infer<typeof registerFormSchema>;
 
 export function RegisterPage() {
   const { t } = useTranslation();
@@ -22,7 +31,7 @@ export function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterForm>({ resolver: zodResolver(registerCredentialsSchema) });
+  } = useForm<RegisterForm>({ resolver: zodResolver(registerFormSchema) });
 
   return (
     <AuthLayout>
@@ -34,7 +43,9 @@ export function RegisterPage() {
         <CardContent>
           <form
             className="flex flex-col gap-4"
-            onSubmit={handleSubmit((values) => registerUser.mutate(values))}
+            onSubmit={handleSubmit(({ confirmPassword: _confirm, ...values }) =>
+              registerUser.mutate(values),
+            )}
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="name">{t('common.name')}</Label>
@@ -44,15 +55,21 @@ export function RegisterPage() {
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">{t('common.email')}</Label>
-              <Input id="email" type="email" autoComplete="email" {...register('email')} />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                {...register('email')}
+              />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">{t('common.password')}</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="new-password"
                 {...register('password')}
               />
@@ -60,6 +77,24 @@ export function RegisterPage() {
                 <p className="text-sm text-destructive">{errors.password.message}</p>
               )}
             </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="confirmPassword">{t('auth.register.confirmPassword')}</Label>
+              <PasswordInput
+                id="confirmPassword"
+                autoComplete="new-password"
+                {...register('confirmPassword')}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-destructive">{t('auth.register.mismatch')}</p>
+              )}
+            </div>
+
+            {registerUser.isError && (
+              <p role="alert" className="text-sm text-destructive">
+                {errorMessage(registerUser.error, t)}
+              </p>
+            )}
 
             <Button type="submit" disabled={registerUser.isPending}>
               {registerUser.isPending ? t('common.loading') : t('auth.register.submit')}

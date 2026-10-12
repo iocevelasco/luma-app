@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/auth/password-input';
 import { Label } from '@/components/ui/label';
 
 interface PasswordFormProps {
@@ -35,9 +35,8 @@ export function PasswordForm({ submitLabel, isPending, onSubmit }: PasswordFormP
     >
       <div className="flex flex-col gap-2">
         <Label htmlFor="password">{t('auth.resetPassword.newPassword')}</Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={8}
@@ -48,9 +47,8 @@ export function PasswordForm({ submitLabel, isPending, onSubmit }: PasswordFormP
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="confirm">{t('auth.resetPassword.confirmPassword')}</Label>
-        <Input
+        <PasswordInput
           id="confirm"
-          type="password"
           autoComplete="new-password"
           required
           minLength={8}

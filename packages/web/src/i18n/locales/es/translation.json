@@ -20,7 +20,9 @@
     "errorTitle": "Algo salió mal",
     "notFoundTitle": "Página no encontrada",
     "notFoundBody": "La dirección que abriste no existe o cambió.",
-    "goHome": "Ir al inicio"
+    "goHome": "Ir al inicio",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
   },
   "layout": {
     "projects": "Obras",
@@ -164,7 +166,9 @@
       "subtitle": "Completá tus datos para empezar.",
       "submit": "Crear cuenta",
       "hasAccount": "¿Ya tenés cuenta?",
-      "login": "Entrá"
+      "login": "Entrá",
+      "confirmPassword": "Repetir contraseña",
+      "mismatch": "Las contraseñas no coinciden."
     },
     "forgotPassword": {
       "title": "Recuperar contraseña",

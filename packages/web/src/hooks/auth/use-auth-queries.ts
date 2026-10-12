@@ -41,7 +41,6 @@ export function useCurrentUser() {
 export function useLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: (credentials: LoginCredentials) => authApi.login(credentials),
@@ -49,18 +48,15 @@ export function useLogin() {
       login(data.accessToken, data.user);
       navigate(ROUTES.ADMIN);
     },
-    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
 export function useRegister() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: (credentials: RegisterCredentials) => authApi.register(credentials),
     onSuccess: () => navigate(ROUTES.CHECK_EMAIL),
-    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 
