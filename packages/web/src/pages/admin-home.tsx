@@ -7,7 +7,6 @@ import { EmptyState } from '@/components/common/empty-state';
 import { fromDayKey } from '@/components/common/date-range-filter';
 import { Fab } from '@/components/common/fab';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProjects } from '@/hooks/projects/use-project-queries';
@@ -19,7 +18,6 @@ import { ROUTES, projectActivitiesPath } from '@/lib/routes';
  * desde la que se entra a trabajar.
  */
 function ProjectCard({ project }: { project: Project }) {
-  const { t } = useTranslation();
   const dateLocale = useDateLocale();
 
   return (
@@ -28,11 +26,8 @@ function ProjectCard({ project }: { project: Project }) {
       className="flex-1 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Card className="h-full transition-colors hover:border-primary/40">
-        <CardHeader className="flex flex-row items-start justify-between gap-3">
+        <CardHeader>
           <CardTitle className="text-base leading-snug">{project.name}</CardTitle>
-          <Badge variant="secondary" className="shrink-0">
-            {t(`project.budgetType.${project.budgetType}`)}
-          </Badge>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">

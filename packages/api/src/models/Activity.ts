@@ -35,7 +35,6 @@ export interface IActivityReview {
 export interface IActivity extends Document {
   project: mongoose.Types.ObjectId;
   name: string;
-  area: string;
   startDate: string;
   endDate: string;
   responsible: IActivityResponsible;
@@ -80,7 +79,6 @@ const activitySchema = new Schema<IActivity>(
   {
     project: { type: Schema.Types.ObjectId, ref: 'Project', required: true, index: true },
     name: { type: String, required: true, trim: true },
-    area: { type: String, required: true, trim: true },
     startDate: { type: String, required: true },
     endDate: { type: String, required: true },
     responsible: { type: activityResponsibleSchema, required: true },

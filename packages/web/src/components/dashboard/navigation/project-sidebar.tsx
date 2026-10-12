@@ -95,7 +95,7 @@ export function ProjectNavScroller() {
   return (
     <nav
       aria-label={t('project.nav.aria')}
-      className="flex gap-1 overflow-x-auto border-b border-border bg-card px-2 py-2 md:hidden"
+      className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-card px-2 py-2 md:hidden"
     >
       {items.map(({ labelKey, path, icon: Icon }) => {
         const to = path(projectId);

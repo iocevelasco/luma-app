@@ -3,6 +3,7 @@ import {
   inviteMemberSchema,
   updateOrganizationMemberSchema,
   updateOrganizationSchema,
+  type CompanyStaffRole,
   type Organization as OrganizationDTO,
   type OrganizationMemberSummary,
 } from '@luma/shared';
@@ -122,15 +123,7 @@ export async function listMembers(req: Request, res: Response) {
       user: { _id: unknown; email: string; name: string; email_verified: boolean };
     }>('user', 'email name email_verified');
 
-    const members: OrganizationMemberSummary[] = memberRows.map((row) => ({
-      id: String(row._id),
-      userId: String(row.user._id),
-      email: row.user.email,
-      name: row.user.name,
-      role: 'member',
-      pending: !row.user.email_verified,
-      createdAt: row.createdAt.toISOString(),
-    }));
+    const members = memberRows.map((row) => toMemberSummary(row, row.user));
 
     return res.json({ success: true, data: { members } });
   } catch (error) {
@@ -140,11 +133,15 @@ export async function listMembers(req: Request, res: Response) {
 }
 
 /**
- * Invita a un Asistente de Obra a mi Empresa — acceso operativo a todas mis
- * obras, nunca a presupuesto ni a gestionar gente. Mismo patrón que
- * `inviteProjectMember` en `project.controller.ts`: si el email no tiene cuenta
- * todavía, la crea sin contraseña y manda el mail de activación que ya
- * existe — no hay flujo nuevo que inventar.
+ * Suma a alguien del personal administrativo a mi Empresa, con su nombre y su
+ * función (gerente, supervisor, contador). Pertenecer no da acceso a ninguna
+ * obra: eso se invita obra por obra. Mismo patrón que `inviteProjectMember`
+ * en `project.controller.ts`: si el email no tiene cuenta todavía, la crea sin
+ * contraseña y manda el mail de activación que ya existe — no hay flujo nuevo
+ * que inventar.
+ *
+ * El nombre sólo se usa al crear la cuenta. Si el email ya existe, la persona
+ * ya eligió cómo se llama y quien la suma no tiene por qué pisárselo.
  */
 export async function inviteMember(req: Request, res: Response) {
   if (!req.user) {
@@ -164,7 +161,7 @@ export async function inviteMember(req: Request, res: Response) {
       return res.status(404).json({ success: false, error: 'No tenés una empresa todavía' });
     }
 
-    const { email } = parsed.data;
+    const { email, name, staffRole, phone } = parsed.data;
 
     const inviter = await User.findById(req.user.sub);
     if (inviter && email === inviter.email) {
@@ -185,7 +182,6 @@ export async function inviteMember(req: Request, res: Response) {
       }
     } else {
       const activationToken = randomToken();
-      const name = email.split('@')[0];
       user = await User.create({
         email,
         name,
@@ -202,19 +198,13 @@ export async function inviteMember(req: Request, res: Response) {
       organization: organizationId,
       user: user._id,
       role: 'member',
+      staffRole,
+      ...(phone ? { phone } : {}),
     });
 
-    const member: OrganizationMemberSummary = {
-      id: String(memberRow._id),
-      userId: String(user._id),
-      email: user.email,
-      name: user.name,
-      role: 'member',
-      pending: !user.email_verified,
-      createdAt: memberRow.createdAt.toISOString(),
-    };
-
-    return res.status(201).json({ success: true, data: { member } });
+    return res
+      .status(201)
+      .json({ success: true, data: { member: toMemberSummary(memberRow, user) } });
   } catch (error) {
     console.error('❌ [ORG] inviteMember:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
@@ -245,7 +235,7 @@ async function findTeamMember(req: Request, res: Response) {
 }
 
 function toMemberSummary(
-  row: { _id: unknown; createdAt: Date },
+  row: { _id: unknown; createdAt: Date; staffRole?: CompanyStaffRole; phone?: string },
   user: { _id: unknown; email: string; name: string; email_verified: boolean },
 ): OrganizationMemberSummary {
   return {
@@ -254,12 +244,14 @@ function toMemberSummary(
     email: user.email,
     name: user.name,
     role: 'member',
+    ...(row.staffRole ? { staffRole: row.staffRole } : {}),
+    ...(row.phone ? { phone: row.phone } : {}),
     pending: !user.email_verified,
     createdAt: row.createdAt.toISOString(),
   };
 }
 
-/** Corrige cómo se llama un integrante. El email es su identidad y no se toca. */
+/** Corrige cómo se llama un integrante y qué función tiene. El email es su identidad y no se toca. */
 export async function updateMember(req: Request, res: Response) {
   try {
     const parsed = updateOrganizationMemberSchema.safeParse(req.body);
@@ -271,6 +263,20 @@ export async function updateMember(req: Request, res: Response) {
 
     const found = await findTeamMember(req, res);
     if (!found) return;
+
+    // Sin `staffRole` ni `phone` en el body no se tocan: corregir un nombre no
+    // borra la función ni el teléfono. Un `phone` vacío sí lo borra, igual que
+    // `contactPhone` de la Empresa.
+    let dirty = false;
+    if (parsed.data.staffRole && parsed.data.staffRole !== found.row.staffRole) {
+      found.row.staffRole = parsed.data.staffRole;
+      dirty = true;
+    }
+    if (parsed.data.phone !== undefined && parsed.data.phone !== (found.row.phone ?? '')) {
+      found.row.phone = parsed.data.phone || undefined;
+      dirty = true;
+    }
+    if (dirty) await found.row.save();
 
     const user = await User.findByIdAndUpdate(
       found.row.user,

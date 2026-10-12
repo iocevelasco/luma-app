@@ -59,16 +59,16 @@ export interface Activity {
   id: string;
   projectId: string;
   name: string;
-  area: string;
   /** `YYYY-MM-DD`, nunca ISO datetime — ver CLAUDE.md. */
   startDate: string;
   endDate: string;
   responsible: ActivityResponsible;
   status: ActivityStatus;
   /**
-   * Rubro de obra, opcional. Mismo catálogo que proveedores y personal: sirve
-   * para agrupar el trabajo (y sus fotos) por especialidad sin obligar a
-   * clasificar actividades que tocan varios rubros a la vez.
+   * Rubro de obra. Mismo catálogo que proveedores y personal: agrupa el
+   * trabajo (y sus fotos) y reemplaza al antiguo "área" de texto libre, que
+   * repetía lo mismo con otras palabras. Obligatoria al crear; queda opcional
+   * en el tipo porque las actividades anteriores a este cambio no la tienen.
    */
   specialty?: ProviderSpecialty;
   notes?: string;

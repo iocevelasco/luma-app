@@ -23,7 +23,7 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { Fab } from '@/components/common/fab';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -483,7 +483,15 @@ export function ProjectDocumentsPage() {
   const { data, isLoading, isError } = useProjectDocuments(projectId);
   const { can } = useProjectCapabilities(projectId);
 
-  const [categoryFilter, setCategoryFilter] = useState<string>(ALL);
+  // El resumen de la obra enlaza acá con `?category=render|plano`: llegar y
+  // ver todo mezclado obligaba a filtrar a mano lo que recién se tocó.
+  const [searchParams] = useSearchParams();
+  const requestedCategory = searchParams.get('category');
+  const [categoryFilter, setCategoryFilter] = useState<string>(
+    CATEGORY_ORDER.some((category) => category === requestedCategory) && requestedCategory
+      ? requestedCategory
+      : ALL,
+  );
   const [uploaderFilter, setUploaderFilter] = useState<string>(ALL);
   const [groupBy, setGroupBy] = useState<GroupBy>('category');
 

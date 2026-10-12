@@ -46,6 +46,24 @@ export const INVITABLE_PROJECT_ROLES: readonly InvitableProjectRole[] = [
 ] as const;
 
 /**
+ * Función de una persona dentro de la Empresa: personal administrativo, no
+ * obrero (eso es `CrewMember`). Reusa el vocabulario de los roles de obra para
+ * que la persona se llame igual en todos lados, pero **no es un permiso**:
+ * figurar acá como supervisor no da acceso a ninguna obra — el acceso se
+ * invita obra por obra.
+ *
+ * `cliente` queda afuera: quien paga no es parte de la Empresa, es parte de
+ * una obra puntual (ver `removeMember`, que lo deja intacto a propósito).
+ */
+export type CompanyStaffRole = Exclude<ProjectRole, 'cliente'>;
+
+export const COMPANY_STAFF_ROLES: readonly CompanyStaffRole[] = [
+  'gerente',
+  'supervisor',
+  'contador',
+] as const;
+
+/**
  * Las acciones que la app sabe gatear. El nombre es `recurso.verbo` y se lee
  * como la fila de la matriz del cliente que lo justifica.
  */

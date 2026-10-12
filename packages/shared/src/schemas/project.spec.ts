@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createProjectSchema, inviteClientSchema, renameOrganizationSchema } from './project.js';
+import {
+  createProjectSchema,
+  inviteClientSchema,
+  inviteMemberSchema,
+  renameOrganizationSchema,
+  updateOrganizationMemberSchema,
+} from './project.js';
 
 const validProject = {
   name: 'Baño 2do piso',
@@ -8,7 +14,6 @@ const validProject = {
   estimatedStartDate: '2026-09-01',
   estimatedEndDate: '2026-10-15',
   currency: 'ARS',
-  budgetType: 'cerrado' as const,
 };
 
 describe('createProjectSchema', () => {
@@ -16,9 +21,10 @@ describe('createProjectSchema', () => {
     expect(createProjectSchema.safeParse(validProject).success).toBe(true);
   });
 
-  it('rechaza budgetType fuera del enum: no hay default que lo tape', () => {
-    const result = createProjectSchema.safeParse({ ...validProject, budgetType: 'gratis' });
-    expect(result.success).toBe(false);
+  it('ignora un budgetType viejo en vez de rechazar la obra', () => {
+    const result = createProjectSchema.safeParse({ ...validProject, budgetType: 'cerrado' });
+    expect(result.success).toBe(true);
+    expect(result.success && 'budgetType' in result.data).toBe(false);
   });
 
   it('rechaza una fecha de entrega anterior al inicio', () => {
@@ -63,5 +69,39 @@ describe('renameOrganizationSchema', () => {
 
   it('acepta un nombre válido', () => {
     expect(renameOrganizationSchema.safeParse({ name: 'Obras Pérez' }).success).toBe(true);
+  });
+});
+
+describe('inviteMemberSchema', () => {
+  const valid = { email: 'Ana@Estudio.com', name: '  Ana Pérez ', staffRole: 'contador' as const };
+
+  it('acepta email, nombre y función, y los normaliza', () => {
+    const result = inviteMemberSchema.parse(valid);
+    expect(result).toEqual({ email: 'ana@estudio.com', name: 'Ana Pérez', staffRole: 'contador' });
+  });
+
+  it('exige el nombre', () => {
+    expect(inviteMemberSchema.safeParse({ ...valid, name: '   ' }).success).toBe(false);
+  });
+
+  it('exige la función: no hay default que la adivine', () => {
+    const { staffRole: _omitted, ...withoutRole } = valid;
+    expect(inviteMemberSchema.safeParse(withoutRole).success).toBe(false);
+  });
+
+  it('rechaza cliente: quien paga no es parte de la Empresa', () => {
+    expect(inviteMemberSchema.safeParse({ ...valid, staffRole: 'cliente' }).success).toBe(false);
+  });
+});
+
+describe('updateOrganizationMemberSchema', () => {
+  it('la función es opcional: corregir un nombre no obliga a inventarla', () => {
+    expect(updateOrganizationMemberSchema.safeParse({ name: 'Ana' }).success).toBe(true);
+  });
+
+  it('rechaza una función fuera del enum', () => {
+    expect(
+      updateOrganizationMemberSchema.safeParse({ name: 'Ana', staffRole: 'obrero' }).success,
+    ).toBe(false);
   });
 });

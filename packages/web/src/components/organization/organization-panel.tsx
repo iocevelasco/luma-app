@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  COMPANY_STAFF_ROLES,
   inviteMemberSchema,
   updateOrganizationMemberSchema,
   updateOrganizationSchema,
@@ -9,8 +10,8 @@ import {
   type UpdateOrganizationInput,
   type UpdateOrganizationMemberInput,
 } from '@luma/shared';
-import { Building2, Check, MailPlus, Pencil, UserMinus, UserPlus, X } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { Building2, Check, KeyRound, MailPlus, Pencil, UserMinus, X } from 'lucide-react';
+import { Controller, useForm, type Control, type FieldValues, type Path } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
@@ -25,15 +26,23 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormShell } from '@/components/common/form-shell';
+import { GrantAccessDialog } from '@/components/organization/grant-access-dialog';
+import { PersonRow } from '@/components/organization/person-row';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   useInviteMember,
   useMyOrganization,
@@ -103,17 +112,80 @@ export function OrganizationName() {
   );
 }
 
-function InviteMemberDialog() {
+/**
+ * Selector de la función de una persona en la Empresa. Es una etiqueta, no un
+ * permiso — el hint lo dice en el lugar donde se elige, porque "supervisor"
+ * suena a que ya puede entrar a las obras.
+ */
+function StaffRoleField<T extends FieldValues>({
+  control,
+  name,
+  id,
+  error,
+}: {
+  control: Control<T>;
+  name: Path<T>;
+  id: string;
+  error?: string;
+}) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id}>{t('team.staffRole')}</Label>
+      <Controller
+        control={control}
+        name={name}
+        render={({ field }) => (
+          <Select value={field.value ?? ''} onValueChange={field.onChange}>
+            <SelectTrigger id={id} className="w-full">
+              <SelectValue placeholder={t('team.staffRolePlaceholder')} />
+            </SelectTrigger>
+            <SelectContent>
+              {COMPANY_STAFF_ROLES.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {t(`project.role.${option}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      />
+      {error ? (
+        <p className="text-sm text-destructive">{error}</p>
+      ) : (
+        <p className="text-2xs text-muted-foreground">{t('team.staffRoleHint')}</p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Sumar a alguien del personal administrativo. Controlado desde afuera porque
+ * el botón de "sumar" es uno solo para todo el equipo (administración y obra) y
+ * vive en `TeamDirectory`.
+ */
+export function InviteMemberDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const setOpen = onOpenChange;
   const inviteMember = useInviteMember();
 
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
-  } = useForm<InviteMemberInput>({ resolver: zodResolver(inviteMemberSchema) });
+  } = useForm<InviteMemberInput>({
+    resolver: zodResolver(inviteMemberSchema),
+    defaultValues: { name: '', email: '', phone: '' },
+  });
 
   return (
     <Dialog
@@ -123,12 +195,6 @@ function InviteMemberDialog() {
         if (!next) reset();
       }}
     >
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <UserPlus className="size-4" />
-          {t('team.invite')}
-        </Button>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('team.inviteTitle')}</DialogTitle>
@@ -150,10 +216,26 @@ function InviteMemberDialog() {
           error={inviteMember.error}
         >
           <div className="flex flex-col gap-2">
+            <Label htmlFor="member-new-name">{t('team.name')}</Label>
+            <Input id="member-new-name" autoComplete="off" {...register('name')} />
+            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+          </div>
+          <div className="flex flex-col gap-2">
             <Label htmlFor="member-email">{t('team.inviteEmail')}</Label>
             <Input id="member-email" type="email" autoComplete="email" {...register('email')} />
             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="member-new-phone">{t('team.phone')}</Label>
+            <Input id="member-new-phone" type="tel" autoComplete="off" {...register('phone')} />
+            {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+          </div>
+          <StaffRoleField
+            control={control}
+            name="staffRole"
+            id="member-new-role"
+            error={errors.staffRole ? t('team.staffRoleRequired') : undefined}
+          />
         </FormShell>
       </DialogContent>
     </Dialog>
@@ -239,10 +321,11 @@ function EditMemberDialog({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<UpdateOrganizationMemberInput>({
     resolver: zodResolver(updateOrganizationMemberSchema),
-    defaultValues: { name: member.name },
+    defaultValues: { name: member.name, staffRole: member.staffRole, phone: member.phone ?? '' },
   });
 
   return (
@@ -267,6 +350,12 @@ function EditMemberDialog({
             <Input id="member-name" {...register('name')} />
             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
+          <StaffRoleField control={control} name="staffRole" id="member-role" />
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="member-phone">{t('team.phone')}</Label>
+            <Input id="member-phone" type="tel" autoComplete="off" {...register('phone')} />
+            {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+          </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="member-email-ro">{t('team.inviteEmail')}</Label>
             <Input id="member-email-ro" value={member.email} readOnly disabled />
@@ -279,86 +368,102 @@ function EditMemberDialog({
 }
 
 /**
- * Roster de la Empresa: quién trabaja conmigo. **No da acceso a ninguna obra**
- * — eso se invita obra por obra con su rol, desde la ficha de cada una (ver
- * `ProjectMembership`). Antes sí lo daba, cuando el Asistente de Obra era un
- * rol de Empresa y entraba a todas; la matriz de roles pidió lo contrario.
+ * El personal administrativo de la Empresa (gerente, supervisor, contador).
+ * **Pertenecer no da acceso a ninguna obra** — el acceso se da obra por obra con su rol (ver
+ * `ProjectMembership`), y desde acá se hace con "Dar acceso a obras", que
+ * invita a la persona a las obras que se tilden. Antes pertenecer sí lo daba,
+ * cuando el Asistente de Obra era un rol de Empresa y entraba a todas; la
+ * matriz de roles pidió lo contrario.
  *
  * Es el camino de alta (crea la cuenta y manda el mail de activación de alguien
  * que todavía no está en Luma) y también donde se corrige o se da de baja.
  */
-export function TeamSection() {
+export function StaffList() {
   const { t } = useTranslation();
   const { data } = useOrganizationMembers();
   const members = data?.members ?? [];
   const remove = useRemoveOrganizationMember();
   const resend = useResendMemberInvitation();
   const [editing, setEditing] = useState<OrganizationMemberSummary | null>(null);
+  const [granting, setGranting] = useState<OrganizationMemberSummary | null>(null);
   const [removing, setRemoving] = useState<OrganizationMemberSummary | null>(null);
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-surface">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h3 className="text-sm font-medium">{t('team.title')}</h3>
-          <p className="text-2xs text-muted-foreground">{t('team.hint')}</p>
-        </div>
-        <InviteMemberDialog />
-      </div>
+    <>
       {members.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('team.empty')}</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-3">
           {members.map((member) => (
-            <li
+            <PersonRow
               key={member.id}
-              className="flex flex-wrap items-center justify-between gap-2 text-sm"
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium">{member.name}</span>
+              name={member.name}
+              badges={
+                <>
+                  {member.staffRole && (
+                    <Badge variant="outline">{t(`project.role.${member.staffRole}`)}</Badge>
+                  )}
                   {member.pending && <Badge variant="secondary">{t('team.pending')}</Badge>}
-                </div>
-                <span className="text-muted-foreground">{member.email}</span>
-              </div>
-              <div className="flex gap-2">
-                {member.pending && (
+                </>
+              }
+              details={[
+                member.email,
+                member.phone ? (
+                  <a href={`tel:${member.phone}`} className="hover:text-foreground">
+                    {member.phone}
+                  </a>
+                ) : null,
+              ]}
+              actions={
+                <>
+                  {member.pending && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-sm"
+                      disabled={resend.isPending}
+                      onClick={() => resend.mutate(member.id)}
+                      aria-label={t('team.resend')}
+                    >
+                      <MailPlus className="size-4" />
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
                     size="icon-sm"
-                    disabled={resend.isPending}
-                    onClick={() => resend.mutate(member.id)}
-                    aria-label={t('team.resend')}
+                    onClick={() => setGranting(member)}
+                    aria-label={t('team.grantAccess')}
                   >
-                    <MailPlus className="size-4" />
+                    <KeyRound className="size-4" />
                   </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => setEditing(member)}
-                  aria-label={t('team.editTitle')}
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => setRemoving(member)}
-                  aria-label={t('team.removeFromCompany')}
-                >
-                  <UserMinus className="size-4" />
-                </Button>
-              </div>
-            </li>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    onClick={() => setEditing(member)}
+                    aria-label={t('team.editTitle')}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    onClick={() => setRemoving(member)}
+                    aria-label={t('team.removeFromCompany')}
+                  >
+                    <UserMinus className="size-4" />
+                  </Button>
+                </>
+              }
+            />
           ))}
         </ul>
       )}
 
       {editing && <EditMemberDialog member={editing} onClose={() => setEditing(null)} />}
+      {granting && <GrantAccessDialog member={granting} onClose={() => setGranting(null)} />}
 
       <AlertDialog open={Boolean(removing)} onOpenChange={(open) => !open && setRemoving(null)}>
         <AlertDialogContent>
@@ -381,6 +486,6 @@ export function TeamSection() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }

@@ -96,10 +96,18 @@ export function FormShell({
         `sticky bottom-0` y no `fixed`: pegado al pie del contenedor, no al del
         viewport. Adentro del drawer, un `fixed` se saldría del panel y
         quedaría flotando sobre la página de atrás.
+
+        En `embedded` NO es sticky: ahí el cuerpo ya scrollea por su cuenta y
+        el pie es un hijo más de la columna, así que queda abajo sin ayuda. Y
+        `sticky` rompe en los diálogos: el navegador lo calcula antes del
+        `translate-y-[-50%]` que centra el diálogo, así que cuando éste supera
+        la mitad del alto de la pantalla el pie se sube y tapa los últimos
+        campos.
       */}
       <div
         className={cn(
-          'sticky bottom-0 z-10 flex flex-col gap-3 border-t border-border',
+          'z-10 flex flex-col gap-3 border-t border-border',
+          variant === 'embedded' ? 'relative' : 'sticky bottom-0',
           variant === 'bare' ? 'bg-background py-4' : 'bg-card',
           variant === 'page' && 'mt-4 -mx-6 px-6 py-4',
           variant === 'embedded' && 'p-4',

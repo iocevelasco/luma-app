@@ -4,9 +4,12 @@
  * al de auth.
  */
 
-import type { Capability, InvitableProjectRole, ProjectRole } from '../permissions/index.js';
-
-export type BudgetType = 'cerrado' | 'abierto' | 'con_margen';
+import type {
+  Capability,
+  CompanyStaffRole,
+  InvitableProjectRole,
+  ProjectRole,
+} from '../permissions/index.js';
 
 export type ProjectStatus = 'active' | 'archived';
 
@@ -49,7 +52,6 @@ export interface Project {
   estimatedStartDate: string;
   estimatedEndDate: string;
   currency: string;
-  budgetType: BudgetType;
   status: ProjectStatus;
   /**
    * Si el cliente final ve el directorio de proveedores de esta obra y quién
@@ -113,8 +115,19 @@ export interface ProjectMemberSummary {
   createdAt: string;
 }
 
+/**
+ * Una obra en el listado, con qué puede hacer acá quien lo pide. Sale resuelto
+ * del server por la misma grilla que `ProjectDetail`: quien necesite saber en
+ * qué obras puede invitar (la Empresa, para dar acceso) no tiene que abrir
+ * cada una ni derivarlo del rol.
+ */
+export interface ProjectListItem extends Project {
+  role: ProjectRole;
+  capabilities: Capability[];
+}
+
 export interface ProjectListResponse {
-  projects: Project[];
+  projects: ProjectListItem[];
 }
 
 export interface ProjectDetailResponse {
@@ -150,6 +163,10 @@ export interface OrganizationMemberSummary {
   email: string;
   name: string;
   role: OrganizationRole;
+  /** Su función en la Empresa. Ausente en quien se sumó antes de que se pidiera. */
+  staffRole?: CompanyStaffRole;
+  /** Teléfono que la Empresa tiene de esta persona. Vive en el vínculo, no en su cuenta. */
+  phone?: string;
   /** Todavía no activó la cuenta: se le puede reenviar la invitación. */
   pending: boolean;
   createdAt: string;

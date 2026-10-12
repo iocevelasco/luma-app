@@ -44,7 +44,7 @@ function mockActivity(overrides: Record<string, unknown> = {}) {
     _id: 'activity-1',
     project: 'project-1',
     name: 'Revoque',
-    area: 'Planta alta',
+    specialty: 'albanileria',
     startDate: '2026-09-01',
     endDate: '2026-09-05',
     responsible: { name: 'Juan' },

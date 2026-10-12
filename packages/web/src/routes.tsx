@@ -35,14 +35,11 @@ const AdminHomePage = lazy(() =>
 const AccountSettingsPage = lazy(() =>
   import('./pages/account-settings').then((m) => ({ default: m.AccountSettingsPage })),
 );
-const CompanyPage = lazy(() =>
-  import('./pages/company').then((m) => ({ default: m.CompanyPage })),
+const EmployeesPage = lazy(() =>
+  import('./pages/employees').then((m) => ({ default: m.EmployeesPage })),
 );
 const ProvidersDirectoryPage = lazy(() =>
   import('./pages/providers-directory').then((m) => ({ default: m.ProvidersDirectoryPage })),
-);
-const CrewDirectoryPage = lazy(() =>
-  import('./pages/crew-directory').then((m) => ({ default: m.CrewDirectoryPage })),
 );
 const ProjectNewPage = lazy(() =>
   import('./pages/projects/project-new').then((m) => ({ default: m.ProjectNewPage })),
@@ -135,12 +132,13 @@ export function AppRoutes() {
             path={ROUTES.ACCOUNT_SETTINGS}
             element={<LazyRoute><AccountSettingsPage /></LazyRoute>}
           />
-          <Route path={ROUTES.COMPANY} element={<LazyRoute><CompanyPage /></LazyRoute>} />
+          {/* Empresa se unificó con Empleados; los datos de la Empresa están en la cuenta. */}
+          <Route path={ROUTES.COMPANY} element={<Navigate to={ROUTES.CREW} replace />} />
           <Route
             path={ROUTES.PROVIDERS}
             element={<LazyRoute><ProvidersDirectoryPage /></LazyRoute>}
           />
-          <Route path={ROUTES.CREW} element={<LazyRoute><CrewDirectoryPage /></LazyRoute>} />
+          <Route path={ROUTES.CREW} element={<LazyRoute><EmployeesPage /></LazyRoute>} />
           <Route path={ROUTES.PROJECT_NEW} element={<LazyRoute><ProjectNewPage /></LazyRoute>} />
           <Route
             path={ROUTES.PROJECT_DETAIL}

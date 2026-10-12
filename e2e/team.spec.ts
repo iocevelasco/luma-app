@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
+import { pickActivitySpecialty } from './helpers/activity';
 
 /**
  * Flujo del Supervisor de obra: se invita **a una obra puntual**, no a la
@@ -46,8 +47,6 @@ test.describe('Supervisor de obra', () => {
     await page.locator('#estimatedEndDate').fill('2026-12-15');
     await page.locator('#currency').click();
     await page.getByRole('option', { name: 'ARS' }).click();
-    await page.locator('#budgetType').click();
-    await page.getByRole('option', { name: /cerrado/i }).click();
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
@@ -56,7 +55,7 @@ test.describe('Supervisor de obra', () => {
     await page.goto(`${projectUrl}/actividades`);
     await page.getByRole('button', { name: /nueva actividad/i }).click();
     await page.locator('#activity-name').fill(ACTIVITY_NAME);
-    await page.locator('#activity-area').fill('Planta alta');
+    await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill('2026-09-05');
     await page.locator('#activity-end').fill('2026-09-10');
     await page.locator('#activity-responsible').fill('Cuadrilla 1');

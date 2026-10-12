@@ -24,8 +24,6 @@ import { ROUTES } from '@/lib/routes';
  */
 const CURRENCY_OPTIONS = ['ARS', 'USD', 'MXN', 'COP', 'CLP', 'PEN'];
 
-const BUDGET_TYPES = ['cerrado', 'abierto', 'con_margen'] as const;
-
 /**
  * Separador con título entre bloques del formulario. Es un `<h2>` y no un
  * `<p>` con estilo: para quien navega con lector de pantalla, la estructura
@@ -153,31 +151,6 @@ export function ProjectNewPage() {
             />
             {errors.currency && (
               <p className="text-sm text-destructive">{errors.currency.message}</p>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="budgetType">{t('project.fields.budgetType')}</Label>
-            <Controller
-              control={control}
-              name="budgetType"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="budgetType">
-                    <SelectValue placeholder={t('project.fields.budgetTypePlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BUDGET_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {t(`project.budgetType.${type}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.budgetType && (
-              <p className="text-sm text-destructive">{errors.budgetType.message}</p>
             )}
           </div>
         </div>

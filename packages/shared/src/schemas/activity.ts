@@ -65,12 +65,11 @@ export const createActivitySchema = z
       .trim()
       .min(1, 'El nombre es obligatorio')
       .max(120, 'El nombre es demasiado largo'),
-    area: z.string().trim().min(1, 'El área es obligatoria').max(120, 'Es demasiado largo'),
     startDate: dayKeySchema,
     endDate: dayKeySchema,
     responsible: activityResponsibleSchema,
     status: activityStatusSchema.default('pendiente'),
-    specialty: activitySpecialtySchema.optional(),
+    specialty: activitySpecialtySchema,
     notes: z.string().trim().max(2000, 'Es demasiado largo').optional(),
   })
   .refine((data) => data.endDate >= data.startDate, {
@@ -81,7 +80,6 @@ export const createActivitySchema = z
 export const updateActivitySchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
-    area: z.string().trim().min(1).max(120).optional(),
     startDate: dayKeySchema.optional(),
     endDate: dayKeySchema.optional(),
     responsible: activityResponsibleSchema.optional(),

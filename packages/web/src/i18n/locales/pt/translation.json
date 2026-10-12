@@ -28,9 +28,8 @@
     "projects": "Obras",
     "openMenu": "Abrir menu",
     "closeMenu": "Fechar menu",
-    "company": "Empresa",
-    "providers": "Fornecedores",
-    "crew": "Funcionários"
+    "crew": "Funcionários",
+    "providers": "Fornecedores"
   },
   "userMenu": {
     "account": "Minha conta",
@@ -46,8 +45,7 @@
       "columns": {
         "name": "Obra",
         "location": "Localização",
-        "dates": "Datas",
-        "budgetType": "Orçamento"
+        "dates": "Datas"
       }
     },
     "new": {
@@ -68,19 +66,12 @@
       "startDate": "Início estimado",
       "endDate": "Entrega estimada",
       "currency": "Moeda",
-      "currencyPlaceholder": "Escolha uma moeda",
-      "budgetType": "Tipo de orçamento",
-      "budgetTypePlaceholder": "Escolha um tipo"
-    },
-    "budgetType": {
-      "cerrado": "Fechado",
-      "abierto": "Aberto",
-      "con_margen": "Com margem de variação"
+      "currencyPlaceholder": "Escolha uma moeda"
     },
     "nav": {
       "detail": "Detalhe",
       "gantt": "Cronograma",
-      "materials": "Materiais",
+      "materials": "Compras",
       "labor": "Pessoal",
       "providers": "Fornecedores",
       "budget": "Orçamento",
@@ -103,10 +94,16 @@
     "dashboard": {
       "progress": "Avanço geral",
       "progressCount": "{{completed}} de {{total}} atividades",
-      "pendingTasks": "Tarefas pendentes",
+      "workPlan": "Plano de trabalho",
       "noPendingTasks": "Não há tarefas pendentes.",
-      "materials": "Materiais",
-      "noMaterialsPending": "Não há materiais pendentes.",
+      "purchases": "Compras realizadas",
+      "noPurchases": "Nenhum material foi comprado ainda.",
+      "toBuy_one": "{{count}} material para comprar",
+      "toBuy_other": "{{count}} materiais para comprar",
+      "noDocuments": {
+        "render": "Você ainda não carregou renders.",
+        "plano": "Você ainda não carregou plantas."
+      },
       "labor": "Pessoal",
       "noActivitiesToday": "Não há atividades programadas para hoje.",
       "laborCount": "presentes",
@@ -266,13 +263,17 @@
     },
     "fields": {
       "name": "Nome",
-      "area": "Área",
       "startDate": "Início",
       "endDate": "Fim",
       "responsible": "Responsável",
       "status": "Status",
-      "specialty": "Especialidade (opcional)",
-      "specialtyPlaceholder": "Sem especialidade",
+      "specialty": "Especialidade",
+      "specialtyPlaceholder": "Escolha uma especialidade",
+      "specialtyRequired": "Escolha uma especialidade.",
+      "responsiblePlaceholder": "Escolha um funcionário",
+      "responsibleMe": "{{name}} (você)",
+      "responsibleRequired": "Escolha quem é o responsável.",
+      "responsibleEmpty": "Ainda não há funcionários cadastrados. Adicione-os em Funcionários.",
       "notes": "Notas (opcional)"
     },
     "status": {
@@ -314,6 +315,7 @@
       "editTitle": "Editar atividade",
       "materials": "Materiais associados",
       "noMaterials": "Não há materiais associados a esta atividade.",
+      "noSpecialty": "Sem especialidade",
       "providers": "Fornecedores atribuídos",
       "noProviders": "Você ainda não atribuiu fornecedores a esta atividade.",
       "assignProvider": "Atribuir",
@@ -328,8 +330,20 @@
   },
   "material": {
     "list": {
-      "navLink": "Materiais",
-      "title": "Materiais",
+      "navLink": "Compras",
+      "title": "Compras",
+      "toBuy": "Para comprar",
+      "toBuyEmpty": "Não há nada para comprar.",
+      "bought": "Comprados",
+      "boughtEmpty": "Nada foi comprado ainda.",
+      "onTheWay": "Comprados, ainda não chegaram",
+      "onSite": "Já na obra",
+      "startsOn": "Começa em {{date}}",
+      "startsToday": "Começa hoje",
+      "startsInDays_one": "Começa em {{count}} dia",
+      "startsInDays_other": "Começa em {{count}} dias",
+      "startedAlready": "Já começou",
+      "changeStatus": "Mudar status",
       "newTitle": "Adicionar material",
       "newSubmit": "Adicionar",
       "created": "Material adicionado",
@@ -352,6 +366,11 @@
       "activityPlaceholder": "Sem atividade associada",
       "estimatedCost": "Custo estimado (opcional)",
       "supplier": "Fornecedor (opcional)"
+    },
+    "action": {
+      "solicitado": "Marcar solicitado",
+      "comprado": "Marcar comprado",
+      "en_obra": "Chegou à obra"
     },
     "status": {
       "pendiente": "Pendente",
@@ -677,10 +696,11 @@
     }
   },
   "team": {
-    "title": "Equipe da Empresa",
-    "hint": "Pertencer à Empresa não dá acesso a nenhuma obra. O acesso é convidado obra a obra, com seu papel.",
+    "groupStaff": "Administração",
+    "groupCrew": "Obra",
+    "addStaff": "Adicionar pessoal administrativo",
+    "addCrew": "Adicionar pessoal de obra",
     "empty": "Você ainda não adicionou ninguém à sua Empresa.",
-    "invite": "Adicionar à equipe",
     "inviteTitle": "Adicionar alguém à Empresa",
     "inviteEmail": "E-mail",
     "inviteSubmit": "Adicionar",
@@ -694,6 +714,21 @@
     "editTitle": "Editar integrante",
     "name": "Nome",
     "emailReadOnly": "O e-mail é a identidade da pessoa no Luma e não é alterado daqui.",
+    "phone": "Telefone (opcional)",
+    "staffRole": "Papel na Empresa",
+    "staffRolePlaceholder": "Escolha um papel",
+    "staffRoleHint": "É a função dela na Empresa. Para que entre em uma obra, use «Dar acesso às obras» na linha dela.",
+    "staffRoleRequired": "Escolha um papel.",
+    "grantAccess": "Dar acesso às obras",
+    "grantTitle": "Dar acesso a {{name}}",
+    "grantRole": "Papel na obra",
+    "grantProjects": "Obras",
+    "grantNoProjects": "Você não tem obras onde possa dar acesso.",
+    "grantNoneSelected": "Escolha ao menos uma obra.",
+    "grantSubmit": "Dar acesso",
+    "grantFailed": "Não conseguimos dar acesso a: {{projects}}.",
+    "grantDone_one": "Você deu acesso a {{count}} obra.",
+    "grantDone_other": "Você deu acesso a {{count}} obras.",
     "pending": "Não ativado",
     "resend": "Reenviar convite",
     "removeFromCompany": "Remover da equipe",

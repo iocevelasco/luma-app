@@ -34,8 +34,15 @@ function TextCell({ row }: { row: unknown }) {
   return <TruncatedText text={(row as GanttTaskRow).activity.name} />;
 }
 
-function AreaCell({ row }: { row: unknown }) {
-  return <TruncatedText text={(row as GanttTaskRow).activity.area} />;
+function SpecialtyCell({ row }: { row: unknown }) {
+  const { t } = useTranslation();
+  const { specialty } = (row as GanttTaskRow).activity;
+  // TruncatedText recibe un string; no se puede pasar <SpecialtyLabel />.
+  return (
+    <TruncatedText
+      text={specialty ? t(`provider.specialty.${specialty}`) : t('activity.detail.noSpecialty')}
+    />
+  );
 }
 
 function ResponsibleCell({ row }: { row: unknown }) {
@@ -91,7 +98,7 @@ export function ActivityGantt({
   const columns: IColumnConfig[] = useMemo(
     () => [
       { id: 'text', header: t('activity.fields.name'), width: 180, flexgrow: 1, cell: TextCell },
-      { id: 'area', header: t('activity.fields.area'), width: 120, cell: AreaCell },
+      { id: 'specialty', header: t('activity.fields.specialty'), width: 140, cell: SpecialtyCell },
       { id: 'responsible', header: t('activity.fields.responsible'), width: 140, cell: ResponsibleCell },
       { id: 'status', header: t('activity.fields.status'), width: 140, cell: StatusCell },
     ],

@@ -6,7 +6,8 @@ import {
   type MaterialItem,
   type MaterialStatus,
 } from '@luma/shared';
-import { Copy, Plus, Share2 } from 'lucide-react';
+import { differenceInCalendarDays, format } from 'date-fns';
+import { Copy, MoreHorizontal, Plus, Share2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -21,10 +22,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { fromDayKey } from '@/components/common/date-range-filter';
+import { Fab } from '@/components/common/fab';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -41,9 +51,30 @@ import {
   useUpdateMaterial,
 } from '@/hooks/materials/use-material-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
+import { useDateLocale } from '@/hooks/use-date-locale';
+import { cn } from '@/lib/utils';
 
 const MATERIAL_UNITS = ['un', 'm', 'm2', 'm3', 'kg', 'l', 'bolsa', 'rollo', 'global'] as const;
 const MATERIAL_STATUSES: MaterialStatus[] = ['pendiente', 'solicitado', 'comprado', 'en_obra'];
+
+/**
+ * El paso siguiente de cada material. El camino es lineal —se pide, se
+ * compra, llega— y casi todos los cambios de estado son "el que sigue": un
+ * botón con el nombre de lo que va a pasar, en vez de un selector con los
+ * cuatro estados donde hay que saber cuál elegir. Los demás cambios (volver
+ * atrás, corregir) quedan en el menú.
+ */
+const NEXT_STATUS: Partial<Record<MaterialStatus, MaterialStatus>> = {
+  pendiente: 'solicitado',
+  solicitado: 'comprado',
+  comprado: 'en_obra',
+};
+
+/** Qué está por comprar y qué ya se compró: las dos bolsas de la pantalla. */
+const TO_BUY: ReadonlySet<MaterialStatus> = new Set(['pendiente', 'solicitado']);
+
+/** Faltan hasta tantos días para que una actividad empiece y se marca como urgente. */
+const URGENT_WITHIN_DAYS = 7;
 
 function copyText(text: string) {
   if (typeof navigator.clipboard === 'object' && typeof navigator.clipboard.writeText === 'function') {
@@ -204,43 +235,72 @@ function MaterialRow({
   material,
   projectId,
   canEdit,
+  activityName,
 }: {
   material: MaterialItem;
   projectId: string;
   canEdit: boolean;
+  /** Sólo donde la fila no está bajo el encabezado de su actividad. */
+  activityName?: string;
 }) {
   const { t } = useTranslation();
   const updateMaterial = useUpdateMaterial(projectId);
   const [pendingStatus, setPendingStatus] = useState<MaterialStatus | null>(null);
+  const next = NEXT_STATUS[material.status];
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm last:border-b-0">
-      <div>
+    <li className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+      <div className="min-w-0">
         <p className="font-medium">{material.name}</p>
         <p className="text-muted-foreground">
           {material.quantity} {t(`material.unit.${material.unit}`)}
           {material.supplier ? ` · ${material.supplier}` : ''}
+          {activityName ? ` · ${activityName}` : ''}
         </p>
       </div>
-      {canEdit ? (
-        <Select
-          value={material.status}
-          onValueChange={(value) => setPendingStatus(value as MaterialStatus)}
+
+      <div className="flex items-center gap-2">
+        {/*
+          Rojo sólo lo que todavía no se pidió: eso es lo que puede frenar una
+          actividad. Lo ya solicitado está en camino, y pintarlo igual que lo
+          que nadie encargó borra la diferencia entre "hay que hacer algo" y
+          "hay que esperar".
+        */}
+        <Badge
+          variant={material.status === 'pendiente' ? 'destructive' : 'secondary'}
+          className={cn(material.status === 'solicitado' && 'bg-warning text-warning-foreground')}
         >
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {MATERIAL_STATUSES.map((status) => (
-              <SelectItem key={status} value={status}>
-                {t(`material.status.${status}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : (
-        <span className="text-muted-foreground">{t(`material.status.${material.status}`)}</span>
-      )}
+          {t(`material.status.${material.status}`)}
+        </Badge>
+
+        {canEdit && next && (
+          <Button type="button" variant="outline" size="sm" onClick={() => setPendingStatus(next)}>
+            {t(`material.action.${next}`)}
+          </Button>
+        )}
+
+        {canEdit && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t('material.list.changeStatus')}
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {MATERIAL_STATUSES.filter((status) => status !== material.status).map((status) => (
+                <DropdownMenuItem key={status} onSelect={() => setPendingStatus(status)}>
+                  {t(`material.status.${status}`)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
 
       <AlertDialog open={pendingStatus !== null} onOpenChange={(open) => !open && setPendingStatus(null)}>
         <AlertDialogContent>
@@ -272,10 +332,73 @@ function MaterialRow({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </li>
+  );
+}
+
+/** Los materiales que necesita una misma actividad, con cuándo empieza. */
+function ToBuyGroup({
+  name,
+  startDate,
+  materials,
+  projectId,
+  canEdit,
+}: {
+  /** `null` = materiales sin actividad. */
+  name: string | null;
+  startDate?: string;
+  materials: MaterialItem[];
+  projectId: string;
+  canEdit: boolean;
+}) {
+  const { t } = useTranslation();
+  const dateLocale = useDateLocale();
+
+  const days = startDate ? differenceInCalendarDays(fromDayKey(startDate), new Date()) : null;
+  const urgent = days !== null && days <= URGENT_WITHIN_DAYS;
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
+        <p className="text-sm font-medium">{name ?? t('material.list.withoutActivity')}</p>
+        {startDate && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>
+              {t('material.list.startsOn', {
+                date: format(fromDayKey(startDate), 'PP', { locale: dateLocale }),
+              })}
+            </span>
+            {urgent && (
+              <Badge variant={days! < 0 ? 'destructive' : 'default'} className={cn(days! >= 0 && 'bg-warning text-warning-foreground')}>
+                {days! < 0
+                  ? t('material.list.startedAlready')
+                  : days === 0
+                    ? t('material.list.startsToday')
+                    : t('material.list.startsInDays', { count: days! })}
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+      <ul className="flex flex-col divide-y divide-border">
+        {materials.map((material) => (
+          <MaterialRow key={material.id} material={material} projectId={projectId} canEdit={canEdit} />
+        ))}
+      </ul>
     </div>
   );
 }
 
+/**
+ * Compras de la obra: lo que falta comprar y lo que ya se compró.
+ *
+ * Son las dos preguntas de quien maneja la obra, y los cuatro estados del
+ * material (pendiente, solicitado, comprado, en obra) son el camino entre una
+ * y la otra. Lo que falta se ordena por cuándo lo necesita cada actividad, no
+ * por estado: lo que frena el lunes va arriba aunque se haya cargado último.
+ * Lo comprado separa lo que todavía no llegó de lo que ya está en obra, que es
+ * lo que se pregunta quien está en el sitio.
+ */
 export function ProjectMaterialsPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
@@ -286,30 +409,54 @@ export function ProjectMaterialsPage() {
   // Dueño o Asistente de Obra — ambos gestionan materiales operativamente.
   const isEditor = Boolean(projectData?.project.isEditor);
 
-  const activityNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const activity of activitiesData?.activities ?? []) map.set(activity.id, activity.name);
+  const activityById = useMemo(() => {
+    const map = new Map<string, { name: string; startDate: string }>();
+    for (const activity of activitiesData?.activities ?? []) {
+      map.set(activity.id, { name: activity.name, startDate: activity.startDate });
+    }
     return map;
   }, [activitiesData]);
 
-  const grouped = useMemo(() => {
-    const result: Record<MaterialStatus, MaterialItem[]> = {
-      pendiente: [],
-      solicitado: [],
-      comprado: [],
-      en_obra: [],
-    };
-    for (const material of materialsData?.materials ?? []) {
-      result[material.status].push(material);
+  const { toBuy, toBuyGroups, onTheWay, onSite } = useMemo(() => {
+    const materials = materialsData?.materials ?? [];
+    const changedAt = (m: MaterialItem) => m.statusChangedAt ?? m.updatedAt;
+    const newestFirst = (a: MaterialItem, b: MaterialItem) => changedAt(b).localeCompare(changedAt(a));
+
+    const toBuy = materials.filter((m) => TO_BUY.has(m.status));
+
+    // Por actividad, la que empieza antes primero; sin actividad, al final.
+    const byActivity = new Map<string | null, MaterialItem[]>();
+    for (const material of toBuy) {
+      const key = material.activityId && activityById.has(material.activityId) ? material.activityId : null;
+      byActivity.set(key, [...(byActivity.get(key) ?? []), material]);
     }
-    return result;
-  }, [materialsData]);
+    const toBuyGroups = [...byActivity.entries()]
+      .map(([activityId, items]) => ({
+        activityId,
+        activity: activityId ? activityById.get(activityId)! : null,
+        // Lo que nadie pidió todavía, antes que lo ya solicitado.
+        items: [...items].sort(
+          (a, b) => Number(a.status === 'solicitado') - Number(b.status === 'solicitado'),
+        ),
+      }))
+      .sort((a, b) => {
+        if (!a.activity) return 1;
+        if (!b.activity) return -1;
+        return a.activity.startDate.localeCompare(b.activity.startDate);
+      });
+
+    return {
+      toBuy,
+      toBuyGroups,
+      onTheWay: materials.filter((m) => m.status === 'comprado').sort(newestFirst),
+      onSite: materials.filter((m) => m.status === 'en_obra').sort(newestFirst),
+    };
+  }, [materialsData, activityById]);
 
   function buildCopyText(): string {
-    const items = (materialsData?.materials ?? []).filter(
-      (m) => m.status === 'pendiente' || m.status === 'solicitado',
-    );
-    return items.map((m) => `- ${m.name}: ${m.quantity} ${t(`material.unit.${m.unit}`)}`).join('\n');
+    return toBuy
+      .map((m) => `- ${m.name}: ${m.quantity} ${t(`material.unit.${m.unit}`)}`)
+      .join('\n');
   }
 
   async function handleCopy() {
@@ -335,69 +482,121 @@ export function ProjectMaterialsPage() {
   if (isLoading || !materialsData) return <RouteLoading />;
 
   const canShare = typeof navigator.share === 'function';
+  const total = materialsData.materials.length;
+  const boughtCount = onTheWay.length + onSite.length;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-3 md:p-4">
-      <div className="flex flex-row flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-medium">{t('material.list.title')}</h3>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            <Copy className="size-4" />
-            {t('material.list.copyList')}
-          </Button>
-          {canShare && (
-            <Button variant="outline" size="sm" onClick={handleShare}>
-              <Share2 className="size-4" />
-              {t('material.list.share')}
-            </Button>
-          )}
-          {isEditor && <NewMaterialDrawer projectId={projectId!} />}
-        </div>
-      </div>
+      {/* Sin título: la sección ya se llama así en el menú y en el encabezado. */}
+      {isEditor && (
+        <Fab>
+          <NewMaterialDrawer projectId={projectId!} />
+        </Fab>
+      )}
 
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-6">
-          {MATERIAL_STATUSES.map((status) => {
-            const items = grouped[status];
-            if (items.length === 0) return null;
-            const withActivity = items.filter((m) => m.activityId);
-            const withoutActivity = items.filter((m) => !m.activityId);
-            return (
-              <div key={status} className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium">
-                  {t(`material.status.${status}`)} ({items.length})
-                </h3>
-                {withActivity.map((material) => (
-                  <div key={material.id}>
-                    <p className="text-xs text-muted-foreground">
-                      {activityNameById.get(material.activityId!) ?? ''}
-                    </p>
-                    <MaterialRow material={material} projectId={projectId!} canEdit={isEditor} />
-                  </div>
+      {total === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('material.list.empty')}</p>
+      ) : (
+        <>
+          <section
+            aria-labelledby="materials-to-buy"
+            className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 id="materials-to-buy" className="text-sm font-medium">
+                {t('material.list.toBuy')} ({toBuy.length})
+              </h4>
+              {toBuy.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={handleCopy}>
+                    <Copy className="size-4" />
+                    {t('material.list.copyList')}
+                  </Button>
+                  {canShare && (
+                    <Button variant="outline" size="sm" onClick={handleShare}>
+                      <Share2 className="size-4" />
+                      {t('material.list.share')}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {toBuyGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('material.list.toBuyEmpty')}</p>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {toBuyGroups.map((group) => (
+                  <ToBuyGroup
+                    key={group.activityId ?? 'none'}
+                    name={group.activity?.name ?? null}
+                    startDate={group.activity?.startDate}
+                    materials={group.items}
+                    projectId={projectId!}
+                    canEdit={isEditor}
+                  />
                 ))}
-                {withoutActivity.length > 0 && (
-                  <div className="flex flex-col gap-1 rounded-lg border border-dashed p-2">
-                    <p className="text-xs text-muted-foreground">
-                      {t('material.list.withoutActivity')}
+              </div>
+            )}
+          </section>
+
+          <section
+            aria-labelledby="materials-bought"
+            className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
+          >
+            <h4 id="materials-bought" className="text-sm font-medium">
+              {t('material.list.bought')} ({boughtCount})
+            </h4>
+
+            {boughtCount === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('material.list.boughtEmpty')}</p>
+            ) : (
+              <>
+                {onTheWay.length > 0 && (
+                  <div className="flex flex-col">
+                    <p className="border-b border-border pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {t('material.list.onTheWay')} ({onTheWay.length})
                     </p>
-                    {withoutActivity.map((material) => (
-                      <MaterialRow
-                        key={material.id}
-                        material={material}
-                        projectId={projectId!}
-                        canEdit={isEditor}
-                      />
-                    ))}
+                    <ul className="flex flex-col divide-y divide-border">
+                      {onTheWay.map((material) => (
+                        <MaterialRow
+                          key={material.id}
+                          material={material}
+                          projectId={projectId!}
+                          canEdit={isEditor}
+                          activityName={
+                            material.activityId ? activityById.get(material.activityId)?.name : undefined
+                          }
+                        />
+                      ))}
+                    </ul>
                   </div>
                 )}
-              </div>
-            );
-          })}
-          {materialsData.materials.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t('material.list.empty')}</p>
-          )}
-        </div>
-      </div>
+                {onSite.length > 0 && (
+                  <div className="flex flex-col">
+                    <p className="border-b border-border pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {t('material.list.onSite')} ({onSite.length})
+                    </p>
+                    <ul className="flex flex-col divide-y divide-border">
+                      {onSite.map((material) => (
+                        <MaterialRow
+                          key={material.id}
+                          material={material}
+                          projectId={projectId!}
+                          canEdit={isEditor}
+                          activityName={
+                            material.activityId ? activityById.get(material.activityId)?.name : undefined
+                          }
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }

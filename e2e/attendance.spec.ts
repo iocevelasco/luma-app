@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
+import { pickActivitySpecialty } from './helpers/activity';
 
 /**
  * Asistencia del día contra la cuadrilla asignada: lo que la vista vieja no
@@ -37,8 +38,6 @@ test.describe('asistencia contra la cuadrilla', () => {
     await page.locator('#estimatedEndDate').fill('2027-12-15');
     await page.locator('#currency').click();
     await page.getByRole('option', { name: 'ARS' }).click();
-    await page.locator('#budgetType').click();
-    await page.getByRole('option', { name: /cerrado/i }).click();
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
@@ -47,7 +46,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     const today = new Date();
     await page.getByRole('button', { name: /nueva actividad/i }).click();
     await page.locator('#activity-name').fill(activityName);
-    await page.locator('#activity-area').fill('Planta alta');
+    await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill(toDayKey(today));
     await page
       .locator('#activity-end')

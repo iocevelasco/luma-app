@@ -103,7 +103,7 @@ export interface ActivityProvidersResponse {
 export interface ProviderActivitySummary {
   id: string;
   name: string;
-  area: string;
+  specialty?: ProviderSpecialty;
   startDate: string;
   endDate: string;
   status: ActivityStatus;

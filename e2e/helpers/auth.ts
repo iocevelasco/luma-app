@@ -45,7 +45,11 @@ export async function loginAsUser(page: Page) {
   await loginWith(page, requireEnv('E2E_USER_EMAIL'), requireEnv('E2E_USER_PASSWORD'));
 }
 
-/** Autoservicio: crea una cuenta nueva desde `/register`. Deja a la persona en /check-email. */
+/**
+ * Autoservicio: crea una cuenta nueva desde `/register`. Deja a la persona en
+ * /check-email, o en /login si el backend corre con
+ * `REQUIRE_EMAIL_VERIFICATION=false` (cuenta ya verificada, sin mail).
+ */
 export async function registerWith(page: Page, name: string, email: string, password: string) {
   await page.goto(appUrl('/register'));
   await page.locator('#name').fill(name);
@@ -53,5 +57,7 @@ export async function registerWith(page: Page, name: string, email: string, pass
   await page.locator('#password').fill(password);
   await page.locator('#confirmPassword').fill(password);
   await page.getByRole('button', { name: /crear cuenta/i }).click();
-  await page.waitForURL((url) => url.pathname.includes('/check-email'), { timeout: 15_000 });
+  await page.waitForURL((url) => /\/(check-email|login)$/.test(url.pathname), {
+    timeout: 15_000,
+  });
 }

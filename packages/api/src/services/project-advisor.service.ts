@@ -52,7 +52,6 @@ function buildTools(projectId: mongoose.Types.ObjectId) {
         return JSON.stringify({
           nombre: project.name,
           ubicacion: project.location,
-          tipoPresupuesto: project.budgetType,
           fechaInicioEstimada: project.estimatedStartDate,
           fechaFinEstimada: project.estimatedEndDate,
           moneda: project.currency,
@@ -100,7 +99,7 @@ function buildTools(projectId: mongoose.Types.ObjectId) {
           },
           atrasadas: atrasadas.map((activity) => ({
             nombre: activity.name,
-            area: activity.area,
+            especialidad: activity.specialty,
             fechaFin: activity.endDate,
             responsable: activity.responsible.name,
           })),
