@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loginWith, registerWith } from './helpers/auth';
+import { appUrl, loginWith, registerWith } from './helpers/auth';
 
 /**
  * Estos tests registran sus propias cuentas: `storageState` se limpia por
@@ -37,10 +37,9 @@ test.describe('empresa, obra e invitación del cliente', () => {
     await expect(page).toHaveURL(/\/admin$/);
 
     // Empresa personal auto-creada, nombrada como la persona — y editable.
-    // Vive en su propia pantalla, no al final de la home: ahí quedaba debajo
-    // del listado de obras y con unas cuantas había que scrollear.
-    await page.getByTestId('nav-company').click();
-    await expect(page).toHaveURL(/\/admin\/empresa$/);
+    // Vive en la configuración de la cuenta: se toca una vez, no es una
+    // pantalla de uso diario.
+    await page.goto(appUrl('/admin/settings/account'));
     await expect(page.locator('#org-name')).toHaveValue(OWNER_NAME);
     await page.locator('#org-name').fill(NEW_ORG_NAME);
     await page.getByRole('button', { name: /^guardar$/i }).click();
@@ -60,8 +59,6 @@ test.describe('empresa, obra e invitación del cliente', () => {
 
     await page.locator('#currency').click();
     await page.getByRole('option', { name: 'ARS' }).click();
-    await page.locator('#budgetType').click();
-    await page.getByRole('option', { name: /cerrado/i }).click();
 
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);

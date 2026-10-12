@@ -9,7 +9,7 @@ import { providerSpecialtySchema } from './provider.js';
 
 const validActivity = {
   name: 'Contrapiso',
-  area: 'Planta baja',
+  specialty: 'albanileria' as const,
   startDate: '2026-09-14',
   endDate: '2026-09-18',
   responsible: { name: 'Juan Pérez' },
@@ -67,8 +67,19 @@ describe('activitySpecialtySchema', () => {
     );
   });
 
-  it('la especialidad es opcional: hay actividades de varios rubros', () => {
-    expect(createActivitySchema.safeParse(validActivity).success).toBe(true);
+  it('la especialidad es obligatoria al crear: reemplaza al área', () => {
+    const { specialty: _omit, ...withoutSpecialty } = validActivity;
+    expect(createActivitySchema.safeParse(withoutSpecialty).success).toBe(false);
+  });
+
+  it('al editar no hace falta: las actividades viejas no tienen especialidad', () => {
+    expect(updateActivitySchema.safeParse({ name: 'Contrapiso nuevo' }).success).toBe(true);
+  });
+
+  it('ignora un área vieja en vez de rechazar el pedido', () => {
+    const result = createActivitySchema.safeParse({ ...validActivity, area: 'Planta baja' });
+    expect(result.success).toBe(true);
+    expect(result.success && 'area' in result.data).toBe(false);
   });
 
   it('acepta una actividad con rubro declarado', () => {

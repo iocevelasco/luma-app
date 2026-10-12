@@ -33,7 +33,7 @@ export function AuthSplitLayout({ children, width = 'sm' }: AuthSplitLayoutProps
         <aside className="relative hidden bg-card p-3 lg:block">
           <div className="relative h-full overflow-hidden rounded-2xl bg-muted">
             <img
-              src="/auth/hero.jpg"
+              src={`${import.meta.env.BASE_URL}auth/hero.jpg`}
               alt={t('auth.hero.imageAlt')}
               className="absolute inset-0 size-full object-cover object-center"
               fetchPriority="high"

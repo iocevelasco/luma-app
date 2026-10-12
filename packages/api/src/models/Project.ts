@@ -1,5 +1,5 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { BudgetType, ProjectStatus } from '@luma/shared';
+import type { ProjectStatus } from '@luma/shared';
 
 /**
  * Obra o remodelación. `organization` se resuelve server-side desde el
@@ -19,7 +19,6 @@ export interface IProject extends Document {
   estimatedStartDate: string;
   estimatedEndDate: string;
   currency: string;
-  budgetType: BudgetType;
   status: ProjectStatus;
   providersVisibleToClient: boolean;
   createdAt: Date;
@@ -42,7 +41,6 @@ const projectSchema = new Schema<IProject>(
     estimatedStartDate: { type: String, required: true },
     estimatedEndDate: { type: String, required: true },
     currency: { type: String, required: true, trim: true },
-    budgetType: { type: String, enum: ['cerrado', 'abierto', 'con_margen'], required: true },
     status: { type: String, enum: ['active', 'archived'], default: 'active' },
     // Default cerrado: el cliente no ve proveedores salvo que el dueño lo
     // habilite — la regla 4 del documento (nada de información operativa

@@ -22,7 +22,7 @@ function toActivitySummaryDTO(activity: IActivity): ProviderActivitySummary {
   return {
     id: String(activity._id),
     name: activity.name,
-    area: activity.area,
+    specialty: activity.specialty,
     startDate: activity.startDate,
     endDate: activity.endDate,
     status: activity.status,

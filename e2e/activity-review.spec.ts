@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
+import { pickActivitySpecialty } from './helpers/activity';
 
 /**
  * Validación del supervisor: el trabajo se reporta terminado, el supervisor
@@ -40,8 +41,6 @@ test.describe('validación del supervisor', () => {
     await page.locator('#estimatedEndDate').fill('2026-12-15');
     await page.locator('#currency').click();
     await page.getByRole('option', { name: 'ARS' }).click();
-    await page.locator('#budgetType').click();
-    await page.getByRole('option', { name: /cerrado/i }).click();
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
@@ -51,7 +50,7 @@ test.describe('validación del supervisor', () => {
     const today = new Date();
     await page.getByRole('button', { name: /nueva actividad/i }).click();
     await page.locator('#activity-name').fill(activityName);
-    await page.locator('#activity-area').fill('Fachada');
+    await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill(toDayKey(today));
     await page
       .locator('#activity-end')

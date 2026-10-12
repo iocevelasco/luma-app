@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Activity, ActivityAttendance as Attendance, ActivityCrewMember } from '@luma/shared';
 import { Check, Phone, Plus, UserMinus, UserPlus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -111,7 +112,7 @@ export function ActivityAttendance({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-medium">{activity.name}</h3>
-          <p className="text-sm text-muted-foreground">{activity.area}</p>
+          <p className="text-sm text-muted-foreground"><SpecialtyLabel specialty={activity.specialty} /></p>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-lg tabular-nums">

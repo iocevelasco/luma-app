@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
-import type { Capability } from '@luma/shared';
-import { Gauge, ListChecks, Package, Users, Wallet, Wrench } from 'lucide-react';
+import type { Capability, DocumentCategory } from '@luma/shared';
+import { Gauge, Image, ListChecks, Package, Ruler, Users, Wallet, Wrench } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
+import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { Can } from '@/components/permissions/can';
@@ -16,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import { useBudget } from '@/hooks/budget/use-budget-queries';
+import { useProjectDocuments } from '@/hooks/documents/use-document-queries';
 import { useLaborRecords } from '@/hooks/labor/use-labor-queries';
 import { useMaterials } from '@/hooks/materials/use-material-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
@@ -28,13 +30,12 @@ import { cn } from '@/lib/utils';
 import {
   projectActivitiesPath,
   projectBudgetPath,
+  projectDocumentsPath,
   projectLaborPath,
   projectMaterialsPath,
   projectProvidersPath,
   projectTeamPath,
 } from '@/lib/routes';
-
-const MATERIAL_STATUS_PRIORITY = { pendiente: 0, solicitado: 1, comprado: 2, en_obra: 3 } as const;
 
 /**
  * Tope de ítems en las tarjetas que listan. Sin él, una obra con veinte
@@ -42,6 +43,13 @@ const MATERIAL_STATUS_PRIORITY = { pendiente: 0, solicitado: 1, comprado: 2, en_
  * columna entera — y para ver todo ya está el enlace "Ver todo".
  */
 const CARD_PREVIEW_COUNT = 5;
+
+/**
+ * Renders y planos se miran para saber que están cargados y cuál es el último,
+ * no para recorrerlos: tres alcanzan, y la lista completa vive en
+ * Documentación.
+ */
+const DOCUMENT_PREVIEW_COUNT = 3;
 
 /** Ícono de sección en círculo, a la izquierda del título de cada card del dashboard. */
 function CardIcon({ icon: Icon }: { icon: ComponentType<{ className?: string }> }) {
@@ -93,7 +101,7 @@ function PendingTasksCard({ projectId }: { projectId: string }) {
       <CardHeader className="flex flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <CardIcon icon={ListChecks} />
-          <CardTitle className="text-base">{t('project.dashboard.pendingTasks')}</CardTitle>
+          <CardTitle className="text-base">{t('project.dashboard.workPlan')}</CardTitle>
         </div>
         <Button variant="ghost" size="sm" asChild>
           <Link to={projectActivitiesPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
@@ -108,7 +116,7 @@ function PendingTasksCard({ projectId }: { projectId: string }) {
               <li key={activity.id} className="flex items-center justify-between gap-2 text-sm">
                 <div>
                   <p className="font-medium">{activity.name}</p>
-                  <p className="text-xs text-muted-foreground">{activity.area}</p>
+                  <p className="text-xs text-muted-foreground"><SpecialtyLabel specialty={activity.specialty} /></p>
                 </div>
                 <ActivityStatusBadge status={activity.status} endDate={activity.endDate} />
               </li>
@@ -163,11 +171,23 @@ function MaterialsCard({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const { data } = useMaterials(projectId);
 
-  const pending = useMemo(() => {
-    return (data?.materials ?? [])
-      .filter((material) => material.status === 'pendiente' || material.status === 'solicitado')
-      .sort((a, b) => MATERIAL_STATUS_PRIORITY[a.status] - MATERIAL_STATUS_PRIORITY[b.status])
-      .slice(0, CARD_PREVIEW_COUNT);
+  const { purchased, toBuyCount } = useMemo(() => {
+    const materials = data?.materials ?? [];
+    const isPurchased = (status: string) => status === 'comprado' || status === 'en_obra';
+    return {
+      purchased: materials
+        .filter((material) => isPurchased(material.status))
+        .sort((a, b) =>
+          (b.statusChangedAt ?? b.updatedAt).localeCompare(a.statusChangedAt ?? a.updatedAt),
+        )
+        .slice(0, CARD_PREVIEW_COUNT),
+      // Lo que todavía no se compró es lo que puede frenar una actividad: no
+      // se lista (la card es de lo comprado) pero se cuenta, para que quien
+      // mira el resumen no tenga que entrar a Materiales a enterarse.
+      toBuyCount: materials.filter(
+        (material) => material.status === 'pendiente' || material.status === 'solicitado',
+      ).length,
+    };
   }, [data]);
 
   return (
@@ -175,18 +195,18 @@ function MaterialsCard({ projectId }: { projectId: string }) {
       <CardHeader className="flex flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <CardIcon icon={Package} />
-          <CardTitle className="text-base">{t('project.dashboard.materials')}</CardTitle>
+          <CardTitle className="text-base">{t('project.dashboard.purchases')}</CardTitle>
         </div>
         <Button variant="ghost" size="sm" asChild>
           <Link to={projectMaterialsPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
         </Button>
       </CardHeader>
-      <CardContent>
-        {pending.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('project.dashboard.noMaterialsPending')}</p>
+      <CardContent className="flex flex-col gap-3">
+        {purchased.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('project.dashboard.noPurchases')}</p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {pending.map((material) => (
+            {purchased.map((material) => (
               <li key={material.id} className="flex items-center justify-between gap-2 text-sm">
                 <div>
                   <p className="font-medium">{material.name}</p>
@@ -194,23 +214,18 @@ function MaterialsCard({ projectId }: { projectId: string }) {
                     {material.quantity} {t(`material.unit.${material.unit}`)}
                   </p>
                 </div>
-                {/*
-                  Rojo sólo lo que todavía no se pidió: eso es lo que puede
-                  frenar una actividad. Lo ya solicitado está en camino, y
-                  pintarlo igual que lo que nadie encargó borra la diferencia
-                  entre "hay que hacer algo" y "hay que esperar".
-                */}
-                <Badge
-                  variant={material.status === 'pendiente' ? 'destructive' : 'default'}
-                  className={cn(
-                    material.status === 'solicitado' && 'bg-warning text-warning-foreground',
-                  )}
-                >
-                  {t(`material.status.${material.status}`)}
-                </Badge>
+                <Badge variant="secondary">{t(`material.status.${material.status}`)}</Badge>
               </li>
             ))}
           </ul>
+        )}
+        {toBuyCount > 0 && (
+          <Link
+            to={projectMaterialsPath(projectId)}
+            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            {t('project.dashboard.toBuy', { count: toBuyCount })}
+          </Link>
         )}
       </CardContent>
     </Card>
@@ -290,6 +305,73 @@ function LaborCard({ projectId }: { projectId: string }) {
 }
 
 
+
+/**
+ * Renders o planos de la obra: una vista de la Documentación filtrada por
+ * categoría, no una entidad aparte. Las dos cards son la misma con otro
+ * filtro, por eso comparten componente.
+ */
+function DocumentsCard({
+  projectId,
+  category,
+  icon,
+}: {
+  projectId: string;
+  category: Extract<DocumentCategory, 'render' | 'plano'>;
+  icon: ComponentType<{ className?: string }>;
+}) {
+  const { t } = useTranslation();
+  const dateLocale = useDateLocale();
+  const { data } = useProjectDocuments(projectId);
+
+  const latest = useMemo(
+    () =>
+      (data?.documents ?? [])
+        .filter((document) => document.category === category)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .slice(0, DOCUMENT_PREVIEW_COUNT),
+    [data, category],
+  );
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <CardIcon icon={icon} />
+          <CardTitle className="text-base">{t(`document.category.${category}`)}</CardTitle>
+        </div>
+        <Button variant="ghost" size="sm" asChild>
+          <Link to={`${projectDocumentsPath(projectId)}?category=${category}`}>
+            {t('project.dashboard.viewAll')}
+          </Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {latest.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {t(`project.dashboard.noDocuments.${category}`)}
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {latest.map((document) => (
+              <li key={document.id} className="flex items-center justify-between gap-2 text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{document.title}</p>
+                  {document.space && (
+                    <p className="truncate text-xs text-muted-foreground">{document.space}</p>
+                  )}
+                </div>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {format(new Date(document.createdAt), 'PP', { locale: dateLocale })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 /**
  * Se muestra con `provider.read`: gerente y supervisor siempre, el cliente
@@ -445,20 +527,32 @@ export function ProjectDetailPage() {
      *
      * El orden del DOM es el de prioridad, y como las columnas se llenan de
      * arriba hacia abajo, lo primero es lo que queda arriba a la izquierda.
-     * Primero cómo viene la obra (avance y plata), después qué necesita
-     * atención, y al final la ficha y el material de consulta: al dashboard
-     * se entra a ver el estado, no a releer la descripción —qué obra es ya lo
-     * dice el breadcrumb—.
+     * Es el orden que pidió el cliente: cómo viene la obra (avance), lo que
+     * se muestra al cliente (renders y planos), el plan, la plata, las
+     * compras, quién está en obra y con quién se trabaja; y recién al final la
+     * ficha y el equipo. Al dashboard se entra a ver el estado, no a releer la
+     * descripción —qué obra es ya lo dice el breadcrumb—.
      */
     <div className="columns-1 gap-4 p-3 md:p-4 lg:columns-2 xl:columns-3 [&>*]:mb-4 [&>*]:break-inside-avoid">
-      {/* Cómo viene la obra: las dos cifras que se miran primero. */}
+      {/* Cómo viene la obra. */}
       <ProgressCard projectId={project.id} />
-      {can('budget.read') && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
 
-      {/* Qué requiere atención hoy. */}
+      {/* Lo que se le muestra al cliente: la documentación que más se consulta. */}
+      {can('document.read') && (
+        <DocumentsCard projectId={project.id} category="render" icon={Image} />
+      )}
+      {can('document.read') && (
+        <DocumentsCard projectId={project.id} category="plano" icon={Ruler} />
+      )}
+
+      {/* El plan, la plata y las compras. */}
       <PendingTasksCard projectId={project.id} />
+      {can('budget.read') && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
       <MaterialsCard projectId={project.id} />
+
+      {/* Quién está en obra y con quién se trabaja. */}
       <LaborCard projectId={project.id} />
+      {can('provider.read') && <ProvidersCard projectId={project.id} />}
 
       {/* La ficha y el directorio: consulta, no urgencia. */}
       <Card>
@@ -467,7 +561,6 @@ export function ProjectDetailPage() {
               <CardTitle>{project.name}</CardTitle>
               <p className="text-sm text-muted-foreground">{project.location}</p>
             </div>
-            <Badge variant="secondary">{t(`project.budgetType.${project.budgetType}`)}</Badge>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm">{project.description}</p>
@@ -513,7 +606,6 @@ export function ProjectDetailPage() {
           </CardContent>
         </Card>
 
-      {can('provider.read') && <ProvidersCard projectId={project.id} />}
 
       {/* El equipo, resumido. Dar y sacar accesos vive en su propia pantalla:
           es una tarea con su propio momento, no algo con lo que uno se

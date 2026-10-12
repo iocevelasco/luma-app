@@ -31,8 +31,6 @@ test.describe('presupuesto (carga manual)', () => {
     await page.locator('#estimatedEndDate').fill('2026-12-15');
     await page.locator('#currency').click();
     await page.getByRole('option', { name: 'ARS' }).click();
-    await page.locator('#budgetType').click();
-    await page.getByRole('option', { name: /cerrado/i }).click();
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 

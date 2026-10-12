@@ -58,7 +58,6 @@ async function toActivityDTO(activity: IActivity): Promise<ActivityDTO> {
     id: String(activity._id),
     projectId: String(activity.project),
     name: activity.name,
-    area: activity.area,
     startDate: activity.startDate,
     endDate: activity.endDate,
     responsible: {
@@ -171,7 +170,7 @@ export async function updateActivity(req: Request, res: Response) {
 
     // El supervisor reporta sobre lo planificado; no replanifica. Si el body
     // toca fechas, responsable o alcance, hace falta `activity.plan`.
-    const PLANNING_FIELDS = ['name', 'area', 'startDate', 'endDate', 'responsible', 'specialty'] as const;
+    const PLANNING_FIELDS = ['name', 'startDate', 'endDate', 'responsible', 'specialty'] as const;
     const touchesPlanning = PLANNING_FIELDS.some((field) => parsed.data[field] !== undefined);
     if (touchesPlanning && !req.can?.('activity.plan')) {
       return res.status(403).json({

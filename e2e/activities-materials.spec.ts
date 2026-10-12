@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
+import { pickActivitySpecialty } from './helpers/activity';
 
 /**
  * Flujo principal de RF-01 (planificación semanal) y RF-02 (materiales):
@@ -37,8 +38,6 @@ test.describe('planificación semanal y materiales', () => {
     await page.locator('#estimatedEndDate').fill('2026-12-15');
     await page.locator('#currency').click();
     await page.getByRole('option', { name: 'ARS' }).click();
-    await page.locator('#budgetType').click();
-    await page.getByRole('option', { name: /cerrado/i }).click();
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
@@ -51,7 +50,7 @@ test.describe('planificación semanal y materiales', () => {
 
     await page.getByRole('button', { name: /nueva actividad/i }).click();
     await page.locator('#activity-name').fill(ACTIVITY_NAME);
-    await page.locator('#activity-area').fill('Planta baja');
+    await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill(start);
     await page.locator('#activity-end').fill(end);
     await page.locator('#activity-responsible').fill('Juan Pérez');
@@ -78,7 +77,7 @@ test.describe('planificación semanal y materiales', () => {
 
     // Agrega un material asociado a esa actividad.
     await page.goto(page.url().replace(/\/actividades$/, ''));
-    await page.getByRole('link', { name: /^materiales$/i }).click();
+    await page.getByRole('link', { name: /^compras$/i }).click();
     await expect(page).toHaveURL(/\/materiales$/);
 
     // El alta vive en el drawer lateral, no en la cabecera de la página.
@@ -93,10 +92,20 @@ test.describe('planificación semanal y materiales', () => {
 
     await expect(page.getByText(MATERIAL_NAME)).toBeVisible();
 
-    // Cambia el estado y confirma en el diálogo.
-    await page.getByText(MATERIAL_NAME).locator('../..').getByRole('combobox').click();
-    await page.getByRole('option', { name: /solicitado/i }).click();
+    // Recién cargado, está "por comprar": avanza al paso siguiente y confirma.
+    const toBuy = page.getByRole('region', { name: /por comprar/i });
+    await expect(toBuy.getByText(MATERIAL_NAME)).toBeVisible();
+    await toBuy.getByRole('button', { name: /marcar solicitado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
     await expect(page.getByRole('alertdialog')).toBeHidden();
+
+    // Sigue por comprar (solicitado todavía no es comprado); al marcarlo
+    // comprado pasa a la otra bolsa.
+    await toBuy.getByRole('button', { name: /marcar comprado/i }).click();
+    await page.getByRole('button', { name: /continuar/i }).click();
+    await expect(page.getByRole('alertdialog')).toBeHidden();
+    const bought = page.getByRole('region', { name: /comprados/i });
+    await expect(bought.getByText(MATERIAL_NAME)).toBeVisible();
+    await expect(toBuy.getByText(MATERIAL_NAME)).toHaveCount(0);
   });
 });

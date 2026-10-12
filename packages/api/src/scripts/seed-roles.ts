@@ -148,7 +148,6 @@ async function main() {
     estimatedStartDate: '2026-10-01',
     estimatedEndDate: '2027-03-31',
     currency: 'ARS',
-    budgetType: 'cerrado',
     // Encendido a propósito: es la única capacidad del cliente que depende de
     // un flag, y apagada no se puede ver la diferencia entre los dos casos.
     providersVisibleToClient: true,

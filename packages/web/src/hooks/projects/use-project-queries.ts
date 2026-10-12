@@ -9,6 +9,7 @@ import type {
   UpdateProjectInput,
 } from '@luma/shared';
 import { projectsApi } from '@/api/projects';
+import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { projectDetailPath } from '@/lib/routes';
@@ -85,6 +86,68 @@ export function useInviteProjectMember(projectId: string) {
       // Sin `onError`: esta mutación se envía desde un formulario y el banner
       // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
       // mensaje dos veces, en dos lugares distintos de la pantalla.
+  });
+}
+
+/** Qué pasó con cada obra al darle acceso a una persona. */
+export interface GrantAccessResult {
+  projectId: string;
+  /** `already`: ya tenía acceso (409). No es una falla: el resultado buscado ya estaba. */
+  status: 'granted' | 'already' | 'failed';
+  /** Texto resuelto para mostrar, sólo en `failed`. */
+  message?: string;
+}
+
+/**
+ * Da acceso a una persona a varias obras de una vez, con un mismo rol.
+ *
+ * No hay endpoint propio a propósito: cada obra pasa por la invitación de
+ * siempre, que ya exige `project.invite` sobre ESA obra. Un endpoint masivo
+ * tendría que reimplementar ese chequeo por cada una, y la autorización
+ * quedaría en dos lugares.
+ *
+ * Resuelve con un resultado por obra y no rechaza si alguna falla: un fallo
+ * parcial es un estado que el formulario tiene que mostrar, no una excepción.
+ */
+export function useGrantProjectAccess() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      email,
+      role,
+      projectIds,
+    }: {
+      email: string;
+      role: InvitableProjectRole;
+      projectIds: string[];
+    }): Promise<GrantAccessResult[]> => {
+      const settled = await Promise.allSettled(
+        projectIds.map((projectId) => projectsApi.inviteMember(projectId, { email, role })),
+      );
+
+      return settled.map((outcome, index): GrantAccessResult => {
+        const projectId = projectIds[index]!;
+        if (outcome.status === 'fulfilled') return { projectId, status: 'granted' };
+        const reason = outcome.reason;
+        if (isApiError(reason) && reason.code === 'CONFLICT') {
+          return { projectId, status: 'already' };
+        }
+        return { projectId, status: 'failed', message: errorMessage(reason, t) ?? undefined };
+      });
+    },
+    onSuccess: (results) => {
+      for (const result of results) {
+        if (result.status === 'failed') continue;
+        void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, result.projectId] });
+      }
+      if (results.every((result) => result.status !== 'failed')) {
+        toast.success(t('team.grantDone', { count: results.length }));
+      }
+    },
+    // Sin `onError`: `mutationFn` no rechaza (ver arriba) y la falla parcial la
+    // muestra el banner del diálogo.
   });
 }
 

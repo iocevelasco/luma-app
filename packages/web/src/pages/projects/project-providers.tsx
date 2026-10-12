@@ -9,6 +9,7 @@ import { Building2, CalendarClock, FileSignature, Pencil, Plus, UserMinus, UserX
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -292,7 +293,7 @@ function ProviderActivitiesDialog({
                 >
                   <div>
                     <p className="font-medium">{activity.name}</p>
-                    <p className="text-xs text-muted-foreground">{activity.area}</p>
+                    <p className="text-xs text-muted-foreground"><SpecialtyLabel specialty={activity.specialty} /></p>
                   </div>
                   <button
                     type="button"

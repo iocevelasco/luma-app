@@ -262,7 +262,7 @@ const baseActivity = {
   _id: 'activity-1',
   project: 'project-1',
   name: 'Colocación de aberturas',
-  area: 'Fachada',
+  specialty: 'carpinteria',
   startDate: '2026-09-01',
   endDate: '2026-09-05',
   status: 'pendiente',

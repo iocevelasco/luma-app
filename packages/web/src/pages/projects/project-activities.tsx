@@ -12,6 +12,8 @@ import { ArrowLeft, Camera, Check, PackageX, Pencil, Plus, Trash2, Undo2, X } fr
 import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import { ResponsibleField } from '@/components/activities/responsible-field';
+import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityGantt } from '@/components/activities/activity-gantt';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { DateRangeFilter, fromDayKey, presetRange } from '@/components/common/date-range-filter';
@@ -91,12 +93,14 @@ const MATERIAL_STATUSES_BLOCKING = new Set(['pendiente', 'solicitado']);
  */
 function ActivityFormFields({
   idPrefix,
+  projectId,
   register,
   control,
   errors,
   isOwner = false,
 }: {
   idPrefix: string;
+  projectId: string;
   register: UseFormRegister<CreateActivityInput>;
   control: Control<CreateActivityInput>;
   errors: FieldErrors<CreateActivityInput>;
@@ -117,9 +121,28 @@ function ActivityFormFields({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-area`}>{t('activity.fields.area')}</Label>
-        <Input id={`${idPrefix}-area`} {...register('area')} />
-        {errors.area && <p className="text-sm text-destructive">{errors.area.message}</p>}
+        <Label htmlFor={`${idPrefix}-specialty`}>{t('activity.fields.specialty')}</Label>
+        <Controller
+          control={control}
+          name="specialty"
+          render={({ field }) => (
+            <Select value={field.value ?? undefined} onValueChange={field.onChange}>
+              <SelectTrigger id={`${idPrefix}-specialty`}>
+                <SelectValue placeholder={t('activity.fields.specialtyPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {ACTIVITY_SPECIALTIES.map((specialty) => (
+                  <SelectItem key={specialty} value={specialty}>
+                    {t(`provider.specialty.${specialty}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.specialty && (
+          <p className="text-sm text-destructive">{t('activity.fields.specialtyRequired')}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -135,13 +158,12 @@ function ActivityFormFields({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-responsible`}>{t('activity.fields.responsible')}</Label>
-        <Input id={`${idPrefix}-responsible`} {...register('responsible.name')} />
-        {errors.responsible?.name && (
-          <p className="text-sm text-destructive">{errors.responsible.name.message}</p>
-        )}
-      </div>
+      <ResponsibleField
+        control={control}
+        projectId={projectId}
+        id={`${idPrefix}-responsible`}
+        hasError={Boolean(errors.responsible)}
+      />
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${idPrefix}-status`}>{t('activity.fields.status')}</Label>
@@ -157,28 +179,6 @@ function ActivityFormFields({
                 {statuses.map((status) => (
                   <SelectItem key={status} value={status}>
                     {t(`activity.status.${status}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-specialty`}>{t('activity.fields.specialty')}</Label>
-        <Controller
-          control={control}
-          name="specialty"
-          render={({ field }) => (
-            <Select value={field.value ?? undefined} onValueChange={field.onChange}>
-              <SelectTrigger id={`${idPrefix}-specialty`}>
-                <SelectValue placeholder={t('activity.fields.specialtyPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {ACTIVITY_SPECIALTIES.map((specialty) => (
-                  <SelectItem key={specialty} value={specialty}>
-                    {t(`provider.specialty.${specialty}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -225,7 +225,7 @@ function NewActivityDialog({ projectId, isOwner }: { projectId: string; isOwner:
           if (!next) reset();
         }}
         title={t('activity.list.newTitle')}
-        fieldCount={8}
+        fieldCount={7}
         submitLabel={t('activity.list.newSubmit')}
         isSubmitting={createActivity.isPending}
         error={createActivity.error}
@@ -240,6 +240,7 @@ function NewActivityDialog({ projectId, isOwner }: { projectId: string; isOwner:
       >
         <ActivityFormFields
           idPrefix="activity"
+          projectId={projectId}
           register={register}
           control={control}
           errors={errors}
@@ -275,12 +276,14 @@ function EditActivityDialog({
     resolver: zodResolver(createActivitySchema),
     values: {
       name: activity.name,
-      area: activity.area,
       startDate: activity.startDate,
       endDate: activity.endDate,
       responsible: activity.responsible,
       status: activity.status,
-      specialty: activity.specialty,
+      // Una actividad anterior al cambio no tiene especialidad: llega
+      // `undefined`, el selector muestra el placeholder y el schema exige
+      // elegirla antes de guardar.
+      specialty: activity.specialty as CreateActivityInput['specialty'],
       notes: activity.notes,
     },
   });
@@ -290,7 +293,7 @@ function EditActivityDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={t('activity.detail.editTitle')}
-      fieldCount={8}
+      fieldCount={7}
       isSubmitting={updateActivity.isPending}
       error={updateActivity.error}
       onSubmit={handleSubmit((values) =>
@@ -302,6 +305,7 @@ function EditActivityDialog({
     >
       <ActivityFormFields
         idPrefix="edit-activity"
+        projectId={projectId}
         register={register}
         control={control}
         errors={errors}
@@ -681,10 +685,7 @@ function ActivityDetailModal({
                 <div>
                   <h2 className="text-3xl">{activity.name}</h2>
                   <p className="text-muted-foreground">
-                    {activity.area}
-                    {activity.specialty
-                      ? ` · ${t(`provider.specialty.${activity.specialty}`)}`
-                      : ''}
+                    <SpecialtyLabel specialty={activity.specialty} />
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -824,7 +825,7 @@ export function ProjectActivitiesPage() {
     : [];
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] min-w-0 flex-col gap-3 p-3 md:p-4">
+    <div className="flex h-[calc(100dvh-5.5rem)] min-w-0 flex-col gap-3 p-3 md:p-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateRangeFilter value={range} onChange={setRange} disableFuture={false} />
         {isEditor && (

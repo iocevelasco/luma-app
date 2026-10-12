@@ -32,7 +32,6 @@ function toProjectDTO(project: IProject): ProjectDTO {
     estimatedStartDate: project.estimatedStartDate,
     estimatedEndDate: project.estimatedEndDate,
     currency: project.currency,
-    budgetType: project.budgetType,
     status: project.status,
     providersVisibleToClient: Boolean(project.providersVisibleToClient),
     createdAt: project.createdAt.toISOString(),
@@ -110,15 +109,33 @@ export async function listProjects(req: Request, res: Response) {
     const userId = req.user.sub;
     // Dos orígenes de acceso y no tres: desde que el supervisor es por obra,
     // ser miembro de la Empresa ya no abre ninguna obra por sí solo.
-    const memberProjectIds = await ProjectMembership.find({ user: userId }).distinct('project');
+    const memberships = await ProjectMembership.find({ user: userId }).select('project role');
+    const roleByProject = new Map(memberships.map((m) => [String(m.project), m.role]));
 
     const projects = await Project.find({
-      $or: [{ createdBy: userId }, { _id: { $in: memberProjectIds } }],
+      $or: [{ createdBy: userId }, { _id: { $in: memberships.map((m) => m.project) } }],
     })
       .sort({ updatedAt: -1 })
       .limit(100);
 
-    return res.json({ success: true, data: { projects: projects.map(toProjectDTO) } });
+    return res.json({
+      success: true,
+      data: {
+        projects: projects.map((project) => {
+          // El gerente no tiene fila: sale de `createdBy` y gana sobre
+          // cualquier membresía (mismo criterio que `requireProjectAccess`).
+          const role: ProjectRole =
+            String(project.createdBy) === userId
+              ? 'gerente'
+              : (roleByProject.get(String(project._id)) as ProjectRole);
+          return {
+            ...toProjectDTO(project),
+            role,
+            capabilities: capabilitiesInProject(role, project),
+          };
+        }),
+      },
+    });
   } catch (error) {
     console.error('❌ [PROJECT] listProjects:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });

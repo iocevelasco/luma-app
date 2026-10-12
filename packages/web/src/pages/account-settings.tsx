@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormShell } from '@/components/common/form-shell';
+import { OrganizationProfile } from '@/components/organization/organization-panel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,9 @@ export function AccountSettingsPage() {
 
   return (
     <div className="flex w-full flex-col gap-4 p-3 md:p-4">
+      {/* Nombre y contacto de la Empresa: se tocan una vez, no es una pantalla de uso diario. */}
+      <OrganizationProfile />
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t('auth.account.changePassword')}</CardTitle>

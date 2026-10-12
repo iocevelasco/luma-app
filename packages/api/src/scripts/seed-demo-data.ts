@@ -14,6 +14,7 @@
  * Es re-ejecutable: antes de crear, borra cualquier obra propia con el
  * prefijo `SEED_PREFIX` (y todo lo que cuelga de ellas) para no duplicar.
  */
+import type { ProviderSpecialty } from '@luma/shared';
 import mongoose from 'mongoose';
 import { DATABASE_CONFIG } from '../config/app.config.js';
 import { Activity } from '../models/Activity.js';
@@ -77,19 +78,19 @@ const WORKERS = [
   'Ariel Quiroga',
 ];
 
-const ACTIVITY_TEMPLATES: Array<{ name: string; area: string }> = [
-  { name: 'Movimiento de suelos y excavación', area: 'Terreno' },
-  { name: 'Fundaciones y platea', area: 'Subsuelo' },
-  { name: 'Estructura de hormigón armado', area: 'Estructura' },
-  { name: 'Mampostería de elevación', area: 'Planta baja' },
-  { name: 'Instalación eléctrica', area: 'Planta baja' },
-  { name: 'Instalación sanitaria y gas', area: 'Baños y cocina' },
-  { name: 'Revoque grueso', area: 'Planta alta' },
-  { name: 'Revoque fino y cielorrasos', area: 'Interior' },
-  { name: 'Colocación de pisos y revestimientos', area: 'Living-comedor' },
-  { name: 'Colocación de aberturas', area: 'Fachada' },
-  { name: 'Pintura interior y exterior', area: 'General' },
-  { name: 'Impermeabilización y terminación de techo', area: 'Techo' },
+const ACTIVITY_TEMPLATES: Array<{ name: string; specialty: ProviderSpecialty }> = [
+  { name: 'Movimiento de suelos y excavación', specialty: 'otra' },
+  { name: 'Fundaciones y platea', specialty: 'estructura' },
+  { name: 'Estructura de hormigón armado', specialty: 'estructura' },
+  { name: 'Mampostería de elevación', specialty: 'albanileria' },
+  { name: 'Instalación eléctrica', specialty: 'electricidad' },
+  { name: 'Instalación sanitaria y gas', specialty: 'plomeria' },
+  { name: 'Revoque grueso', specialty: 'albanileria' },
+  { name: 'Revoque fino y cielorrasos', specialty: 'acabados' },
+  { name: 'Colocación de pisos y revestimientos', specialty: 'pisos_revestimientos' },
+  { name: 'Colocación de aberturas', specialty: 'carpinteria' },
+  { name: 'Pintura interior y exterior', specialty: 'pintura' },
+  { name: 'Impermeabilización y terminación de techo', specialty: 'techos' },
 ];
 
 const MATERIAL_TEMPLATES: Array<{
@@ -132,7 +133,6 @@ interface ProjectTemplate {
   estimatedStartDate: string;
   estimatedEndDate: string;
   currency: string;
-  budgetType: 'cerrado' | 'abierto' | 'con_margen';
   status: 'active' | 'archived';
   completedActivities: number;
   unitCostBase: number;
@@ -147,7 +147,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2026-02-02',
     estimatedEndDate: '2027-01-30',
     currency: 'USD',
-    budgetType: 'con_margen',
     status: 'active',
     completedActivities: 4,
     unitCostBase: 180,
@@ -160,7 +159,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2026-04-10',
     estimatedEndDate: '2026-12-15',
     currency: 'USD',
-    budgetType: 'cerrado',
     status: 'active',
     completedActivities: 3,
     unitCostBase: 210,
@@ -173,7 +171,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2025-11-03',
     estimatedEndDate: '2026-08-20',
     currency: 'USD',
-    budgetType: 'con_margen',
     status: 'active',
     completedActivities: 6,
     unitCostBase: 260,
@@ -186,7 +183,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2025-08-01',
     estimatedEndDate: '2026-04-30',
     currency: 'ARS',
-    budgetType: 'cerrado',
     status: 'archived',
     completedActivities: 10,
     unitCostBase: 145000,
@@ -199,7 +195,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2026-01-12',
     estimatedEndDate: '2026-05-10',
     currency: 'ARS',
-    budgetType: 'abierto',
     status: 'archived',
     completedActivities: 9,
     unitCostBase: 98000,
@@ -212,7 +207,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2026-05-18',
     estimatedEndDate: '2026-11-01',
     currency: 'ARS',
-    budgetType: 'abierto',
     status: 'active',
     completedActivities: 2,
     unitCostBase: 110000,
@@ -225,7 +219,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2026-03-01',
     estimatedEndDate: '2026-10-30',
     currency: 'USD',
-    budgetType: 'cerrado',
     status: 'active',
     completedActivities: 5,
     unitCostBase: 95,
@@ -238,7 +231,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2026-06-01',
     estimatedEndDate: '2026-12-20',
     currency: 'ARS',
-    budgetType: 'con_margen',
     status: 'active',
     completedActivities: 1,
     unitCostBase: 130000,
@@ -251,7 +243,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2026-07-15',
     estimatedEndDate: '2027-02-28',
     currency: 'USD',
-    budgetType: 'cerrado',
     status: 'active',
     completedActivities: 0,
     unitCostBase: 240,
@@ -264,7 +255,6 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedStartDate: '2026-08-01',
     estimatedEndDate: '2027-04-15',
     currency: 'USD',
-    budgetType: 'abierto',
     status: 'active',
     completedActivities: 0,
     unitCostBase: 190,
@@ -328,7 +318,6 @@ async function main() {
       estimatedStartDate: tpl.estimatedStartDate,
       estimatedEndDate: tpl.estimatedEndDate,
       currency: tpl.currency,
-      budgetType: tpl.budgetType,
       status: tpl.status,
     });
 
@@ -364,7 +353,7 @@ async function main() {
       const activity = await Activity.create({
         project: project._id,
         name: at.name,
-        area: at.area,
+        specialty: at.specialty,
         startDate: start,
         endDate: end,
         responsible: { name: FOREMEN[(pIdx + i) % FOREMEN.length] },

@@ -65,7 +65,7 @@ function fakeActivity(evidence: FakeEvidenceItem[] = []) {
     _id: 'activity-1',
     project: 'project-1',
     name: 'Contrapiso',
-    area: 'Planta baja',
+    specialty: 'albanileria',
     startDate: '2026-01-01',
     endDate: '2026-01-05',
     responsible: { name: 'Juan Pérez' },
