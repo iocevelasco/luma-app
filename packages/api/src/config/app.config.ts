@@ -84,6 +84,13 @@ export const RECAPTCHA_CONFIG = {
   ENABLED: isProduction && Boolean(process.env.RECAPTCHA_SECRET_KEY),
 } as const;
 
+/**
+ * Medida temporal para pruebas con usuarios: con `REQUIRE_EMAIL_VERIFICATION=false`
+ * el registro deja la cuenta ya verificada y no manda mail. Por defecto sigue
+ * exigiéndose; hay que apagarlo a propósito.
+ */
+export const REQUIRE_EMAIL_VERIFICATION = process.env.REQUIRE_EMAIL_VERIFICATION !== 'false';
+
 export const EMAIL_CONFIG = {
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   FROM: process.env.EMAIL_FROM ?? 'onboarding@resend.dev',

@@ -4,9 +4,8 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
-import { AuthLayout } from '@/components/auth/auth-layout';
+import { AuthHeader, AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PasswordInput } from '@/components/auth/password-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,82 +33,99 @@ export function RegisterPage() {
   } = useForm<RegisterForm>({ resolver: zodResolver(registerFormSchema) });
 
   return (
-    <AuthLayout>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('auth.register.title')}</CardTitle>
-          <CardDescription>{t('auth.register.subtitle')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={handleSubmit(({ confirmPassword: _confirm, ...values }) =>
-              registerUser.mutate(values),
-            )}
-          >
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="name">{t('common.name')}</Label>
-              <Input id="name" autoComplete="name" {...register('name')} />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">{t('common.email')}</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                {...register('email')}
-              />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">{t('common.password')}</Label>
-              <PasswordInput
-                id="password"
-                autoComplete="new-password"
-                {...register('password')}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="confirmPassword">{t('auth.register.confirmPassword')}</Label>
-              <PasswordInput
-                id="confirmPassword"
-                autoComplete="new-password"
-                {...register('confirmPassword')}
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{t('auth.register.mismatch')}</p>
-              )}
-            </div>
-
-            {registerUser.isError && (
+    <AuthSplitLayout width="md">
+      <AuthHeader title={t('auth.register.title')} description={t('auth.register.subtitle')} />
+      <div>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={handleSubmit((values) =>
+            registerUser.mutate({
+              name: values.name,
+              email: values.email,
+              password: values.password,
+            }),
+          )}
+        >
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="name">{t('common.name')}</Label>
+            <Input
+              id="name"
+              autoComplete="name"
+              aria-invalid={!!errors.name}
+              {...register('name')}
+            />
+            {errors.name && (
               <p role="alert" className="text-sm text-destructive">
-                {errorMessage(registerUser.error, t)}
+                {errors.name.message}
               </p>
             )}
+          </div>
 
-            <Button type="submit" disabled={registerUser.isPending}>
-              {registerUser.isPending ? t('common.loading') : t('auth.register.submit')}
-            </Button>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email">{t('common.email')}</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              aria-invalid={!!errors.email}
+              {...register('email')}
+            />
+            {errors.email && (
+              <p role="alert" className="text-sm text-destructive">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
 
-            <p className="text-center text-sm text-muted-foreground">
-              {t('auth.register.hasAccount')}{' '}
-              <Link className="text-primary hover:underline" to={ROUTES.LOGIN}>
-                {t('auth.register.login')}
-              </Link>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="password">{t('common.password')}</Label>
+            <PasswordInput
+              id="password"
+              autoComplete="new-password"
+              aria-invalid={!!errors.password}
+              {...register('password')}
+            />
+            {errors.password && (
+              <p role="alert" className="text-sm text-destructive">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="confirmPassword">{t('auth.register.confirmPassword')}</Label>
+            <PasswordInput
+              id="confirmPassword"
+              autoComplete="new-password"
+              aria-invalid={!!errors.confirmPassword}
+              {...register('confirmPassword')}
+            />
+            {errors.confirmPassword && (
+              <p role="alert" className="text-sm text-destructive">
+                {t('auth.register.mismatch')}
+              </p>
+            )}
+          </div>
+
+          {registerUser.isError && (
+            <p role="alert" className="text-sm text-destructive">
+              {errorMessage(registerUser.error, t)}
             </p>
-          </form>
-        </CardContent>
-      </Card>
-    </AuthLayout>
+          )}
+
+          <Button type="submit" size="lg" className="w-full" disabled={registerUser.isPending}>
+            {registerUser.isPending ? t('common.loading') : t('auth.register.submit')}
+          </Button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            {t('auth.register.hasAccount')}{' '}
+            <Link className="text-primary hover:underline" to={ROUTES.LOGIN}>
+              {t('auth.register.login')}
+            </Link>
+          </p>
+        </form>
+      </div>
+    </AuthSplitLayout>
   );
 }
 

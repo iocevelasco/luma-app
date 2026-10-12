@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { AuthLayout } from '@/components/auth/auth-layout';
+import { AuthHeader, AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useResendVerification } from '@/hooks/auth/use-auth-queries';
 
 export function CheckEmailPage() {
@@ -12,13 +11,9 @@ export function CheckEmailPage() {
   const resend = useResendVerification();
 
   return (
-    <AuthLayout>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('auth.checkEmail.title')}</CardTitle>
-          <CardDescription>{t('auth.checkEmail.subtitle')}</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <AuthSplitLayout width="md">
+      <AuthHeader title={t('auth.checkEmail.title')} description={t('auth.checkEmail.subtitle')} />
+      <div className="flex justify-center">
           {email && (
             <Button
               variant="outline"
@@ -28,9 +23,8 @@ export function CheckEmailPage() {
               {resend.isPending ? t('common.loading') : t('auth.checkEmail.resend')}
             </Button>
           )}
-        </CardContent>
-      </Card>
-    </AuthLayout>
+        </div>
+    </AuthSplitLayout>
   );
 }
 
