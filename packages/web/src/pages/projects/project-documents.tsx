@@ -21,6 +21,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
+import { Fab } from '@/components/common/fab';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import {
@@ -558,10 +559,11 @@ export function ProjectDocumentsPage() {
 
   return (
     <div className="flex flex-col gap-4 p-3 md:p-4">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-medium">{t('document.list.title')}</h2>
-        {canWrite && <NewDocumentDrawer projectId={projectId!} />}
-      </div>
+      {canWrite && (
+        <Fab>
+          <NewDocumentDrawer projectId={projectId!} />
+        </Fab>
+      )}
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1">

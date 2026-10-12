@@ -21,6 +21,45 @@ export const renameOrganizationSchema = z.object({
     .max(120, 'El nombre es demasiado largo'),
 });
 
+/**
+ * Datos de la Empresa que se editan juntos. Todo opcional: se manda sólo lo que
+ * cambió. `''` en un contacto lo borra.
+ */
+export const updateOrganizationSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'El nombre es obligatorio')
+    .max(120, 'El nombre es demasiado largo')
+    .optional(),
+  contactEmail: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email('Email inválido')
+    .or(z.literal(''))
+    .optional(),
+  contactPhone: z.string().trim().max(30, 'Es demasiado largo').optional(),
+});
+
+/** De un integrante del equipo sólo se corrige cómo se llama: el email es su identidad. */
+export const updateOrganizationMemberSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'El nombre es obligatorio')
+    .max(120, 'El nombre es demasiado largo'),
+});
+
+/**
+ * En qué obras está un proveedor o un empleado. Se manda la lista completa y
+ * no altas y bajas sueltas: la pantalla muestra casillas, y "lo que veo es lo
+ * que queda" evita pedidos que se pisan.
+ */
+export const setAssignedProjectsSchema = z.object({
+  projectIds: z.array(z.string().trim().min(1)).max(500),
+});
+
 export const createProjectSchema = z
   .object({
     name: z
@@ -82,6 +121,9 @@ export const inviteProjectMemberSchema = inviteClientSchema.extend({
 });
 
 export type RenameOrganizationInput = z.infer<typeof renameOrganizationSchema>;
+export type UpdateOrganizationInput = z.infer<typeof updateOrganizationSchema>;
+export type UpdateOrganizationMemberInput = z.infer<typeof updateOrganizationMemberSchema>;
+export type SetAssignedProjectsInput = z.infer<typeof setAssignedProjectsSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type InviteClientInput = z.infer<typeof inviteClientSchema>;

@@ -1,5 +1,4 @@
-import { useTranslation } from 'react-i18next';
-import { OrganizationName, TeamSection } from '@/components/organization/organization-panel';
+import { OrganizationProfile, TeamSection } from '@/components/organization/organization-panel';
 
 /**
  * La Empresa: su nombre y quién la integra.
@@ -11,16 +10,9 @@ import { OrganizationName, TeamSection } from '@/components/organization/organiz
  * entra alguien nuevo— y mezclarlas hacía que la segunda desapareciera.
  */
 export function CompanyPage() {
-  const { t } = useTranslation();
-
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-4 md:p-6">
-      <div>
-        <h1 className="text-lg font-medium">{t('layout.company')}</h1>
-        <p className="text-sm text-muted-foreground">{t('team.pageSubtitle')}</p>
-      </div>
-
-      <OrganizationName />
+    <div className="flex flex-col gap-6 p-3 md:p-4">
+      <OrganizationProfile />
       <TeamSection />
     </div>
   );

@@ -10,6 +10,7 @@ import {
   ProviderEngagement,
   type IProviderEngagement,
 } from '../models/ProviderEngagement.js';
+import { visibleProviderFilter } from '../services/directory.service.js';
 import type { IProject } from '../models/Project.js';
 
 function errMsg(error: unknown): string {
@@ -39,14 +40,13 @@ function toEngagementDTO(engagement: IProviderEngagement): ProviderEngagementDTO
 }
 
 /**
- * El proveedor tiene que ser visible desde ESTA obra: de la libreta de la
- * Empresa o propio de esta obra. Mismo criterio que `provider.controller.ts`.
+ * El proveedor tiene que ser visible desde ESTA obra: asignado a ella o
+ * propio de ella. Ver `directory.service.ts`.
  */
 async function findProviderInScope(project: IProject, providerId: string) {
   return Provider.findOne({
     _id: providerId,
-    organization: project.organization,
-    $or: [{ scope: { $ne: 'project' } }, { project: project._id }],
+    ...(await visibleProviderFilter(project)),
   });
 }
 

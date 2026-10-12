@@ -9,8 +9,9 @@ import {
   type MilestoneSeverity,
 } from '@luma/shared';
 import { format } from 'date-fns';
-import { Eye, EyeOff, Flag, Plus, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
+import { Fab } from '@/components/common/fab';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import {
@@ -386,13 +387,11 @@ export function ProjectMilestonesPage() {
 
   return (
     <div className="flex flex-col gap-6 p-3 md:p-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Flag className="size-4 text-muted-foreground" />
-          <h2 className="text-lg font-medium">{t('milestone.list.title')}</h2>
-        </div>
-        {canReport && <NewMilestoneDrawer projectId={projectId!} canPublish={canPublish} />}
-      </div>
+      {canReport && (
+        <Fab>
+          <NewMilestoneDrawer projectId={projectId!} canPublish={canPublish} />
+        </Fab>
+      )}
 
       {/* Cronología: lo último arriba. La API ya ordena por `occurredOn` desc. */}
       <ul className="flex flex-col gap-2">

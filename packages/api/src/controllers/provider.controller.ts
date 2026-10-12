@@ -8,30 +8,14 @@ import {
   type ProviderActivitySummary,
 } from '@luma/shared';
 import { Provider, type IProvider } from '../models/Provider.js';
+import { ProjectProvider } from '../models/ProjectProvider.js';
 import { ActivityProvider } from '../models/ActivityProvider.js';
 import { Activity, type IActivity } from '../models/Activity.js';
 import type { IProject } from '../models/Project.js';
+import { visibleProviderFilter } from '../services/directory.service.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
-}
-
-/**
- * Alcance visible desde una obra: los de la Empresa más los propios de ESTA
- * obra. Va en todas las búsquedas por id, no sólo en el listado — si no, un
- * `providerId` a mano alcanzaría para asignar (o editar) el proveedor privado
- * de otra obra de la misma Empresa.
- */
-function visibleFromProject(project: IProject) {
-  return {
-    organization: project.organization,
-    // `$ne: 'project'` y no `eq: 'organization'` a propósito: los proveedores
-    // creados antes de que existiera `scope` no tienen el campo, y el default
-    // de Mongoose sólo corre al crear — con un `eq` desaparecerían todos del
-    // listado sin migrar la base. "Privado de una obra" es la excepción
-    // explícita; todo lo demás es la libreta.
-    $or: [{ scope: { $ne: 'project' } }, { project: project._id }],
-  };
 }
 
 function toActivitySummaryDTO(activity: IActivity): ProviderActivitySummary {
@@ -45,7 +29,7 @@ function toActivitySummaryDTO(activity: IActivity): ProviderActivitySummary {
   };
 }
 
-function toProviderDTO(provider: IProvider): ProviderDTO {
+export function toProviderDTO(provider: IProvider): ProviderDTO {
   return {
     id: String(provider._id),
     organizationId: String(provider.organization),
@@ -80,7 +64,7 @@ export async function listProviders(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const providers = await Provider.find({
-      ...visibleFromProject(project),
+      ...(await visibleProviderFilter(project)),
       active: true,
     }).sort({ name: 1 });
 
@@ -110,6 +94,12 @@ export async function createProvider(req: Request, res: Response) {
       project: parsed.data.scope === 'project' ? project._id : null,
     });
 
+    // Lo que se carga desde una obra para toda la Empresa queda disponible en
+    // ESA obra: sin esta fila no lo vería después de crearlo.
+    if (provider.scope !== 'project') {
+      await ProjectProvider.create({ project: project._id, provider: provider._id });
+    }
+
     return res.status(201).json({ success: true, data: { provider: toProviderDTO(provider) } });
   } catch (error) {
     console.error('❌ [PROVIDER] createProvider:', error);
@@ -129,7 +119,7 @@ export async function updateProvider(req: Request, res: Response) {
 
     const project = req.project as IProject;
     const provider = await Provider.findOneAndUpdate(
-      { _id: req.params.providerId, ...visibleFromProject(project) },
+      { _id: req.params.providerId, ...(await visibleProviderFilter(project)) },
       parsed.data,
       { new: true },
     );
@@ -153,7 +143,7 @@ export async function deactivateProvider(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const provider = await Provider.findOneAndUpdate(
-      { _id: req.params.providerId, ...visibleFromProject(project) },
+      { _id: req.params.providerId, ...(await visibleProviderFilter(project)) },
       { active: false },
       { new: true },
     );
@@ -221,7 +211,7 @@ export async function assignProvider(req: Request, res: Response) {
 
     const provider = await Provider.findOne({
       _id: parsed.data.providerId,
-      ...visibleFromProject(project),
+      ...(await visibleProviderFilter(project)),
     });
     if (!provider) {
       return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
@@ -290,7 +280,7 @@ export async function listProviderActivities(req: Request, res: Response) {
     const project = req.project as IProject;
     const provider = await Provider.findOne({
       _id: req.params.providerId,
-      ...visibleFromProject(project),
+      ...(await visibleProviderFilter(project)),
     });
     if (!provider) {
       return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
@@ -324,7 +314,7 @@ export async function assignActivityToProvider(req: Request, res: Response) {
     const project = req.project as IProject;
     const provider = await Provider.findOne({
       _id: req.params.providerId,
-      ...visibleFromProject(project),
+      ...(await visibleProviderFilter(project)),
     });
     if (!provider) {
       return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
@@ -365,7 +355,7 @@ export async function unassignActivityFromProvider(req: Request, res: Response) 
     const project = req.project as IProject;
     const provider = await Provider.findOne({
       _id: req.params.providerId,
-      ...visibleFromProject(project),
+      ...(await visibleProviderFilter(project)),
     });
     if (!provider) {
       return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/common/empty-state';
 import { fromDayKey } from '@/components/common/date-range-filter';
+import { Fab } from '@/components/common/fab';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -94,17 +95,16 @@ export function AdminHomePage() {
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-lg font-medium">{t('layout.projects')}</h1>
+      <Fab>
         <Button asChild>
           <Link to={ROUTES.PROJECT_NEW}>
             <Plus className="size-4" />
             {t('project.list.new')}
           </Link>
         </Button>
-      </div>
+      </Fab>
 
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-4">
         {projects.map((project) => (
           <li key={project.id} className="flex">
             <ProjectCard project={project} />

@@ -6,6 +6,22 @@ import type { Request, Response } from 'express';
  * obra), que una meta no se le pueda asignar a personal de otra Empresa, y
  * que la actividad vinculada sea de esta obra.
  */
+vi.mock('../../services/directory.service.js', () => ({
+  visibleProviderFilter: vi.fn(async (project: { _id: string; organization: string }) => ({
+    organization: project.organization,
+    $or: [{ project: project._id }, { _id: { $in: ['assigned-1'] } }],
+  })),
+  visibleCrewFilter: vi.fn(async (project: { _id: string; organization: string }) => ({
+    organization: project.organization,
+    $or: [{ project: project._id }, { _id: { $in: ['assigned-1'] } }],
+  })),
+}));
+vi.mock('../../models/ProjectProvider.js', () => ({
+  ProjectProvider: { create: vi.fn(), find: vi.fn() },
+}));
+vi.mock('../../models/ProjectCrewMember.js', () => ({
+  ProjectCrewMember: { create: vi.fn(), find: vi.fn() },
+}));
 vi.mock('../../models/CrewMember.js', () => ({
   CrewMember: { find: vi.fn(), create: vi.fn(), findOne: vi.fn(), findOneAndUpdate: vi.fn() },
 }));
@@ -59,7 +75,7 @@ describe('listCrewMembers — roster de la Empresa más el de esta obra', () => 
 
     expect(CrewMember.find).toHaveBeenCalledWith({
       organization: 'org-1',
-      $or: [{ scope: { $ne: 'project' } }, { project: 'project-1' }],
+      $or: [{ project: 'project-1' }, { _id: { $in: ['assigned-1'] } }],
       active: true,
     });
     expect(jsonData(res)).toMatchObject({ data: { crewMembers: [{ id: 'crew-1' }] } });

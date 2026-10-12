@@ -22,6 +22,20 @@ async function unwrap<T>(request: Promise<ApiResponse<T>>): Promise<T> {
 }
 
 export const crewApi = {
+  /** Lo de la libreta de la Empresa que esta obra todavía no tiene. */
+  listDirectory: (projectId: string) =>
+    unwrap<CrewMemberListResponse>(apiClient.get(`/api/projects/${projectId}/crew/directory`)),
+
+  addFromDirectory: (projectId: string, crewMemberId: string) =>
+    unwrap<CrewMemberResponse>(
+      apiClient.post(`/api/projects/${projectId}/crew/directory/${crewMemberId}`, {}),
+    ),
+
+  removeFromProject: (projectId: string, crewMemberId: string) =>
+    unwrap<{ crewMemberId: string }>(
+      apiClient.delete(`/api/projects/${projectId}/crew/directory/${crewMemberId}`),
+    ),
+
   list: (projectId: string) =>
     unwrap<CrewMemberListResponse>(apiClient.get(`/api/projects/${projectId}/crew`)),
 

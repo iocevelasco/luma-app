@@ -205,3 +205,52 @@ export function useAssignActivitiesToProvider(projectId: string) {
     onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
+
+/** Lo de la libreta de la Empresa que esta obra todavía no tiene. */
+export function useProviderDirectory(projectId: string | undefined, enabled = true) {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.providerDirectory, projectId],
+    queryFn: () => providersApi.listDirectory(projectId!),
+    enabled: isAuthenticated && !!projectId && enabled,
+  });
+}
+
+function useInvalidateProjectProviders(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: [QueryKeys.providers, projectId] });
+    void queryClient.invalidateQueries({ queryKey: [QueryKeys.providerDirectory, projectId] });
+    void queryClient.invalidateQueries({ queryKey: [QueryKeys.organizationProviders] });
+  };
+}
+
+export function useAddProviderToProject(projectId: string) {
+  const invalidate = useInvalidateProjectProviders(projectId);
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (providerId: string) => providersApi.addFromDirectory(projectId, providerId),
+    onSuccess: () => {
+      invalidate();
+      toast.success(t('directory.addedToProject'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
+export function useRemoveProviderFromProject(projectId: string) {
+  const invalidate = useInvalidateProjectProviders(projectId);
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (providerId: string) => providersApi.removeFromProject(projectId, providerId),
+    onSuccess: () => {
+      invalidate();
+      toast.success(t('directory.removedFromProject'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}

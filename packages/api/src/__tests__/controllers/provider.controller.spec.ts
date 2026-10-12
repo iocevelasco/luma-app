@@ -8,6 +8,22 @@ import type { Request, Response } from 'express';
  * antes de tocar la tabla puente. Mismo patrón de mocks que
  * `material.controller.spec.ts`.
  */
+vi.mock('../../services/directory.service.js', () => ({
+  visibleProviderFilter: vi.fn(async (project: { _id: string; organization: string }) => ({
+    organization: project.organization,
+    $or: [{ project: project._id }, { _id: { $in: ['assigned-1'] } }],
+  })),
+  visibleCrewFilter: vi.fn(async (project: { _id: string; organization: string }) => ({
+    organization: project.organization,
+    $or: [{ project: project._id }, { _id: { $in: ['assigned-1'] } }],
+  })),
+}));
+vi.mock('../../models/ProjectProvider.js', () => ({
+  ProjectProvider: { create: vi.fn(), find: vi.fn() },
+}));
+vi.mock('../../models/ProjectCrewMember.js', () => ({
+  ProjectCrewMember: { create: vi.fn(), find: vi.fn() },
+}));
 vi.mock('../../models/Provider.js', () => ({
   Provider: { find: vi.fn(), create: vi.fn(), findOne: vi.fn(), findOneAndUpdate: vi.fn() },
 }));
@@ -70,7 +86,7 @@ describe('listProviders — libreta de la Empresa MÁS los propios de esta obra'
 
     expect(Provider.find).toHaveBeenCalledWith({
       organization: 'org-1',
-      $or: [{ scope: { $ne: 'project' } }, { project: 'project-1' }],
+      $or: [{ project: 'project-1' }, { _id: { $in: ['assigned-1'] } }],
       active: true,
     });
     expect(jsonData(res)).toMatchObject({ success: true, data: { providers: [{ id: 'provider-1' }] } });
@@ -172,7 +188,7 @@ describe('assignProvider — pertenencia cruzada antes de crear el vínculo', ()
     expect(Provider.findOne).toHaveBeenCalledWith({
       _id: 'provider-1',
       organization: 'org-1',
-      $or: [{ scope: { $ne: 'project' } }, { project: 'project-1' }],
+      $or: [{ project: 'project-1' }, { _id: { $in: ['assigned-1'] } }],
     });
     expect(res.status).toHaveBeenCalledWith(404);
     expect(ActivityProvider.create).not.toHaveBeenCalled();

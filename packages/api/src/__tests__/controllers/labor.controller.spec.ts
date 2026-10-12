@@ -8,6 +8,22 @@ import type { Request, Response } from 'express';
  * una actualización, y el cliente invitado no recibe nombres individuales de
  * personal — mismo patrón que `material.controller.spec.ts`.
  */
+vi.mock('../../services/directory.service.js', () => ({
+  visibleProviderFilter: vi.fn(async (project: { _id: string; organization: string }) => ({
+    organization: project.organization,
+    $or: [{ project: project._id }, { _id: { $in: ['assigned-1'] } }],
+  })),
+  visibleCrewFilter: vi.fn(async (project: { _id: string; organization: string }) => ({
+    organization: project.organization,
+    $or: [{ project: project._id }, { _id: { $in: ['assigned-1'] } }],
+  })),
+}));
+vi.mock('../../models/ProjectProvider.js', () => ({
+  ProjectProvider: { create: vi.fn(), find: vi.fn() },
+}));
+vi.mock('../../models/ProjectCrewMember.js', () => ({
+  ProjectCrewMember: { create: vi.fn(), find: vi.fn() },
+}));
 vi.mock('../../models/Activity.js', () => ({
   Activity: { findOne: vi.fn() },
 }));
