@@ -223,6 +223,18 @@
       "login": "No pudimos entrar. Revisá tu correo y contraseña.",
       "register": "No pudimos crear la cuenta.",
       "generic": "Algo salió mal. Probá de nuevo."
+    },
+    "hero": {
+      "title": "Construyendo el mañana",
+      "subtitle": "Cada paso cuenta. Cada obra importa.",
+      "imageAlt": "Equipo trabajando sobre la estructura de una obra en construcción"
+    },
+    "or": "o",
+    "cta": {
+      "manageQuestion": "¿Gestionás una obra?",
+      "manageAction": "Creá una cuenta gratis",
+      "invitedQuestion": "¿Te invitaron a una obra?",
+      "invitedAction": "Revisá tu correo de invitación"
     }
   },
   "routeError": {

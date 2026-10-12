@@ -12,7 +12,7 @@ import {
   setPasswordRequestSchema,
   type AuthUser,
 } from '@luma/shared';
-import { isProduction } from '../config/app.config.js';
+import { isProduction, REQUIRE_EMAIL_VERIFICATION } from '../config/app.config.js';
 import { User, type IUser } from '../models/User.js';
 import { generateTokens } from '../services/auth.service.js';
 import { EmailService } from '../services/email.service.js';
@@ -131,20 +131,26 @@ export async function register(req: Request, res: Response) {
       name,
       password: await bcrypt.hash(password, BCRYPT_ROUNDS),
       role: 'user',
-      email_verified: false,
-      emailVerificationToken: verificationToken,
-      emailVerificationTokenExpires: new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS),
+      email_verified: !REQUIRE_EMAIL_VERIFICATION,
+      ...(REQUIRE_EMAIL_VERIFICATION && {
+        emailVerificationToken: verificationToken,
+        emailVerificationTokenExpires: new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS),
+      }),
     });
 
     // Toda cuenta nueva tiene su empresa personal desde el arranque: así nunca
     // hace falta un paso aparte de "creá tu empresa" antes de la primera obra.
     await createPersonalOrganization(String(user._id), name);
 
-    await EmailService.sendEmailVerificationEmail(email, verificationToken, name);
+    if (REQUIRE_EMAIL_VERIFICATION) {
+      await EmailService.sendEmailVerificationEmail(email, verificationToken, name);
+    }
 
     return res.status(201).json({
       success: true,
-      message: 'Cuenta creada. Revisá tu correo para confirmarla.',
+      message: REQUIRE_EMAIL_VERIFICATION
+        ? 'Cuenta creada. Revisá tu correo para confirmarla.'
+        : 'Cuenta creada. Ya podés entrar.',
       data: { user: toAuthUser(user) },
     });
   } catch (error) {

@@ -9,10 +9,10 @@ interface GridBackgroundProps {
 export function GridBackground({ className, opacity = 0.025, size = 48 }: GridBackgroundProps) {
   return (
     <div
-      className={cn('absolute inset-0 pointer-events-none', className)}
+      className={cn('absolute inset-0 pointer-events-none text-foreground', className)}
       style={{
         backgroundImage:
-          'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+          'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
         backgroundSize: `${size}px ${size}px`,
         opacity,
       }}

@@ -56,7 +56,9 @@ export function useRegister() {
 
   return useMutation({
     mutationFn: (credentials: RegisterCredentials) => authApi.register(credentials),
-    onSuccess: () => navigate(ROUTES.CHECK_EMAIL),
+    // Con la verificación apagada la cuenta nace verificada: se entra directo.
+    onSuccess: (data) =>
+      navigate(data.user.email_verified ? ROUTES.LOGIN : ROUTES.CHECK_EMAIL),
   });
 }
 

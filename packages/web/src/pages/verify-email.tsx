@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
-import { AuthLayout } from '@/components/auth/auth-layout';
+import { AuthHeader, AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useVerifyEmail } from '@/hooks/auth/use-auth-queries';
 import { ROUTES } from '@/lib/routes';
 
@@ -18,26 +17,24 @@ export function VerifyEmailPage() {
   const { isPending, isError, isSuccess } = useVerifyEmail(token);
 
   return (
-    <AuthLayout>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {isPending && token
+    <AuthSplitLayout width="md">
+      <AuthHeader
+        title={
+          isPending && token
               ? t('auth.verifyEmail.verifying')
               : isSuccess
                 ? t('auth.verifyEmail.success')
-                : t('auth.verifyEmail.error')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+                : t('auth.verifyEmail.error')
+        }
+      />
+      <div className="flex justify-center">
           {(isSuccess || isError || !token) && (
             <Button asChild>
               <Link to={ROUTES.LOGIN}>{t('auth.verifyEmail.goToLogin')}</Link>
             </Button>
           )}
-        </CardContent>
-      </Card>
-    </AuthLayout>
+        </div>
+    </AuthSplitLayout>
   );
 }
 

@@ -57,9 +57,13 @@ export function PasswordForm({ submitLabel, isPending, onSubmit }: PasswordFormP
         />
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
-      <Button type="submit" disabled={isPending}>
+      <Button type="submit" size="lg" className="w-full" disabled={isPending}>
         {isPending ? t('common.loading') : submitLabel}
       </Button>
     </form>
