@@ -51,6 +51,7 @@ export async function registerWith(page: Page, name: string, email: string, pass
   await page.locator('#name').fill(name);
   await page.locator('#email').fill(email);
   await page.locator('#password').fill(password);
+  await page.locator('#confirmPassword').fill(password);
   await page.getByRole('button', { name: /crear cuenta/i }).click();
   await page.waitForURL((url) => url.pathname.includes('/check-email'), { timeout: 15_000 });
 }

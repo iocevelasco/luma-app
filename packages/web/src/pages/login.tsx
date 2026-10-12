@@ -7,9 +7,11 @@ import type { z } from 'zod';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PasswordInput } from '@/components/auth/password-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLogin } from '@/hooks/auth/use-auth-queries';
+import { errorMessage } from '@/lib/error-message';
 import { ROUTES } from '@/lib/routes';
 
 type LoginForm = z.infer<typeof loginCredentialsSchema>;
@@ -38,7 +40,14 @@ export function LoginPage() {
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">{t('common.email')}</Label>
-              <Input id="email" type="email" autoComplete="email" {...register('email')} />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                {...register('email')}
+              />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email.message}</p>
               )}
@@ -46,9 +55,8 @@ export function LoginPage() {
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">{t('common.password')}</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="current-password"
                 {...register('password')}
               />
@@ -56,6 +64,12 @@ export function LoginPage() {
                 <p className="text-sm text-destructive">{errors.password.message}</p>
               )}
             </div>
+
+            {login.isError && (
+              <p role="alert" className="text-sm text-destructive">
+                {errorMessage(login.error, t)}
+              </p>
+            )}
 
             <Button type="submit" disabled={login.isPending}>
               {login.isPending ? t('common.loading') : t('auth.login.submit')}
