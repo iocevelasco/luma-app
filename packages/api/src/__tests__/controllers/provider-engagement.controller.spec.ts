@@ -7,6 +7,22 @@ import type { Request, Response } from 'express';
  * requisitos no pueden apuntar a actividades de otra obra, y marcar un
  * requisito cumplido no toca montos ni estado.
  */
+vi.mock('../../services/directory.service.js', () => ({
+  visibleProviderFilter: vi.fn(async (project: { _id: string; organization: string }) => ({
+    organization: project.organization,
+    $or: [{ project: project._id }, { _id: { $in: ['assigned-1'] } }],
+  })),
+  visibleCrewFilter: vi.fn(async (project: { _id: string; organization: string }) => ({
+    organization: project.organization,
+    $or: [{ project: project._id }, { _id: { $in: ['assigned-1'] } }],
+  })),
+}));
+vi.mock('../../models/ProjectProvider.js', () => ({
+  ProjectProvider: { create: vi.fn(), find: vi.fn() },
+}));
+vi.mock('../../models/ProjectCrewMember.js', () => ({
+  ProjectCrewMember: { create: vi.fn(), find: vi.fn() },
+}));
 vi.mock('../../models/ProviderEngagement.js', () => ({
   ProviderEngagement: {
     find: vi.fn(),

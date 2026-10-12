@@ -9,11 +9,12 @@ import {
   type ExpenseCategory,
 } from '@luma/shared';
 import { format } from 'date-fns';
-import { Download, Plus, Receipt, Trash2, TrendingUp, Upload, Users } from 'lucide-react';
+import { Download, Plus, Trash2, TrendingUp, Upload, Users } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Can } from '@/components/permissions/can';
+import { Fab } from '@/components/common/fab';
 import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
@@ -457,15 +458,11 @@ export function ProjectExpensesPage() {
 
       <PayrollCard projectId={projectId!} currency={currency} />
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Receipt className="size-4 text-muted-foreground" />
-          <h2 className="text-lg font-medium">{t('finance.expenses.title')}</h2>
-        </div>
-        <Can I="expense.write">
+      <Can I="expense.write">
+        <Fab>
           <NewExpenseDrawer projectId={projectId!} projectCurrency={currency} />
-        </Can>
-      </div>
+        </Fab>
+      </Can>
 
       {data.expenses.length === 0 ? (
         <EmptyState

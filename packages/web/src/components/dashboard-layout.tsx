@@ -1,8 +1,9 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { ROUTES } from '@/lib/routes';
 import { AppLogo } from '@/components/app-logo';
 import { DashboardBottomNav } from '@/components/dashboard/navigation/dashboard-bottom-nav';
 import { DashboardRail } from '@/components/dashboard/navigation/dashboard-rail';
-import { Breadcrumbs } from '@/components/dashboard/navigation/breadcrumbs';
+import { HeaderTitle } from '@/components/dashboard/navigation/page-header';
 import {
   ProjectNavScroller,
   ProjectSidebar,
@@ -30,6 +31,13 @@ import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 export function DashboardLayout() {
   const projectId = useCurrentProjectId();
   const insideProject = Boolean(projectId);
+  const { pathname } = useLocation();
+  // Formularios (alta de obra, Empresa, Mi cuenta): más angostos que un listado.
+  const narrow = [ROUTES.PROJECT_NEW, ROUTES.COMPANY, ROUTES.ACCOUNT_SETTINGS].some(
+    (path) => path === pathname,
+  );
+  // El listado de obras usa todo el ancho: las cards crecen en columnas.
+  const wide = pathname === ROUTES.ADMIN;
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -37,7 +45,7 @@ export function DashboardLayout() {
         <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border px-4">
           <div className="flex min-w-0 items-center gap-3">
             <AppLogo />
-            <Breadcrumbs />
+            <HeaderTitle />
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <LanguageSelector />
@@ -56,8 +64,37 @@ export function DashboardLayout() {
             obra no se muestra (la navegación es la tira de arriba), y ese
             padding dejaría un hueco muerto al final de cada pantalla.
           */}
-          <main className={cn('min-w-0 flex-1 p-4 md:pb-4', insideProject ? 'pb-4' : 'pb-20')}>
-            <Outlet />
+          <main
+            className={cn(
+              'relative min-w-0 flex-1 p-4 md:pb-4',
+              insideProject ? 'pb-24' : 'pb-36 md:pb-28',
+            )}
+          >
+            {/*
+              Las vistas principales (Obras, Proveedores, Empleados, Empresa,
+              Nueva obra) llevan la ilustración de fondo y el contenido
+              centrado. Adentro de una obra no: ahí hay tablas y cronogramas
+              que necesitan todo el ancho y un fondo que no compita.
+
+              Va antes que el contenido, que es `relative` y por eso queda
+              encima, y con opacidad baja: son líneas finas, y a todo color
+              hacen ilegible el texto que cae encima.
+            */}
+            {!insideProject && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 bg-[url('/illustrations/estructura.png')] bg-contain bg-right-bottom bg-no-repeat opacity-[0.14] dark:opacity-20"
+              />
+            )}
+            <div
+              className={cn(
+                'relative',
+                !insideProject && 'mx-auto w-full',
+                !insideProject && !wide && (narrow ? 'max-w-2xl' : 'max-w-4xl'),
+              )}
+            >
+              <Outlet />
+            </div>
           </main>
         </div>
 

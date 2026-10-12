@@ -6,6 +6,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme="dark"
+      // Abajo al centro y no a la derecha: ahí vive el botón flotante de
+      // creación, y un aviso encima lo tapa justo cuando se acaba de usar.
+      position="bottom-center"
       className="toaster group"
       style={
         {

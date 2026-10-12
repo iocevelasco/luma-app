@@ -72,6 +72,19 @@ export interface ProviderListResponse {
   providers: Provider[];
 }
 
+/** Proveedor de la libreta de la Empresa con las obras donde ya está asignado. */
+export interface OrganizationProvider extends Provider {
+  projectIds: string[];
+}
+
+export interface OrganizationProviderListResponse {
+  providers: OrganizationProvider[];
+}
+
+export interface OrganizationProviderResponse {
+  provider: OrganizationProvider;
+}
+
 export interface ProviderResponse {
   provider: Provider;
 }

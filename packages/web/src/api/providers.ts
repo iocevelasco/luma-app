@@ -26,6 +26,20 @@ async function unwrap<T>(request: Promise<ApiResponse<T>>): Promise<T> {
 }
 
 export const providersApi = {
+  /** Lo de la libreta de la Empresa que esta obra todavía no tiene. */
+  listDirectory: (projectId: string) =>
+    unwrap<ProviderListResponse>(apiClient.get(`/api/projects/${projectId}/providers/directory`)),
+
+  addFromDirectory: (projectId: string, providerId: string) =>
+    unwrap<ProviderResponse>(
+      apiClient.post(`/api/projects/${projectId}/providers/directory/${providerId}`, {}),
+    ),
+
+  removeFromProject: (projectId: string, providerId: string) =>
+    unwrap<{ providerId: string }>(
+      apiClient.delete(`/api/projects/${projectId}/providers/directory/${providerId}`),
+    ),
+
   list: (projectId: string) =>
     unwrap<ProviderListResponse>(apiClient.get(`/api/projects/${projectId}/providers`)),
 

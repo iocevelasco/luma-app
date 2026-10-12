@@ -80,13 +80,7 @@ export function ProjectAdvisorPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-3 md:p-4">
-      <div>
-        <h1 className="text-2xl">{t('advisor.title')}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t('advisor.subtitle', { name: projectData.project.name })}
-        </p>
-      </div>
+    <div className="flex max-w-3xl flex-col gap-4 p-3 md:p-4">
 
       <Card className="flex flex-col gap-0 overflow-hidden py-0">
         <ScrollArea className="h-[50vh]">

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { CrewMemberKind, ProviderSpecialty } from '@luma/shared';
-import { Plus, UserX } from 'lucide-react';
+import { Building2, Plus, UserMinus, UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FormDrawer } from '@/components/common/form-drawer';
+import { DirectoryPickerDialog } from '@/components/directory/directory-picker-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,9 +17,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  useAddCrewMemberToProject,
   useCreateCrewMember,
+  useCrewDirectory,
   useCrewMembers,
   useDeactivateCrewMember,
+  useRemoveCrewMemberFromProject,
 } from '@/hooks/crew/use-crew-queries';
 
 /** Mismo catálogo que proveedores — un test en `@luma/shared` los mantiene alineados. */
@@ -72,6 +76,13 @@ export function CrewRosterDialog({
   const { data } = useCrewMembers(open ? projectId : undefined);
   const createMember = useCreateCrewMember(projectId);
   const deactivateMember = useDeactivateCrewMember(projectId);
+  const removeMember = useRemoveCrewMemberFromProject(projectId);
+  const addMember = useAddCrewMemberToProject(projectId);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const { data: directoryData, isLoading: directoryLoading } = useCrewDirectory(
+    projectId,
+    open && pickerOpen,
+  );
 
   const crewMembers = data?.crewMembers ?? [];
 
@@ -116,19 +127,46 @@ export function CrewRosterDialog({
                     )}
                   </div>
                   {isOwner && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-sm"
-                      onClick={() => deactivateMember.mutate(member.id)}
-                      aria-label={t('crew.list.deactivate')}
-                    >
-                      <UserX className="size-4" />
-                    </Button>
+                    // De la libreta de la Empresa: se saca DE ESTA OBRA. La baja
+                    // es de la Empresa y alcanza a todas las obras.
+                    member.scope === 'project' ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        onClick={() => deactivateMember.mutate(member.id)}
+                        aria-label={t('crew.list.deactivate')}
+                      >
+                        <UserX className="size-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        onClick={() => removeMember.mutate(member.id)}
+                        aria-label={t('directory.removeFromProject')}
+                      >
+                        <UserMinus className="size-4" />
+                      </Button>
+                    )
                   )}
                 </li>
               ))}
             </ul>
+          )}
+
+          {isOwner && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="self-start"
+              onClick={() => setPickerOpen(true)}
+            >
+              <Building2 className="size-4" />
+              {t('directory.addFromCompany')}
+            </Button>
           )}
 
           {isOwner && (
@@ -227,6 +265,20 @@ export function CrewRosterDialog({
             </form>
           )}
         </div>
+      <DirectoryPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        title={t('directory.pickCrewTitle')}
+        items={(directoryData?.crewMembers ?? []).map((member) => ({
+          id: member.id,
+          name: member.name,
+          detail: member.specialty ? t(`provider.specialty.${member.specialty}`) : undefined,
+        }))}
+        isLoading={directoryLoading}
+        pendingId={addMember.isPending ? addMember.variables : null}
+        emptyLabel={t('directory.pickEmptyCrew')}
+        onAdd={(id) => addMember.mutate(id)}
+      />
     </FormDrawer>
   );
 }

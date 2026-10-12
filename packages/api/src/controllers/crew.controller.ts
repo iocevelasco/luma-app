@@ -9,28 +9,17 @@ import {
   type CrewMember as CrewMemberDTO,
 } from '@luma/shared';
 import { Activity } from '../models/Activity.js';
+import { ProjectCrewMember } from '../models/ProjectCrewMember.js';
 import { CrewGoal, type ICrewGoal } from '../models/CrewGoal.js';
 import { CrewMember, type ICrewMember } from '../models/CrewMember.js';
 import type { IProject } from '../models/Project.js';
+import { visibleCrewFilter } from '../services/directory.service.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
 }
 
-/**
- * Mismo criterio de alcance que `provider.controller.ts`: el roster de la
- * Empresa más el personal contratado sólo para esta obra. `$ne: 'project'`
- * y no `eq: 'organization'` para que las filas viejas sin el campo sigan
- * apareciendo.
- */
-function visibleFromProject(project: IProject) {
-  return {
-    organization: project.organization,
-    $or: [{ scope: { $ne: 'project' } }, { project: project._id }],
-  };
-}
-
-function toCrewMemberDTO(member: ICrewMember): CrewMemberDTO {
+export function toCrewMemberDTO(member: ICrewMember): CrewMemberDTO {
   return {
     id: String(member._id),
     organizationId: String(member.organization),
@@ -69,7 +58,7 @@ export async function listCrewMembers(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const crewMembers = await CrewMember.find({
-      ...visibleFromProject(project),
+      ...(await visibleCrewFilter(project)),
       active: true,
     }).sort({ name: 1 });
 
@@ -97,6 +86,11 @@ export async function createCrewMember(req: Request, res: Response) {
       project: parsed.data.scope === 'project' ? project._id : null,
     });
 
+    // Igual que con los proveedores: lo creado desde una obra queda en ella.
+    if (crewMember.scope !== 'project') {
+      await ProjectCrewMember.create({ project: project._id, crewMember: crewMember._id });
+    }
+
     return res
       .status(201)
       .json({ success: true, data: { crewMember: toCrewMemberDTO(crewMember) } });
@@ -118,7 +112,7 @@ export async function updateCrewMember(req: Request, res: Response) {
 
     const project = req.project as IProject;
     const crewMember = await CrewMember.findOneAndUpdate(
-      { _id: req.params.crewMemberId, ...visibleFromProject(project) },
+      { _id: req.params.crewMemberId, ...(await visibleCrewFilter(project)) },
       parsed.data,
       { new: true },
     );
@@ -142,7 +136,7 @@ export async function deactivateCrewMember(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
     const crewMember = await CrewMember.findOneAndUpdate(
-      { _id: req.params.crewMemberId, ...visibleFromProject(project) },
+      { _id: req.params.crewMemberId, ...(await visibleCrewFilter(project)) },
       { active: false },
       { new: true },
     );
@@ -217,7 +211,7 @@ export async function createCrewGoal(req: Request, res: Response) {
 
     const crewMember = await CrewMember.findOne({
       _id: parsed.data.crewMemberId,
-      ...visibleFromProject(project),
+      ...(await visibleCrewFilter(project)),
     });
     if (!crewMember) {
       return res.status(404).json({ success: false, error: 'Personal no encontrado' });

@@ -293,11 +293,7 @@ export function ProjectTeamPage() {
 
   return (
     <div className="flex flex-col gap-6 p-3 md:p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-medium">{t('project.team.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('project.team.subtitle')}</p>
-        </div>
+      <div className="flex items-start justify-end gap-4">
         {/*
           `hide` y no `disable`: para un supervisor o un contador, invitar
           gente no es parte de su flujo — un botón apagado ahí sugiere que le

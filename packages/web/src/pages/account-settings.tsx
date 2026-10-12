@@ -19,9 +19,7 @@ export function AccountSettingsPage() {
   const [emailPassword, setEmailPassword] = useState('');
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-      <h1 className="text-xl font-semibold">{t('auth.account.title')}</h1>
-
+    <div className="flex w-full flex-col gap-4 p-3 md:p-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t('auth.account.changePassword')}</CardTitle>

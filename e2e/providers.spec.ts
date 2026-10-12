@@ -141,23 +141,21 @@ test.describe('directorio de proveedores', () => {
     await detailDialog.getByRole('button', { name: /atrás/i }).click();
     await expect(detailDialog).toBeHidden();
 
-    // --- CRUD: dar de baja ---
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
-    await expect(page).toHaveURL(/\/proveedores$/);
-    // Mismo duplicado tabla/tarjeta que arriba.
+    // --- Dar de baja: es de la Empresa, no de la obra ---
+    // Desde la obra sólo se lo puede sacar de ESTA obra, y la API lo rechaza
+    // mientras tenga actividades asignadas. La baja vive en la libreta.
+    // Adentro de una obra no está el riel: se entra por URL.
+    await page.goto('/admin/proveedores');
+    await expect(page).toHaveURL(/\/admin\/proveedores$/);
     await page.getByRole('button', { name: /dar de baja/i }).first().click();
-    await page.getByRole('button', { name: /^continuar$/i }).click();
-    // Espera al estado vacío en vez de "el nombre ya no aparece": la
-    // invalidación de la query tarda un round-trip, y mientras tanto
-    // `getByText` puede resolver a las dos filas (tabla + tarjeta) a la vez —
-    // el vacío es un único elemento, sin ese problema de modo estricto.
-    await expect(page.getByText(/todavía no cargaste proveedores/i)).toBeVisible({
+    await page.getByRole('alertdialog').getByRole('button', { name: /dar de baja/i }).click();
+    await expect(page.getByText(/todavía no hay proveedores en tu empresa/i)).toBeVisible({
       timeout: 10_000,
     });
 
     // El proveedor dado de baja sigue apareciendo donde ya estaba asignado
     // (trazabilidad — ver comentario en models/Provider.ts).
-    await page.goto(page.url().replace(/\/proveedores$/, '/actividades'));
+    await page.goto(`${projectDetailUrl}/actividades`);
     await page.getByRole('gridcell', { name: ACTIVITY_NAME_2, exact: true }).click();
     detailDialog = page.getByRole('dialog');
     await expect(detailDialog.getByText(PROVIDER_NAME)).toBeVisible();
@@ -328,13 +326,24 @@ test.describe('directorio de proveedores', () => {
     await expect(page.getByText(clientProvider).first()).toBeVisible();
     await expect(page.getByText(/solo esta obra/i).first()).toBeVisible();
 
-    // Obra B: sólo tiene que ver el de la libreta. Se vuelve por URL: "Obras"
-    // aparece dos veces (breadcrumb y riel) y no vale la pena desambiguar.
+    // Obra B: cada obra ve sólo lo que tiene asignado, así que arranca sin
+    // ninguno. Se vuelve por URL: "Obras" aparece dos veces (breadcrumb y
+    // riel) y no vale la pena desambiguar.
     await page.goto('/admin');
     await expect(page).toHaveURL(/\/admin$/);
     await createProject(projectB, false);
     await page.getByRole('link', { name: /^proveedores$/i }).click();
     await expect(page).toHaveURL(/\/proveedores$/);
+
+    await expect(page.getByText(libraryProvider)).toHaveCount(0);
+
+    // El de la libreta se suma desde la Empresa; el del cliente nunca aparece.
+    await page.getByRole('button', { name: /agregar de la empresa/i }).click();
+    const picker = page.getByRole('dialog');
+    await expect(picker.getByText(libraryProvider)).toBeVisible();
+    await expect(picker.getByText(clientProvider)).toHaveCount(0);
+    await picker.getByRole('button', { name: /^agregar$/i }).click();
+    await page.keyboard.press('Escape');
 
     await expect(page.getByText(libraryProvider).first()).toBeVisible();
     await expect(page.getByText(clientProvider)).toHaveCount(0);

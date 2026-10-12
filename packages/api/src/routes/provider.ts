@@ -17,6 +17,9 @@ import {
   unassignActivityFromProvider,
   updateProvider,
   updateProviderEngagement,
+  addProviderToProject,
+  listProviderDirectory,
+  removeProviderFromProject,
 } from '../controllers/index.js';
 
 /**
@@ -38,6 +41,20 @@ providerRouter.use(isAuthenticated, requireProjectAccess);
 // habilitó — esa excepción vive en la grilla, no acá.
 providerRouter.get('/', requireCapability('provider.read'), listProviders);
 providerRouter.post('/', requireCapability('provider.manage'), createProvider);
+
+// Sumar a esta obra lo que ya está en la libreta de la Empresa. Antes que
+// `/:providerId` para que "directory" no se lea como un id.
+providerRouter.get('/directory', requireCapability('provider.manage'), listProviderDirectory);
+providerRouter.post(
+  '/directory/:providerId',
+  requireCapability('provider.manage'),
+  addProviderToProject,
+);
+providerRouter.delete(
+  '/directory/:providerId',
+  requireCapability('provider.manage'),
+  removeProviderFromProject,
+);
 providerRouter.patch('/:providerId', requireCapability('provider.manage'), updateProvider);
 providerRouter.delete('/:providerId', requireCapability('provider.manage'), deactivateProvider);
 

@@ -28,7 +28,9 @@
     "projects": "Obras",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
-    "company": "Empresa"
+    "company": "Empresa",
+    "providers": "Proveedores",
+    "crew": "Empleados"
   },
   "userMenu": {
     "account": "Mi cuenta",
@@ -134,7 +136,6 @@
     },
     "team": {
       "title": "Equipo y accesos",
-      "subtitle": "Quién entra a esta obra y qué puede hacer.",
       "manage": "Gestionar",
       "invite": "Dar acceso",
       "inviteTitle": "Dar acceso a la obra",
@@ -497,7 +498,11 @@
       "deactivate": "Dar de baja",
       "created": "Personal agregado",
       "updated": "Personal actualizado",
-      "deactivated": "Personal dado de baja"
+      "deactivated": "Personal dado de baja",
+      "new": "Nuevo empleado",
+      "newTitle": "Nuevo empleado",
+      "newSubmit": "Crear empleado",
+      "editTitle": "Editar empleado"
     },
     "fields": {
       "name": "Nombre",
@@ -663,7 +668,6 @@
   },
   "advisor": {
     "title": "Consultor IA",
-    "subtitle": "Preguntale por el presupuesto, el cronograma o la mano de obra de {{name}}.",
     "empty": "Escribí una pregunta sobre esta obra para empezar.",
     "placeholder": "Preguntale al Consultor IA sobre esta obra…",
     "thinking": "Pensando…",
@@ -684,7 +688,17 @@
     "errors": {
       "invite": "No pudimos invitar a esa persona."
     },
-    "pageSubtitle": "El nombre de tu Empresa y quién trabaja en ella."
+    "updated": "Datos actualizados",
+    "removed": "Persona sacada del equipo",
+    "invitationResent": "Invitación reenviada",
+    "editTitle": "Editar integrante",
+    "name": "Nombre",
+    "emailReadOnly": "El email es su identidad en Luma y no se cambia desde acá.",
+    "pending": "Sin activar",
+    "resend": "Reenviar invitación",
+    "removeFromCompany": "Sacar del equipo",
+    "removeCompanyTitle": "¿Sacar del equipo?",
+    "removeCompanyBody": "{{name}} deja de pertenecer a tu Empresa y pierde el acceso a sus obras. Lo que cargó se mantiene."
   },
   "document": {
     "list": {
@@ -961,5 +975,47 @@
     "internal": "Algo falló de nuestro lado. Probá de nuevo en un momento.",
     "network": "No pudimos conectarnos. Revisá tu conexión.",
     "title": "No se pudo guardar"
+  },
+  "directory": {
+    "providersEmpty": "Todavía no hay proveedores en tu Empresa.",
+    "crewEmpty": "Todavía no hay empleados en tu Empresa.",
+    "emptyHint": "Cargá el primero con el botón de arriba. Después lo sumás a las obras donde trabaja.",
+    "name": "Nombre",
+    "specialty": "Especialidad",
+    "phone": "Teléfono",
+    "kind": "Tipo",
+    "lead": "Encargado",
+    "kindPersona": "Persona",
+    "kindEquipo": "Equipo",
+    "projects": "Obras",
+    "projectsCount_one": "{{count}} obra",
+    "projectsCount_other": "{{count}} obras",
+    "projectsTitle": "Obras de {{name}}",
+    "projectsHint": "Elegí en qué obras está. Cada obra sólo dispone de quienes tiene asignados.",
+    "projectsSave": "Guardar",
+    "projectsSaved": "Obras actualizadas",
+    "noProjects": "Todavía no tenés obras.",
+    "noValue": "—",
+    "confirmDeactivateTitle": "Dar de baja al proveedor",
+    "confirmDeactivateBody": "\"{{name}}\" deja de aparecer para asignar en todas tus obras. Donde ya trabajó, queda registrado.",
+    "confirmDeactivateCrewTitle": "Dar de baja al empleado",
+    "confirmDeactivateCrewBody": "\"{{name}}\" deja de aparecer para asignar en todas tus obras. Su asistencia y sus metas pasadas se conservan.",
+    "addFromCompany": "Agregar de la Empresa",
+    "addToProject": "Agregar",
+    "addedToProject": "Agregado a la obra",
+    "removedFromProject": "Sacado de la obra",
+    "removeFromProject": "Sacar de la obra",
+    "pickProviderTitle": "Proveedores de la Empresa",
+    "pickCrewTitle": "Empleados de la Empresa",
+    "pickEmptyProviders": "No hay más proveedores en la Empresa para sumar a esta obra.",
+    "pickEmptyCrew": "No hay más empleados en la Empresa para sumar a esta obra."
+  },
+  "company": {
+    "saved": "Datos de la Empresa guardados",
+    "profileTitle": "Datos de la Empresa",
+    "profileHint": "Cómo se llama tu Empresa y cómo contactarla.",
+    "name": "Nombre",
+    "contactEmail": "Email de contacto (opcional)",
+    "contactPhone": "Teléfono de contacto (opcional)"
   }
 }
