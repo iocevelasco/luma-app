@@ -130,3 +130,52 @@ export function useDeleteCrewGoal(projectId: string) {
     onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
+
+/** Lo de la libreta de la Empresa que esta obra todavía no tiene. */
+export function useCrewDirectory(projectId: string | undefined, enabled = true) {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.crewDirectory, projectId],
+    queryFn: () => crewApi.listDirectory(projectId!),
+    enabled: isAuthenticated && !!projectId && enabled,
+  });
+}
+
+function useInvalidateProjectCrew(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewMembers, projectId] });
+    void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewDirectory, projectId] });
+    void queryClient.invalidateQueries({ queryKey: [QueryKeys.organizationCrew] });
+  };
+}
+
+export function useAddCrewMemberToProject(projectId: string) {
+  const invalidate = useInvalidateProjectCrew(projectId);
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (crewMemberId: string) => crewApi.addFromDirectory(projectId, crewMemberId),
+    onSuccess: () => {
+      invalidate();
+      toast.success(t('directory.addedToProject'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
+export function useRemoveCrewMemberFromProject(projectId: string) {
+  const invalidate = useInvalidateProjectCrew(projectId);
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (crewMemberId: string) => crewApi.removeFromProject(projectId, crewMemberId),
+    onSuccess: () => {
+      invalidate();
+      toast.success(t('directory.removedFromProject'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}

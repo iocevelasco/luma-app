@@ -1,14 +1,12 @@
 import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  allowsCustomSpecialty,
   createProviderSchema,
   type CreateProviderInput,
   type Provider,
-  type ProviderSpecialty,
 } from '@luma/shared';
-import { CalendarClock, FileSignature, Pencil, Plus, UserX, X } from 'lucide-react';
-import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
+import { Building2, CalendarClock, FileSignature, Pencil, Plus, UserMinus, UserX, X } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import {
@@ -21,15 +19,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Fab } from '@/components/common/fab';
 import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
+import { ProviderFormFields } from '@/components/providers/provider-form-fields';
+import { DirectoryPickerDialog } from '@/components/directory/directory-picker-dialog';
 import { ProviderEngagementDialog } from '@/components/providers/provider-engagement-dialog';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
 import { RouteError } from '@/components/routes/route-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -38,155 +38,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import {
   useAssignActivitiesToProvider,
+  useAddProviderToProject,
   useAssignActivityToProvider,
   useCreateProvider,
   useDeactivateProvider,
   useProviderActivities,
+  useProviderDirectory,
+  useRemoveProviderFromProject,
   useProviders,
   useUnassignActivityFromProvider,
   useUpdateProvider,
 } from '@/hooks/providers/use-provider-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
-
-/** Mismo orden que el enum de `@luma/shared`: primero el catálogo de obra. */
-const PROVIDER_SPECIALTIES: ProviderSpecialty[] = [
-  'electricidad',
-  'plomeria',
-  'gas',
-  'carpinteria',
-  'cristaleria',
-  'albanileria',
-  'herreria',
-  'redes',
-  'mecanicas',
-  'estructura',
-  'acabados',
-  'pintura',
-  'climatizacion',
-  'techos',
-  'pisos_revestimientos',
-  'jardineria',
-  'demolicion',
-  'otra',
-];
-
-/**
- * Campos del formulario de proveedor, compartidos entre "Nuevo" y "Editar" —
- * mismo criterio que `ActivityFormFields` en `project-activities.tsx`.
- */
-function ProviderFormFields({
-  idPrefix,
-  register,
-  control,
-  errors,
-  specialty,
-  showScope = false,
-}: {
-  idPrefix: string;
-  register: UseFormRegister<CreateProviderInput>;
-  control: Control<CreateProviderInput>;
-  errors: FieldErrors<CreateProviderInput>;
-  specialty: ProviderSpecialty | undefined;
-  /** Sólo al crear: mover un proveedor de alcance después es otra conversación. */
-  showScope?: boolean;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-name`}>{t('provider.fields.name')}</Label>
-        <Input id={`${idPrefix}-name`} {...register('name')} />
-        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-company`}>{t('provider.fields.companyName')}</Label>
-        <Input id={`${idPrefix}-company`} {...register('companyName')} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-specialty`}>{t('provider.fields.specialty')}</Label>
-        <Controller
-          control={control}
-          name="specialty"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id={`${idPrefix}-specialty`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVIDER_SPECIALTIES.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {t(`provider.specialty.${value}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </div>
-
-      {specialty && allowsCustomSpecialty(specialty) && (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={`${idPrefix}-custom-specialty`}>
-            {specialty === 'acabados'
-              ? t('provider.fields.customSpecialtyAcabados')
-              : t('provider.fields.customSpecialty')}
-          </Label>
-          <Input id={`${idPrefix}-custom-specialty`} {...register('customSpecialty')} />
-          {errors.customSpecialty && (
-            <p className="text-sm text-destructive">{errors.customSpecialty.message}</p>
-          )}
-        </div>
-      )}
-
-      {showScope && (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={`${idPrefix}-scope`}>{t('provider.fields.scope')}</Label>
-          <Controller
-            control={control}
-            name="scope"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id={`${idPrefix}-scope`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="organization">{t('provider.scope.organization')}</SelectItem>
-                  <SelectItem value="project">{t('provider.scope.project')}</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-          <p className="text-sm text-muted-foreground">{t('provider.fields.scopeHint')}</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={`${idPrefix}-phone`}>{t('provider.fields.phone')}</Label>
-          <Input id={`${idPrefix}-phone`} type="tel" {...register('phone')} />
-          {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={`${idPrefix}-email`}>{t('provider.fields.email')}</Label>
-          <Input id={`${idPrefix}-email`} type="email" {...register('email')} />
-          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-notes`}>{t('provider.fields.notes')}</Label>
-        <Textarea id={`${idPrefix}-notes`} rows={3} {...register('notes')} />
-      </div>
-    </>
-  );
-}
 
 /**
  * Checklist opcional de actividades para asignar apenas se crea el
@@ -481,6 +347,13 @@ export function ProjectProvidersPage() {
   const { data: projectData } = useProject(projectId);
   const { data: providersData, isLoading, isFetching, isError } = useProviders(projectId);
   const deactivateProvider = useDeactivateProvider(projectId!);
+  const removeFromProject = useRemoveProviderFromProject(projectId!);
+  const addToProject = useAddProviderToProject(projectId!);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const { data: directoryData, isLoading: directoryLoading } = useProviderDirectory(
+    projectId,
+    pickerOpen,
+  );
 
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [deactivatingProvider, setDeactivatingProvider] = useState<Provider | null>(null);
@@ -575,15 +448,29 @@ export function ProjectProvidersPage() {
                 >
                   <Pencil className="size-4" />
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => setDeactivatingProvider(provider)}
-                  aria-label={t('provider.list.deactivate')}
-                >
-                  <UserX className="size-4" />
-                </Button>
+                {/* De la libreta de la Empresa: se saca DE ESTA OBRA, no se da de
+                    baja — la baja es de la Empresa y alcanza a todas las obras. */}
+                {provider.scope === 'project' ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    onClick={() => setDeactivatingProvider(provider)}
+                    aria-label={t('provider.list.deactivate')}
+                  >
+                    <UserX className="size-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    onClick={() => removeFromProject.mutate(provider.id)}
+                    aria-label={t('directory.removeFromProject')}
+                  >
+                    <UserMinus className="size-4" />
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -591,16 +478,25 @@ export function ProjectProvidersPage() {
         mobile: 'actions',
       },
     ];
-  }, [isEditor, isOwner, t]);
+  }, [isEditor, isOwner, removeFromProject, t]);
 
   if (isError) return <RouteError />;
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-3 md:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-2xl">{t('provider.list.title')}</h2>
-        {isOwner && <NewProviderDialog projectId={projectId!} />}
-      </div>
+    <div className="flex max-w-4xl flex-col gap-6 p-3 md:p-4">
+      {isOwner && (
+        <>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setPickerOpen(true)}>
+              <Building2 className="size-4" />
+              {t('directory.addFromCompany')}
+            </Button>
+          </div>
+          <Fab>
+            <NewProviderDialog projectId={projectId!} />
+          </Fab>
+        </>
+      )}
 
       <ResponsiveTable
         columns={columns}
@@ -614,6 +510,24 @@ export function ProjectProvidersPage() {
             description={isOwner ? t('provider.list.emptyOwnerHint') : undefined}
           />
         }
+      />
+
+      <DirectoryPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        title={t('directory.pickProviderTitle')}
+        items={(directoryData?.providers ?? []).map((provider) => ({
+          id: provider.id,
+          name: provider.name,
+          detail:
+            provider.specialty === 'otra'
+              ? provider.customSpecialty
+              : t(`provider.specialty.${provider.specialty}`),
+        }))}
+        isLoading={directoryLoading}
+        pendingId={addToProject.isPending ? addToProject.variables : null}
+        emptyLabel={t('directory.pickEmptyProviders')}
+        onAdd={(id) => addToProject.mutate(id)}
       />
 
       {editingProvider && (

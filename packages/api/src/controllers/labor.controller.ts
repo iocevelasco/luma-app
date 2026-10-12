@@ -10,17 +10,10 @@ import { ActivityCrew } from '../models/ActivityCrew.js';
 import { CrewMember, type ICrewMember } from '../models/CrewMember.js';
 import { LaborRecord, type ILaborRecord } from '../models/LaborRecord.js';
 import type { IProject } from '../models/Project.js';
+import { visibleCrewFilter } from '../services/directory.service.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
-}
-
-/** Mismo alcance que el resto: roster de la Empresa más el propio de la obra. */
-function crewVisibleFromProject(project: IProject) {
-  return {
-    organization: project.organization,
-    $or: [{ scope: { $ne: 'project' } }, { project: project._id }],
-  };
 }
 
 /**
@@ -149,7 +142,7 @@ export async function assignCrewToActivity(req: Request, res: Response) {
 
     const member = await CrewMember.findOne({
       _id: parsed.data.crewMemberId,
-      ...crewVisibleFromProject(project),
+      ...(await visibleCrewFilter(project)),
     });
     if (!member) {
       return res.status(404).json({ success: false, error: 'Personal no encontrado' });
@@ -278,8 +271,7 @@ export async function upsertLaborRecord(req: Request, res: Response) {
     if (presentCrewMemberIds.length > 0) {
       const valid = await CrewMember.countDocuments({
         _id: { $in: presentCrewMemberIds },
-        organization: project.organization,
-        $or: [{ scope: { $ne: 'project' } }, { project: project._id }],
+        ...(await visibleCrewFilter(project)),
       });
       if (valid !== new Set(presentCrewMemberIds).size) {
         return res

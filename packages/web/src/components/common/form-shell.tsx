@@ -52,8 +52,11 @@ interface FormShellProps {
   /**
    * Para el drawer, que ya aporta su propia caja con scroll y bordes. En una
    * página el shell se encarga de todo eso.
+   *
+   * `bare` es la página sin tarjeta alrededor: el pie se pega al fondo del
+   * contenedor sobre el fondo de la página, sin el sangrado de la card.
    */
-  variant?: 'page' | 'embedded';
+  variant?: 'page' | 'embedded' | 'bare';
   className?: string;
 }
 
@@ -86,7 +89,7 @@ export function FormShell({
       className={cn('flex min-h-0 flex-1 flex-col', className)}
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className={cn('flex flex-col gap-4', variant === 'page' && 'pb-4')}>{children}</div>
+        <div className={cn('flex flex-col gap-4', variant !== 'embedded' && 'pb-4')}>{children}</div>
       </div>
 
       {/*
@@ -96,8 +99,10 @@ export function FormShell({
       */}
       <div
         className={cn(
-          'sticky bottom-0 z-10 flex flex-col gap-3 border-t border-border bg-card',
-          variant === 'page' ? 'mt-4 -mx-6 px-6 py-4' : 'p-4',
+          'sticky bottom-0 z-10 flex flex-col gap-3 border-t border-border',
+          variant === 'bare' ? 'bg-background py-4' : 'bg-card',
+          variant === 'page' && 'mt-4 -mx-6 px-6 py-4',
+          variant === 'embedded' && 'p-4',
         )}
       >
         {/*

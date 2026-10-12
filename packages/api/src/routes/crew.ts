@@ -5,12 +5,15 @@ import {
   requireProjectAccess,
 } from '../middleware/project.middleware.js';
 import {
+  addCrewMemberToProject,
   createCrewGoal,
   createCrewMember,
   deactivateCrewMember,
   deleteCrewGoal,
+  listCrewDirectory,
   listCrewGoals,
   listCrewMembers,
+  removeCrewMemberFromProject,
   updateCrewGoal,
   updateCrewMember,
 } from '../controllers/index.js';
@@ -32,6 +35,16 @@ crewRouter.use(isAuthenticated, requireProjectAccess);
 
 crewRouter.get('/', requireCapability('crew.read'), listCrewMembers);
 crewRouter.post('/', requireCapability('crew.manage'), createCrewMember);
+
+// Sumar a esta obra lo que ya está en la libreta de la Empresa. Antes que
+// `/:crewMemberId` para que "directory" no se lea como un id.
+crewRouter.get('/directory', requireCapability('crew.manage'), listCrewDirectory);
+crewRouter.post('/directory/:crewMemberId', requireCapability('crew.manage'), addCrewMemberToProject);
+crewRouter.delete(
+  '/directory/:crewMemberId',
+  requireCapability('crew.manage'),
+  removeCrewMemberFromProject,
+);
 crewRouter.patch('/:crewMemberId', requireCapability('crew.manage'), updateCrewMember);
 crewRouter.delete('/:crewMemberId', requireCapability('crew.manage'), deactivateCrewMember);
 

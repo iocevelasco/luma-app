@@ -8,6 +8,8 @@ import mongoose, { Schema, type Document, type Model } from 'mongoose';
  */
 export interface IOrganization extends Document {
   name: string;
+  contactEmail?: string;
+  contactPhone?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +17,8 @@ export interface IOrganization extends Document {
 const organizationSchema = new Schema<IOrganization>(
   {
     name: { type: String, required: true, trim: true },
+    contactEmail: { type: String, trim: true, lowercase: true },
+    contactPhone: { type: String, trim: true },
   },
   { timestamps: true },
 );

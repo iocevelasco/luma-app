@@ -38,6 +38,12 @@ const AccountSettingsPage = lazy(() =>
 const CompanyPage = lazy(() =>
   import('./pages/company').then((m) => ({ default: m.CompanyPage })),
 );
+const ProvidersDirectoryPage = lazy(() =>
+  import('./pages/providers-directory').then((m) => ({ default: m.ProvidersDirectoryPage })),
+);
+const CrewDirectoryPage = lazy(() =>
+  import('./pages/crew-directory').then((m) => ({ default: m.CrewDirectoryPage })),
+);
 const ProjectNewPage = lazy(() =>
   import('./pages/projects/project-new').then((m) => ({ default: m.ProjectNewPage })),
 );
@@ -130,6 +136,11 @@ export function AppRoutes() {
             element={<LazyRoute><AccountSettingsPage /></LazyRoute>}
           />
           <Route path={ROUTES.COMPANY} element={<LazyRoute><CompanyPage /></LazyRoute>} />
+          <Route
+            path={ROUTES.PROVIDERS}
+            element={<LazyRoute><ProvidersDirectoryPage /></LazyRoute>}
+          />
+          <Route path={ROUTES.CREW} element={<LazyRoute><CrewDirectoryPage /></LazyRoute>} />
           <Route path={ROUTES.PROJECT_NEW} element={<LazyRoute><ProjectNewPage /></LazyRoute>} />
           <Route
             path={ROUTES.PROJECT_DETAIL}

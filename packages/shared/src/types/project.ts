@@ -22,6 +22,8 @@ export type OrganizationRole = 'owner' | 'member';
 export interface Organization {
   id: string;
   name: string;
+  contactEmail?: string;
+  contactPhone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -148,6 +150,8 @@ export interface OrganizationMemberSummary {
   email: string;
   name: string;
   role: OrganizationRole;
+  /** Todavía no activó la cuenta: se le puede reenviar la invitación. */
+  pending: boolean;
   createdAt: string;
 }
 

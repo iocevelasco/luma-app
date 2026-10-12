@@ -78,6 +78,19 @@ export interface CrewMemberListResponse {
   crewMembers: CrewMember[];
 }
 
+/** Empleado de la Empresa con las obras donde ya está asignado. */
+export interface OrganizationCrewMember extends CrewMember {
+  projectIds: string[];
+}
+
+export interface OrganizationCrewListResponse {
+  crewMembers: OrganizationCrewMember[];
+}
+
+export interface OrganizationCrewResponse {
+  crewMember: OrganizationCrewMember;
+}
+
 export interface CrewMemberResponse {
   crewMember: CrewMember;
 }

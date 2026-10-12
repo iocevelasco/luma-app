@@ -41,11 +41,11 @@ test.describe('empresa, obra e invitación del cliente', () => {
     // del listado de obras y con unas cuantas había que scrollear.
     await page.getByTestId('nav-company').click();
     await expect(page).toHaveURL(/\/admin\/empresa$/);
-    await expect(page.getByRole('button', { name: OWNER_NAME })).toBeVisible();
-    await page.getByRole('button', { name: OWNER_NAME }).click();
-    await page.getByRole('textbox').fill(NEW_ORG_NAME);
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('button', { name: NEW_ORG_NAME })).toBeVisible();
+    await expect(page.locator('#org-name')).toHaveValue(OWNER_NAME);
+    await page.locator('#org-name').fill(NEW_ORG_NAME);
+    await page.getByRole('button', { name: /^guardar$/i }).click();
+    await expect(page.getByText(/datos de la empresa guardados/i)).toBeVisible();
+    await expect(page.locator('#org-name')).toHaveValue(NEW_ORG_NAME);
 
     // Primera obra, desde el estado vacío de la home.
     await page.getByTestId('nav-home').click();

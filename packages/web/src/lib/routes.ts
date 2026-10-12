@@ -15,6 +15,8 @@ export const ROUTES = {
 
   ADMIN: '/admin',
   COMPANY: '/admin/empresa',
+  PROVIDERS: '/admin/proveedores',
+  CREW: '/admin/empleados',
   ACCOUNT_SETTINGS: '/admin/settings/account',
   PROJECT_NEW: '/admin/proyectos/nuevo',
   PROJECT_DETAIL: '/admin/proyectos/:projectId',
