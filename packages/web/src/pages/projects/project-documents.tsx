@@ -13,6 +13,7 @@ import {
 import { format } from 'date-fns';
 import {
   Download,
+  FilterX,
   FileText,
   Image as ImageIcon,
   Plus,
@@ -36,6 +37,7 @@ import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -310,8 +312,55 @@ function DeleteDocumentButton({
   );
 }
 
+type GroupBy = 'category' | 'uploader' | 'none';
+
+const ALL = 'all';
+
+function initials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('') || '?'
+  );
+}
+
+/**
+ * Miniatura. Las imágenes se muestran tal cual con la URL firmada; un PDF no
+ * se puede rasterizar sin cargar un renderer en el navegador, así que lleva un
+ * mosaico con el ícono y la etiqueta PDF.
+ */
+function DocumentThumbnail({ doc }: { doc: ProjectDocument }) {
+  const { t } = useTranslation();
+  const isImage = doc.contentType.startsWith('image/');
+  const [failed, setFailed] = useState(false);
+
+  if (isImage && doc.url && !failed) {
+    return (
+      <img
+        src={doc.url}
+        alt={doc.title}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className="size-full object-cover"
+      />
+    );
+  }
+
+  return (
+    <div className="flex size-full flex-col items-center justify-center gap-1 text-muted-foreground">
+      <DocumentIcon contentType={doc.contentType} className="size-8" />
+      <span className="text-2xs font-medium uppercase">
+        {isImage ? t('document.previewUnavailable') : t('document.pdf')}
+      </span>
+    </div>
+  );
+}
+
 /** Misma razón que arriba para `doc`: no tapar `window.document`. */
-function DocumentRow({
+function DocumentCard({
   projectId,
   doc,
   canWrite,
@@ -322,60 +371,109 @@ function DocumentRow({
 }) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
+  const date = format(new Date(doc.createdAt), 'PP', { locale: dateLocale });
+
+  const thumbnail = (
+    <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-muted">
+      <DocumentThumbnail doc={doc} />
+    </div>
+  );
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-md border border-border p-3">
-      <div className="flex min-w-0 items-start gap-3">
-        <DocumentIcon
-          contentType={doc.contentType}
-          className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-        />
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <p className="truncate text-sm font-medium">{doc.title}</p>
-          {doc.space && (
-            <Badge variant="secondary" className="w-fit">
-              {doc.space}
-            </Badge>
-          )}
-          {doc.notes && (
-            <p className="text-xs text-muted-foreground">{doc.notes}</p>
-          )}
-          <p className="text-2xs text-muted-foreground">
-            {t('document.uploadedBy', {
-              name: doc.uploadedByName,
-              date: format(new Date(doc.createdAt), 'PP', { locale: dateLocale }),
-            })}
-            {' · '}
-            {formatSize(doc.sizeBytes)}
-          </p>
+    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3">
+      {/* `doc.url` vence y viene `null` sin storage: sin URL la miniatura no es un enlace. */}
+      {doc.url ? (
+        <a
+          href={doc.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t('document.open')}
+          className="focus-visible:ring-ring rounded-md outline-none focus-visible:ring-2"
+        >
+          {thumbnail}
+        </a>
+      ) : (
+        thumbnail
+      )}
+
+      <div className="flex min-w-0 flex-col gap-1">
+        <p className="truncate text-sm font-medium" title={doc.title}>
+          {doc.title}
+        </p>
+        <div className="flex flex-wrap items-center gap-1">
+          <Badge variant="outline">{t(`document.category.${doc.category}`)}</Badge>
+          {doc.space && <Badge variant="secondary">{doc.space}</Badge>}
         </div>
+        {doc.notes && <p className="line-clamp-2 text-xs text-muted-foreground">{doc.notes}</p>}
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        {/*
-          `doc.url` es una URL firmada que vence. Si el storage no está
-          configurado viene `null`, y entonces no hay nada que abrir: el botón
-          se deshabilita en vez de llevar a un enlace roto.
-        */}
-        <Button
-          variant="ghost"
-          size="icon"
-          asChild={Boolean(doc.url)}
-          disabled={!doc.url}
-          aria-label={t('document.open')}
-        >
-          {doc.url ? (
-            <a href={doc.url} target="_blank" rel="noopener noreferrer">
+      <div className="mt-auto flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Avatar className="size-6">
+            <AvatarFallback className="text-2xs">{initials(doc.uploadedByName)}</AvatarFallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-xs font-medium">{doc.uploadedByName || '—'}</span>
+            <span className="truncate text-2xs text-muted-foreground">
+              {t('document.uploadedOn', { date })} · {formatSize(doc.sizeBytes)}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild={Boolean(doc.url)}
+            disabled={!doc.url}
+            aria-label={t('document.open')}
+          >
+            {doc.url ? (
+              <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                <Download className="size-4" />
+              </a>
+            ) : (
               <Download className="size-4" />
-            </a>
-          ) : (
-            <Download className="size-4" />
-          )}
-        </Button>
-        {canWrite && <DeleteDocumentButton projectId={projectId} doc={doc} />}
+            )}
+          </Button>
+          {canWrite && <DeleteDocumentButton projectId={projectId} doc={doc} />}
+        </div>
       </div>
     </div>
   );
+}
+
+function DocumentGrid({
+  projectId,
+  docs,
+  canWrite,
+}: {
+  projectId: string;
+  docs: ProjectDocument[];
+  canWrite: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {docs.map((doc) => (
+        <DocumentCard key={doc.id} projectId={projectId} doc={doc} canWrite={canWrite} />
+      ))}
+    </div>
+  );
+}
+
+function groupBySpace(docs: ProjectDocument[]): [string, ProjectDocument[]][] {
+  const map = new Map<string, ProjectDocument[]>();
+  for (const doc of docs) {
+    const key = doc.space ?? '';
+    map.set(key, [...(map.get(key) ?? []), doc]);
+  }
+  return [...map.entries()];
+}
+
+interface DocumentGroup {
+  key: string;
+  label: string;
+  docs: ProjectDocument[];
 }
 
 export function ProjectDocumentsPage() {
@@ -384,27 +482,64 @@ export function ProjectDocumentsPage() {
   const { data, isLoading, isError } = useProjectDocuments(projectId);
   const { can } = useProjectCapabilities(projectId);
 
-  const canWrite = can('document.write');
+  const [categoryFilter, setCategoryFilter] = useState<string>(ALL);
+  const [uploaderFilter, setUploaderFilter] = useState<string>(ALL);
+  const [groupBy, setGroupBy] = useState<GroupBy>('category');
 
-  /**
-   * Agrupado por categoría y, dentro de planos y renders, por espacio. Una
-   * lista plana de cuarenta archivos obliga a leerlos todos para encontrar el
-   * plano de la cocina.
-   */
-  const grouped = useMemo(() => {
-    const byCategory = new Map<DocumentCategory, ProjectDocument[]>();
-    for (const doc of data?.documents ?? []) {
-      const list = byCategory.get(doc.category) ?? [];
-      list.push(doc);
-      byCategory.set(doc.category, list);
+  const canWrite = can('document.write');
+  const documents = useMemo(() => data?.documents ?? [], [data]);
+
+  /** Las personas salen de lo que ya se subió: no hay una lista aparte que mantener. */
+  const uploaders = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const doc of documents) map.set(doc.uploadedBy, doc.uploadedByName);
+    return [...map.entries()].map(([id, name]) => ({ id, name: name || '—' }));
+  }, [documents]);
+
+  const categoriesInUse = useMemo(
+    () => CATEGORY_ORDER.filter((category) => documents.some((doc) => doc.category === category)),
+    [documents],
+  );
+
+  const filtered = useMemo(
+    () =>
+      documents.filter(
+        (doc) =>
+          (categoryFilter === ALL || doc.category === categoryFilter) &&
+          (uploaderFilter === ALL || doc.uploadedBy === uploaderFilter),
+      ),
+    [documents, categoryFilter, uploaderFilter],
+  );
+
+  const groups = useMemo<DocumentGroup[]>(() => {
+    if (groupBy === 'none') return [{ key: 'all', label: '', docs: filtered }];
+
+    if (groupBy === 'uploader') {
+      const map = new Map<string, DocumentGroup>();
+      for (const doc of filtered) {
+        const group = map.get(doc.uploadedBy) ?? {
+          key: doc.uploadedBy,
+          label: doc.uploadedByName || '—',
+          docs: [],
+        };
+        group.docs.push(doc);
+        map.set(doc.uploadedBy, group);
+      }
+      return [...map.values()];
     }
-    return byCategory;
-  }, [data]);
+
+    return CATEGORY_ORDER.flatMap((category) => {
+      const docs = filtered.filter((doc) => doc.category === category);
+      return docs.length > 0
+        ? [{ key: category, label: t(`document.category.${category}`), docs }]
+        : [];
+    });
+  }, [filtered, groupBy, t]);
 
   if (isError) return <RouteError />;
   if (isLoading || !data) return <RouteLoading />;
 
-  if (data.documents.length === 0) {
+  if (documents.length === 0) {
     return (
       <div className="p-3 md:p-4">
         <EmptyState
@@ -419,65 +554,122 @@ export function ProjectDocumentsPage() {
     );
   }
 
+  const hasFilters = categoryFilter !== ALL || uploaderFilter !== ALL;
+
   return (
-    <div className="flex flex-col gap-6 p-3 md:p-4">
+    <div className="flex flex-col gap-4 p-3 md:p-4">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-lg font-medium">{t('document.list.title')}</h2>
         {canWrite && <NewDocumentDrawer projectId={projectId!} />}
       </div>
 
-      <div className="flex flex-col gap-6">
-        {CATEGORY_ORDER.map((category) => {
-          const documents = grouped.get(category);
-          if (!documents || documents.length === 0) return null;
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="filter-category" className="text-xs">
+            {t('document.filters.category')}
+          </Label>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger id="filter-category" className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{t('document.filters.allCategories')}</SelectItem>
+              {categoriesInUse.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {t(`document.category.${category}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          const spaceScoped = isSpaceScoped(category);
-          const bySpace = new Map<string, ProjectDocument[]>();
-          if (spaceScoped) {
-            for (const doc of documents) {
-              const key = doc.space ?? '';
-              const list = bySpace.get(key) ?? [];
-              list.push(doc);
-              bySpace.set(key, list);
-            }
-          }
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="filter-uploader" className="text-xs">
+            {t('document.filters.uploader')}
+          </Label>
+          <Select value={uploaderFilter} onValueChange={setUploaderFilter}>
+            <SelectTrigger id="filter-uploader" className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{t('document.filters.allUploaders')}</SelectItem>
+              {uploaders.map((person) => (
+                <SelectItem key={person.id} value={person.id}>
+                  {person.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          return (
-            <section key={category} className="flex flex-col gap-2">
-              <h3 className="text-sm font-medium">
-                {t(`document.category.${category}`)} ({documents.length})
-              </h3>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="group-by" className="text-xs">
+            {t('document.filters.groupBy')}
+          </Label>
+          <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupBy)}>
+            <SelectTrigger id="group-by" className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="category">{t('document.filters.groupCategory')}</SelectItem>
+              <SelectItem value="uploader">{t('document.filters.groupUploader')}</SelectItem>
+              <SelectItem value="none">{t('document.filters.groupNone')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-              {spaceScoped ? (
-                [...bySpace.entries()].map(([space, docs]) => (
-                  <div key={space || 'sin-espacio'} className="flex flex-col gap-2">
-                    <p className={cn('text-xs text-muted-foreground', !space && 'italic')}>
-                      {space || t('document.list.noSpace')}
-                    </p>
-                    {docs.map((doc) => (
-                      <DocumentRow
-                        key={doc.id}
-                        projectId={projectId!}
-                        doc={doc}
-                        canWrite={canWrite}
-                      />
-                    ))}
-                  </div>
-                ))
-              ) : (
-                documents.map((doc) => (
-                  <DocumentRow
-                    key={doc.id}
-                    projectId={projectId!}
-                    doc={doc}
-                    canWrite={canWrite}
-                  />
-                ))
-              )}
-            </section>
-          );
-        })}
+        {hasFilters && (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setCategoryFilter(ALL);
+              setUploaderFilter(ALL);
+            }}
+          >
+            <FilterX className="size-4" />
+            {t('document.filters.clear')}
+          </Button>
+        )}
       </div>
+
+      {filtered.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          {t('document.filters.noResults')}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-6">
+          {groups.map((group) => {
+            // Planos y renders se subdividen por espacio: "el plano de la cocina".
+            const bySpace =
+              groupBy === 'category' && isSpaceScoped(group.key as DocumentCategory)
+                ? groupBySpace(group.docs)
+                : null;
+
+            return (
+              <section key={group.key} className="flex flex-col gap-2">
+                {group.label && (
+                  <h3 className="text-sm font-medium">
+                    {group.label} ({group.docs.length})
+                  </h3>
+                )}
+
+                {bySpace ? (
+                  bySpace.map(([space, docs]) => (
+                    <div key={space || 'sin-espacio'} className="flex flex-col gap-2">
+                      <p className={cn('text-xs text-muted-foreground', !space && 'italic')}>
+                        {space || t('document.list.noSpace')}
+                      </p>
+                      <DocumentGrid projectId={projectId!} docs={docs} canWrite={canWrite} />
+                    </div>
+                  ))
+                ) : (
+                  <DocumentGrid projectId={projectId!} docs={group.docs} canWrite={canWrite} />
+                )}
+              </section>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
