@@ -28,6 +28,7 @@
     "docker:build": "docker build -t luma-app .",
     "docker:build:landing": "docker build -f packages/landing/Dockerfile -t luma-landing .",
     "docker:run": "docker run -p 8080:8080 --env-file .env luma-app",
+    "bump:web": "node scripts/bump-web-version.mjs",
     "deploy": "bash scripts/coolify-deploy.sh"
   },
   "devDependencies": {

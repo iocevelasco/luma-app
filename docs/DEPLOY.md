@@ -108,6 +108,35 @@ curl -I https://<DOMINIO>/         # 301 → /home
 curl -I https://<DOMINIO>/app/     # 200, la SPA
 ```
 
+## Versión de la SPA y aviso de actualización
+
+Una pestaña abierta no se entera de un deploy: la SPA ya cargó sus bundles y
+sigue con ellos hasta que alguien recarga. Para eso cada build se publica en
+`/app/version.json` (`{ version, buildTime }`) y la app lo consulta cada minuto,
+al volver a la pestaña y cuando falla la carga de un chunk. Si no coincide con el
+que tiene cargado, muestra un toast con **Actualizar**.
+
+**Antes de mergear un cambio de la SPA, subí la versión** (semver.org, sólo
+`packages/web/package.json`):
+
+```bash
+pnpm bump:web patch   # arreglo, nada nuevo a la vista        0.2.0 → 0.2.1
+pnpm bump:web minor   # funcionalidad nueva                   0.2.0 → 0.3.0
+pnpm bump:web major   # algo que rompe lo que la gente tenía  0.2.0 → 1.0.0
+```
+
+El número es lo que ve la persona en el aviso. Si te olvidás, no se pierde el
+deploy: `buildTime` cambia en cada build y la app lo detecta igual, pero el aviso
+sale sin número de versión. La API, la landing y el `package.json` de la raíz
+no se versionan acá.
+
+El servidor fija la política de cache (`packages/api/src/middleware/spaCache.ts`):
+`version.json` → `no-store`, `index.html` → `no-cache`, bundles con hash →
+`immutable`. Las tres van juntas — si `index.html` se pudiera cachear, el
+`immutable` dejaría a la gente apuntando a bundles que ya no existen.
+
+Para ver el aviso en local sin buildear: `DEV_VERSION_OVERRIDE=9.9.9 pnpm dev:web`.
+
 ## Coolify desde Claude (MCP)
 
 `.mcp.json` configura el servidor MCP de Coolify con **lectura y escritura**:

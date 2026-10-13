@@ -7,10 +7,18 @@ import { readFileSync, writeFileSync } from 'fs';
 const packageJson = JSON.parse(readFileSync(path.resolve(__dirname, './package.json'), 'utf-8'));
 const appVersion = packageJson.version;
 
+// Se calcula UNA vez, al cargar la config: el bundle la hornea en
+// VITE_APP_BUILD_TIME y `version.json` publica la misma. Si cada uno tomara su
+// propio `new Date()`, el cliente vería "build distinto" contra su propio deploy.
+//
+// Es la red de seguridad del semver: si alguien despliega sin subir la versión,
+// el `version` no cambia pero el `buildTime` sí, y la app igual se entera.
+const buildTime = new Date().toISOString();
+
 // Un solo lugar arma el payload: si el del build y el de dev se separan, el
 // hook se prueba en dev contra una forma que en producción no existe.
 function buildVersionPayload(version = appVersion) {
-  return { version, buildTime: new Date().toISOString() };
+  return { version, buildTime };
 }
 
 // Plugin para generar version.json — en el build como archivo, en dev servido
@@ -62,6 +70,7 @@ export default defineConfig(() => ({
   define: {
     // Inyectar la versión de la app como variable de entorno
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+    'import.meta.env.VITE_APP_BUILD_TIME': JSON.stringify(buildTime),
   },
   envPrefix: 'VITE_',
   resolve: {
