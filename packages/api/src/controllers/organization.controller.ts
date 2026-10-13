@@ -3,6 +3,7 @@ import {
   inviteMemberSchema,
   updateOrganizationMemberSchema,
   updateOrganizationSchema,
+  type ActivationDelivery,
   type CompanyStaffRole,
   type Organization as OrganizationDTO,
   type OrganizationMemberSummary,
@@ -17,6 +18,12 @@ import {
   findMyOrganizationId,
 } from '../services/organization.service.js';
 import { EmailService } from '../services/email.service.js';
+import {
+  isLinkedToAnotherInviter,
+  LINK_HELD_BY_ANOTHER_MESSAGE,
+  recordActivationDelivery,
+} from '../services/activation.service.js';
+import { activationDelivery } from '../utils/activation.js';
 import { ACTIVATION_TOKEN_TTL_MS, randomToken } from './auth.controller.js';
 
 function errMsg(error: unknown): string {
@@ -120,10 +127,19 @@ export async function listMembers(req: Request, res: Response) {
       organization: organizationId,
       role: 'member',
     }).populate<{
-      user: { _id: unknown; email: string; name: string; email_verified: boolean };
-    }>('user', 'email name email_verified');
+      user: {
+        _id: unknown;
+        email: string;
+        name: string;
+        email_verified: boolean;
+        password?: string;
+      };
+    }>('user', 'email name email_verified +password');
 
-    const members = memberRows.map((row) => toMemberSummary(row, row.user));
+    // El hash se pide sólo para saber SI hay contraseña: no sale de acá.
+    const members = memberRows.map((row) =>
+      toMemberSummary(row, row.user, Boolean(row.user.password)),
+    );
 
     return res.json({ success: true, data: { members } });
   } catch (error) {
@@ -169,8 +185,16 @@ export async function inviteMember(req: Request, res: Response) {
     }
 
     let user = await User.findOne({ email });
+    // Sólo cuando esta invitación crea la cuenta: quien ya existía no recibe
+    // mail de activación, así que no hay nada que contar.
+    let delivery: ActivationDelivery | undefined;
 
     if (user) {
+      // Si otra persona tiene (o usó) el enlace de esa cuenta, sumarla acá le
+      // daría a esa persona acceso a esta Empresa: ver `isLinkedToAnotherInviter`.
+      if (isLinkedToAnotherInviter(user, req.user.sub)) {
+        return res.status(409).json({ success: false, error: LINK_HELD_BY_ANOTHER_MESSAGE });
+      }
       const alreadyMember = await OrganizationMember.exists({
         organization: organizationId,
         user: user._id,
@@ -191,7 +215,9 @@ export async function inviteMember(req: Request, res: Response) {
         emailVerificationTokenExpires: new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS),
       });
       await createPersonalOrganization(String(user._id), name);
-      await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      await recordActivationDelivery(user._id, emailSent, req.user.sub);
+      delivery = activationDelivery(emailSent, activationToken);
     }
 
     const memberRow = await OrganizationMember.create({
@@ -204,7 +230,7 @@ export async function inviteMember(req: Request, res: Response) {
 
     return res
       .status(201)
-      .json({ success: true, data: { member: toMemberSummary(memberRow, user) } });
+      .json({ success: true, data: { member: toMemberSummary(memberRow, user), ...delivery } });
   } catch (error) {
     console.error('❌ [ORG] inviteMember:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
@@ -237,6 +263,12 @@ async function findTeamMember(req: Request, res: Response) {
 function toMemberSummary(
   row: { _id: unknown; createdAt: Date; staffRole?: CompanyStaffRole; phone?: string },
   user: { _id: unknown; email: string; name: string; email_verified: boolean },
+  /**
+   * Si se sabe que la cuenta no tiene contraseña, está pendiente aunque figure
+   * verificada: pasa con cuentas que confirmaron el correo antes de elegirla.
+   * `undefined` cuando quien llama no cargó ese dato.
+   */
+  hasPassword?: boolean,
 ): OrganizationMemberSummary {
   return {
     id: String(row._id),
@@ -246,7 +278,7 @@ function toMemberSummary(
     role: 'member',
     ...(row.staffRole ? { staffRole: row.staffRole } : {}),
     ...(row.phone ? { phone: row.phone } : {}),
-    pending: !user.email_verified,
+    pending: !user.email_verified || hasPassword === false,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -330,7 +362,10 @@ export async function resendMemberInvitation(req: Request, res: Response) {
     if (!user) {
       return res.status(404).json({ success: false, error: 'No encontramos a esa persona' });
     }
-    if (user.email_verified) {
+    // "Ya activó" es tener contraseña, no sólo haber verificado el correo: hay
+    // cuentas verificadas que nunca eligieron una y quedaban sin salida.
+    const hasPassword = Boolean(await User.exists({ _id: user._id, password: { $exists: true } }));
+    if (user.email_verified && hasPassword) {
       return res
         .status(409)
         .json({ success: false, error: 'Esa persona ya activó su cuenta' });
@@ -340,9 +375,20 @@ export async function resendMemberInvitation(req: Request, res: Response) {
     user.emailVerificationToken = activationToken;
     user.emailVerificationTokenExpires = new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS);
     await user.save();
-    await EmailService.sendAccountActivationEmail(user.email, activationToken, user.name);
+    const emailSent = await EmailService.sendAccountActivationEmail(
+      user.email,
+      activationToken,
+      user.name,
+    );
+    await recordActivationDelivery(user._id, emailSent, String(req.user?.sub));
 
-    return res.json({ success: true, data: { member: toMemberSummary(found.row, user) } });
+    return res.json({
+      success: true,
+      data: {
+        member: toMemberSummary(found.row, user, hasPassword),
+        ...activationDelivery(emailSent, activationToken),
+      },
+    });
   } catch (error) {
     console.error('❌ [ORG] resendMemberInvitation:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });

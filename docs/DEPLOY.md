@@ -54,6 +54,7 @@ nombre de la base no admite guiones en el formulario de Coolify.
 | `JWT_SECRET` | HS256 | **la API no arranca** (alternativa: `JWT_PRIVATE_KEY_PEM` + `JWT_PUBLIC_KEY_PEM`) |
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | opcionales | `7d` / `90d` |
 | `RECAPTCHA_SECRET_KEY` | reCAPTCHA v3 | **la API no arranca en producción** |
+| `SKIP_RECAPTCHA` | `true` desactiva la verificación en el servidor | con la clave puesta y sin esto, **login y registro rechazan a todos**: ver la nota de abajo |
 | `FRONTEND_URL` | origen del front | `http://localhost:6173` |
 | `APP_URL` | raíz del SPA **con subpath**: `https://<DOMINIO>/app` | cae a `FRONTEND_URL`; rompe los links de los mails y los redirects |
 | `ALLOWED_ORIGINS` | whitelist de CORS, separada por comas | sólo entra `FRONTEND_URL` |
@@ -61,6 +62,25 @@ nombre de la base no admite guiones en el formulario de Coolify.
 | `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails | aviso; los mails quedan deshabilitados |
 | `MEDIA_SERVICE_URL`, `MEDIA_SERVICE_API_KEY` | storage de archivos (evidencia RF-04 y documentación de obra) vía el microservicio `media-service` (ej. `https://media.matflow.site`); la key se emite con `bucket key create luma` | aviso; subir archivos da 503, el resto de la app sigue |
 | `STORAGE_SIGNED_URL_TTL` | opcional: vida de las URLs firmadas de lectura | `3600` segundos (máximo que admite el servicio) |
+
+> **reCAPTCHA hoy: el front no manda el token.** `executeRecaptcha`
+> (`packages/web/src/lib/recaptcha.ts`) existe pero ninguna pantalla lo llama,
+> y el servidor en producción exige `recaptchaToken` en login y registro.
+> Mientras no se cablee, la única forma de que esos flujos funcionen en
+> producción es `SKIP_RECAPTCHA=true`. Cablearlo
+> requiere probar con las claves reales (`VITE_RECAPTCHA_SITE_KEY` como build
+> arg) — por eso no se hizo a ciegas.
+
+> **Mails: el remitente por defecto es de prueba.** Con `EMAIL_FROM` sin
+> definir, Resend usa `onboarding@resend.dev`, que sólo entrega a la casilla
+> del dueño de la cuenta de Resend. Para invitar a otras personas hace falta
+> un dominio verificado en Resend y `EMAIL_FROM` con él. Si un mail no sale,
+> la invitación lo avisa y entrega el enlace de activación para copiarlo.
+> Una cuenta activada con ese enlace **funciona pero queda sin verificar**:
+> quien lo tuvo en mano pudo elegir la contraseña, así que no prueba que la
+> persona tenga la casilla. Hasta que recupere su contraseña por mail
+> («Olvidé mi contraseña»), sólo quien tenía el enlace puede seguir sumándola
+> a obras o Empresas (`activationLinkHeldBy` / `claimedViaLinkBy` en `User`).
 
 Build args (las `VITE_*` se hornean en el bundle, no se leen en runtime):
 `VITE_RECAPTCHA_SITE_KEY` en `app`, `VITE_APP_URL` en `landing`

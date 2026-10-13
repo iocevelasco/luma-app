@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useLogin } from '@/hooks/auth/use-auth-queries';
+import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { ROUTES } from '@/lib/routes';
 
@@ -76,9 +77,23 @@ export function LoginPage() {
         </div>
 
         {login.isError && (
-          <p role="alert" className="text-sm text-destructive">
-            {errorMessage(login.error, t)}
-          </p>
+          <div role="alert" className="flex flex-col gap-1">
+            <p className="text-sm text-destructive">{errorMessage(login.error, t)}</p>
+            {/*
+              Una cuenta creada por invitación y sin activar recibe el mismo 401
+              que una contraseña mal puesta (el servidor no puede distinguirlas
+              sin delatar qué correos están registrados). La pista va acá, en
+              el cliente, para quien llegó por una invitación.
+            */}
+            {isApiError(login.error) && login.error.status === 401 && (
+              <p className="text-sm text-muted-foreground">
+                {t('auth.login.pendingHint')}{' '}
+                <Link className="text-primary hover:underline" to={ROUTES.CHECK_EMAIL}>
+                  {t('auth.login.pendingAction')}
+                </Link>
+              </p>
+            )}
+          </div>
         )}
 
         <Button type="submit" size="lg" className="w-full" disabled={login.isPending}>

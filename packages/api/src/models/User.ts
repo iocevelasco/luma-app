@@ -28,6 +28,20 @@ export interface IUser extends Document {
   emailChangeToken?: string;
   emailChangeTokenExpires?: Date;
 
+  /**
+   * Quien invitó y tiene en pantalla el enlace de activación **vigente** porque
+   * el mail no salió. Mientras esté puesto, ese enlace no prueba nada sobre
+   * quién tiene la casilla: pasó por manos de otra persona.
+   */
+  activationLinkHeldBy?: mongoose.Types.ObjectId;
+  /**
+   * Quien tenía ese enlace cuando la cuenta se activó con él. La contraseña
+   * la eligió alguien que no demostró tener la casilla, así que `email_verified`
+   * sigue en false y nadie más puede sumar a esta cuenta hasta que la persona
+   * real recupere la contraseña por mail (eso borra esta marca).
+   */
+  claimedViaLinkBy?: mongoose.Types.ObjectId;
+
   enabled: boolean;
   account_status: AccountStatus;
   deactivated_at?: Date;
@@ -65,6 +79,9 @@ const userSchema = new Schema<IUser>(
     pendingEmail: { type: String, select: false, lowercase: true, trim: true },
     emailChangeToken: { type: String, select: false },
     emailChangeTokenExpires: { type: Date, select: false },
+
+    activationLinkHeldBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    claimedViaLinkBy: { type: Schema.Types.ObjectId, ref: 'User' },
 
     enabled: { type: Boolean, default: true },
     account_status: {

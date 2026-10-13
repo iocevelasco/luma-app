@@ -157,7 +157,9 @@
       "submit": "Entrar",
       "forgot": "Esqueceu sua senha?",
       "noAccount": "Não tem conta?",
-      "register": "Crie uma"
+      "register": "Crie uma",
+      "pendingHint": "Foi convidado e ainda não escolheu sua senha?",
+      "pendingAction": "Peça um novo link de ativação"
     },
     "register": {
       "title": "Criar conta",
@@ -194,7 +196,8 @@
       "title": "Confira seu e-mail",
       "subtitle": "Enviamos um link para confirmar sua conta.",
       "resend": "Reenviar e-mail",
-      "resent": "Reenviamos o e-mail."
+      "resent": "Reenviamos o e-mail.",
+      "askEmail": "Não chegou? Digite seu e-mail e enviaremos um novo."
     },
     "verifyEmail": {
       "verifying": "Confirmando sua conta…",
@@ -733,7 +736,16 @@
     "resend": "Reenviar convite",
     "removeFromCompany": "Remover da equipe",
     "removeCompanyTitle": "Remover da equipe?",
-    "removeCompanyBody": "{{name}} deixa de pertencer à sua Empresa e perde o acesso às obras dela. O que foi cadastrado é mantido."
+    "removeCompanyBody": "{{name}} deixa de pertencer à sua Empresa e perde o acesso às obras dela. O que foi cadastrado é mantido.",
+    "activationLink": {
+      "title": "O e-mail não saiu",
+      "body": "A conta de {{name}} foi criada, mas não conseguimos enviar o e-mail de ativação. Copie o link e envie pelo meio que preferir. Vale por 72 horas.",
+      "label": "Link de ativação",
+      "warning": "Quem tiver este link pode escolher a senha dessa conta. Compartilhe só com {{name}}.",
+      "copy": "Copiar link",
+      "copied": "Copiado",
+      "done": "Pronto"
+    }
   },
   "document": {
     "list": {

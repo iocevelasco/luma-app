@@ -5,6 +5,7 @@ import {
   invitableProjectRoleSchema,
   inviteProjectMemberSchema,
   updateProjectSchema,
+  type ActivationDelivery,
   type Project as ProjectDTO,
   type ProjectMemberSummary,
   type ProjectRole,
@@ -14,6 +15,12 @@ import { Project, type IProject } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
 import { EmailService } from '../services/email.service.js';
+import {
+  isLinkedToAnotherInviter,
+  LINK_HELD_BY_ANOTHER_MESSAGE,
+  recordActivationDelivery,
+} from '../services/activation.service.js';
+import { activationDelivery } from '../utils/activation.js';
 import { ACTIVATION_TOKEN_TTL_MS, randomToken } from './auth.controller.js';
 
 function errMsg(error: unknown): string {
@@ -239,8 +246,15 @@ export async function inviteProjectMember(req: Request, res: Response) {
     }
 
     let user = await User.findOne({ email });
+    // Sólo si esta invitación crea la cuenta: ver `activationDelivery`.
+    let delivery: ActivationDelivery | undefined;
 
     if (user) {
+      // Ver `isLinkedToAnotherInviter`: la cuenta puede estar en manos de quien
+      // invitó antes, y sumarla acá le abriría esta obra a esa persona.
+      if (isLinkedToAnotherInviter(user, req.user.sub)) {
+        return res.status(409).json({ success: false, error: LINK_HELD_BY_ANOTHER_MESSAGE });
+      }
       const alreadyMember = await ProjectMembership.exists({
         project: project._id,
         user: user._id,
@@ -264,7 +278,9 @@ export async function inviteProjectMember(req: Request, res: Response) {
         emailVerificationTokenExpires: new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS),
       });
       await createPersonalOrganization(String(user._id), name);
-      await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      await recordActivationDelivery(user._id, emailSent, req.user.sub);
+      delivery = activationDelivery(emailSent, activationToken);
     }
 
     const membership = await ProjectMembership.create({
@@ -283,7 +299,7 @@ export async function inviteProjectMember(req: Request, res: Response) {
       createdAt: membership.createdAt.toISOString(),
     };
 
-    return res.status(201).json({ success: true, data: { member } });
+    return res.status(201).json({ success: true, data: { member, ...delivery } });
   } catch (error) {
     console.error('❌ [PROJECT] inviteProjectMember:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });

@@ -26,6 +26,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Can } from '@/components/permissions/can';
 import { FormDrawer } from '@/components/common/form-drawer';
+import {
+  ActivationLinkDialog,
+  type ActivationLink,
+} from '@/components/organization/activation-link-dialog';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +80,8 @@ function InviteMemberDrawer({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const inviteMember = useInviteProjectMember(projectId);
+  // Si invitar creó la cuenta y el mail no salió, el enlace se pasa a mano.
+  const [activationLink, setActivationLink] = useState<ActivationLink | null>(null);
 
   const {
     register,
@@ -87,6 +93,7 @@ function InviteMemberDrawer({ projectId }: { projectId: string }) {
 
   return (
     <>
+      <ActivationLinkDialog link={activationLink} onClose={() => setActivationLink(null)} />
       <Button onClick={() => setOpen(true)}>
         <UserPlus className="size-4" />
         {t('project.team.invite')}
@@ -106,9 +113,12 @@ function InviteMemberDrawer({ projectId }: { projectId: string }) {
         error={inviteMember.error}
         onSubmit={handleSubmit((values) =>
           inviteMember.mutate(values, {
-            onSuccess: () => {
+            onSuccess: (data) => {
               reset();
               setOpen(false);
+              if (data.activationUrl) {
+                setActivationLink({ name: data.member.name, url: data.activationUrl });
+              }
             },
           }),
         )}

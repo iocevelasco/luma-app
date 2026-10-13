@@ -1,4 +1,5 @@
 import { EMAIL_CONFIG } from '../config/app.config.js';
+import { activationUrl } from '../utils/activation.js';
 import { appUrl } from '../utils/app-url.js';
 import { escapeHtml, renderEmailLayout, type EmailLayoutOptions } from './email-layout.js';
 
@@ -52,15 +53,28 @@ const APP_NAME = EMAIL_CONFIG.APP_NAME;
 const layout = (o: Omit<EmailLayoutOptions, 'appName'>) =>
   renderEmailLayout({ ...o, appName: APP_NAME });
 
-async function send(email: ResendEmail, label: string): Promise<void> {
+/**
+ * Devuelve si el mail salió. Nunca lanza, pero tampoco calla: el que llama
+ * decide qué hacer cuando es `false`. Un mail de activación que no sale y de
+ * lo que nadie se entera es una persona invitada que no puede entrar.
+ */
+async function send(email: ResendEmail, label: string): Promise<boolean> {
   const resend = await getResendClient();
-  if (!resend) return;
+  if (!resend) return false;
 
   try {
-    await resend.emails.send(email);
+    const result = (await resend.emails.send(email)) as { error?: unknown } | undefined;
+    // El SDK de Resend no lanza ante un rechazo de la API (remitente sin
+    // verificar, destinatario no permitido): devuelve `{ error }`.
+    if (result?.error) {
+      console.error(`❌ [EMAIL] Resend rechazó el ${label} a ${email.to}:`, result.error);
+      return false;
+    }
     console.log(`✅ [EMAIL] ${label} enviado a: ${email.to}`);
+    return true;
   } catch (error) {
     console.error(`❌ [EMAIL] Falló el envío de ${label}:`, error);
+    return false;
   }
 }
 
@@ -73,11 +87,11 @@ export class EmailService {
     email: string,
     activationToken: string,
     userName?: string,
-  ): Promise<void> {
-    const url = appUrl(`/activate?token=${activationToken}`);
+  ): Promise<boolean> {
+    const url = activationUrl(activationToken);
     const name = userName || email.split('@')[0];
 
-    await send(
+    return send(
       {
         from: FROM_EMAIL,
         to: email,

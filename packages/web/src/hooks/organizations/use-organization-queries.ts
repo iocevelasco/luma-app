@@ -57,9 +57,11 @@ export function useInviteMember() {
 
   return useMutation({
     mutationFn: (payload: InviteMemberInput) => organizationsApi.inviteMember(payload),
-    onSuccess: () => {
+    onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.organizationMembers] });
-      toast.success(t('team.invited'));
+      // Si el mail no salió, "Invitación enviada" sería mentira: lo que
+      // corresponde es el diálogo con el enlace, que abre quien llamó.
+      if (data.emailSent !== false) toast.success(t('team.invited'));
     },
       // Sin `onError`: esta mutación se envía desde un formulario y el banner
       // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
@@ -117,7 +119,10 @@ export function useResendMemberInvitation() {
 
   return useMutation({
     mutationFn: (memberId: string) => organizationsApi.resendInvitation(memberId),
-    onSuccess: () => toast.success(t('team.invitationResent')),
+    // Mismo criterio que `useInviteMember`: si no salió, no se dice que sí.
+    onSuccess: (data) => {
+      if (data.emailSent !== false) toast.success(t('team.invitationResent'));
+    },
     onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

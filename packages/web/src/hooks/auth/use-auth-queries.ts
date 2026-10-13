@@ -57,8 +57,13 @@ export function useRegister() {
   return useMutation({
     mutationFn: (credentials: RegisterCredentials) => authApi.register(credentials),
     // Con la verificación apagada la cuenta nace verificada: se entra directo.
-    onSuccess: (data) =>
-      navigate(data.user.email_verified ? ROUTES.LOGIN : ROUTES.CHECK_EMAIL),
+    // El correo viaja en el estado del router y no en la URL: así `check-email`
+    // ya sabe a quién reenviar sin pedírselo de nuevo, y la dirección no queda
+    // en el historial ni en los logs de un proxy.
+    onSuccess: (data, credentials) =>
+      data.user.email_verified
+        ? navigate(ROUTES.LOGIN)
+        : navigate(ROUTES.CHECK_EMAIL, { state: { email: credentials.email } }),
   });
 }
 

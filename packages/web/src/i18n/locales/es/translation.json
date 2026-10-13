@@ -157,7 +157,9 @@
       "submit": "Entrar",
       "forgot": "¿Olvidaste tu contraseña?",
       "noAccount": "¿No tenés cuenta?",
-      "register": "Creá una"
+      "register": "Creá una",
+      "pendingHint": "¿Te invitaron y todavía no elegiste tu contraseña?",
+      "pendingAction": "Pedí un enlace de activación nuevo"
     },
     "register": {
       "title": "Crear cuenta",
@@ -194,7 +196,8 @@
       "title": "Revisá tu correo",
       "subtitle": "Te enviamos un enlace para confirmar tu cuenta.",
       "resend": "Reenviar correo",
-      "resent": "Te reenviamos el correo."
+      "resent": "Te reenviamos el correo.",
+      "askEmail": "¿No te llegó? Escribí tu correo y te mandamos uno nuevo."
     },
     "verifyEmail": {
       "verifying": "Confirmando tu cuenta…",
@@ -733,7 +736,16 @@
     "resend": "Reenviar invitación",
     "removeFromCompany": "Sacar del equipo",
     "removeCompanyTitle": "¿Sacar del equipo?",
-    "removeCompanyBody": "{{name}} deja de pertenecer a tu Empresa y pierde el acceso a sus obras. Lo que cargó se mantiene."
+    "removeCompanyBody": "{{name}} deja de pertenecer a tu Empresa y pierde el acceso a sus obras. Lo que cargó se mantiene.",
+    "activationLink": {
+      "title": "El correo no salió",
+      "body": "La cuenta de {{name}} está creada, pero no pudimos enviarle el correo de activación. Copiá el enlace y mandáselo por el medio que prefieras. Vence en 72 horas.",
+      "label": "Enlace de activación",
+      "warning": "Quien tenga este enlace puede elegir la contraseña de esa cuenta. Compartilo sólo con {{name}}.",
+      "copy": "Copiar enlace",
+      "copied": "Copiado",
+      "done": "Listo"
+    }
   },
   "document": {
     "list": {

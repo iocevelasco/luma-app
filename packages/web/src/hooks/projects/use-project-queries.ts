@@ -79,9 +79,11 @@ export function useInviteProjectMember(projectId: string) {
 
   return useMutation({
     mutationFn: (payload: InviteProjectMemberInput) => projectsApi.inviteMember(projectId, payload),
-    onSuccess: () => {
+    onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
-      toast.success(t('project.detail.memberInvited'));
+      // Si invitar creó la cuenta y el mail no salió, el aviso es el diálogo
+      // con el enlace; un toast verde diría que todo salió bien.
+      if (data.emailSent !== false) toast.success(t('project.detail.memberInvited'));
     },
       // Sin `onError`: esta mutación se envía desde un formulario y el banner
       // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
