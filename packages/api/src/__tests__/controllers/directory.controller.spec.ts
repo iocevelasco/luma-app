@@ -11,10 +11,6 @@ vi.mock('../../models/CrewMember.js', () => ({
 }));
 vi.mock('../../services/crew-identity.service.js', () => ({
   assertNoCrewDuplicate: vi.fn(),
-  toCrewDirectoryEntry: vi.fn((member: { _id: string; name: string }) => ({
-    id: String(member._id),
-    name: member.name,
-  })),
 }));
 vi.mock('../../models/ProjectProvider.js', () => ({
   ProjectProvider: { findOne: vi.fn(), find: vi.fn(), updateOne: vi.fn(), insertMany: vi.fn() },
@@ -49,6 +45,7 @@ const { conflict } = await import('../../utils/errors.js');
 const {
   addCrewMemberToProject,
   createOrganizationCrewMember,
+  listCrewDirectory,
   removeProviderFromProject,
   setOrganizationProviderProjects,
 } = await import('../../controllers/directory.controller.js');
@@ -243,5 +240,43 @@ describe('createOrganizationCrewMember — mismo guardia que desde la obra', () 
       kind: 'persona',
       allowDuplicateName: undefined,
     });
+  });
+});
+
+describe('listCrewDirectory — ficha completa, sin plata', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('devuelve teléfono y notas (el supervisor ve todo del obrero) pero nunca el jornal', async () => {
+    vi.mocked(ProjectCrewMember.find).mockReturnValue({
+      distinct: vi.fn().mockResolvedValue([]),
+    } as never);
+    vi.mocked(CrewMember.find).mockReturnValue({
+      sort: vi.fn().mockResolvedValue([
+        {
+          _id: 'crew-1',
+          organization: 'org-1',
+          scope: 'organization',
+          name: 'Juan Pérez',
+          kind: 'persona',
+          isLead: false,
+          phone: '11 5555 5555',
+          notes: 'Trabajó en la obra de Palermo',
+          dailyRate: 25000,
+          active: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]),
+    } as never);
+
+    const { res } = await run(listCrewDirectory, { project } as never);
+
+    const body = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(body.data.crewMembers[0]).toMatchObject({
+      id: 'crew-1',
+      phone: '11 5555 5555',
+      notes: 'Trabajó en la obra de Palermo',
+    });
+    expect(body.data.crewMembers[0]).not.toHaveProperty('dailyRate');
   });
 });

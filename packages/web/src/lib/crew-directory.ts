@@ -1,4 +1,4 @@
-import { normalizePersonName, type CrewDirectoryEntry, type CrewDuplicateDetails } from '@luma/shared';
+import { normalizePersonName, type CrewDuplicateDetails } from '@luma/shared';
 import { isApiError } from './api-client';
 
 /**
@@ -22,11 +22,11 @@ export const CREW_SUGGESTION_LIMIT = 5;
  * están acá. Lo que no aparece en la sugerencia todavía puede chocar al
  * crear, y para eso está el banner del 409.
  */
-export function matchCrewDirectory(
-  entries: CrewDirectoryEntry[],
+export function matchCrewDirectory<T extends { name: string }>(
+  entries: T[],
   query: string,
   limit = CREW_SUGGESTION_LIMIT,
-): CrewDirectoryEntry[] {
+): T[] {
   const tokens = normalizePersonName(query).split(' ').filter(Boolean);
   if (tokens.join('').length < 2) return [];
 

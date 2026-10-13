@@ -18,7 +18,7 @@ import { ProjectCrewMember } from '../models/ProjectCrewMember.js';
 import { ProjectProvider } from '../models/ProjectProvider.js';
 import { Provider } from '../models/Provider.js';
 import { ProviderEngagement } from '../models/ProviderEngagement.js';
-import { assertNoCrewDuplicate, toCrewDirectoryEntry } from '../services/crew-identity.service.js';
+import { assertNoCrewDuplicate } from '../services/crew-identity.service.js';
 import { findMyOrganizationId } from '../services/organization.service.js';
 import { badRequest, conflict, forbidden, notFound } from '../utils/errors.js';
 import { toCrewMemberDTO } from './crew.controller.js';
@@ -427,9 +427,10 @@ export const removeProviderFromProject = wrap(async (req, res) => {
  * Lo de la libreta de la Empresa que esta obra todavía no tiene. Es lo que
  * busca el drawer de alta mientras se tipea el nombre.
  *
- * Sale acotado (`CrewDirectoryEntry`) para todos: lo usa también el
- * supervisor, que es por obra y puede ser externo, y para reconocer a alguien
- * alcanza con nombre, tipo y especialidad. El resto se ve desde Empleados.
+ * Sale la ficha completa, también para el supervisor: es decisión de
+ * producto que vea toda la información de los obreros —es quien los tiene
+ * enfrente—, y el teléfono es lo que distingue a dos homónimos. El jornal no
+ * viaja: `toCrewMemberDTO` no lo incluye, y el supervisor no ve plata.
  */
 export const listCrewDirectory = wrap(async (req, res) => {
   const project = req.project as IProject;
@@ -443,7 +444,7 @@ export const listCrewDirectory = wrap(async (req, res) => {
 
   return res.json({
     success: true,
-    data: { crewMembers: crewMembers.map(toCrewDirectoryEntry) },
+    data: { crewMembers: crewMembers.map(toCrewMemberDTO) },
   });
 });
 

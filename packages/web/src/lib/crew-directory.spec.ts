@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { CrewDirectoryEntry } from '@luma/shared';
+import type { CrewMemberSummary } from '@luma/shared';
 import { ApiError } from './api-client';
 import { crewDuplicateOf, matchCrewDirectory } from './crew-directory';
 
-const entry = (id: string, name: string): CrewDirectoryEntry => ({
+const entry = (id: string, name: string): CrewMemberSummary => ({
   id,
   name,
   kind: 'persona',

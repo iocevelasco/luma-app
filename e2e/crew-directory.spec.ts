@@ -48,6 +48,8 @@ test.describe('empleados sin duplicar entre obras', () => {
 
     const suggestion = drawer.getByRole('listitem').filter({ hasText: workerName });
     await expect(suggestion).toBeVisible();
+    // Ficha completa también desde la búsqueda: el teléfono distingue homónimos.
+    await expect(suggestion).toContainText('11 4444 5555');
     await suggestion.getByRole('button', { name: /sumar a esta obra/i }).click();
     await expect(drawer).toBeHidden();
 

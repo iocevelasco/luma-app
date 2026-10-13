@@ -2,7 +2,6 @@ import type {
   ApiResponse,
   CreateCrewGoalInput,
   CreateCrewMemberInput,
-  CrewDirectoryListResponse,
   CrewGoalListResponse,
   CrewGoalResponse,
   CrewMemberListResponse,
@@ -23,9 +22,9 @@ async function unwrap<T>(request: Promise<ApiResponse<T>>): Promise<T> {
 }
 
 export const crewApi = {
-  /** Lo de la libreta de la Empresa que esta obra todavía no tiene. Sale acotado: ver `CrewDirectoryEntry`. */
+  /** Lo de la libreta de la Empresa que esta obra todavía no tiene. */
   listDirectory: (projectId: string) =>
-    unwrap<CrewDirectoryListResponse>(apiClient.get(`/api/projects/${projectId}/crew/directory`)),
+    unwrap<CrewMemberListResponse>(apiClient.get(`/api/projects/${projectId}/crew/directory`)),
 
   /** `reactivate` reactiva a alguien dado de baja en el mismo paso. Pide `crew.manage`. */
   addFromDirectory: (projectId: string, crewMemberId: string, options?: { reactivate?: boolean }) =>

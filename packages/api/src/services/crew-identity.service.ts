@@ -2,7 +2,7 @@ import type mongoose from 'mongoose';
 import {
   normalizePersonName,
   normalizePhone,
-  type CrewDirectoryEntry,
+  type CrewMemberSummary,
   type CrewDuplicateDetails,
   type CrewMemberKind,
 } from '@luma/shared';
@@ -27,8 +27,8 @@ import { conflict } from '../utils/errors.js';
  * en el mismo milisegundo pueden colarse; `migrate:crew` las lista.
  */
 
-/** Lo justo para reconocer a alguien. Ver `CrewDirectoryEntry`. */
-export function toCrewDirectoryEntry(member: ICrewMember): CrewDirectoryEntry {
+/** Lo justo para nombrar a alguien en el banner del 409. Ver `CrewMemberSummary`. */
+export function toCrewMemberSummary(member: ICrewMember): CrewMemberSummary {
   return {
     id: String(member._id),
     name: member.name,
@@ -100,7 +100,7 @@ export async function findCrewDuplicate(
 
   return {
     reason,
-    existing: { ...toCrewDirectoryEntry(match), active: Boolean(match.active) },
+    existing: { ...toCrewMemberSummary(match), active: Boolean(match.active) },
     alreadyInProject,
   };
 }

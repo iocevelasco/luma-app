@@ -184,11 +184,13 @@ export function AddCrewDrawer({
             >
               <div className="min-w-0">
                 <p className="truncate font-medium">{entry.name}</p>
-                {(entry.specialty || entry.kind === 'equipo') && (
+                {/* El teléfono es lo que distingue a dos homónimos. */}
+                {(entry.specialty || entry.kind === 'equipo' || entry.phone) && (
                   <p className="truncate text-xs text-muted-foreground">
                     {[
                       entry.kind === 'equipo' ? t('crew.kind.equipo') : null,
                       entry.specialty ? t(`provider.specialty.${entry.specialty}`) : null,
+                      entry.phone ?? null,
                     ]
                       .filter(Boolean)
                       .join(' · ')}

@@ -118,22 +118,15 @@ export interface CrewGoalResponse {
 }
 
 /**
- * Lo que devuelve la búsqueda en la libreta de la Empresa desde una obra.
- *
- * Acotado a propósito: la usa también el supervisor, que es por obra y puede
- * ser externo. Con esto alcanza para reconocer a alguien y sumarlo; teléfono,
- * notas, jornal y en qué otras obras está se ven desde Empleados.
+ * Con quién chocó un alta: lo justo para nombrarlo en el banner y ofrecer
+ * sumarlo. La ficha completa sale del roster una vez que está en la obra.
  */
-export interface CrewDirectoryEntry {
+export interface CrewMemberSummary {
   id: string;
   name: string;
   kind: CrewMemberKind;
   specialty?: ProviderSpecialty;
   isLead: boolean;
-}
-
-export interface CrewDirectoryListResponse {
-  crewMembers: CrewDirectoryEntry[];
 }
 
 /**
@@ -146,7 +139,7 @@ export interface CrewDirectoryListResponse {
  */
 export interface CrewDuplicateDetails {
   reason: 'phone' | 'name';
-  existing: CrewDirectoryEntry & { active: boolean };
+  existing: CrewMemberSummary & { active: boolean };
   /** Ya está en la obra desde la que se intentó el alta: no hay nada que sumar. */
   alreadyInProject: boolean;
 }
