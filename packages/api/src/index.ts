@@ -17,6 +17,7 @@ import {
 import { connectDatabase, isDatabaseConnected } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { normalizeErrors } from './middleware/normalizeErrors.js';
+import { CACHE_REVALIDATE, setSpaCacheHeaders } from './middleware/spaCache.js';
 import { authRouter } from './routes/auth.js';
 import { organizationRouter } from './routes/organization.js';
 import { notificationRouter } from './routes/notification.js';
@@ -198,13 +199,15 @@ if (isProduction) {
   });
 
   if (publicPath) {
-    app.use('/app', express.static(publicPath));
+    // El `setHeaders` es la mitad servidor del aviso de nueva versión: ver
+    // middleware/spaCache.ts.
+    app.use('/app', express.static(publicPath, { setHeaders: setSpaCacheHeaders }));
     console.log(`📦 Sirviendo estáticos desde: ${publicPath}`);
 
     app.get('/app/*', (_req, res, next) => {
       const indexPath = join(publicPath, 'index.html');
       if (existsSync(indexPath)) {
-        res.sendFile(indexPath);
+        res.sendFile(indexPath, { headers: { 'Cache-Control': CACHE_REVALIDATE } });
       } else {
         next();
       }
@@ -251,7 +254,7 @@ if (isProduction) {
         }
         const indexPath = join(publicPath, 'index.html');
         if (existsSync(indexPath)) {
-          res.sendFile(indexPath);
+          res.sendFile(indexPath, { headers: { 'Cache-Control': CACHE_REVALIDATE } });
         } else {
           next();
         }
