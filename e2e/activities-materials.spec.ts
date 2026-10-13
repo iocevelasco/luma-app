@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
-import { pickActivitySpecialty } from './helpers/activity';
+import { pickActivitySpecialty, pickActivityResponsible } from './helpers/activity';
 
 /**
  * Flujo principal de RF-01 (planificación semanal) y RF-02 (materiales):
@@ -53,7 +53,7 @@ test.describe('planificación semanal y materiales', () => {
     await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill(start);
     await page.locator('#activity-end').fill(end);
-    await page.locator('#activity-responsible').fill('Juan Pérez');
+    await pickActivityResponsible(page);
     await page.getByRole('button', { name: /crear actividad/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 

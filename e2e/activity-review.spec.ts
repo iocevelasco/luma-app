@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
-import { pickActivitySpecialty } from './helpers/activity';
+import { pickActivitySpecialty, pickActivityResponsible } from './helpers/activity';
 
 /**
  * Validación del supervisor: el trabajo se reporta terminado, el supervisor
@@ -55,7 +55,7 @@ test.describe('validación del supervisor', () => {
     await page
       .locator('#activity-end')
       .fill(toDayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2)));
-    await page.locator('#activity-responsible').fill('Juan Pérez');
+    await pickActivityResponsible(page);
     // La especialidad es opcional, pero se declara para agrupar por rubro.
     await page.locator('#activity-specialty').click();
     await page.getByRole('option', { name: /^carpintería$/i }).click();
