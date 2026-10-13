@@ -18,6 +18,7 @@ vi.mock('../../models/User.js', () => ({
     create: vi.fn(),
     findByIdAndUpdate: vi.fn(),
     updateOne: vi.fn(),
+    exists: vi.fn(),
   },
 }));
 vi.mock('../../models/Project.js', () => ({ Project: { find: vi.fn() } }));
@@ -40,7 +41,9 @@ const { findMyOrganizationId, createPersonalOrganization } = await import(
   '../../services/organization.service.js'
 );
 const { EmailService } = await import('../../services/email.service.js');
-const { inviteMember, updateMember } = await import('../../controllers/organization.controller.js');
+const { inviteMember, updateMember, resendMemberInvitation } = await import(
+  '../../controllers/organization.controller.js'
+);
 
 function mockRes() {
   const res = {} as Response;
@@ -453,3 +456,80 @@ describe('updateMember', () => {
     expect(body.data.member.phone).toBe('11 4444 3333');
   });
 });
+
+describe('resendMemberInvitation', () => {
+  const resend = async (user: Record<string, unknown>, hasPassword = false) => {
+    vi.clearAllMocks();
+    vi.mocked(findMyOrganizationId).mockResolvedValue('org-1' as never);
+    vi.mocked(OrganizationMember.findOne).mockResolvedValue({
+      _id: 'row-1',
+      user: 'user-2',
+      createdAt,
+      staffRole: 'supervisor',
+    } as never);
+    vi.mocked(User.findById).mockResolvedValue({
+      _id: 'user-2',
+      email: 'ana@estudio.com',
+      name: 'Ana Pérez',
+      email_verified: false,
+      save: vi.fn().mockResolvedValue(undefined),
+      ...user,
+    } as never);
+    vi.mocked(User.exists).mockResolvedValue((hasPassword ? { _id: 'user-2' } : null) as never);
+    const res = mockRes();
+    await resendMemberInvitation(
+      { user: { sub: 'owner-1' }, params: { memberId: 'row-1' } } as never,
+      res,
+    );
+    return res;
+  };
+
+  const bodyOf = (res: Response) =>
+    vi.mocked(res.json).mock.calls[0]![0] as {
+      data: { emailSent?: boolean; activationUrl?: string; member: { pending: boolean } };
+    };
+
+  it('si el mail no salió, entrega el enlace y deja asentado que lo tiene quien reenvió', async () => {
+    vi.mocked(EmailService.sendAccountActivationEmail).mockResolvedValue(false);
+
+    const res = await resend({});
+
+    expect(bodyOf(res).data.emailSent).toBe(false);
+    expect(bodyOf(res).data.activationUrl).toMatch(/\/activate\?token=token$/);
+    expect(User.updateOne).toHaveBeenCalledWith(
+      { _id: 'user-2' },
+      { $set: { activationLinkHeldBy: 'owner-1' } },
+    );
+  });
+
+  it('si el mail salió no entrega el enlace y suelta el que hubiera en mano', async () => {
+    vi.mocked(EmailService.sendAccountActivationEmail).mockResolvedValue(true);
+
+    const res = await resend({});
+
+    expect(bodyOf(res).data.emailSent).toBe(true);
+    expect(bodyOf(res).data.activationUrl).toBeUndefined();
+    expect(User.updateOne).toHaveBeenCalledWith(
+      { _id: 'user-2' },
+      { $unset: { activationLinkHeldBy: '' } },
+    );
+  });
+
+  it('a quien ya activó (verificado y con contraseña) le contesta 409 y no manda nada', async () => {
+    const res = await resend({ email_verified: true }, true);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(EmailService.sendAccountActivationEmail).not.toHaveBeenCalled();
+  });
+
+  it('rescata a una cuenta verificada que nunca eligió contraseña', async () => {
+    vi.mocked(EmailService.sendAccountActivationEmail).mockResolvedValue(true);
+
+    const res = await resend({ email_verified: true }, false);
+
+    expect(res.status).not.toHaveBeenCalledWith(409);
+    expect(EmailService.sendAccountActivationEmail).toHaveBeenCalled();
+    expect(bodyOf(res).data.member.pending).toBe(true);
+  });
+});
+

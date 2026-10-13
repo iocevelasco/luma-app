@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { emailSchema } from '@luma/shared';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { AuthHeader, AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,16 +11,19 @@ import { useResendVerification } from '@/hooks/auth/use-auth-queries';
 /**
  * "Revisá tu correo" y, si no llegó, pedir otro.
  *
- * El correo no viaja en la URL: ni el registro ni el "Me invitaron" del login
- * lo pasaban, así que el botón de reenviar nunca aparecía — y para alguien
- * invitado esta pantalla era un callejón. Si no viene `?email=` se pide acá.
- * El servidor contesta igual exista o no la cuenta, así que esto no enumera
- * direcciones.
+ * El correo llega por el estado del router cuando la persona viene del
+ * registro (no va en la URL). Desde "Me invitaron" del login no hay ninguno:
+ * antes el botón de reenviar no aparecía y esta pantalla era un callejón; ahora
+ * se pide acá. El servidor contesta igual exista o no la cuenta, así que esto
+ * no enumera direcciones.
  */
 export function CheckEmailPage() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const emailFromUrl = searchParams.get('email');
+  const location = useLocation();
+  const stateEmail = (location.state as { email?: unknown } | null)?.email;
+  const knownEmail =
+    searchParams.get('email') ?? (typeof stateEmail === 'string' ? stateEmail : null);
   const resend = useResendVerification();
   const [typed, setTyped] = useState('');
 
@@ -34,12 +37,12 @@ export function CheckEmailPage() {
   return (
     <AuthSplitLayout width="md">
       <AuthHeader title={t('auth.checkEmail.title')} description={t('auth.checkEmail.subtitle')} />
-      {emailFromUrl ? (
+      {knownEmail ? (
         <div className="flex justify-center">
           <Button
             variant="outline"
             disabled={resend.isPending}
-            onClick={() => resend.mutate(emailFromUrl)}
+            onClick={() => resend.mutate(knownEmail)}
           >
             {resend.isPending ? t('common.loading') : t('auth.checkEmail.resend')}
           </Button>

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * El SDK de Resend NO lanza cuando la API rechaza un mail (remitente sin
@@ -30,6 +30,9 @@ describe('EmailService.sendAccountActivationEmail', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
   });
+
+  // Sin restaurar, los spies de `console` se filtran a los demás archivos.
+  afterEach(() => vi.restoreAllMocks());
 
   it('devuelve true cuando Resend acepta el mail', async () => {
     send.mockResolvedValue({ data: { id: 'mail-1' }, error: null });

@@ -3,6 +3,7 @@ import {
   inviteMemberSchema,
   updateOrganizationMemberSchema,
   updateOrganizationSchema,
+  type ActivationDelivery,
   type CompanyStaffRole,
   type Organization as OrganizationDTO,
   type OrganizationMemberSummary,
@@ -126,10 +127,19 @@ export async function listMembers(req: Request, res: Response) {
       organization: organizationId,
       role: 'member',
     }).populate<{
-      user: { _id: unknown; email: string; name: string; email_verified: boolean };
-    }>('user', 'email name email_verified');
+      user: {
+        _id: unknown;
+        email: string;
+        name: string;
+        email_verified: boolean;
+        password?: string;
+      };
+    }>('user', 'email name email_verified +password');
 
-    const members = memberRows.map((row) => toMemberSummary(row, row.user));
+    // El hash se pide sólo para saber SI hay contraseña: no sale de acá.
+    const members = memberRows.map((row) =>
+      toMemberSummary(row, row.user, Boolean(row.user.password)),
+    );
 
     return res.json({ success: true, data: { members } });
   } catch (error) {
@@ -177,7 +187,7 @@ export async function inviteMember(req: Request, res: Response) {
     let user = await User.findOne({ email });
     // Sólo cuando esta invitación crea la cuenta: quien ya existía no recibe
     // mail de activación, así que no hay nada que contar.
-    let delivery: ReturnType<typeof activationDelivery> | undefined;
+    let delivery: ActivationDelivery | undefined;
 
     if (user) {
       // Si otra persona tiene (o usó) el enlace de esa cuenta, sumarla acá le
@@ -253,6 +263,12 @@ async function findTeamMember(req: Request, res: Response) {
 function toMemberSummary(
   row: { _id: unknown; createdAt: Date; staffRole?: CompanyStaffRole; phone?: string },
   user: { _id: unknown; email: string; name: string; email_verified: boolean },
+  /**
+   * Si se sabe que la cuenta no tiene contraseña, está pendiente aunque figure
+   * verificada: pasa con cuentas que confirmaron el correo antes de elegirla.
+   * `undefined` cuando quien llama no cargó ese dato.
+   */
+  hasPassword?: boolean,
 ): OrganizationMemberSummary {
   return {
     id: String(row._id),
@@ -262,7 +278,7 @@ function toMemberSummary(
     role: 'member',
     ...(row.staffRole ? { staffRole: row.staffRole } : {}),
     ...(row.phone ? { phone: row.phone } : {}),
-    pending: !user.email_verified,
+    pending: !user.email_verified || hasPassword === false,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -346,7 +362,10 @@ export async function resendMemberInvitation(req: Request, res: Response) {
     if (!user) {
       return res.status(404).json({ success: false, error: 'No encontramos a esa persona' });
     }
-    if (user.email_verified) {
+    // "Ya activó" es tener contraseña, no sólo haber verificado el correo: hay
+    // cuentas verificadas que nunca eligieron una y quedaban sin salida.
+    const hasPassword = Boolean(await User.exists({ _id: user._id, password: { $exists: true } }));
+    if (user.email_verified && hasPassword) {
       return res
         .status(409)
         .json({ success: false, error: 'Esa persona ya activó su cuenta' });
@@ -366,7 +385,7 @@ export async function resendMemberInvitation(req: Request, res: Response) {
     return res.json({
       success: true,
       data: {
-        member: toMemberSummary(found.row, user),
+        member: toMemberSummary(found.row, user, hasPassword),
         ...activationDelivery(emailSent, activationToken),
       },
     });

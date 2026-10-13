@@ -13,6 +13,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+/**
+ * Selecciona todo el contenido del input.
+ *
+ * `select()` solo no alcanza en iOS Safari: en un input `readOnly` no deja
+ * nada seleccionado, y el rango explícito es lo que hace aparecer el menú de
+ * copiar. Va el par, no uno u otro.
+ */
+function selectAll(input: HTMLInputElement) {
+  input.select();
+  input.setSelectionRange(0, input.value.length);
+}
+
 /** Lo que el servidor devuelve cuando el mail de activación no salió. */
 export interface ActivationLink {
   /** A quién se le creó la cuenta, para que el texto diga de quién es el enlace. */
@@ -65,7 +77,7 @@ function ActivationLinkBody({ link, onClose }: { link: ActivationLink; onClose: 
         // Permiso denegado: cae a la selección manual.
       }
     }
-    inputRef.current?.select();
+    if (inputRef.current) selectAll(inputRef.current);
   }
 
   return (
@@ -86,7 +98,7 @@ function ActivationLinkBody({ link, onClose }: { link: ActivationLink; onClose: 
             readOnly
             value={link.url}
             className="font-mono text-sm"
-            onFocus={(event) => event.currentTarget.select()}
+            onFocus={(event) => selectAll(event.currentTarget)}
           />
           <Button type="button" variant="outline" onClick={() => void copy()}>
             {copied ? <Check className="size-4" /> : <Copy className="size-4" />}

@@ -5,6 +5,7 @@ import {
   invitableProjectRoleSchema,
   inviteProjectMemberSchema,
   updateProjectSchema,
+  type ActivationDelivery,
   type Project as ProjectDTO,
   type ProjectMemberSummary,
   type ProjectRole,
@@ -246,7 +247,7 @@ export async function inviteProjectMember(req: Request, res: Response) {
 
     let user = await User.findOne({ email });
     // Sólo si esta invitación crea la cuenta: ver `activationDelivery`.
-    let delivery: ReturnType<typeof activationDelivery> | undefined;
+    let delivery: ActivationDelivery | undefined;
 
     if (user) {
       // Ver `isLinkedToAnotherInviter`: la cuenta puede estar en manos de quien
