@@ -2,36 +2,168 @@
   "brand": "Luma",
   "nav": {
     "login": "Entrar",
-    "language": "Idioma"
+    "language": "Idioma",
+    "links": {
+      "roles": "Control compartido",
+      "features": "Qué incluye",
+      "how": "Cómo funciona",
+      "faq": "Preguntas"
+    }
   },
   "hero": {
-    "label": "Estructura base",
-    "title": "Acá va la promesa del producto.",
-    "subtitle": "Este es el esqueleto de la landing: bandas, tipografía y llamados a la acción ya resueltos. El contenido se define cuando se define el producto.",
+    "label": "Gestión de obra compartida",
+    "title": "Toda la obra, a la vista de todos.",
+    "subtitle": "Cronograma, presupuesto, cobros y gastos en un solo lugar. Gerente, supervisor, contador y cliente ven la misma obra, cada uno lo que le corresponde.",
     "cta": "Crear cuenta",
-    "secondary": "Ver más"
+    "secondary": "Ver cómo funciona",
+    "mock": {
+      "badge": "Ejemplo ilustrativo",
+      "project": "Casa en construcción",
+      "progress": "Avance general",
+      "activities": [
+        {
+          "name": "Estructura de planta baja",
+          "state": "Completada"
+        },
+        {
+          "name": "Instalación eléctrica",
+          "state": "En curso"
+        },
+        {
+          "name": "Mampostería de planta alta",
+          "state": "En revisión"
+        }
+      ],
+      "nextPayment": "Próximo cobro",
+      "nextPaymentValue": "Cuota 3 de 6"
+    },
+    "photo": {
+      "alt": "Obreros trabajando sobre el encofrado de una losa, en una obra en construcción.",
+      "caption": "Cada paso cuenta. Cada obra importa."
+    }
   },
-  "features": {
-    "label": "Qué ofrece",
-    "title": "Tres bloques, listos para llenarse.",
+  "problem": {
+    "label": "Lo que pasa hoy",
+    "title": "La obra avanza. La información, no tanto.",
+    "items": [
+      "El cliente pregunta en qué va su obra y la respuesta está repartida en tres chats.",
+      "El presupuesto vive en una planilla que sólo entiende una persona.",
+      "Te enterás de lo que pasó en obra cuando ya costó plata."
+    ]
+  },
+  "roles": {
+    "label": "Control compartido",
+    "title": "Cuatro personas, una sola obra.",
+    "subtitle": "Cada rol se asigna obra por obra. Nadie ve de más y nadie tiene que pedir lo que necesita.",
+    "sees": "Ve y hace",
+    "never": "No ve",
     "items": [
       {
-        "title": "Primer bloque",
-        "body": "Placeholder. Reemplazar por el primer beneficio real cuando esté definido."
+        "name": "Gerente",
+        "does": "Planifica actividades, arma el presupuesto, registra cobros y gastos, publica hitos y maneja proveedores.",
+        "never": "Nada: es quien dirige la obra."
       },
       {
-        "title": "Segundo bloque",
-        "body": "Placeholder. Reemplazar por el segundo beneficio real cuando esté definido."
+        "name": "Supervisor",
+        "does": "Reporta avances con fotos, anota asistencia de personal y el ingreso de materiales, y avisa eventualidades al gerente.",
+        "never": "La plata: ni presupuesto, ni cobros, ni gastos."
       },
       {
-        "title": "Tercer bloque",
-        "body": "Placeholder. Reemplazar por el tercer beneficio real cuando esté definido."
+        "name": "Contador",
+        "does": "Lleva cobros y gastos con sus comprobantes, en la moneda y con la cotización de cada día.",
+        "never": "Actividades, personal ni documentación de obra."
+      },
+      {
+        "name": "Cliente",
+        "does": "Sigue el avance, ve el cronograma de pagos acordado, recibe los hitos que se le publican y accede a planos y documentación.",
+        "never": "Los gastos del ejecutante."
+      }
+    ]
+  },
+  "features": {
+    "label": "Qué incluye",
+    "title": "Lo que necesitás para llevar una obra, sin planillas sueltas.",
+    "items": [
+      {
+        "title": "Cronograma y avances",
+        "body": "Planificá las actividades con responsable y especialidad, mirá todo en un Gantt y seguí cada una de principio a fin, con fotos de evidencia."
+      },
+      {
+        "title": "Presupuesto",
+        "body": "Importá tu planilla, mapeá las columnas y revisá la vista previa antes de confirmar. Cada versión queda guardada, con contingencia y saldo disponible."
+      },
+      {
+        "title": "Cobros y gastos",
+        "body": "Cobros y gastos van por separado, con comprobante, moneda y cotización congelada al día en que ocurrieron. Los saldos se calculan siempre desde los movimientos."
+      },
+      {
+        "title": "Personal y materiales",
+        "body": "Asistencia diaria, metas por persona, nómina calculada desde el jornal, y el ingreso y salida de materiales y herramientas."
+      },
+      {
+        "title": "Proveedores",
+        "body": "Un directorio propio, asignación por obra y contrataciones con el monto comprometido a la vista, separado de lo que ya se gastó."
+      },
+      {
+        "title": "Consultor IA",
+        "body": "Preguntale por el estado de la obra, el presupuesto o la mano de obra. Responde sólo con los datos de esa obra y avisa cuando no puede responder."
+      }
+    ]
+  },
+  "how": {
+    "label": "Cómo funciona",
+    "title": "Tres pasos para que todos vean lo mismo.",
+    "steps": [
+      {
+        "title": "Creás la obra",
+        "body": "Cargás los datos básicos, el presupuesto y las actividades que ya tenés planificadas."
+      },
+      {
+        "title": "Invitás al equipo",
+        "body": "Sumás a supervisor, contador y cliente. Cada uno entra con el acceso que le corresponde."
+      },
+      {
+        "title": "Todos ven lo mismo",
+        "body": "Cada avance, cobro y hito queda registrado y llega a quien corresponde dentro de la app."
+      }
+    ]
+  },
+  "faq": {
+    "label": "Preguntas frecuentes",
+    "title": "Antes de empezar.",
+    "items": [
+      {
+        "q": "¿Mi cliente puede ver cuánto gasto?",
+        "a": "No. El cliente ve el cronograma de pagos y lo que pagó, pero nunca los gastos de la obra. Con ambos totales se calcularía tu margen, y esa cifra queda de tu lado."
+      },
+      {
+        "q": "¿Puedo traer el presupuesto que ya tengo en una planilla?",
+        "a": "Sí. Subís el archivo, indicás qué columna es cada dato y ves una vista previa con las filas incompletas marcadas antes de importar."
+      },
+      {
+        "q": "¿Trabaja con más de una moneda?",
+        "a": "Sí. Cada cobro y cada gasto guarda su moneda y la cotización del día, así el total de una obra cerrada no cambia solo."
+      },
+      {
+        "q": "¿Mis proveedores necesitan una cuenta?",
+        "a": "No. Los registrás en tu directorio y los asignás a cada obra. Por ahora no tienen acceso propio a la app."
+      },
+      {
+        "q": "¿Cómo me entero de lo que pasa en la obra?",
+        "a": "Dentro de la app, con avisos cuando una actividad avanza o se publica un hito. Todavía no se envían por mail."
+      },
+      {
+        "q": "¿En qué idiomas está?",
+        "a": "Español y portugués, y podés cambiar entre uno y otro cuando quieras."
       }
     ]
   },
   "finalCta": {
-    "title": "Cierre de la página.",
-    "subtitle": "El último empujón antes de la acción. Acá va el argumento que queda resonando.",
-    "cta": "Empezar"
+    "title": "Llevá tu próxima obra a la vista de todos.",
+    "subtitle": "Creá la cuenta, cargá la obra e invitá a quien tenga que verla.",
+    "cta": "Crear cuenta"
+  },
+  "footer": {
+    "tagline": "Gestión de obra con control compartido."
   }
 }
