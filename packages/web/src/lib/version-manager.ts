@@ -12,6 +12,19 @@ const USER_KEY = 'auth_user';
 const SESSION_START_KEY = 'session_start_time';
 const USER_STORAGE_KEY = 'user-storage'; // Zustand store
 const THEME_STORAGE_KEY = 'vite-ui-theme'; // Theme preference
+// Lo escribe i18next-browser-languagedetector (i18n/config.ts, `caches`). Si no
+// se preserva, cada deploy le resetea el idioma a todo el mundo.
+const LANGUAGE_STORAGE_KEY = 'i18nextLng';
+
+/** Lo que sobrevive a una invalidación: la sesión y las preferencias de la persona. */
+const PRESERVED_KEYS = [
+  TOKEN_KEY,
+  USER_KEY,
+  SESSION_START_KEY,
+  USER_STORAGE_KEY,
+  THEME_STORAGE_KEY,
+  LANGUAGE_STORAGE_KEY,
+] as const;
 
 /**
  * Obtiene la versión actual de la aplicación desde las variables de entorno
@@ -37,34 +50,19 @@ function saveVersion(version: string): void {
 
 /**
  * Limpia el localStorage pero preserva los datos de sesión del usuario
- * (token, usuario, tiempo de inicio de sesión, store de zustand y preferencias de tema)
+ * (token, usuario, tiempo de inicio de sesión, store de zustand) y sus
+ * preferencias (tema, idioma)
  */
 function clearLocalStoragePreservingSession(): void {
-  // Guardar temporalmente los datos de sesión y preferencias del usuario
-  const token = localStorage.getItem(TOKEN_KEY);
-  const user = localStorage.getItem(USER_KEY);
-  const sessionStart = localStorage.getItem(SESSION_START_KEY);
-  const userStorage = localStorage.getItem(USER_STORAGE_KEY);
-  const theme = localStorage.getItem(THEME_STORAGE_KEY);
+  const preserved = PRESERVED_KEYS.flatMap((key) => {
+    const value = localStorage.getItem(key);
+    return value === null ? [] : [[key, value] as const];
+  });
 
-  // Limpiar todo el localStorage
   localStorage.clear();
 
-  // Restaurar los datos de sesión y preferencias
-  if (token) {
-    localStorage.setItem(TOKEN_KEY, token);
-  }
-  if (user) {
-    localStorage.setItem(USER_KEY, user);
-  }
-  if (sessionStart) {
-    localStorage.setItem(SESSION_START_KEY, sessionStart);
-  }
-  if (userStorage) {
-    localStorage.setItem(USER_STORAGE_KEY, userStorage);
-  }
-  if (theme) {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  for (const [key, value] of preserved) {
+    localStorage.setItem(key, value);
   }
 
   console.log('🧹 [VERSION] localStorage limpiado, sesión y preferencias preservadas');

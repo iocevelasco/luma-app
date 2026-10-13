@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { hasNewBuild, parseBuildInfo, type BuildInfo } from '@/lib/build-info';
 
 // `VITE_APP_VERSION` está declarada opcional en vite-env.d.ts y sólo la inyecta
 // vite.config al compilar. Sin ella no hay con qué comparar: el hook se apaga
 // en lugar de reportar "hay update" contra `undefined` en cada chequeo.
 const CURRENT_VERSION = import.meta.env.VITE_APP_VERSION;
+const CURRENT_BUILD: BuildInfo | null = CURRENT_VERSION
+  ? { version: CURRENT_VERSION, buildTime: import.meta.env.VITE_APP_BUILD_TIME ?? null }
+  : null;
 const CHECK_INTERVAL = 60 * 1000; // Verificar cada 60 segundos
 const REQUEST_TIMEOUT = 10 * 1000;
 
@@ -23,7 +27,7 @@ interface VersionCheckState {
  * "The string did not match the expected pattern"—. Por eso se valida el
  * content-type y se parsea a mano.
  */
-async function fetchServerVersion(signal: AbortSignal): Promise<string | null> {
+async function fetchServerBuild(signal: AbortSignal): Promise<BuildInfo | null> {
   const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   // Timestamp + no-store: sin esto el propio version.json se sirve cacheado y
   // la app nunca se entera de que hay una versión nueva.
@@ -38,16 +42,8 @@ async function fetchServerVersion(signal: AbortSignal): Promise<string | null> {
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.includes('json')) return null;
 
-  // El content-type puede mentir; parsear igual bajo try.
-  let data: unknown;
-  try {
-    data = JSON.parse(await response.text());
-  } catch {
-    return null;
-  }
-
-  const version = (data as { version?: unknown } | null)?.version;
-  return typeof version === 'string' && version.length > 0 ? version : null;
+  // El content-type puede mentir; `parseBuildInfo` parsea bajo try.
+  return parseBuildInfo(await response.text());
 }
 
 export function useVersionCheck() {
@@ -65,7 +61,7 @@ export function useVersionCheck() {
   const mountedRef = useRef(true);
 
   const checkForUpdate = useCallback(async () => {
-    if (!CURRENT_VERSION || inFlightRef.current) return;
+    if (!CURRENT_BUILD || inFlightRef.current) return;
     inFlightRef.current = true;
     setState(prev => ({ ...prev, isChecking: true }));
 
@@ -75,21 +71,21 @@ export function useVersionCheck() {
     const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
     try {
-      const serverVersion = await fetchServerVersion(controller.signal);
+      const serverBuild = await fetchServerBuild(controller.signal);
       if (!mountedRef.current) return;
 
       // `null` = no se pudo leer la versión (dev, deploy a medias, red caída).
       // No es un update: no hay nada que avisarle al usuario.
-      if (serverVersion === null) {
+      if (serverBuild === null) {
         setState(prev => ({ ...prev, lastChecked: new Date() }));
         return;
       }
 
-      const hasUpdate = serverVersion !== CURRENT_VERSION;
+      const hasUpdate = hasNewBuild(CURRENT_BUILD, serverBuild);
       setState(prev => ({
         ...prev,
         hasUpdate,
-        newVersion: hasUpdate ? serverVersion : null,
+        newVersion: hasUpdate ? serverBuild.version : null,
         lastChecked: new Date(),
       }));
     } catch (error) {
@@ -116,7 +112,7 @@ export function useVersionCheck() {
   // Verificar al montar y luego periódicamente
   useEffect(() => {
     mountedRef.current = true;
-    if (!CURRENT_VERSION) return;
+    if (!CURRENT_BUILD) return;
 
     // Primera verificación después de 5 segundos (dar tiempo a que cargue la app)
     const initialTimeout = window.setTimeout(checkForUpdate, 5000);
@@ -130,11 +126,19 @@ export function useVersionCheck() {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // El caso que más duele de un deploy: la pestaña vieja pide un chunk con
+    // hash que ya no existe y la ruta no carga. Vite avisa con este evento. No
+    // se asume "hay update" —puede ser una red caída—: se pregunta al servidor,
+    // y el aviso sale sólo si de verdad hay otro build.
+    const handlePreloadError = () => void checkForUpdate();
+    window.addEventListener('vite:preloadError', handlePreloadError);
+
     return () => {
       mountedRef.current = false;
       window.clearTimeout(initialTimeout);
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('vite:preloadError', handlePreloadError);
     };
   }, [checkForUpdate]);
 

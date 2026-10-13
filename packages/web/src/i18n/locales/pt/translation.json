@@ -31,6 +31,12 @@
     "crew": "Funcionários",
     "providers": "Fornecedores"
   },
+  "appUpdate": {
+    "title": "Há uma nova versão",
+    "body": "Atualize para ter as últimas melhorias.",
+    "bodyWithVersion": "A versão {{version}} já está disponível. Atualize para ter as últimas melhorias.",
+    "action": "Atualizar"
+  },
   "userMenu": {
     "account": "Minha conta",
     "settings": "Configurações",

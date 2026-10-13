@@ -336,6 +336,14 @@ Coolify sobre VPS: `app` (API + SPA) + `landing` (nginx interno) + `mongo`. Todo
 en `docs/DEPLOY.md`, incluidas las dos trampas operativas (el network alias de la
 landing y el redeploy obligatorio al cambiar env vars).
 
+### Versión de la SPA
+
+**Todo cambio en `packages/web` sube la versión** con `pnpm bump:web
+<patch|minor|major>` — semver.org, sólo `packages/web/package.json`. Es lo que
+le avisa a una pestaña abierta que hay un deploy nuevo (`/app/version.json` +
+`UpdateNotification`). `buildTime` es la red si se olvida, no un reemplazo.
+Detalle en `docs/DEPLOY.md`.
+
 ### Cambios de configuración: primero el skill de Coolify
 
 Cuando se pida un cambio relacionado con la **configuración del proyecto** —
