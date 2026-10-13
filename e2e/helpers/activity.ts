@@ -11,3 +11,16 @@ export async function pickActivitySpecialty(page: Page, name: RegExp = /albañil
   await page.locator('#activity-specialty').click();
   await page.getByRole('option', { name }).click();
 }
+
+/**
+ * Elige el responsable en el formulario de "Nueva actividad".
+ *
+ * Ya no es un nombre tipeado: es un selector con quien está logueado, el
+ * personal de obra y el administrativo (ver `ResponsibleField`). Por defecto
+ * elige a quien está logueado, que es la única opción que existe siempre —
+ * una obra recién creada todavía no tiene personal.
+ */
+export async function pickActivityResponsible(page: Page, name: RegExp = /\(vos\)$/i) {
+  await page.locator('#activity-responsible').click();
+  await page.getByRole('option', { name }).click();
+}

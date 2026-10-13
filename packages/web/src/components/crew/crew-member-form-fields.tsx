@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { CreateCrewMemberInput, CrewMemberKind } from '@luma/shared';
 import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -22,11 +23,14 @@ export function CrewMemberFormFields({
   register,
   control,
   errors,
+  nameAddon,
 }: {
   idPrefix: string;
   register: UseFormRegister<CreateCrewMemberInput>;
   control: Control<CreateCrewMemberInput>;
   errors: FieldErrors<CreateCrewMemberInput>;
+  /** Va pegado abajo del nombre: las sugerencias de la Empresa mientras se tipea. */
+  nameAddon?: ReactNode;
 }) {
   const { t } = useTranslation();
 
@@ -34,8 +38,10 @@ export function CrewMemberFormFields({
     <>
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${idPrefix}-name`}>{t('crew.fields.name')}</Label>
-        <Input id={`${idPrefix}-name`} {...register('name')} />
+        {/* Sin autocompletar del browser: tapaba las sugerencias de la Empresa. */}
+        <Input id={`${idPrefix}-name`} autoComplete="off" {...register('name')} />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+        {nameAddon}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

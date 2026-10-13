@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
+import { addCrewMember } from './helpers/crew';
 
 /**
- * Personal fijo de obra y metas semanales: cargar el roster (persona, equipo
- * y encargado de especialidad), asignar una meta de la semana, marcarla, y
+ * Personal fijo de obra y metas semanales: cargar el roster desde el drawer
+ * (persona, equipo y encargado de especialidad), asignar una meta de la
+ * semana, marcarla, y
  * confirmar que las metas viven en SU semana y no se filtran a la siguiente.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -12,7 +14,7 @@ const RUN_ID = Date.now();
 const PASSWORD = 'E2eProyecto1234!';
 
 test.describe('personal fijo y metas semanales', () => {
-  test('carga el roster, asigna una meta y la marca cumplida', async ({ page }) => {
+  test('carga el roster, asigna una meta y la marca hecha', async ({ page }) => {
     const ownerEmail = `e2e-crew-${RUN_ID}@luma.test`;
     const projectName = `Obra personal ${RUN_ID}`;
     const leadName = `Martín Acosta ${RUN_ID}`;
@@ -41,27 +43,20 @@ test.describe('personal fijo y metas semanales', () => {
     await expect(page.getByText(/^presentes$/i)).toBeVisible();
     await expect(page.getByText(/actividades hoy/i)).toBeVisible();
 
-    await page.getByRole('tab', { name: /metas de la semana/i }).click();
+    await page.getByRole('tab', { name: /^tablero$/i }).click();
+    await expect(page).toHaveURL(/\/personal\?tab=board$/);
     await expect(page.getByText(/primero cargá el personal fijo/i)).toBeVisible();
 
-    // --- Roster: un encargado de especialidad y un equipo ---
+    // --- Roster: un encargado de especialidad y un equipo, desde el drawer ---
+    await addCrewMember(page, { name: leadName, specialty: /^electricidad$/i, isLead: true });
+    await addCrewMember(page, { name: teamName, kind: /^equipo$/i });
+
+    // El panel de personal fijo los lista, con la marca de encargado.
     await page.getByRole('button', { name: /^personal fijo$/i }).click();
     const roster = page.getByRole('dialog');
-
-    await roster.locator('#crew-name').fill(leadName);
-    await roster.locator('#crew-specialty').click();
-    await page.getByRole('option', { name: /^electricidad$/i }).click();
-    await roster.getByText(/es el encargado de su especialidad/i).click();
-    await roster.getByRole('button', { name: /^agregar$/i }).click();
     await expect(roster.getByText(leadName)).toBeVisible();
     await expect(roster.getByText(/^encargado$/i)).toBeVisible();
-
-    await roster.locator('#crew-name').fill(teamName);
-    await roster.locator('#crew-kind').click();
-    await page.getByRole('option', { name: /^equipo$/i }).click();
-    await roster.getByRole('button', { name: /^agregar$/i }).click();
     await expect(roster.getByText(teamName)).toBeVisible();
-
     await roster.getByRole('button', { name: /close/i }).click();
     await expect(roster).toBeHidden();
 
@@ -75,11 +70,11 @@ test.describe('personal fijo y metas semanales', () => {
     // Agrupada bajo el nombre de quien la tiene.
     await expect(page.getByRole('heading', { name: teamName })).toBeVisible();
 
-    // --- Se marca cumplida ---
+    // --- Se marca hecha ---
     await page.getByRole('combobox').filter({ hasText: /pendiente/i }).click();
-    await page.getByRole('option', { name: /^cumplida$/i }).click();
+    await page.getByRole('option', { name: /^hecha$/i }).click();
     await expect(
-      page.getByRole('combobox').filter({ hasText: /^cumplida$/i }),
+      page.getByRole('combobox').filter({ hasText: /^hecha$/i }),
     ).toBeVisible();
 
     // --- La meta vive en SU semana, no se filtra a la siguiente ---
@@ -91,7 +86,7 @@ test.describe('personal fijo y metas semanales', () => {
     await page.getByRole('button', { name: /semana actual/i }).click();
     await expect(page.getByText(goalText)).toBeVisible();
     await expect(
-      page.getByRole('combobox').filter({ hasText: /^cumplida$/i }),
+      page.getByRole('combobox').filter({ hasText: /^hecha$/i }),
     ).toBeVisible();
   });
 });

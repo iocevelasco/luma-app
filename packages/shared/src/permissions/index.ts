@@ -85,8 +85,9 @@ export type Capability =
   // Materiales y herramientas
   | 'material.read'
   | 'material.write'
-  // Personal en obra: roster vs. asistencia diaria
+  // Personal en obra: sumar gente, administrar el roster, asistencia y metas
   | 'crew.read'
+  | 'crew.create'
   | 'crew.manage'
   | 'crew.attendance.write'
   | 'crew.goals.write'
@@ -163,6 +164,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'document.read',
     'document.write',
     'crew.read',
+    'crew.create',
     'crew.manage',
     'crew.attendance.write',
     'crew.goals.write',
@@ -182,6 +184,9 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'milestone.report',
     'document.read',
     'crew.read',
+    // Suma gente a SU obra —crear o traer de la Empresa—, pero no edita, no
+    // da de baja ni saca: el CRUD del roster sigue siendo del gerente.
+    'crew.create',
     'crew.attendance.write',
     'crew.goals.write',
     'provider.read',

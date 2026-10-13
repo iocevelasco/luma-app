@@ -1,58 +1,28 @@
 import { useState } from 'react';
-import type { CrewMemberKind, ProviderSpecialty } from '@luma/shared';
-import { Building2, Plus, UserMinus, UserX } from 'lucide-react';
+import { Building2, UserMinus, UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { DirectoryPickerDialog } from '@/components/directory/directory-picker-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   useAddCrewMemberToProject,
-  useCreateCrewMember,
   useCrewDirectory,
   useCrewMembers,
   useDeactivateCrewMember,
   useRemoveCrewMemberFromProject,
 } from '@/hooks/crew/use-crew-queries';
-
-/** Mismo catálogo que proveedores — un test en `@luma/shared` los mantiene alineados. */
-const CREW_SPECIALTIES: ProviderSpecialty[] = [
-  'electricidad',
-  'plomeria',
-  'gas',
-  'carpinteria',
-  'cristaleria',
-  'albanileria',
-  'herreria',
-  'redes',
-  'mecanicas',
-  'estructura',
-  'acabados',
-  'pintura',
-  'climatizacion',
-  'techos',
-  'pisos_revestimientos',
-  'jardineria',
-  'demolicion',
-  'otra',
-];
-
-const CREW_KINDS: CrewMemberKind[] = ['persona', 'equipo'];
+import { errorMessage } from '@/lib/error-message';
 
 /**
  * Personal fijo de obra: el que está toda la ejecución, a diferencia del
- * proveedor que entra y sale. Lo administra el dueño; el Asistente lo ve para
- * poder asignarle metas.
+ * proveedor que entra y sale. Es la lista de quién está en ESTA obra y lo que
+ * se hace con cada uno: sumar de la Empresa, sacar de la obra, dar de baja.
+ *
+ * El alta ya no vive acá: va por `AddCrewDrawer`, que busca en la Empresa
+ * antes de crear para no duplicar a nadie. El formulario inline que había
+ * creaba sin mirar.
  */
 export function CrewRosterDialog({
   projectId,
@@ -66,15 +36,7 @@ export function CrewRosterDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const [name, setName] = useState('');
-  const [kind, setKind] = useState<CrewMemberKind>('persona');
-  const [specialty, setSpecialty] = useState<string>('');
-  const [isLead, setIsLead] = useState(false);
-  const [phone, setPhone] = useState('');
-  const [onlyThisProject, setOnlyThisProject] = useState(false);
-
   const { data } = useCrewMembers(open ? projectId : undefined);
-  const createMember = useCreateCrewMember(projectId);
   const deactivateMember = useDeactivateCrewMember(projectId);
   const removeMember = useRemoveCrewMemberFromProject(projectId);
   const addMember = useAddCrewMemberToProject(projectId);
@@ -85,15 +47,6 @@ export function CrewRosterDialog({
   );
 
   const crewMembers = data?.crewMembers ?? [];
-
-  function resetForm() {
-    setName('');
-    setKind('persona');
-    setSpecialty('');
-    setIsLead(false);
-    setPhone('');
-    setOnlyThisProject(false);
-  }
 
   return (
     <FormDrawer
@@ -169,101 +122,6 @@ export function CrewRosterDialog({
             </Button>
           )}
 
-          {isOwner && (
-            <form
-              className="flex flex-col gap-3 border-t border-border pt-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!name.trim()) return;
-                createMember.mutate(
-                  {
-                    name: name.trim(),
-                    kind,
-                    isLead,
-                    scope: onlyThisProject ? 'project' : 'organization',
-                    ...(phone.trim() ? { phone: phone.trim() } : {}),
-                    ...(specialty ? { specialty: specialty as ProviderSpecialty } : {}),
-                  },
-                  { onSuccess: resetForm },
-                );
-              }}
-            >
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="crew-name">{t('crew.fields.name')}</Label>
-                <Input
-                  id="crew-name"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="crew-kind">{t('crew.fields.kind')}</Label>
-                  <Select value={kind} onValueChange={(value) => setKind(value as CrewMemberKind)}>
-                    <SelectTrigger id="crew-kind">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CREW_KINDS.map((value) => (
-                        <SelectItem key={value} value={value}>
-                          {t(`crew.kind.${value}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="crew-specialty">{t('crew.fields.specialty')}</Label>
-                  <Select value={specialty} onValueChange={setSpecialty}>
-                    <SelectTrigger id="crew-specialty">
-                      <SelectValue placeholder={t('crew.fields.specialtyPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CREW_SPECIALTIES.map((value) => (
-                        <SelectItem key={value} value={value}>
-                          {t(`provider.specialty.${value}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {/* Sin teléfono no se puede llamar al que faltó, que es el
-                    motivo de ser de la pantalla de asistencia. */}
-                <Label htmlFor="crew-phone">{t('crew.fields.phone')}</Label>
-                <Input
-                  id="crew-phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                />
-              </div>
-
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox checked={isLead} onCheckedChange={(next) => setIsLead(next === true)} />
-                {t('crew.fields.isLead')}
-              </label>
-
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={onlyThisProject}
-                  onCheckedChange={(next) => setOnlyThisProject(next === true)}
-                />
-                {t('crew.fields.onlyThisProject')}
-              </label>
-
-              <div className="flex justify-end">
-                <Button type="submit" size="sm" disabled={createMember.isPending}>
-                  <Plus className="size-4" />
-                  {t('crew.list.add')}
-                </Button>
-              </div>
-            </form>
-          )}
         </div>
       <DirectoryPickerDialog
         open={pickerOpen}
@@ -275,9 +133,15 @@ export function CrewRosterDialog({
           detail: member.specialty ? t(`provider.specialty.${member.specialty}`) : undefined,
         }))}
         isLoading={directoryLoading}
-        pendingId={addMember.isPending ? addMember.variables : null}
+        pendingId={addMember.isPending ? (addMember.variables?.crewMemberId ?? null) : null}
         emptyLabel={t('directory.pickEmptyCrew')}
-        onAdd={(id) => addMember.mutate(id)}
+        // Una lista sin formulario: la falla va por toast, no hay banner.
+        onAdd={(id) =>
+          addMember.mutate(
+            { crewMemberId: id },
+            { onError: (error) => toast.error(errorMessage(error, t)) },
+          )
+        }
       />
     </FormDrawer>
   );

@@ -23,14 +23,26 @@ describe('crewSpecialtySchema', () => {
 describe('createCrewMemberSchema', () => {
   const valid = { name: 'Juan Pérez' };
 
-  it('acepta lo mínimo y asume persona de la libreta', () => {
+  it('acepta lo mínimo y asume persona', () => {
     const result = createCrewMemberSchema.safeParse(valid);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.kind).toBe('persona');
-      expect(result.data.scope).toBe('organization');
       expect(result.data.isLead).toBe(false);
     }
+  });
+
+  it('ya no acepta elegir el alcance: todo alta va a la libreta de la Empresa', () => {
+    const result = createCrewMemberSchema.safeParse({ ...valid, scope: 'project' });
+    // Un cliente viejo que todavía lo manda no se rompe: el campo se descarta.
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).not.toHaveProperty('scope');
+  });
+
+  it('permite insistir con un homónimo', () => {
+    const result = createCrewMemberSchema.safeParse({ ...valid, allowDuplicateName: true });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.allowDuplicateName).toBe(true);
   });
 
   it('acepta un equipo entero como destinatario de metas', () => {
@@ -67,7 +79,7 @@ describe('createCrewGoalSchema', () => {
   it('acepta una meta válida y nace pendiente', () => {
     const result = createCrewGoalSchema.safeParse(valid);
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.status).toBe('pendiente');
+    if (result.success) expect(result.data.status).toBe('pending');
   });
 
   it('rechaza una meta sin descripción', () => {
@@ -86,12 +98,22 @@ describe('createCrewGoalSchema', () => {
 });
 
 describe('updateCrewGoalSchema', () => {
-  it('permite marcarla cumplida', () => {
-    expect(updateCrewGoalSchema.safeParse({ status: 'cumplida' }).success).toBe(true);
+  it('permite marcarla hecha', () => {
+    expect(updateCrewGoalSchema.safeParse({ status: 'done' }).success).toBe(true);
   });
 
-  it('distingue "no cumplida" de "pendiente"', () => {
-    expect(updateCrewGoalSchema.safeParse({ status: 'no_cumplida' }).success).toBe(true);
-    expect(updateCrewGoalSchema.safeParse({ status: 'fallida' }).success).toBe(false);
+  it('distingue "descartada" de "pendiente"', () => {
+    expect(updateCrewGoalSchema.safeParse({ status: 'discarded' }).success).toBe(true);
+    expect(updateCrewGoalSchema.safeParse({ status: 'failed' }).success).toBe(false);
+  });
+
+  it('no deja mover la meta de semana: borraría el dato del atraso', () => {
+    const result = updateCrewGoalSchema.safeParse({ weekStart: '2026-10-12' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).not.toHaveProperty('weekStart');
+  });
+
+  it('ya no acepta los valores en castellano: esos sólo existen guardados', () => {
+    expect(updateCrewGoalSchema.safeParse({ status: 'cumplida' }).success).toBe(false);
   });
 });

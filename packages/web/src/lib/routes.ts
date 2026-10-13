@@ -52,9 +52,17 @@ export function projectMaterialsPath(projectId: string): string {
   return ROUTES.PROJECT_MATERIALS.replace(':projectId', projectId);
 }
 
-/** `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. */
-export function projectLaborPath(projectId: string): string {
-  return ROUTES.PROJECT_LABOR.replace(':projectId', projectId);
+/** Las pestañas de Personal que se abren por link: `day` es la Jornada, la de siempre. */
+export type ProjectLaborTab = 'day' | 'board';
+
+/**
+ * `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. Con
+ * `tab: 'board'` abre directo el Tablero de metas — es a donde lleva la card
+ * de metas del detalle.
+ */
+export function projectLaborPath(projectId: string, tab?: ProjectLaborTab): string {
+  const path = ROUTES.PROJECT_LABOR.replace(':projectId', projectId);
+  return tab === 'board' ? `${path}?tab=board` : path;
 }
 
 /** `ROUTES.PROJECT_PAYMENTS` con el `:projectId` resuelto, para armar links. */

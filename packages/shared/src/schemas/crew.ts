@@ -9,7 +9,7 @@ const dayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida');
 
 export const crewMemberKindSchema = z.enum(['persona', 'equipo']);
 
-export const crewGoalStatusSchema = z.enum(['pendiente', 'cumplida', 'no_cumplida']);
+export const crewGoalStatusSchema = z.enum(['pending', 'done', 'discarded']);
 
 /**
  * Duplica los valores de `providerSpecialtySchema` en vez de importarlo: los
@@ -46,7 +46,6 @@ export const createCrewMemberSchema = z.object({
   kind: crewMemberKindSchema.default('persona'),
   specialty: crewSpecialtySchema.optional(),
   isLead: z.boolean().default(false),
-  scope: z.enum(['organization', 'project']).default('organization'),
   phone: z.string().trim().max(30, 'Es demasiado largo').optional(),
   /**
    * Jornal diario. Opcional a propósito: una obra puede funcionar sin cargar
@@ -55,6 +54,12 @@ export const createCrewMemberSchema = z.object({
    */
   dailyRate: z.coerce.number().min(0, 'El jornal no puede ser negativo').optional(),
   notes: z.string().trim().max(1000, 'Es demasiado largo').optional(),
+  /**
+   * "Es otra persona": el alta insiste aunque ya haya alguien con el mismo
+   * nombre. No salta el chequeo de teléfono — mismo teléfono es la misma
+   * persona.
+   */
+  allowDuplicateName: z.boolean().optional(),
 });
 
 export const updateCrewMemberSchema = z.object({
@@ -77,14 +82,18 @@ export const createCrewGoalSchema = z.object({
     .min(1, 'Escribí la meta')
     .max(500, 'Es demasiado larga'),
   activityId: z.string().trim().min(1).optional(),
-  status: crewGoalStatusSchema.default('pendiente'),
+  status: crewGoalStatusSchema.default('pending'),
 });
 
+/**
+ * Sin `weekStart`: una meta no cambia de semana. El arrastre es derivado y
+ * cuenta con la semana de origen; moverla borraría justo el dato de que se
+ * atrasó.
+ */
 export const updateCrewGoalSchema = z.object({
   description: z.string().trim().min(1).max(500).optional(),
   activityId: z.string().trim().min(1).optional(),
   status: crewGoalStatusSchema.optional(),
-  weekStart: dayKeySchema.optional(),
 });
 
 export type CreateCrewMemberInput = z.infer<typeof createCrewMemberSchema>;

@@ -48,11 +48,19 @@ export interface CrewMember {
 }
 
 /**
- * `pendiente` no es lo mismo que `no_cumplida`: un booleano confunde "todavía
- * no" con "no se logró", y justamente el incumplimiento es el dato que le
- * dice al ejecutante que está planificando de más.
+ * Valores en inglés, textos en castellano: el código nombra, la traducción
+ * habla (`crew.goalStatus.*`).
+ *
+ * - `pending`: abierta. Es la única que se arrastra a la semana siguiente.
+ * - `done`: hecha.
+ * - `discarded`: cerrada sin hacer. Con el arrastre es la única salida para
+ *   algo que no se va a hacer: sin ella, una meta abandonada rodaría para
+ *   siempre. Reemplaza a `no_cumplida`.
+ *
+ * Los valores viejos (`pendiente`, `cumplida`, `no_cumplida`) los traduce la
+ * API al leer hasta que corra `migrate:crew` — ver `LEGACY_CREW_GOAL_STATUS`.
  */
-export type CrewGoalStatus = 'pendiente' | 'cumplida' | 'no_cumplida';
+export type CrewGoalStatus = 'pending' | 'done' | 'discarded';
 
 export interface CrewGoal {
   id: string;
@@ -64,6 +72,12 @@ export interface CrewGoal {
   /** Opcional: la meta puede no mapear a una actividad puntual del cronograma. */
   activityId?: string;
   status: CrewGoalStatus;
+  /**
+   * Cuándo pasó a `done`. Es un hecho con fecha, no un derivado: es lo único
+   * que dice si una meta se cerró en su semana o tres después. Las cerradas
+   * antes de que existiera el campo no lo tienen.
+   */
+  completedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -101,4 +115,38 @@ export interface CrewGoalListResponse {
 
 export interface CrewGoalResponse {
   goal: CrewGoal;
+}
+
+/**
+ * Lo que devuelve la búsqueda en la libreta de la Empresa desde una obra.
+ *
+ * Acotado a propósito: la usa también el supervisor, que es por obra y puede
+ * ser externo. Con esto alcanza para reconocer a alguien y sumarlo; teléfono,
+ * notas, jornal y en qué otras obras está se ven desde Empleados.
+ */
+export interface CrewDirectoryEntry {
+  id: string;
+  name: string;
+  kind: CrewMemberKind;
+  specialty?: ProviderSpecialty;
+  isLead: boolean;
+}
+
+export interface CrewDirectoryListResponse {
+  crewMembers: CrewDirectoryEntry[];
+}
+
+/**
+ * `details` del 409 cuando un alta choca con alguien que ya está en la
+ * Empresa. El frontend ramifica por `reason`, nunca por el texto.
+ *
+ * - `phone`: mismo teléfono y mismo tipo. Es la misma persona, sin excepción.
+ * - `name`: mismo nombre. Puede ser un homónimo: se puede insistir con
+ *   `allowDuplicateName`.
+ */
+export interface CrewDuplicateDetails {
+  reason: 'phone' | 'name';
+  existing: CrewDirectoryEntry & { active: boolean };
+  /** Ya está en la obra desde la que se intentó el alta: no hay nada que sumar. */
+  alreadyInProject: boolean;
 }

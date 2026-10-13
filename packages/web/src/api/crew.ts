@@ -2,6 +2,7 @@ import type {
   ApiResponse,
   CreateCrewGoalInput,
   CreateCrewMemberInput,
+  CrewDirectoryListResponse,
   CrewGoalListResponse,
   CrewGoalResponse,
   CrewMemberListResponse,
@@ -22,13 +23,16 @@ async function unwrap<T>(request: Promise<ApiResponse<T>>): Promise<T> {
 }
 
 export const crewApi = {
-  /** Lo de la libreta de la Empresa que esta obra todavía no tiene. */
+  /** Lo de la libreta de la Empresa que esta obra todavía no tiene. Sale acotado: ver `CrewDirectoryEntry`. */
   listDirectory: (projectId: string) =>
-    unwrap<CrewMemberListResponse>(apiClient.get(`/api/projects/${projectId}/crew/directory`)),
+    unwrap<CrewDirectoryListResponse>(apiClient.get(`/api/projects/${projectId}/crew/directory`)),
 
-  addFromDirectory: (projectId: string, crewMemberId: string) =>
+  /** `reactivate` reactiva a alguien dado de baja en el mismo paso. Pide `crew.manage`. */
+  addFromDirectory: (projectId: string, crewMemberId: string, options?: { reactivate?: boolean }) =>
     unwrap<CrewMemberResponse>(
-      apiClient.post(`/api/projects/${projectId}/crew/directory/${crewMemberId}`, {}),
+      apiClient.post(`/api/projects/${projectId}/crew/directory/${crewMemberId}`, {
+        ...(options?.reactivate ? { reactivate: true } : {}),
+      }),
     ),
 
   removeFromProject: (projectId: string, crewMemberId: string) =>
@@ -50,8 +54,14 @@ export const crewApi = {
   deactivate: (projectId: string, crewMemberId: string) =>
     unwrap<CrewMemberResponse>(apiClient.delete(`/api/projects/${projectId}/crew/${crewMemberId}`)),
 
-  listGoals: (projectId: string, weekStart?: string) => {
-    const query = weekStart ? `?weekStart=${weekStart}` : '';
+  listGoals: (projectId: string, weekStart?: string, options?: { includeCarried?: boolean }) => {
+    const params = new URLSearchParams();
+    if (weekStart) params.set('weekStart', weekStart);
+    if (weekStart && options?.includeCarried) params.set('includeCarried', 'true');
+    // `toString()` y no `params.size`: `size` no existe antes de Safari 17, y
+    // ahí la query se perdía sin error.
+    const search = params.toString();
+    const query = search ? `?${search}` : '';
     return unwrap<CrewGoalListResponse>(
       apiClient.get(`/api/projects/${projectId}/crew/goals${query}`),
     );

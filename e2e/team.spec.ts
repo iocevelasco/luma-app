@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
-import { pickActivitySpecialty } from './helpers/activity';
+import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
+import { addCrewMember } from './helpers/crew';
 
 /**
  * Flujo del Supervisor de obra: se invita **a una obra puntual**, no a la
@@ -58,7 +59,7 @@ test.describe('Supervisor de obra', () => {
     await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill('2026-09-05');
     await page.locator('#activity-end').fill('2026-09-10');
-    await page.locator('#activity-responsible').fill('Cuadrilla 1');
+    await pickActivityResponsible(page);
     await page.getByRole('button', { name: /crear actividad/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
@@ -94,6 +95,18 @@ test.describe('Supervisor de obra', () => {
     // Y no administra accesos: la pestaña de equipo no existe para él.
     await supervisorPage.goto(projectUrl);
     await expect(supervisorPage.getByRole('link', { name: /^equipo$/i })).toHaveCount(0);
+
+    // Suma personal a SU obra —es quien está cuando llega alguien nuevo—, pero
+    // no administra el roster: ni sacar, ni dar de baja, ni traer de la Empresa.
+    await expect(supervisorPage.getByText(/metas de la semana/i)).toBeVisible();
+    await supervisorPage.goto(`${projectUrl}/personal`);
+    await addCrewMember(supervisorPage, { name: `Obrero del supervisor ${RUN_ID}` });
+    await supervisorPage.getByRole('tab', { name: /^tablero$/i }).click();
+    await supervisorPage.getByRole('button', { name: /^personal fijo$/i }).click();
+    const roster = supervisorPage.getByRole('dialog');
+    await expect(roster.getByText(`Obrero del supervisor ${RUN_ID}`)).toBeVisible();
+    await expect(roster.getByRole('button', { name: /agregar de la empresa/i })).toHaveCount(0);
+    await expect(roster.getByRole('button', { name: /sacar de la obra|dar de baja/i })).toHaveCount(0);
 
     await supervisorContext.close();
   });

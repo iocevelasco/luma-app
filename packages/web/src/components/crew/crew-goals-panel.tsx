@@ -27,11 +27,12 @@ import {
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { currentWeekRange, isSameWeek, shiftWeek, type WeekRange } from '@/lib/week';
 
-const GOAL_STATUSES: CrewGoalStatus[] = ['pendiente', 'cumplida', 'no_cumplida'];
+const GOAL_STATUSES: CrewGoalStatus[] = ['pending', 'done', 'discarded'];
 
+/** Descartada no es peligro: es una decisión. Por eso no va en rojo. */
 function statusVariant(status: CrewGoalStatus) {
-  if (status === 'cumplida') return 'default' as const;
-  if (status === 'no_cumplida') return 'destructive' as const;
+  if (status === 'done') return 'default' as const;
+  if (status === 'discarded') return 'outline' as const;
   return 'secondary' as const;
 }
 
@@ -62,7 +63,7 @@ function NewGoalForm({ projectId, weekStart }: { projectId: string; weekStart: s
             crewMemberId,
             weekStart,
             description: description.trim(),
-            status: 'pendiente',
+            status: 'pending',
             ...(activityId ? { activityId } : {}),
           },
           {
@@ -133,11 +134,14 @@ function GoalRow({
   projectId,
   goal,
   activityName,
+  carriedFrom,
   isEditor,
 }: {
   projectId: string;
   goal: CrewGoalWithMember;
   activityName?: string;
+  /** La semana de origen, ya formateada, si la meta viene arrastrada de antes. */
+  carriedFrom?: string;
   isEditor: boolean;
 }) {
   const { t } = useTranslation();
@@ -149,6 +153,11 @@ function GoalRow({
       <div className="min-w-0 flex-1">
         <p className="text-sm">{goal.description}</p>
         {activityName && <p className="text-xs text-muted-foreground">{activityName}</p>}
+        {carriedFrom && (
+          <p className="text-xs text-muted-foreground">
+            {t('crew.goals.carriedFrom', { date: carriedFrom })}
+          </p>
+        )}
       </div>
 
       {isEditor ? (
@@ -191,6 +200,10 @@ function GoalRow({
  * Metas de la semana, agrupadas por quién las tiene. La semana es la unidad
  * porque es así como el cliente planifica ("una o dos semanas antes"), y
  * porque ya es la unidad de planificación del producto (RF-01).
+ *
+ * En la semana en curso aparecen también las que quedaron abiertas de
+ * semanas anteriores, con su semana de origen a la vista: el arrastre es
+ * derivado, la meta nunca cambia de semana.
  */
 export function CrewGoalsPanel({
   projectId,
@@ -206,7 +219,12 @@ export function CrewGoalsPanel({
   const [week, setWeek] = useState<WeekRange>(() => currentWeekRange());
   const [rosterOpen, setRosterOpen] = useState(false);
 
-  const { data: goalsData } = useCrewGoals(projectId, week.from);
+  const isCurrentWeek = isSameWeek(week, currentWeekRange());
+  // Lo abierto de semanas anteriores se arrastra a la semana en curso, nunca a
+  // una pasada: esa se mira como quedó.
+  const { data: goalsData } = useCrewGoals(projectId, week.from, {
+    includeCarried: isCurrentWeek,
+  });
   const { data: activitiesData } = useAllActivities(projectId);
 
   const activityNameById = useMemo(() => {
@@ -217,16 +235,18 @@ export function CrewGoalsPanel({
 
   /** Agrupadas por destinatario: la pregunta diaria es "¿qué tiene fulano?". */
   const byMember = useMemo(() => {
-    const groups = new Map<string, { name: string; goals: CrewGoalWithMember[] }>();
+    const groups = new Map<string, { id: string; name: string; goals: CrewGoalWithMember[] }>();
     for (const goal of goalsData?.goals ?? []) {
-      const group = groups.get(goal.crewMemberId) ?? { name: goal.crewMemberName, goals: [] };
+      const group = groups.get(goal.crewMemberId) ?? {
+        id: goal.crewMemberId,
+        name: goal.crewMemberName,
+        goals: [],
+      };
       group.goals.push(goal);
       groups.set(goal.crewMemberId, group);
     }
     return [...groups.values()];
   }, [goalsData]);
-
-  const isCurrentWeek = isSameWeek(week, currentWeekRange());
 
   return (
     <div className="flex flex-col gap-6">
@@ -274,7 +294,8 @@ export function CrewGoalsPanel({
       ) : (
         <div className="flex flex-col gap-6">
           {byMember.map((group) => (
-            <div key={group.name} className="flex flex-col gap-1">
+            // Por id y no por nombre: los homónimos existen.
+            <div key={group.id} className="flex flex-col gap-1">
               <h3 className="text-sm font-medium">{group.name}</h3>
               {group.goals.map((goal) => (
                 <GoalRow
@@ -282,6 +303,11 @@ export function CrewGoalsPanel({
                   projectId={projectId}
                   goal={goal}
                   activityName={goal.activityId ? activityNameById.get(goal.activityId) : undefined}
+                  carriedFrom={
+                    goal.weekStart < week.from
+                      ? format(fromDayKey(goal.weekStart), 'd MMM', { locale: dateLocale })
+                      : undefined
+                  }
                   isEditor={isEditor}
                 />
               ))}

@@ -63,6 +63,8 @@ interface FormDrawerProps {
   isDirty?: boolean;
   /** El error crudo de la mutación. El shell lo resuelve — ver `FormShell`. */
   error?: unknown;
+  /** Botones dentro del banner de error — ver `FormShell`. */
+  errorActions?: ReactNode;
   children: ReactNode;
 }
 
@@ -78,6 +80,7 @@ export function FormDrawer({
   isSubmitting = false,
   isDirty,
   error,
+  errorActions,
   children,
 }: FormDrawerProps) {
   const resolvedSize = size ?? (fieldCount ? sizeForFieldCount(fieldCount) : 'md');
@@ -115,6 +118,7 @@ export function FormDrawer({
             isSubmitting={isSubmitting}
             isDirty={isDirty}
             error={error}
+            errorActions={errorActions}
           >
             <div className="pt-4">{body}</div>
           </FormShell>

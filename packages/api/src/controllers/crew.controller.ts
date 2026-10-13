@@ -1,7 +1,8 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import {
   createCrewGoalSchema,
   createCrewMemberSchema,
+  normalizeCrewGoalStatus,
   updateCrewGoalSchema,
   updateCrewMemberSchema,
   type CrewGoal as CrewGoalDTO,
@@ -13,7 +14,9 @@ import { ProjectCrewMember } from '../models/ProjectCrewMember.js';
 import { CrewGoal, type ICrewGoal } from '../models/CrewGoal.js';
 import { CrewMember, type ICrewMember } from '../models/CrewMember.js';
 import type { IProject } from '../models/Project.js';
+import { assertNoCrewDuplicate } from '../services/crew-identity.service.js';
 import { visibleCrewFilter } from '../services/directory.service.js';
+import { badRequest } from '../utils/errors.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
@@ -45,7 +48,10 @@ function toGoalDTO(goal: ICrewGoal): CrewGoalDTO {
     weekStart: goal.weekStart,
     description: goal.description,
     activityId: goal.activity ? String(goal.activity) : undefined,
-    status: goal.status,
+    // Shim hasta que corra `migrate:crew`: traduce `pendiente`/`cumplida`/
+    // `no_cumplida` al leer. Se borra en el PR que sigue a la migración.
+    status: normalizeCrewGoalStatus(goal.status),
+    completedAt: goal.completedAt ? goal.completedAt.toISOString() : undefined,
     createdAt: goal.createdAt.toISOString(),
     updatedAt: goal.updatedAt.toISOString(),
   };
@@ -69,34 +75,49 @@ export async function listCrewMembers(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
-export async function createCrewMember(req: Request, res: Response) {
+/**
+ * Requiere `requireProjectAccess` + `requireCapability('crew.create')`: lo
+ * hacen el gerente y el supervisor.
+ *
+ * Todo alta va a la libreta de la Empresa y queda asignada a esta obra. Ya no
+ * existe el "sólo para esta obra": un obrero cargado acá tiene que poder
+ * sumarse a la próxima sin recrearlo.
+ *
+ * Antes de crear, el guardia de duplicados (`crew-identity.service.ts`): si
+ * ya está en la Empresa, 409 con la persona existente para sumarla en vez de
+ * duplicarla.
+ *
+ * El jornal es plata: sólo se guarda si quien carga puede ver gastos. El
+ * supervisor no lo ve, así que tampoco lo escribe — ni con un `curl`.
+ */
+export async function createCrewMember(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = createCrewMemberSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
-    }
+    if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
 
     const project = req.project as IProject;
-    const crewMember = await CrewMember.create({
-      ...parsed.data,
-      organization: project.organization,
-      project: parsed.data.scope === 'project' ? project._id : null,
-    });
+    const { allowDuplicateName, dailyRate, ...fields } = parsed.data;
 
-    // Igual que con los proveedores: lo creado desde una obra queda en ella.
-    if (crewMember.scope !== 'project') {
-      await ProjectCrewMember.create({ project: project._id, crewMember: crewMember._id });
-    }
+    await assertNoCrewDuplicate(
+      project.organization,
+      { name: fields.name, phone: fields.phone, kind: fields.kind, allowDuplicateName },
+      String(project._id),
+    );
+
+    const crewMember = await CrewMember.create({
+      ...fields,
+      ...(dailyRate !== undefined && req.can?.('expense.read') ? { dailyRate } : {}),
+      scope: 'organization',
+      organization: project.organization,
+      project: null,
+    });
+    await ProjectCrewMember.create({ project: project._id, crewMember: crewMember._id });
 
     return res
       .status(201)
       .json({ success: true, data: { crewMember: toCrewMemberDTO(crewMember) } });
   } catch (error) {
-    console.error('❌ [CREW] createCrewMember:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
+    return next(error);
   }
 }
 
@@ -158,6 +179,14 @@ export async function deactivateCrewMember(req: Request, res: Response) {
  * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Filtra por
  * `?weekStart=YYYY-MM-DD`; sin el parámetro devuelve todas las de la obra.
  *
+ * Con `?includeCarried=true` además de la semana trae las metas de semanas
+ * ANTERIORES que siguen `pending`, más las que se cerraron (`done`) durante
+ * la semana pedida. Es el arrastre semana a semana, y es
+ * derivado: la meta conserva su `weekStart` de origen y no hay ningún job que
+ * la mueva. Así nada se "olvida" de arrastrar, y cuántas vienen de atrás sale
+ * de comparar `weekStart` con la semana pedida. `done` y `discarded` están
+ * cerradas y dejan de arrastrarse.
+ *
  * Trae el nombre de cada destinatario resuelto: la pantalla de metas siempre
  * los necesita, y pedir el roster aparte para cruzarlo a mano es una llamada
  * extra garantizada.
@@ -165,10 +194,29 @@ export async function deactivateCrewMember(req: Request, res: Response) {
 export async function listCrewGoals(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
-    const { weekStart } = req.query as { weekStart?: string };
+    const { weekStart, includeCarried } = req.query as {
+      weekStart?: string;
+      includeCarried?: string;
+    };
 
     const filter: Record<string, unknown> = { project: project._id };
-    if (weekStart) filter.weekStart = weekStart;
+    if (weekStart && includeCarried === 'true') {
+      // Lunes de la semana pedida, a medianoche del servidor. El lunes del
+      // cliente puede correrse unas horas por zona horaria: para "se cerró
+      // esta semana" alcanza.
+      const weekStartedAt = new Date(`${weekStart}T00:00:00`);
+      // `YYYY-MM-DD` ordena igual como string que como fecha.
+      filter.$or = [
+        { weekStart },
+        // `pendiente` es el valor viejo: entra hasta que corra `migrate:crew`.
+        { weekStart: { $lt: weekStart }, status: { $in: ['pending', 'pendiente'] } },
+        // Las arrastradas que se cerraron ESTA semana siguen a la vista: si
+        // no, cerrar una la haría desaparecer y el avance nunca la contaría.
+        { weekStart: { $lt: weekStart }, status: 'done', completedAt: { $gte: weekStartedAt } },
+      ];
+    } else if (weekStart) {
+      filter.weekStart = weekStart;
+    }
 
     const goals = await CrewGoal.find(filter)
       .sort({ weekStart: 1, createdAt: 1 })
@@ -236,6 +284,7 @@ export async function createCrewGoal(req: Request, res: Response) {
       description: parsed.data.description,
       activity: parsed.data.activityId ?? null,
       status: parsed.data.status,
+      completedAt: parsed.data.status === 'done' ? new Date() : null,
       createdBy: req.user.sub,
     });
 
@@ -268,9 +317,25 @@ export async function updateCrewGoal(req: Request, res: Response) {
       }
     }
 
+    const current = await CrewGoal.findOne({ _id: req.params.goalId, project: project._id }).select(
+      'status',
+    );
+    if (!current) {
+      return res.status(404).json({ success: false, error: 'Meta no encontrada' });
+    }
+
+    // `completedAt` marca la transición a `done`, no el último guardado: volver
+    // a mandar `done` no le cambia la fecha, y reabrirla se la borra.
+    const completion: { completedAt?: Date | null } = {};
+    if (rest.status) {
+      const wasDone = normalizeCrewGoalStatus(current.status) === 'done';
+      if (rest.status === 'done' && !wasDone) completion.completedAt = new Date();
+      if (rest.status !== 'done') completion.completedAt = null;
+    }
+
     const goal = await CrewGoal.findOneAndUpdate(
       { _id: req.params.goalId, project: project._id },
-      { ...rest, ...(activityId ? { activity: activityId } : {}) },
+      { ...rest, ...completion, ...(activityId ? { activity: activityId } : {}) },
       { new: true },
     );
 

@@ -104,14 +104,20 @@
         "render": "Você ainda não carregou renders.",
         "plano": "Você ainda não carregou plantas."
       },
-      "labor": "Pessoal",
-      "noActivitiesToday": "Não há atividades programadas para hoje.",
-      "laborCount": "presentes",
       "providers": "Fornecedores",
       "noProviders": "Você ainda não adicionou fornecedores.",
       "budget": "Orçamento",
       "noBudget": "Você ainda não carregou o orçamento.",
-      "viewAll": "Ver tudo"
+      "viewAll": "Ver tudo",
+      "goals": "Metas da semana",
+      "goalsCount": "{{done}} de {{total}} metas",
+      "goalsCarried_one": "{{count}} vinda de semanas anteriores",
+      "goalsCarried_other": "{{count}} vindas de semanas anteriores",
+      "goalsAllDone": "Semana em dia.",
+      "noGoals": "Não há metas para esta semana.",
+      "noCrew": "Você ainda não cadastrou pessoal de obra.",
+      "missingToday_one": "Falta {{count}} pessoa hoje",
+      "missingToday_other": "Faltam {{count}} pessoas hoje"
     },
     "errors": {
       "create": "Não conseguimos criar a obra.",
@@ -514,7 +520,6 @@
   "crew": {
     "list": {
       "title": "Pessoal fixo",
-      "add": "Adicionar",
       "empty": "Você ainda não cadastrou pessoal fixo de obra.",
       "lead": "Encarregado",
       "deactivate": "Desativar",
@@ -532,7 +537,6 @@
       "specialty": "Especialidade (opcional)",
       "specialtyPlaceholder": "Sem especialidade",
       "isLead": "É o encarregado da sua especialidade",
-      "onlyThisProject": "Somente para esta obra",
       "phone": "Telefone (opcional)",
       "dailyRate": "Diária",
       "dailyRateHint": "Usada para calcular a folha contra a presença. Opcional."
@@ -556,12 +560,13 @@
       "needRoster": "Cadastre primeiro o pessoal fixo de obra para poder atribuir metas.",
       "prevWeek": "Semana anterior",
       "nextWeek": "Próxima semana",
-      "currentWeek": "Semana atual"
+      "currentWeek": "Semana atual",
+      "carriedFrom": "Vem da semana de {{date}}"
     },
     "goalStatus": {
-      "pendiente": "Pendente",
-      "cumplida": "Cumprida",
-      "no_cumplida": "Não cumprida"
+      "pending": "Pendente",
+      "done": "Feita",
+      "discarded": "Descartada"
     },
     "errors": {
       "create": "Não conseguimos adicionar o pessoal.",
@@ -570,12 +575,24 @@
       "createGoal": "Não conseguimos adicionar a meta.",
       "updateGoal": "Não conseguimos atualizar a meta.",
       "deleteGoal": "Não conseguimos excluir a meta."
+    },
+    "add": {
+      "button": "Adicionar pessoal",
+      "title": "Adicionar pessoal",
+      "description": "Fica nos funcionários da Empresa e atribuído a esta obra.",
+      "submit": "Criar e adicionar à obra",
+      "suggestionsTitle": "Já estão na Empresa",
+      "addExisting": "Adicionar a esta obra",
+      "reactivate": "Reativar e adicionar",
+      "askToReactivate": "Peça ao gerente para reativá-lo.",
+      "differentPerson": "É outra pessoa",
+      "reactivateInCompany": "Reativar"
     }
   },
   "labor": {
     "tabs": {
-      "attendance": "Presença do dia",
-      "goals": "Metas da semana"
+      "day": "Jornada",
+      "board": "Quadro"
     },
     "prevDay": "Dia anterior",
     "nextDay": "Próximo dia",

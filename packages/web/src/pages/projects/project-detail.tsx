@@ -1,12 +1,24 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import type { Capability, DocumentCategory } from '@luma/shared';
-import { Gauge, Image, ListChecks, Package, Ruler, Users, Wallet, Wrench } from 'lucide-react';
+import {
+  Gauge,
+  Image,
+  ListChecks,
+  Package,
+  Ruler,
+  Target,
+  UserPlus,
+  Users,
+  Wallet,
+  Wrench,
+} from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
+import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { Can } from '@/components/permissions/can';
 import { RouteError } from '@/components/routes/route-error';
@@ -18,15 +30,18 @@ import { Progress } from '@/components/ui/progress';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import { useBudget } from '@/hooks/budget/use-budget-queries';
 import { useProjectDocuments } from '@/hooks/documents/use-document-queries';
-import { useLaborRecords } from '@/hooks/labor/use-labor-queries';
+import { useCrewGoals, useCrewMembers } from '@/hooks/crew/use-crew-queries';
+import { useDayAttendance } from '@/hooks/labor/use-labor-queries';
 import { useMaterials } from '@/hooks/materials/use-material-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProject, useUpdateProject } from '@/hooks/projects/use-project-queries';
 import { Switch } from '@/components/ui/switch';
+import { activitiesOnDay, summarizeDayAttendance } from '@/lib/attendance';
 import { formatMoney } from '@/lib/format-money';
 import { iconForSpecialty } from '@/lib/specialty-icons';
 import { cn } from '@/lib/utils';
+import { currentWeekRange } from '@/lib/week';
 import {
   projectActivitiesPath,
   projectBudgetPath,
@@ -50,6 +65,12 @@ const CARD_PREVIEW_COUNT = 5;
  * Documentación.
  */
 const DOCUMENT_PREVIEW_COUNT = 3;
+
+/**
+ * Metas pendientes en la card: tres, como los documentos. La card dice cómo
+ * viene la semana; la lista entera vive en el Tablero.
+ */
+const GOALS_PREVIEW_COUNT = 3;
 
 /** Ícono de sección en círculo, a la izquierda del título de cada card del dashboard. */
 function CardIcon({ icon: Icon }: { icon: ComponentType<{ className?: string }> }) {
@@ -232,79 +253,128 @@ function MaterialsCard({ projectId }: { projectId: string }) {
   );
 }
 
-function LaborCard({ projectId }: { projectId: string }) {
+/**
+ * Metas de la semana: reemplaza a la card de Personal, que mostraba la
+ * asistencia por actividad y casi siempre decía `0 / 0`.
+ *
+ * Cuenta las de esta semana más las arrastradas de semanas anteriores —todas
+ * hay que hacerlas ahora— y saca del total las descartadas, igual que el
+ * avance general saca las actividades canceladas. Las arrastradas se dicen
+ * aparte: son el dato de que se está planificando de más.
+ *
+ * La asistencia no desaparece: si hoy falta gente, va una línea en rojo que
+ * lleva a la Jornada.
+ */
+function CrewGoalsCard({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
-  const today = useMemo(() => toDayKey(new Date()), []);
-  const { data: activitiesData } = useAllActivities(projectId);
-  const { data: laborData } = useLaborRecords(projectId, today);
+  // Cada render y no memorizados: una pestaña abierta de domingo a lunes
+  // tiene que pasar a la semana nueva. Son baratos.
+  const week = currentWeekRange();
+  const today = toDayKey(new Date());
+  const [addCrewOpen, setAddCrewOpen] = useState(false);
 
-  const rows = useMemo(() => {
-    const recordByActivity = new Map((laborData?.laborRecords ?? []).map((r) => [r.activityId, r]));
-    return (activitiesData?.activities ?? [])
-      .filter((activity) => activity.startDate <= today && today <= activity.endDate)
-      .map((activity) => ({ activity, record: recordByActivity.get(activity.id) }));
-  }, [activitiesData, laborData, today]);
+  const { data: crewData } = useCrewMembers(projectId);
+  const { data: goalsData } = useCrewGoals(projectId, week.from, { includeCarried: true });
+  const { data: activitiesData } = useAllActivities(projectId);
+  const { data: attendanceData } = useDayAttendance(projectId, today);
+
+  const { done, total, carried, pending } = useMemo(() => {
+    const goals = (goalsData?.goals ?? []).filter((goal) => goal.status !== 'discarded');
+    const open = goals.filter((goal) => goal.status === 'pending');
+    return {
+      done: goals.filter((goal) => goal.status === 'done').length,
+      total: goals.length,
+      carried: open.filter((goal) => goal.weekStart < week.from).length,
+      // La API las devuelve de la semana más vieja a la más nueva: las
+      // arrastradas quedan primero, que son las más urgentes.
+      pending: open.slice(0, GOALS_PREVIEW_COUNT),
+    };
+  }, [goalsData, week.from]);
+
+  const { missing } = useMemo(
+    () =>
+      summarizeDayAttendance(
+        activitiesOnDay(activitiesData?.activities ?? [], today),
+        attendanceData?.attendance ?? [],
+      ),
+    [activitiesData, attendanceData, today],
+  );
+
+  const hasCrew = (crewData?.crewMembers.length ?? 0) > 0;
+  const percent = total === 0 ? 0 : Math.round((done / total) * 100);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <CardIcon icon={Users} />
-          <CardTitle className="text-base">{t('project.dashboard.labor')}</CardTitle>
+          <CardIcon icon={Target} />
+          <CardTitle className="text-base">{t('project.dashboard.goals')}</CardTitle>
         </div>
         <Button variant="ghost" size="sm" asChild>
-          <Link to={projectLaborPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
+          <Link to={projectLaborPath(projectId, 'board')}>{t('project.dashboard.viewAll')}</Link>
         </Button>
       </CardHeader>
-      <CardContent>
-        {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('project.dashboard.noActivitiesToday')}</p>
+      <CardContent className="flex flex-col gap-3">
+        {!crewData ? null : !hasCrew ? (
+          <>
+            <p className="text-sm text-muted-foreground">{t('project.dashboard.noCrew')}</p>
+            <Can I="crew.create">
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onClick={() => setAddCrewOpen(true)}
+              >
+                <UserPlus className="size-4" />
+                {t('crew.add.button')}
+              </Button>
+            </Can>
+          </>
+        ) : total === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('project.dashboard.noGoals')}</p>
         ) : (
-          // Una sola columna: la tarjeta vive dentro de una columna angosta
-          // del masonry, y dos nombres de actividad al lado se pisan.
-          <ul className="flex flex-col gap-3">
-            {rows.map(({ activity, record }) => {
-              const expected = record?.expectedCount ?? 0;
-              // `presentCount` en vez de `presentNames.length`: la API vacía
-              // los nombres para el cliente invitado, pero la cuenta sigue
-              // siendo real — este badge es agregado, no expone a nadie.
-              const present = record?.presentCount ?? 0;
-              const deficit = expected - present;
-              return (
-                <li key={activity.id} className="flex items-center justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{activity.name}</p>
-                    {deficit > 0 && (
-                      <p className="text-xs text-destructive">
-                        {t('labor.deficit', { count: deficit })}
-                      </p>
-                    )}
-                  </div>
-                  {/*
-                    La cuenta al frente y en grande: la pregunta de la mañana es
-                    "¿cuántos vinieron de los que esperaba?", y antes eso vivía
-                    en un texto chico y gris debajo del nombre.
-                  */}
-                  <p
-                    className={cn(
-                      'shrink-0 text-base tabular-nums',
-                      deficit > 0 ? 'text-destructive' : 'text-foreground',
-                    )}
-                  >
-                    <span className="font-semibold">{present}</span>
-                    <span className="text-muted-foreground"> / {expected}</span>
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-2xl font-semibold tabular-nums">
+                {done}
+                <span className="text-base text-muted-foreground"> / {total}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {carried > 0
+                  ? t('project.dashboard.goalsCarried', { count: carried })
+                  : t('project.dashboard.goalsCount', { done, total })}
+              </p>
+            </div>
+            <Progress value={percent} />
+            {pending.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('project.dashboard.goalsAllDone')}</p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {pending.map((goal) => (
+                  <li key={goal.id} className="min-w-0 text-sm">
+                    <p className="truncate font-medium">{goal.description}</p>
+                    <p className="truncate text-xs text-muted-foreground">{goal.crewMemberName}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+
+        {missing > 0 && (
+          <Link
+            to={projectLaborPath(projectId)}
+            className="text-sm text-destructive underline-offset-4 hover:underline"
+          >
+            {t('project.dashboard.missingToday', { count: missing })}
+          </Link>
         )}
       </CardContent>
+
+      <AddCrewDrawer projectId={projectId} open={addCrewOpen} onOpenChange={setAddCrewOpen} />
     </Card>
   );
 }
-
-
 
 /**
  * Renders o planos de la obra: una vista de la Documentación filtrada por
@@ -550,8 +620,8 @@ export function ProjectDetailPage() {
       {can('budget.read') && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
       <MaterialsCard projectId={project.id} />
 
-      {/* Quién está en obra y con quién se trabaja. */}
-      <LaborCard projectId={project.id} />
+      {/* Qué tiene que lograr la gente esta semana, y con quién se trabaja. */}
+      {can('crew.read') && <CrewGoalsCard projectId={project.id} />}
       {can('provider.read') && <ProvidersCard projectId={project.id} />}
 
       {/* La ficha y el directorio: consulta, no urgencia. */}

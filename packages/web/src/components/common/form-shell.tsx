@@ -50,6 +50,12 @@ interface FormShellProps {
    */
   error?: unknown;
   /**
+   * Salidas para el error, adentro del banner: "sumarlo a esta obra" cuando
+   * el alta chocó con alguien que ya existe. Un error que se puede resolver
+   * con un click tiene que ofrecer ese click donde se lo lee.
+   */
+  errorActions?: ReactNode;
+  /**
    * Para el drawer, que ya aporta su propia caja con scroll y bordes. En una
    * página el shell se encarga de todo eso.
    *
@@ -69,6 +75,7 @@ export function FormShell({
   isSubmitting = false,
   isDirty,
   error,
+  errorActions,
   variant = 'page',
   className,
 }: FormShellProps) {
@@ -129,6 +136,7 @@ export function FormShell({
             <div className="flex min-w-0 flex-col">
               <span className="text-sm font-medium">{t('errors.title')}</span>
               <span className="text-sm">{message}</span>
+              {errorActions && <div className="mt-2 flex flex-wrap gap-2">{errorActions}</div>}
             </div>
           </div>
         )}

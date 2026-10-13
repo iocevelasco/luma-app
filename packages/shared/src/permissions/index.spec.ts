@@ -46,6 +46,11 @@ describe('grilla de capacidades por obra', () => {
       expect(canInProject('supervisor', 'activity.evidence.write')).toBe(true);
     });
 
+    it('suma personal a su obra pero no administra el roster', () => {
+      expect(canInProject('supervisor', 'crew.create')).toBe(true);
+      expect(canInProject('supervisor', 'crew.manage')).toBe(false);
+    });
+
     it('asigna proveedores a actividades pero no administra el directorio', () => {
       expect(canInProject('supervisor', 'provider.assign')).toBe(true);
       expect(canInProject('supervisor', 'provider.manage')).toBe(false);
@@ -67,6 +72,7 @@ describe('grilla de capacidades por obra', () => {
         'material.write',
         'milestone.report',
         'milestone.publish',
+        'crew.create',
         'crew.manage',
         'crew.attendance.write',
         'crew.goals.write',

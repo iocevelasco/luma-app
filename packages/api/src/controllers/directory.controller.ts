@@ -18,8 +18,9 @@ import { ProjectCrewMember } from '../models/ProjectCrewMember.js';
 import { ProjectProvider } from '../models/ProjectProvider.js';
 import { Provider } from '../models/Provider.js';
 import { ProviderEngagement } from '../models/ProviderEngagement.js';
+import { assertNoCrewDuplicate, toCrewDirectoryEntry } from '../services/crew-identity.service.js';
 import { findMyOrganizationId } from '../services/organization.service.js';
-import { badRequest, conflict, notFound } from '../utils/errors.js';
+import { badRequest, conflict, forbidden, notFound } from '../utils/errors.js';
 import { toCrewMemberDTO } from './crew.controller.js';
 import { toProviderDTO } from './provider.controller.js';
 
@@ -32,8 +33,9 @@ import { toProviderDTO } from './provider.controller.js';
  *   qué obras está cada uno. Sólo el dueño de la Empresa — la grilla de
  *   permisos es por obra y no tiene celdas para este nivel.
  * - **Desde una obra** (`/api/projects/:id/providers|crew/directory`): sumar a
- *   la obra lo que ya está en la Empresa, o sacarlo. Sale con
- *   `provider.manage` / `crew.manage`, las mismas celdas que ya existían.
+ *   la obra lo que ya está en la Empresa, o sacarlo. Proveedores con
+ *   `provider.manage`. Empleados: buscar y sumar con `crew.create` —también
+ *   el supervisor, que si no sólo podría duplicar—; sacar con `crew.manage`.
  *
  * Express 4 no atrapa el `throw` de un handler async: todo va por `next(error)`.
  */
@@ -254,9 +256,17 @@ export const listOrganizationCrew = wrap(async (req, res) => {
   });
 });
 
+/** Mismo guardia de duplicados que el alta desde una obra: si no, esta sería la puerta para duplicar. */
 export const createOrganizationCrewMember = wrap(async (req, res) => {
   const organizationId = await myOrganizationId(req);
-  const data = parseOrThrow(createCrewMemberSchema, req.body);
+  const { allowDuplicateName, ...data } = parseOrThrow(createCrewMemberSchema, req.body);
+
+  await assertNoCrewDuplicate(organizationId, {
+    name: data.name,
+    phone: data.phone,
+    kind: data.kind,
+    allowDuplicateName,
+  });
 
   const crewMember = await CrewMember.create({
     ...data,
@@ -413,6 +423,14 @@ export const removeProviderFromProject = wrap(async (req, res) => {
   return res.json({ success: true, data: { providerId: String(providerId) } });
 });
 
+/**
+ * Lo de la libreta de la Empresa que esta obra todavía no tiene. Es lo que
+ * busca el drawer de alta mientras se tipea el nombre.
+ *
+ * Sale acotado (`CrewDirectoryEntry`) para todos: lo usa también el
+ * supervisor, que es por obra y puede ser externo, y para reconocer a alguien
+ * alcanza con nombre, tipo y especialidad. El resto se ve desde Empleados.
+ */
 export const listCrewDirectory = wrap(async (req, res) => {
   const project = req.project as IProject;
   const assigned = await ProjectCrewMember.find({ project: project._id }).distinct('crewMember');
@@ -423,18 +441,38 @@ export const listCrewDirectory = wrap(async (req, res) => {
     _id: { $nin: assigned },
   }).sort({ name: 1 });
 
-  return res.json({ success: true, data: { crewMembers: crewMembers.map(toCrewMemberDTO) } });
+  return res.json({
+    success: true,
+    data: { crewMembers: crewMembers.map(toCrewDirectoryEntry) },
+  });
 });
 
+/**
+ * Suma a esta obra a alguien que ya está en la Empresa.
+ *
+ * Si está dado de baja, `{ reactivate: true }` lo reactiva y lo suma en el
+ * mismo paso. Reactivar es administrar el roster, así que es del gerente
+ * (`crew.manage`); al supervisor le queda pedírselo.
+ */
 export const addCrewMemberToProject = wrap(async (req, res) => {
   const project = req.project as IProject;
+  const reactivate = (req.body as { reactivate?: unknown } | undefined)?.reactivate === true;
+
   const crewMember = await CrewMember.findOne({
     _id: req.params.crewMemberId,
     organization: project.organization,
     scope: { $ne: 'project' },
-    active: true,
   });
   if (!crewMember) throw notFound('No encontramos a esa persona.');
+
+  if (!crewMember.active) {
+    if (!reactivate) throw conflict(`${crewMember.name} está dado de baja en la Empresa.`);
+    if (!req.can?.('crew.manage')) {
+      throw forbidden('Sólo el gerente puede reactivar a alguien dado de baja.');
+    }
+    crewMember.active = true;
+    await crewMember.save();
+  }
 
   await ProjectCrewMember.updateOne(
     { project: project._id, crewMember: crewMember._id },

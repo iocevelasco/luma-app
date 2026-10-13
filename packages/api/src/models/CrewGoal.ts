@@ -1,5 +1,5 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { CrewGoalStatus } from '@luma/shared';
+import { LEGACY_CREW_GOAL_STATUS } from '@luma/shared';
 
 /**
  * Meta semanal de una persona o equipo (RF nuevo, pedido del cliente: "poder
@@ -21,7 +21,13 @@ export interface ICrewGoal extends Document {
   weekStart: string;
   description: string;
   activity?: mongoose.Types.ObjectId | null;
-  status: CrewGoalStatus;
+  /**
+   * Un `CrewGoalStatus`, o un valor viejo en castellano hasta que corra
+   * `migrate:crew`. Por eso es `string`: leer siempre con
+   * `normalizeCrewGoalStatus`.
+   */
+  status: string;
+  completedAt?: Date | null;
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -36,15 +42,21 @@ const crewGoalSchema = new Schema<ICrewGoal>(
     activity: { type: Schema.Types.ObjectId, ref: 'Activity', default: null },
     status: {
       type: String,
-      enum: ['pendiente', 'cumplida', 'no_cumplida'],
-      default: 'pendiente',
+      // Los valores viejos siguen en el enum sólo hasta que corra
+      // `migrate:crew`: un `save()` valida todos los paths, y un documento sin
+      // migrar fallaría al tocarle cualquier otro campo.
+      enum: ['pending', 'done', 'discarded', ...Object.keys(LEGACY_CREW_GOAL_STATUS)],
+      default: 'pending',
     },
+    completedAt: { type: Date, default: null },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true },
 );
 
 crewGoalSchema.index({ project: 1, weekStart: 1 });
+// El arrastre: "lo abierto de semanas anteriores" de una obra.
+crewGoalSchema.index({ project: 1, status: 1, weekStart: 1 });
 
 export const CrewGoal: Model<ICrewGoal> =
   (mongoose.models.CrewGoal as Model<ICrewGoal>) ??
