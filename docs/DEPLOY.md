@@ -25,7 +25,7 @@ entre la app y su propia página pública.
 | Recurso | Build Pack | Base Directory | Dockerfile | Expone | Dominio |
 |---|---|---|---|---|---|
 | `app` | Dockerfile | `/` | `/Dockerfile` | 8080 | `https://<DOMINIO>` · Health Check `/health` |
-| `landing` | Dockerfile | `/` | `/packages/landing/Dockerfile` | 8080 | **vacío** · network alias `landing` |
+| `luma-landing` | Dockerfile | `/` | `/packages/landing/Dockerfile` | 8080 | **vacío** · network alias `luma-landing` |
 | `mongo` | recurso "MongoDB 8" | — | — | 27017 | sin puerto público · alias `mongo` |
 
 **Base Directory es `/` también para la landing.** Su Dockerfile se construye desde
@@ -38,8 +38,8 @@ nombre de la base no admite guiones en el formulario de Coolify.
 
 ## Dos trampas operativas
 
-1. **El network alias de `landing` se fija ANTES del primer deploy.** Si no, Docker
-   le da un hostname aleatorio, `LANDING_URL=http://landing:8080` no resuelve y
+1. **El network alias de `luma-landing` se fija ANTES del primer deploy.** Si no, Docker
+   le da un hostname aleatorio, `LANDING_URL=http://luma-landing:8080` no resuelve y
    `/home` devuelve 502.
 2. **Cambiar dominio, alias o variables de entorno exige redesplegar.** Todo eso se
    escribe como labels y env del contenedor en el momento de crearlo: editarlo en
@@ -57,7 +57,7 @@ nombre de la base no admite guiones en el formulario de Coolify.
 | `FRONTEND_URL` | origen del front | `http://localhost:6173` |
 | `APP_URL` | raíz del SPA **con subpath**: `https://<DOMINIO>/app` | cae a `FRONTEND_URL`; rompe los links de los mails y los redirects |
 | `ALLOWED_ORIGINS` | whitelist de CORS, separada por comas | sólo entra `FRONTEND_URL` |
-| `LANDING_URL` | `http://landing:8080` | ese mismo default |
+| `LANDING_URL` | `http://luma-landing:8080` | cae a `http://landing:8080` — **que en la red compartida de Coolify puede ser la landing de otra app** |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails | aviso; los mails quedan deshabilitados |
 | `MEDIA_SERVICE_URL`, `MEDIA_SERVICE_API_KEY` | storage de archivos (evidencia RF-04 y documentación de obra) vía el microservicio `media-service` (ej. `https://media.matflow.site`); la key se emite con `bucket key create luma` | aviso; subir archivos da 503, el resto de la app sigue |
 | `STORAGE_SIGNED_URL_TTL` | opcional: vida de las URLs firmadas de lectura | `3600` segundos (máximo que admite el servicio) |

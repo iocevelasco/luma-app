@@ -1,16 +1,20 @@
 import { Nav } from './components/Nav';
-import { FinalCTA } from './sections/FinalCTA';
+import { Faq } from './sections/Faq';
 import { Features } from './sections/Features';
+import { FinalCTA } from './sections/FinalCTA';
 import { Footer } from './sections/Footer';
 import { Hero } from './sections/Hero';
+import { How } from './sections/How';
+import { Problem } from './sections/Problem';
+import { Roles } from './sections/Roles';
 
 /**
- * Estructura de la landing, sin producto.
+ * Orden de la página: promesa → problema → quién ve qué → qué incluye →
+ * cómo se empieza → dudas → cierre. Termina en la banda de cierre, que es el
+ * elemento de continuidad de la marca y va en la landing, no en el panel.
  *
- * Cuatro bandas y nada más: encabezado, tres celdas de feature, cierre con CTA
- * y pie, cerradas por la banda de sol — el elemento de continuidad de la marca,
- * que va en todas las páginas de la landing y en ninguna del panel. Es el esqueleto sobre el que va la propuesta real cuando exista — las
- * secciones que falten (precios, testimonios, cómo funciona) se agregan acá.
+ * Todo el contenido sale de i18n. No hay pricing ni testimonios a propósito:
+ * no hay datos reales para sostenerlos y esta página no inventa.
  */
 export default function App() {
   return (
@@ -18,10 +22,14 @@ export default function App() {
       <Nav />
       <main>
         <Hero />
+        <Problem />
+        <Roles />
         <Features />
+        <How />
+        <Faq />
         <FinalCTA />
       </main>
-      <div className="sunset-stripe" aria-hidden="true" />
+      <div className="brand-stripe" aria-hidden="true" />
       <Footer />
     </>
   );

@@ -1,103 +1,116 @@
 @import 'tailwindcss';
 
 /*
-  Tokens de la landing. La fuente de verdad es DESIGN.md en la raíz del repo;
-  este bloque es su implementación para Tailwind v4.
+  Fuentes self-hosted, sólo el subset latino. Antes se pedían a Google Fonts:
+  una hoja de estilos externa que bloquea el render y un segundo origen para
+  los woff2. Vite las emite a /home/assets con hash y cache inmutable.
 
-  Usa EL MISMO vocabulario que el panel (`packages/web/src/index.css`) a
-  propósito: antes había dos sistemas con dos juegos de nombres —el rojo del
-  panel y el "lenguaje de cero" de la landing— y una persona que pasaba de un
-  paquete al otro tenía que reaprender los tokens. Ahora `bg-cream` y
-  `text-muted-foreground` significan lo mismo de los dos lados.
+  Inter va como variable (un solo archivo para 400–600). El serif tiene un
+  único peso, el 400 del sistema; la itálica no se carga porque nada la usa.
+  `swap` evita texto invisible: el fallback Georgia ya es un serif cercano.
+*/
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/instrument-serif-latin-400.woff2') format('woff2');
+}
 
-  La landing no tiene tema oscuro: es un afiche, y su contraste lo dan las
-  bandas —blanco, crema, y el gradiente de cierre— no un switch.
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('./assets/fonts/inter-latin-variable.woff2') format('woff2');
+}
+
+/*
+  Tokens de la landing: los MISMOS valores y los mismos nombres que el panel
+  (`packages/web/src/index.css`, sistema VoltAgent): lienzo casi negro #101010,
+  un solo verde #00d992 como marca y como relleno de CTA, y tinta clara.
+
+  Un solo tema, oscuro. La landing no tiene modo claro porque la app tampoco:
+  quien pasa de /home a /app no cambia de mundo.
+
+  Contraste: texto `primary-foreground` (#101010) sobre #00d992 da ~10.3:1.
+  El verde no necesita partirse en dos tokens como el naranja de antes.
 */
 @theme {
-  /* ─────────────── Marca ───────────────
-     Dos naranjas porque ninguno solo sirve para las dos cosas. `brand` con
-     blanco encima da 3.34:1 y no pasa AA; como tinta sobre claro u oscuro
-     funciona. Entonces: `brand` es tinta y acento, `primary` es relleno.
-     La identidad no cambia — el CTA deja de fallar. */
-  --color-brand: #fa520f; /* tinta, ícono, borde, acento                  */
-  --color-primary: #cc3a05; /* relleno de CTA — blanco encima 5.03:1        */
-  --color-primary-foreground: #ffffff;
-  --color-primary-pressed: #a82f04; /* hover y active                      */
+  /* ─────────────── Marca ─────────────── */
+  --color-brand: #00d992; /* tinta, ícono, acento                        */
+  --color-primary: #00d992; /* relleno de CTA                              */
+  --color-primary-foreground: #101010;
+  --color-primary-pressed: #10b981; /* hover y active                         */
+  --color-primary-soft: #2fd6a1;
 
   /* ─────────────── Superficies ───────────────
-     El ritmo de la página es blanco → crema → blanco, cerrado por la banda de
-     sol. La crema es lo que reemplaza a la banda oscura que había antes. */
-  --color-background: #ffffff;
-  --color-cream: #fff8e0; /* panel destacado, CTA de cierre, footer       */
-  --color-cream-soft: #fffaeb; /* banda de sección                            */
-  --color-cream-deep: #fff0c2; /* chips                                       */
-  --color-beige: #e6d5a8; /* filete de 1px sobre superficie crema        */
-  --color-ink-surface: #1f1f1f; /* banda oscura — code blocks, nada más      */
-
-  /* ─────────────── Sol ───────────────
-     Existen para el gradiente de la banda de cierre y para nada más.
-     No son una paleta de acentos. */
-  --color-sunshine-300: #ffd06a;
-  --color-sunshine-500: #ffb83e;
-  --color-sunshine-700: #ffa110;
-  --color-yellow: #ffd900;
+     El ritmo de la página es lienzo → card → lienzo. La profundidad la dan el
+     salto de tono y el filete, con una sombra suave de apoyo. */
+  --color-background: #101010;
+  --color-card: #1a1a1a;
+  --color-card-foreground: #f2f2f2;
+  --color-secondary: #242424; /* chips, hover; un escalón arriba de la card */
+  --color-secondary-foreground: #f2f2f2;
 
   /* ─────────────── Tinta ───────────────
-     Sobre las superficies claras de esta landing:
-       foreground      #1f1f1f  16.48:1 sobre blanco
-       muted-foreground #6a6a6a  5.41:1 sobre blanco · 5.09:1 sobre crema
-     `stone` #8a8a8a da 3.45:1 y NO se usa para texto — sólo íconos y filetes. */
-  --color-foreground: #1f1f1f;
-  --color-secondary-foreground: #4a4a4a;
-  --color-muted-foreground: #6a6a6a;
-  --color-stone: #8a8a8a;
-  --color-on-ink: #ffffff;
+       foreground       #f2f2f2  sobre #101010  ~17:1
+       muted-foreground #bdbdbd  sobre #101010  ~10:1 · sobre #1a1a1a ~9:1 */
+  --color-foreground: #f2f2f2;
+  --color-muted-foreground: #bdbdbd;
 
-  /* ─────────────── Filetes ───────────────
-     La profundidad la dan estas líneas y el salto de superficie, no una
-     escalera de sombras. */
-  --color-border: #ededed;
-  --color-border-strong: #c7c7c7;
+  /* ─────────────── Filetes ─────────────── */
+  --color-border: #3d3a39;
+  --color-border-strong: #57534e;
+
+  /* ─────────────── Estados ───────────────
+     Información, no decoración: independientes del verde de marca. */
+  --color-status-active: #3dbd69;
+  --color-status-warning: #e0a63a;
+  --color-status-danger: #e8455a;
 
   /* ─────────────── Tipografía ───────────────
-     El contraste serif/sans ES la voz del sistema. La referencia usa PP
-     Editorial Old, que es comercial; Instrument Serif es el near-serif libre
-     más cercano. Si se compra la licencia, se cambia esta línea. */
+     Inter para todo lo narrativo. El serif (Instrument Serif) es sólo el
+     display de la landing: h1 y h2. */
   --font-serif: 'Instrument Serif', 'Times New Roman', Georgia, serif;
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-mono:
+    'SF Mono', 'SFMono-Regular', 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+
+  /* Piso de la escala: 11px, en rem para que siga el tamaño del sistema. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.4;
 
   /* ─────────────── Espaciado ───────────────
-     No hay tokens de espaciado genéricos a propósito. La escalera numérica de
-     Tailwind ya es la misma escalera de 8px, y declarar `--spacing-md` pisa las
-     tallas t-shirt: `max-w-md` deja de ser 28rem y pasa a 32px.
-       4px=1 · 8px=2 · 16px=4 · 24px=6 · 32px=8 · 48px=12 · 64px=16 · 96px=24
-     Sólo se declaran los dos que no caen en esa escalera. */
+     Sólo los que no caen en la escalera de 8px de Tailwind. */
   --spacing-section: 96px;
   --spacing-section-sm: 64px;
   --spacing-hero: 120px;
 
-  /* ─────────────── Radio ───────────────
-     Escala sobria: 8px en controles, 12px en superficies. La landing ya no usa
-     el radio de 2px del sistema anterior — la geometría del producto es una
-     sola, y es editorial, no plana.
-
-     `rounded-full` queda para badges y avatares. Los botones NO son píldora. */
+  /* ─────────────── Radio — escala del panel ───────────────
+     Controles chicos, superficies grandes: la card es `rounded-3xl`.
+     `rounded-full` queda para estados (badge, progress), no para botones. */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 8px; /* botones, inputs                                */
-  --radius-lg: 12px; /* cards, paneles  ← el radio dominante            */
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
+  --radius-md: 8px; /* botones, inputs                              */
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
+  --radius-3xl: 28px; /* card — el radio dominante                    */
+
+  --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
 }
 
 @layer base {
   * {
     box-sizing: border-box;
+    border-color: var(--color-border);
   }
 
   html {
     scroll-behavior: smooth;
+    color-scheme: dark;
+    background-color: var(--color-background);
   }
 
   body {
@@ -108,16 +121,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* El serif ya se aplica acá: no hace falta repetir `style={{ fontFamily }}`
-     en cada heading del JSX.
-
-     Sólo h1 y h2 son serif: en una landing el h2 sigue siendo un display
-     de sección (64px), no un encabezado de UI. De h3 para abajo es Inter.
-     Ver DESIGN.md. */
+  /* Sólo h1 y h2 son serif: el display de la landing. De h3 para abajo es
+     Inter, como en el panel. */
   h1,
   h2 {
     font-family: var(--font-serif);
-    font-weight: 400; /* el display de este sistema es 400, no bold */
+    font-weight: 400;
   }
 
   h1,
@@ -132,44 +141,31 @@
   }
 }
 
-/*
-  Clases de la casa. Van en `components` a propósito: así una utilidad de
-  Tailwind las puede pisar. Sin capa, `.section-label` le ganaría a
-  `text-muted-foreground` y el rótulo quedaría con el color equivocado.
-*/
 @layer components {
-  /* ─────────────── Banda de sol ───────────────
-     El elemento de continuidad de la marca: cierra todas las páginas de la
-     landing, arriba del footer.
-
-     En el panel autenticado NO va. Una app de trabajo no se firma en cada
-     pantalla: ahí la banda es decoración que le roba altura a la tarea. */
-  .sunset-stripe {
+  /* Banda de cierre: el único lugar donde el verde se vuelve degradé. Va en
+     la landing y no en el panel — una app de trabajo no se firma en cada
+     pantalla. */
+  .brand-stripe {
     display: block;
     width: 100%;
-    height: 8px;
+    height: 4px;
     background: linear-gradient(
       90deg,
-      var(--color-primary) 0%,
-      var(--color-brand) 22%,
-      var(--color-sunshine-700) 45%,
-      var(--color-sunshine-500) 65%,
-      var(--color-yellow) 82%,
-      var(--color-cream) 100%
+      transparent 0%,
+      var(--color-primary-pressed) 20%,
+      var(--color-primary) 50%,
+      var(--color-primary-soft) 80%,
+      transparent 100%
     );
   }
 
-  /* ─────────────── Hero ───────────────
-     El equivalente sobrio de la fotografía de montaña: un cielo de atardecer
-     hecho con los tokens de sol. El texto encima es tinta oscura, no blanca —
-     sobre estos amarillos el blanco no pasa contraste en ningún tamaño. */
-  .hero-sunset {
+  /* Hero: un resplandor verde muy tenue sobre el lienzo, arriba a la derecha. */
+  .hero-glow {
     background:
-      radial-gradient(120% 90% at 85% 15%, var(--color-sunshine-300) 0%, transparent 55%),
-      linear-gradient(160deg, var(--color-cream-soft) 0%, var(--color-cream) 45%, var(--color-sunshine-300) 100%);
+      radial-gradient(55% 70% at 88% 0%, rgb(0 217 146 / 0.14) 0%, transparent 70%),
+      var(--color-background);
   }
 
-  /* Filete horizontal — el separador de la casa. */
   .rule {
     display: block;
     width: 100%;
@@ -177,23 +173,12 @@
     background-color: var(--color-border);
   }
 
-  /* Punto naranja — motivo del sello. */
-  .hanko {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background-color: var(--color-brand);
-    border-radius: 50%;
-    margin-left: 2px;
-    vertical-align: middle;
-  }
-
-  /* Rótulo de sección — el "eyebrow" del sistema: 11px, 600, mayúsculas. */
+  /* Rótulo de sección — el "eyebrow": 11px, 600, mayúsculas. */
   .section-label {
     font-family: var(--font-sans);
-    font-size: 0.6875rem; /* 11px — el piso de la escala */
+    font-size: 0.6875rem;
     font-weight: 600;
-    letter-spacing: 0.09em; /* ~1px */
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--color-muted-foreground);
   }
@@ -206,42 +191,26 @@
     letter-spacing: 0.05em;
   }
 
-  /* ─────────────── Spec cell ───────────────
-     Cifra enorme en serif, rótulo diminuto debajo. La tensión entre 80px y 11px
-     es lo que produce el efecto: achicar la cifra o agrandar el rótulo lo mata.
-     Sirve para el trial, las métricas y los pasos numerados. */
+  /* Cifra grande en serif; sirve para los pasos numerados. */
   .spec-number {
     font-family: var(--font-serif);
-    font-size: 3.5rem; /* 56px — el token `stat` del sistema */
+    font-size: 3.5rem;
     font-weight: 400;
     line-height: 1.1;
     letter-spacing: -1px;
   }
 
-  .spec-label {
-    font-family: var(--font-sans);
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-  }
-
   @media (max-width: 639px) {
     .spec-number {
-      font-size: 2.5rem; /* 40px */
+      font-size: 2.5rem;
       letter-spacing: -0.6px;
     }
   }
 
-  /*
-    Etiquetas de control. El sistema es editorial y sobrio: las mayúsculas con
-    tracking fuerte del sistema anterior se aflojan — el botón de 14px/500 de
-    la referencia no grita, y la jerarquía la da el color del relleno.
-  */
   .cta-label {
     font-family: var(--font-sans);
     font-weight: 500;
-    font-size: 0.875rem; /* 14px */
+    font-size: 0.875rem;
     line-height: 1.3;
   }
 

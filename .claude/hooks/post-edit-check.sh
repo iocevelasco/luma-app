@@ -54,24 +54,19 @@ esac
 case "$REL" in
   *.tsx|*.jsx)
     RAW=$(grep -nE '(bg|text|border|ring|fill|stroke|from|to|via)-\[#[0-9A-Fa-f]' "$FILE" || true)
-    [ -n "$RAW" ] && add "Color crudo — saltea el tema. Usá tokens semánticos (bg-background, text-muted-foreground, bg-primary, bg-cream):"$'\n'"$(lines "$RAW")"
+    [ -n "$RAW" ] && add "Color crudo — saltea el tema. Usá tokens semánticos (bg-background, bg-card, text-muted-foreground, bg-primary):"$'\n'"$(lines "$RAW")"
 
     ARB=$(grep -nE 'rounded(-[a-z0-9]+)?-\[' "$FILE" || true)
-    [ -n "$ARB" ] && add "Radio arbitrario — el redondeo sale de la escala: rounded-md (8px) en botones e inputs, rounded-lg (12px) en cards y paneles. Ver DESIGN.md:"$'\n'"$(lines "$ARB")"
+    [ -n "$ARB" ] && add "Radio arbitrario — el redondeo sale de la escala: rounded-md (8px) en botones, rounded-sm (6px) en inputs, rounded-3xl (28px) en cards. Ver DESIGN.md:"$'\n'"$(lines "$ARB")"
 
-    # La píldora dejó de ser la forma de los controles: este sistema es
-    # editorial. rounded-full queda para lo que es un ESTADO — badge, avatar,
-    # switch, slider, progress — no para una acción.
+    # La píldora no es la forma de los controles. rounded-full queda para lo
+    # que es un ESTADO — badge, avatar, switch, slider, progress — no para una
+    # acción.
     PILL=$(grep -nE '<(Button|button)[^>]*rounded-full' "$FILE" || true)
     [ -n "$PILL" ] && add "Botón píldora — este sistema no usa botones píldora. Los botones van rounded-md (8px); rounded-full queda para badges y avatares. Ver DESIGN.md:"$'\n'"$(lines "$PILL")"
 
     BTN=$(grep -nE '<Button[^>]*className="[^"]*rounded-' "$FILE" || true)
     [ -n "$BTN" ] && add "Button con rounded-* propio — Button ya trae el radio del sistema; el override lo saca de la escala:"$'\n'"$(lines "$BTN")"
-
-    # #fa520f con blanco encima da 3.34:1 y no pasa AA. Para relleno va
-    # bg-primary, que ya resuelve el contraste por tema.
-    BRANDFILL=$(grep -nE 'bg-brand\b' "$FILE" || true)
-    [ -n "$BRANDFILL" ] && add "bg-brand como relleno — el naranja de marca con texto encima no pasa contraste AA (3.34:1). Para rellenar usá bg-primary; bg-brand es para tinta, bordes e íconos:"$'\n'"$(lines "$BRANDFILL")"
     ;;
 esac
 

@@ -1,149 +1,130 @@
 # Sistema de diseño de Luma
 
 Fuente de verdad única. Lo implementan `packages/web/src/index.css` y
-`packages/landing/src/index.css`; si algo de acá y algo del CSS no coinciden,
-manda este archivo y el CSS está mal.
+`packages/landing/src/index.css`, con **los mismos valores y los mismos nombres
+de token**; si algo de acá y algo del CSS no coinciden, manda el CSS del panel y
+este archivo está mal.
 
-Antes había dos sistemas —el rojo `#EF233C` del panel y el "lenguaje de cero" de
-la landing— y ninguno de los dos existe más. Un producto, una voz.
+El sistema es **VoltAgent**: un lienzo casi negro, un único verde eléctrico como
+marca, tarjetas de relieve suave y una grilla que se lee como documentación
+vestida de producto. El análisis completo de la referencia está en
+[`voltagent/DESIGN.md`](voltagent/DESIGN.md); lo de abajo es lo que Luma adopta
+y cómo lo nombra.
+
+> **Historial.** Hubo un sistema anterior —naranja `#fa520f`, superficies crema,
+> temas claro y oscuro— que ya no existe. Si ves `bg-cream`, `brand-fill`,
+> `sunshine-*` o `beige` en un archivo, es resto de esa etapa.
 
 ## La voz
 
-Editorial y templada. Un serif de display contra un sans neutro, superficies
-crema en vez de gris, y un naranja saturado que aparece poco y cuando aparece
-significa "acá se actúa".
+Técnica, sobria, nocturna. Un solo tema, **oscuro**: no hay modo claro ni
+switch, y la landing y el panel comparten fondo y marca para que pasar de
+`/home` a `/app` no se sienta como cambiar de producto.
 
-La geometría es sobria: **no hay botones píldora**. La píldora queda para lo que
-es un estado, no una acción — badges y avatares. Un botón de 8px y una card de
-12px se leen como documento; todo píldora se lee como juguete.
+El verde aparece poco y cuando aparece significa "acá se actúa" (CTA, estado
+activo, foco). No es un color decorativo.
 
 ## Color
 
+Un solo tema. Los valores viven en `:root` del panel y en `@theme` de la landing.
+
 ### Marca
 
-El naranja se parte en dos tokens, y no es un capricho: **`#fa520f` con texto
-blanco encima da 3.34:1 y no pasa AA.** Es el valor que publica la referencia y
-tomado literal deja cada CTA del producto por debajo del mínimo legible.
+| Token | Hex | Para qué |
+|---|---|---|
+| `brand` / `primary` | `#00d992` | Marca, relleno de CTA, foco, estado activo |
+| `primary-foreground` | `#101010` | Texto sobre el relleno verde — **10.3:1** |
+| `primary-pressed` | `#10b981` | Hover y estado presionado |
+| `primary-soft` | `#2fd6a1` | Variantes ghost y focus rings sutiles |
 
-| Token | Hex | Qué es | Contraste |
-|---|---|---|---|
-| `brand` | `#fa520f` | La marca. Tinta sobre oscuro, ícono, borde, acento | 5.54:1 sobre el fondo oscuro |
-| `brand-fill` | `#cc3a05` | **Relleno** de CTA en tema claro, con texto blanco | 5.03:1 con blanco |
-| `brand-press` | `#a82f04` | Estado presionado | — |
+A diferencia del naranja anterior, **el verde no necesita partirse en dos
+tokens**: texto `#101010` sobre `#00d992` pasa AA con holgura en cualquier
+tamaño. `brand` y `primary` siguen siendo dos nombres por **rol** (tinta/ícono vs.
+relleno de CTA), no porque el hex cambie. `bg-primary text-primary-foreground`
+es siempre correcto.
 
-Sobre tema oscuro el relleno **sí** es `brand` (`#fa520f`) pero el texto encima
-es `ink`, no blanco: negro sobre ese naranja da 4.93:1, blanco da 3.34:1. La
-misma superficie cambia el color del texto según el tema. Está resuelto en los
-tokens, no lo decidas por componente.
-
-El naranja se reserva para CTA primario, estado activo y la banda de cierre. No
-es un color decorativo.
-
-### Crema y neutros cálidos
+### Superficies
 
 | Token | Hex | Uso |
 |---|---|---|
-| `cream` | `#fff8e0` | Paneles de formulario, cards destacadas, footer |
-| `cream-soft` | `#fffaeb` | Variante más liviana |
-| `cream-deep` | `#fff0c2` | Chips y tags |
-| `beige` | `#e6d5a8` | Filete de 1px de las superficies crema |
+| `background` | `#101010` | Lienzo — el único fondo de página |
+| `card` / `popover` / `sidebar` | `#1a1a1a` | Una card se despega del fondo por **color**, no sólo por filete |
+| `secondary` / `muted` / `accent` | `#242424` | Chips, hover de menú, un escalón **arriba** de la card |
 
-### Sol — sólo para la banda de cierre
+El escalón de `secondary` no es capricho: un badge o un hover viven casi siempre
+encima de una card. Si compartieran hex con la superficie que los contiene,
+desaparecerían.
 
-`sunshine-300 #ffd06a` · `sunshine-500 #ffb83e` · `sunshine-700 #ffa110` ·
-`yellow #ffd900`. Existen para el gradiente de la banda y para nada más. No son
-una paleta de acentos.
+### Tinta y filetes
 
-### Tinta
-
-`ink #1f1f1f` · `slate #4a4a4a` (secundario) · `steel #6a6a6a` (terciario,
-5.09:1 sobre crema) · `muted #a8a8a8` (deshabilitado, placeholders).
-
-`stone #8a8a8a` da 3.45:1 sobre blanco: **no lo uses para texto**, sólo para
-íconos decorativos o filetes.
+| Token | Hex | Uso |
+|---|---|---|
+| `foreground` | `#f2f2f2` | Texto principal (~17:1 sobre el lienzo) |
+| `muted-foreground` | `#bdbdbd` | Cuerpo y texto secundario (~10:1) |
+| `border` | `#3d3a39` | Filete universal de 1px |
+| `border-strong` | `#57534e` | Filete de énfasis, divisores de FAQ |
 
 ### Estados
 
-Ahora que la marca es naranja, el rojo quedó libre para significar peligro de
-verdad — antes el CTA y el error eran el mismo color, que es exactamente el
-problema que un sistema de diseño tiene que evitar.
+Información, no decoración: independientes del verde de marca.
 
-`destructive #C81E32` (5.69:1 con blanco) · `success #157F3D` (5.08:1) ·
-`warning #A15C07`.
+| Token | Hex |
+|---|---|
+| `destructive` / `status-danger` | `#e8455a` |
+| `success` / `status-active` | `#3dbd69` |
+| `warning` / `status-warning` | `#e0a63a` |
+| `info` / `status-info` | `#7dd3fc` |
+| `status-neutral` | `#8b949e` |
 
-### Tema oscuro
-
-La referencia no tiene tema oscuro publicado; este está derivado acá. El fondo
-es **charcoal cálido**, no el azulado de antes: un gris frío debajo de un naranja
-lo ensucia.
-
-`background #16130E` · `card #1F1B14` · texto `#FFF7EC` (17.44:1) ·
-cuerpo `#C4BAA8` (9.65:1) · muted `#948A79` (5.44:1, el piso).
-
-En oscuro no hay superficies crema: la crema es un tema claro. Su rol —"esta
-superficie es cálida y distinta"— lo cumple `card` sobre `background`.
+El rojo significa **peligro**, nunca marca.
 
 ## Tipografía
 
-**Display — Instrument Serif.** La referencia usa PP Editorial Old, que es
-comercial y no se puede empaquetar. Instrument Serif es el near-serif libre más
-cercano en Google Fonts: misma tensión clásica, mismo comportamiento en tamaños
-grandes. Si algún día se compra la licencia de PP Editorial Old, se cambia una
-línea del `@theme` y nada más.
+**Inter** para todo lo narrativo y de interfaz. **JetBrains Mono** (con
+`SF Mono` primero) para lo que se podría escribir en una terminal: código,
+contadores, numeración.
 
-**UI — Inter.** Body, navegación, botones, labels.
+**Instrument Serif** es el único serif y tiene un uso acotado:
 
-**Código — JetBrains Mono.**
+| Dónde | Qué lleva serif |
+|---|---|
+| Panel | Sólo el título de cada pantalla (`PageHeader`, `font-serif`) |
+| Landing | `h1` y `h2` — el display. De `h3` para abajo es Inter |
 
-| Rol | Tamaño | Peso | Interlínea | Tracking | Familia |
-|---|---|---|---|---|---|
-| hero | 84px | 400 | 1.05 | -1.5px | serif |
-| display | 64px | 400 | 1.10 | -1px | serif |
-| h1 | 52px | 400 | 1.15 | -0.5px | serif |
-| stat | 56px | 400 | 1.10 | -1px | serif |
-| h2 | 36px | 500 | 1.20 | -0.5px | sans |
-| h3 | 28px | 500 | 1.25 | 0 | sans |
-| h4 | 22px | 500 | 1.30 | 0 | sans |
-| h5 | 18px | 500 | 1.40 | 0 | sans |
-| subtitle | 18px | 400 | 1.50 | 0 | sans |
-| body | 16px | 400 | 1.55 | 0 | sans |
-| body-sm | 14px | 400 | 1.50 | 0 | sans |
-| caption | 13px | 400 | 1.40 | 0 | sans |
-| micro | 12px | 500 | 1.40 | 0 | sans |
-| eyebrow | 11px | 600 | 1.40 | 1px, mayúsculas | sans |
-| button | 14px | 500 | 1.30 | 0 | sans |
-| code | 14px | 400 | 1.50 | 0 | mono |
+El serif ya se aplica en la capa base de la landing; no hace falta repetirlo en
+el JSX. Peso 400, sin negrita: el display de este sistema no es bold.
 
-El tracking negativo crece con el tamaño y se relaja a 0 antes de los 28px.
-El contraste serif/sans **es** la voz: un hero en Inter no es este sistema.
+Piso de tamaño: **11px**, escrito en `rem` (`text-2xs`). Un `text-[10px]` en px no
+responde al tamaño de texto del sistema operativo, justo en los rótulos que más
+lo necesitan.
 
-Piso de tamaño: 11px, y escrito en `rem`. Un `text-[10px]` en px no responde al
-tamaño de texto del sistema operativo, justo en los rótulos que más lo necesitan.
+Las fuentes de la landing son **self-hosted** (subset latino, woff2) y salen del
+bundle con hash. No se piden a Google Fonts: una hoja externa bloquea el render.
 
 ## Radio
 
-Escala de la referencia, no la que había antes.
+Controles en la escala chica, superficies en la grande.
 
-| Clase | Valor | Dónde |
+| Clase | Valor | Se usa en |
 |---|---|---|
 | `rounded-xs` | 4px | Chips micro, indicadores |
-| `rounded-sm` | 6px | Controles compactos |
-| `rounded-md` | **8px** | **Botones**, inputs, select, code blocks |
-| `rounded-lg` | **12px** | **Cards**, dialog, popover, panel — el radio dominante |
-| `rounded-xl` | 16px | Paneles grandes que envuelven cards |
-| `rounded-2xl` | 20px | Card destacada, bottom sheet |
-| `rounded-full` | píldora | **Sólo** badges, avatares, switch, slider, progress |
+| `rounded-sm` | 6px | **Input**, Select, Textarea, ítems de menú |
+| `rounded-md` | 8px | **Botones**, code blocks, filas internas |
+| `rounded-lg` | 14px | Dialog, menú, dropdown, toast |
+| `rounded-xl` | 18px | Popover grande, alert dialog |
+| `rounded-2xl` | 22px | Panel destacado |
+| `rounded-3xl` | **28px** | **Card** — el radio dominante |
+| `rounded-full` | píldora | **Sólo** estados: Badge, Avatar, Switch, Slider, Progress |
 
-Dos reglas que siguen valiendo:
+Dos reglas:
 
-1. **El hijo va un escalón abajo del padre.** Un input `rounded-md` dentro de una
-   card `rounded-lg`. Un radio interno mayor que el del contenedor deja una luz
+1. **No hay botones píldora.** La píldora significa "esto es un estado", no
+   "esto se toca".
+2. **El hijo va un escalón abajo del padre.** Un input `rounded-sm` dentro de una
+   card `rounded-3xl`. Un radio interno mayor que el del contenedor deja una luz
    visible en la esquina.
-2. **Nunca un radio arbitrario.** `rounded-[14px]` no existe.
 
-Lo que cambió respecto del sistema anterior: **el botón dejó de ser píldora**.
-La forma sigue diciendo qué es algo, pero ahora la píldora significa "esto es un
-estado" (badge, avatar), no "esto se toca".
+Nunca un radio arbitrario: `rounded-[14px]` no existe.
 
 ## Espaciado
 
@@ -151,84 +132,60 @@ Base 4px, incremento principal 8px. Usá la escalera numérica de Tailwind
 (`p-4` = 16px), no tokens propios: declarar `--spacing-md` pisa las tallas
 t-shirt y `max-w-md` deja de ser 28rem.
 
-`4=1 · 8=2 · 12=3 · 16=4 · 20=5 · 24=6 · 32=8 · 40=10 · 48=12 · 64=16 · 96=24`
-
-Sí hay dos tokens de sección porque no caen en la escalera:
-`section` 64px · `section-lg` 96px · `hero` 120px.
-
-Ritmo: la landing respira en `section-lg` (96px); el panel se ajusta a 64px.
-Padding interno: 24px en cards compactas, 32px en paneles y formularios.
+Sí hay tokens de sección porque no caen en la escalera: `section` 64px,
+`section-lg` 96px y `hero` 120px en el panel; en la landing, `section` 96px y
+`section-sm` 64px.
 
 ## Profundidad
 
-Plana por defecto. La profundidad la dan el filete de 1px y el salto de
-superficie, no una escalera de sombras.
+La card se despega del lienzo por **color** (`#1a1a1a` sobre `#101010`) y además
+lleva una sombra suave de apoyo.
 
 | Rol | Valor | Uso |
 |---|---|---|
-| plano | sin sombra, borde 1px `hairline-soft` | Cards, filas, inputs |
-| `shadow-surface` | `0 4px 12px rgb(0 0 0 / 0.04)` | Card de producto destacada |
-| `shadow-overlay` | `0 16px 48px -8px rgb(0 0 0 / 0.12)` | Dialog, dropdown, barra fija |
+| plano | borde 1px `border`, sin sombra | Filas, divisores, inputs |
+| `shadow-surface` | `0 1px 2px rgb(0 0 0 / .3), 0 8px 24px -12px rgb(0 0 0 / .5)` | Card en reposo |
+| `shadow-overlay` | `0 20px 60px rgb(0 0 0 / .7)` + filete interno | Dialog, menú, popover |
 
-No hay `shadow-glow`. Un resplandor de marca no es profundidad y era la forma
-más fácil de elevar algo que no debía estar elevado.
+Nada de `shadow-glow`: un resplandor de marca no es profundidad.
 
 ## Componentes
 
-**Botón primario** — relleno `brand-fill` + texto blanco en claro;
-relleno `brand` + texto `ink` en oscuro. `rounded-md`, padding `10px 20px`,
-altura efectiva 40–44px.
+**Botón primario** — `bg-primary text-primary-foreground`, `rounded-md`, hover
+`primary-pressed`. Altura `h-9`, o `h-10` en `lg`.
 
-**Botón crema** — fondo `cream`, texto `ink`, borde 1px `beige`. La acción
-secundaria natural sobre bandas crema.
+**Botón secundario / outline** — borde `border`, texto `foreground`, hover
+`accent`.
 
-**Botón secundario** — transparente, texto `ink`, borde 1px `hairline-strong`.
+**Card** — `bg-card`, `rounded-3xl`, borde 1px, `shadow-surface`. Padding 16px en
+móvil, 24px desde `sm`.
 
-**Botón link** — texto `brand-fill` (no `brand`: sobre blanco `brand` da 3.34:1),
-subrayado al activarse.
+**Input / Select / Textarea** — `rounded-sm`, borde `input`, foco con
+`ring` verde. El foco se ve, siempre.
 
-**Card** — fondo `card`, `rounded-lg`, padding 24px, borde 1px `hairline-soft`.
-La variante crema cambia fondo a `cream` y borde a `beige`.
+**Badge** — `rounded-full`, `text-xs`, peso 500. Para estados usá los tokens
+`status-*` con fondo al 15% de opacidad.
 
-**Input** — `rounded-md`, altura 44px, borde 1px `hairline-strong`. Al foco el
-borde pasa a 2px `brand`. El foco se ve, siempre.
-
-**Badge** — `rounded-full`, 13px peso 600, padding `4px 10px`. Naranja, crema o
-tinta.
-
-**Tabs** — subrayado: inactivo `steel`, activo texto `brand` con borde inferior
-de 2px. Las tabs píldora existen pero se usan poco.
-
-**Banda de cierre** — gradiente horizontal
-`brand → sunshine-700 → sunshine-500 → yellow → cream`, ancho completo, arriba
-del footer, en todas las páginas de la landing. Es el elemento de continuidad de
-la marca. En el panel autenticado **no va**: una app de trabajo no se firma en
-cada pantalla.
+**Banda de cierre (sólo landing)** — línea horizontal de 4px con degradé
+`primary-pressed → primary → primary-soft`, ancho completo, arriba del footer.
+En el panel **no va**: una app de trabajo no se firma en cada pantalla.
 
 ## Qué no hacer
 
-- No agregar acentos fuera de naranja / amarillo / crema. Los colores de estado
-  son información, no paleta.
 - No usar botones píldora.
-- No reemplazar el serif de display por el sans. El contraste es la voz.
-- No bajar la interlínea del hero de 1.05.
-- No poner sombras pesadas en cards planas.
-- No usar `brand` (`#fa520f`) como relleno con texto blanco: 3.34:1. Para eso
-  está `brand-fill`.
-- No meter la banda de cierre en el panel.
+- No agregar acentos fuera del verde: los colores de estado son información,
+  no paleta.
+- No poner texto blanco sobre el verde: el texto es `primary-foreground`
+  (`#101010`).
+- No editar `components/ui/` salvo un cambio del sistema que tenga que vivir ahí.
+- No usar colores crudos (`bg-[#00d992]`): saltean el tema.
+- No reintroducir un tema claro "sólo para la landing".
+- No cargar fuentes desde Google Fonts.
 
 ## Responsive
 
-| Ancho | Cambios |
-|---|---|
-| < 480px | Una columna. Hero 40px. Nav a hamburguesa. Tabs a 44px de alto. |
-| 480–767px | Tiles de a 2. Hero 52px. |
-| 768–1023px | Grillas de a 2. Hero 64px. |
-| 1024–1279px | Multi columna. Hero 76px. |
-| ≥ 1280px | Hero 84px. Contenedor 1280px con gutters de 32px. |
+La landing es mobile-first: una columna bajo `sm`, grillas de 2 desde `sm`, de
+3–4 desde `lg`. El contenedor es `max-w-6xl` con gutter de 24px.
 
-Objetivos táctiles: botones e inputs a 44px efectivos. En móvil, todo control
-sube a 44px aunque en desktop mida menos.
-
-Altura de viewport: `100dvh`, nunca `100vh` — en iOS el `100vh` incluye la barra
-del browser.
+Objetivos táctiles de 44px efectivos en móvil. Altura de viewport: `100dvh`,
+nunca `100vh` — en iOS el `100vh` incluye la barra del browser.

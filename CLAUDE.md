@@ -163,63 +163,68 @@ Rutas públicas que nunca deben recibir un redirect por 401: `/login`, `/registe
 **La fuente de verdad es `DESIGN.md` en la raíz.** Este bloque es el resumen
 operativo; ante cualquier duda o contradicción, manda `DESIGN.md`.
 
-Hay **un solo** sistema de diseño. El rojo `#EF233C` del panel y el "lenguaje de
-cero" de la landing fueron reemplazados por uno editorial —naranja, crema,
-serif de display— que rige los dos paquetes con el mismo vocabulario de tokens.
+Hay **un solo** sistema de diseño, **VoltAgent**: lienzo casi negro `#101010`,
+un único verde `#00d992` como marca y como relleno de CTA, y **un solo tema,
+oscuro**. Rige los dos paquetes con el mismo vocabulario de tokens y los mismos
+valores. El rojo del panel, el "lenguaje de cero" de la landing y el sistema
+naranja/crema que vino después ya no existen: si ves `bg-cream`, `brand-fill`,
+`sunshine-*` o `#fa520f`, es un resto.
 
 - **Tailwind v4**: no hay `tailwind.config.js`. Los tokens viven en
-  `packages/web/src/index.css` y `packages/landing/src/index.css`, dentro de
-  `@theme`.
+  `packages/web/src/index.css` (`:root` + `@theme inline`) y
+  `packages/landing/src/index.css` (`@theme`).
 - **Composición de clases**: siempre `cn()` de `@/lib/utils`.
 - **shadcn/ui**: los componentes de `components/ui/` no se editan. Se extienden
   por `className` o se envuelven. La única excepción es un cambio del sistema que
   *tiene* que vivir en el componente — el radio o el color del `Button`.
-- **Tokens semánticos, no colores crudos**: `bg-background`, `text-muted-foreground`,
-  `bg-primary`, `bg-cream`. Un `bg-[#fa520f]` saltea el tema.
+- **Tokens semánticos, no colores crudos**: `bg-background`, `bg-card`,
+  `text-muted-foreground`, `bg-primary`. Un `bg-[#00d992]` saltea el tema.
 
-### El naranja va partido en dos
+### Un solo verde
 
-`#fa520f` con texto blanco encima da **3.34:1 y no pasa AA**. Es el valor de
-marca de la referencia, y tomado literal como relleno deja cada CTA por debajo
-del mínimo legible.
+`#00d992` con texto `#101010` da ~10.3:1: pasa AA en cualquier tamaño, así que
+**no hay que partir la marca en dos tokens** como pasaba con el naranja.
 
 | Token | Para qué |
 |---|---|
-| `brand` | Tinta, ícono, borde, acento. **Nunca como relleno con texto encima.** |
-| `primary` | Relleno de CTA. Ya resuelve el contraste por tema: en claro es naranja profundo con texto blanco (5.03:1), en oscuro es naranja saturado con texto tinta (4.93:1). |
+| `brand` / `primary` | Marca, relleno de CTA, foco, estado activo. El hex es el mismo; son dos nombres por rol |
+| `primary-foreground` | Texto sobre el relleno: `#101010`, **nunca blanco** |
+| `primary-pressed` | Hover y estado presionado |
 
-El componente no decide el color del texto sobre el primario — lo resuelve el
-token. Usá `bg-primary text-primary-foreground` y funciona en los dos temas.
+Usá `bg-primary text-primary-foreground`. El rojo (`destructive`) significa
+**peligro**, no marca.
 
-El rojo ahora significa **peligro**, no marca: antes el CTA y el error eran el
-mismo color.
-
-### Radio — escala editorial
+### Radio — escala del panel
 
 | Clase | Valor | Se usa en |
 |---|---|---|
-| `rounded-md` | **8px** | **Botones**, Input, Select, Textarea, code blocks |
-| `rounded-lg` | **12px** | **Card**, Dialog, Popover, Dropdown, panel — el dominante |
-| `rounded-xl` | 16px | Contenedor que envuelve cards |
-| `rounded-2xl` | 20px | Card destacada, bottom sheet |
-| `rounded-sm` / `rounded-xs` | 6 / 4px | Ítems de menú, chips micro, indicadores |
+| `rounded-sm` | 6px | Input, Select, Textarea, ítems de menú |
+| `rounded-md` | 8px | **Botones**, code blocks, filas internas |
+| `rounded-lg` | 14px | Dialog, menú, dropdown, toast |
+| `rounded-xl` / `rounded-2xl` | 18 / 22px | Popover grande, panel destacado |
+| `rounded-3xl` | **28px** | **Card** — el dominante |
+| `rounded-xs` | 4px | Chips micro, indicadores |
 | `rounded-full` | píldora | **Sólo**: Badge, Avatar, Switch, Slider, Progress |
 
 Dos reglas:
 
-1. **No hay botones píldora.** La píldora dejó de significar "esto se toca" y
-   pasa a significar "esto es un estado". Un botón de 8px y una card de 12px se
-   leen como documento; todo píldora se lee como juguete.
-2. **El hijo va un escalón abajo del padre.** Un Input `rounded-md` dentro de una
-   Card `rounded-lg`. Un radio interno mayor que el del contenedor deja una luz
+1. **No hay botones píldora.** La píldora significa "esto es un estado", no
+   "esto se toca".
+2. **El hijo va un escalón abajo del padre.** Un Input `rounded-sm` dentro de una
+   Card `rounded-3xl`. Un radio interno mayor que el del contenedor deja una luz
    visible en la esquina.
 
 ### Tipografía
 
-Serif de display (`Instrument Serif`) para h1–h6, `Inter` para todo lo demás,
-`JetBrains Mono` para código. **El contraste serif/sans es la voz del sistema**:
-un heading en sans no es este sistema. El serif ya se aplica en `@layer base`,
-no hace falta repetirlo en el JSX.
+`Inter` para todo lo narrativo y de interfaz, `JetBrains Mono` para código y
+contadores. **`Instrument Serif` es el único serif y tiene un uso acotado**:
+
+- **Panel**: sólo el título de cada pantalla (`PageHeader`, `font-serif`).
+- **Landing**: `h1` y `h2`, el display. De `h3` para abajo es Inter. Ya se aplica
+  en `@layer base`, no hace falta repetirlo en el JSX.
+
+Peso 400, sin negrita. Las fuentes de la landing son self-hosted (woff2 latino,
+salen con hash en `/home/assets`); no se piden a Google Fonts.
 
 Piso de tamaño: 11px (`text-2xs`), y siempre en `rem`. Un `text-[10px]` en px no
 responde al tamaño de texto del sistema operativo.
@@ -314,7 +319,7 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 | Pieza | Qué hace |
 |---|---|
 | `.claude/settings.json` | Permisos (los scripts del repo y los comandos de lectura no piden aprobación; deploy, `git push` y el seed están denegados) y el hook de post-edición |
-| `.claude/hooks/post-edit-check.sh` | Corre después de cada Edit/Write: paridad i18n, colores crudos, radios fuera de escala, botones píldora, `bg-brand` como relleno, strings inline, `components/ui/` editado, `shared` sin rebuildear |
+| `.claude/hooks/post-edit-check.sh` | Corre después de cada Edit/Write: paridad i18n, colores crudos, radios fuera de escala, botones píldora, strings inline, `components/ui/` editado, `shared` sin rebuildear |
 | `.claude/hooks/pre-push-check.sh` | Bloquea todo `git push` cuyo destino sea main o master. El flujo es rama de feature + PR, y una regla de permisos no puede expresar "salvo a main" |
 | `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e, y cross-browser cuando corresponde |
 | `.claude/commands/feature.md` | `/feature <qué>` — implementa respetando el orden shared → api → capa 1 → capa 2 → UI → i18n |
