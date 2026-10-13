@@ -6,9 +6,13 @@ import type { Response } from 'express';
  * capacidades ya resueltas: es lo que le permite a la Empresa saber en qué
  * obras puede dar acceso sin abrirlas una por una ni derivarlo del rol.
  */
-vi.mock('../../models/User.js', () => ({ User: {} }));
+vi.mock('../../models/User.js', () => ({
+  User: { findById: vi.fn(), findOne: vi.fn(), create: vi.fn(), updateOne: vi.fn() },
+}));
 vi.mock('../../models/Project.js', () => ({ Project: { find: vi.fn() } }));
-vi.mock('../../models/ProjectMembership.js', () => ({ ProjectMembership: { find: vi.fn() } }));
+vi.mock('../../models/ProjectMembership.js', () => ({
+  ProjectMembership: { find: vi.fn(), exists: vi.fn(), create: vi.fn() },
+}));
 vi.mock('../../services/organization.service.js', () => ({
   findMyOrganizationId: vi.fn(),
   createPersonalOrganization: vi.fn(),
@@ -21,7 +25,10 @@ vi.mock('../../controllers/auth.controller.js', () => ({
 
 const { Project } = await import('../../models/Project.js');
 const { ProjectMembership } = await import('../../models/ProjectMembership.js');
-const { listProjects } = await import('../../controllers/project.controller.js');
+const { User } = await import('../../models/User.js');
+const { listProjects, inviteProjectMember } = await import(
+  '../../controllers/project.controller.js'
+);
 
 function mockRes() {
   const res = {} as Response;
@@ -90,3 +97,55 @@ describe('listProjects', () => {
     expect(body.data.projects[0]!.capabilities).not.toContain('project.invite');
   });
 });
+
+describe('inviteProjectMember: enlace de activación en manos de otra persona', () => {
+  const invite = async (existing: Record<string, unknown>) => {
+    vi.clearAllMocks();
+    vi.mocked(User.findById).mockResolvedValue({ email: 'dueno@empresa.com' } as never);
+    vi.mocked(User.findOne).mockResolvedValue({
+      _id: 'user-2',
+      email: 'ana@estudio.com',
+      name: 'ana',
+      email_verified: false,
+      ...existing,
+    } as never);
+    vi.mocked(ProjectMembership.exists).mockResolvedValue(null as never);
+    vi.mocked(ProjectMembership.create).mockResolvedValue({
+      _id: 'm-1',
+      role: 'supervisor',
+      createdAt: new Date('2026-10-12T10:00:00.000Z'),
+    } as never);
+    const res = mockRes();
+    await inviteProjectMember(
+      {
+        user: { sub: 'owner-1' },
+        project: { _id: 'p-1', createdBy: 'owner-1' },
+        body: { email: 'ana@estudio.com', role: 'supervisor' },
+      } as never,
+      res,
+    );
+    return res;
+  };
+
+  it('no la suma si el enlace de esa cuenta lo tiene otra persona', async () => {
+    const res = await invite({ activationLinkHeldBy: 'owner-OTRO' });
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(ProjectMembership.create).not.toHaveBeenCalled();
+  });
+
+  it('no la suma si otra persona la activó con ese enlace y nadie probó la casilla', async () => {
+    const res = await invite({ claimedViaLinkBy: 'owner-OTRO' });
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(ProjectMembership.create).not.toHaveBeenCalled();
+  });
+
+  it('quien tiene el enlace sí puede seguir dándole acceso', async () => {
+    const res = await invite({ activationLinkHeldBy: 'owner-1' });
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(ProjectMembership.create).toHaveBeenCalled();
+  });
+});
+

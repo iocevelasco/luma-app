@@ -17,6 +17,11 @@ import {
   findMyOrganizationId,
 } from '../services/organization.service.js';
 import { EmailService } from '../services/email.service.js';
+import {
+  isLinkedToAnotherInviter,
+  LINK_HELD_BY_ANOTHER_MESSAGE,
+  recordActivationDelivery,
+} from '../services/activation.service.js';
 import { activationDelivery } from '../utils/activation.js';
 import { ACTIVATION_TOKEN_TTL_MS, randomToken } from './auth.controller.js';
 
@@ -175,6 +180,11 @@ export async function inviteMember(req: Request, res: Response) {
     let delivery: ReturnType<typeof activationDelivery> | undefined;
 
     if (user) {
+      // Si otra persona tiene (o usó) el enlace de esa cuenta, sumarla acá le
+      // daría a esa persona acceso a esta Empresa: ver `isLinkedToAnotherInviter`.
+      if (isLinkedToAnotherInviter(user, req.user.sub)) {
+        return res.status(409).json({ success: false, error: LINK_HELD_BY_ANOTHER_MESSAGE });
+      }
       const alreadyMember = await OrganizationMember.exists({
         organization: organizationId,
         user: user._id,
@@ -196,6 +206,7 @@ export async function inviteMember(req: Request, res: Response) {
       });
       await createPersonalOrganization(String(user._id), name);
       const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      await recordActivationDelivery(user._id, emailSent, req.user.sub);
       delivery = activationDelivery(emailSent, activationToken);
     }
 
@@ -350,6 +361,7 @@ export async function resendMemberInvitation(req: Request, res: Response) {
       activationToken,
       user.name,
     );
+    await recordActivationDelivery(user._id, emailSent, String(req.user?.sub));
 
     return res.json({
       success: true,

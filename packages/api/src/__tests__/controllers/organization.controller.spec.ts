@@ -12,7 +12,13 @@ vi.mock('../../models/OrganizationMember.js', () => ({
   OrganizationMember: { create: vi.fn(), exists: vi.fn(), find: vi.fn(), findOne: vi.fn() },
 }));
 vi.mock('../../models/User.js', () => ({
-  User: { findById: vi.fn(), findOne: vi.fn(), create: vi.fn(), findByIdAndUpdate: vi.fn() },
+  User: {
+    findById: vi.fn(),
+    findOne: vi.fn(),
+    create: vi.fn(),
+    findByIdAndUpdate: vi.fn(),
+    updateOne: vi.fn(),
+  },
 }));
 vi.mock('../../models/Project.js', () => ({ Project: { find: vi.fn() } }));
 vi.mock('../../models/ProjectMembership.js', () => ({ ProjectMembership: { deleteMany: vi.fn() } }));
@@ -154,6 +160,109 @@ describe('inviteMember', () => {
       const body = vi.mocked(res.json).mock.calls[0]![0] as { data: Record<string, unknown> };
       expect(body.data).not.toHaveProperty('emailSent');
       expect(body.data).not.toHaveProperty('activationUrl');
+    });
+  });
+
+  describe('enlace de activación en manos de otra persona', () => {
+    const existing = (fields: Record<string, unknown>) =>
+      vi.mocked(User.findOne).mockResolvedValue({
+        _id: 'user-2',
+        email: 'ana@estudio.com',
+        name: 'Ana P.',
+        email_verified: false,
+        ...fields,
+      } as never);
+
+    const invite = async () => {
+      const res = mockRes();
+      await inviteMember(
+        {
+          user: { sub: 'owner-1' },
+          body: { email: 'ana@estudio.com', name: 'Ana', staffRole: 'supervisor' },
+        } as never,
+        res,
+      );
+      return res;
+    };
+
+    it('no suma a una cuenta cuyo enlace tiene otra persona: le abriría esta Empresa', async () => {
+      existing({ activationLinkHeldBy: 'owner-OTRO' });
+      vi.mocked(OrganizationMember.exists).mockResolvedValue(null as never);
+
+      const res = await invite();
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(OrganizationMember.create).not.toHaveBeenCalled();
+    });
+
+    it('tampoco si otra persona ya la activó con ese enlace y nadie probó la casilla', async () => {
+      existing({ claimedViaLinkBy: 'owner-OTRO' });
+      vi.mocked(OrganizationMember.exists).mockResolvedValue(null as never);
+
+      const res = await invite();
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(OrganizationMember.create).not.toHaveBeenCalled();
+    });
+
+    it('quien tiene el enlace sí puede seguir sumándola: es quien la está dando de alta', async () => {
+      existing({ activationLinkHeldBy: 'owner-1' });
+      vi.mocked(OrganizationMember.exists).mockResolvedValue(null as never);
+
+      const res = await invite();
+
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(OrganizationMember.create).toHaveBeenCalled();
+    });
+
+    it('una cuenta sin marcas se suma como siempre', async () => {
+      existing({});
+      vi.mocked(OrganizationMember.exists).mockResolvedValue(null as never);
+
+      const res = await invite();
+
+      expect(res.status).toHaveBeenCalledWith(201);
+    });
+  });
+
+  describe('registro de quién se llevó el enlace', () => {
+    const inviteNew = async () => {
+      vi.mocked(User.findOne).mockResolvedValue(null as never);
+      vi.mocked(User.create).mockResolvedValue({
+        _id: 'user-9',
+        email: 'ana@estudio.com',
+        name: 'Ana Pérez',
+        email_verified: false,
+      } as never);
+      await inviteMember(
+        {
+          user: { sub: 'owner-1' },
+          body: { email: 'ana@estudio.com', name: 'Ana Pérez', staffRole: 'supervisor' },
+        } as never,
+        mockRes(),
+      );
+    };
+
+    it('si el mail no salió, deja asentado que quien invitó tiene el enlace', async () => {
+      vi.mocked(EmailService.sendAccountActivationEmail).mockResolvedValue(false);
+
+      await inviteNew();
+
+      expect(User.updateOne).toHaveBeenCalledWith(
+        { _id: 'user-9' },
+        { $set: { activationLinkHeldBy: 'owner-1' } },
+      );
+    });
+
+    it('si el mail salió, no queda ningún enlace en manos de nadie', async () => {
+      vi.mocked(EmailService.sendAccountActivationEmail).mockResolvedValue(true);
+
+      await inviteNew();
+
+      expect(User.updateOne).toHaveBeenCalledWith(
+        { _id: 'user-9' },
+        { $unset: { activationLinkHeldBy: '' } },
+      );
     });
   });
 

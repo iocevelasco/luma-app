@@ -76,6 +76,11 @@ nombre de la base no admite guiones en el formulario de Coolify.
 > del dueño de la cuenta de Resend. Para invitar a otras personas hace falta
 > un dominio verificado en Resend y `EMAIL_FROM` con él. Si un mail no sale,
 > la invitación lo avisa y entrega el enlace de activación para copiarlo.
+> Una cuenta activada con ese enlace **funciona pero queda sin verificar**:
+> quien lo tuvo en mano pudo elegir la contraseña, así que no prueba que la
+> persona tenga la casilla. Hasta que recupere su contraseña por mail
+> («Olvidé mi contraseña»), sólo quien tenía el enlace puede seguir sumándola
+> a obras o Empresas (`activationLinkHeldBy` / `claimedViaLinkBy` en `User`).
 
 Build args (las `VITE_*` se hornean en el bundle, no se leen en runtime):
 `VITE_RECAPTCHA_SITE_KEY` en `app`, `VITE_APP_URL` en `landing`

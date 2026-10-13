@@ -14,6 +14,11 @@ import { Project, type IProject } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
 import { EmailService } from '../services/email.service.js';
+import {
+  isLinkedToAnotherInviter,
+  LINK_HELD_BY_ANOTHER_MESSAGE,
+  recordActivationDelivery,
+} from '../services/activation.service.js';
 import { activationDelivery } from '../utils/activation.js';
 import { ACTIVATION_TOKEN_TTL_MS, randomToken } from './auth.controller.js';
 
@@ -244,6 +249,11 @@ export async function inviteProjectMember(req: Request, res: Response) {
     let delivery: ReturnType<typeof activationDelivery> | undefined;
 
     if (user) {
+      // Ver `isLinkedToAnotherInviter`: la cuenta puede estar en manos de quien
+      // invitó antes, y sumarla acá le abriría esta obra a esa persona.
+      if (isLinkedToAnotherInviter(user, req.user.sub)) {
+        return res.status(409).json({ success: false, error: LINK_HELD_BY_ANOTHER_MESSAGE });
+      }
       const alreadyMember = await ProjectMembership.exists({
         project: project._id,
         user: user._id,
@@ -268,6 +278,7 @@ export async function inviteProjectMember(req: Request, res: Response) {
       });
       await createPersonalOrganization(String(user._id), name);
       const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      await recordActivationDelivery(user._id, emailSent, req.user.sub);
       delivery = activationDelivery(emailSent, activationToken);
     }
 

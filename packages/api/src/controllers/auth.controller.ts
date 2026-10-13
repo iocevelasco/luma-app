@@ -253,6 +253,11 @@ export async function resetPassword(req: Request, res: Response) {
     user.password = await bcrypt.hash(parsed.data.password, BCRYPT_ROUNDS);
     user.resetToken = undefined;
     user.resetTokenExpires = undefined;
+    // El enlace viajó sólo por el mail: usarlo prueba que se tiene la casilla, y
+    // la contraseña que había (si la eligió quien tuvo un enlace en mano) ya no vale.
+    user.email_verified = true;
+    user.activationLinkHeldBy = undefined;
+    user.claimedViaLinkBy = undefined;
     await user.save();
 
     return res.json({ success: true, message: 'Contraseña actualizada' });
@@ -281,10 +286,21 @@ export async function setPassword(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: 'El enlace es inválido o venció' });
     }
 
+    // Si el mail no salió, este enlace pasó por manos de quien invitó: elegir
+    // la contraseña con él no demuestra tener la casilla. La cuenta funciona
+    // pero queda sin verificar y atada a quien lo tenía (`claimedViaLinkBy`),
+    // y sólo se verifica cuando la persona real recupere la contraseña por mail.
+    const heldBy = user.activationLinkHeldBy;
     user.password = await bcrypt.hash(parsed.data.password, BCRYPT_ROUNDS);
-    user.email_verified = true;
     user.emailVerificationToken = undefined;
     user.emailVerificationTokenExpires = undefined;
+    user.activationLinkHeldBy = undefined;
+    if (heldBy && !user.email_verified) {
+      user.claimedViaLinkBy = heldBy;
+    } else {
+      user.email_verified = true;
+      user.claimedViaLinkBy = undefined;
+    }
     await user.save();
 
     const tokens = generateTokens(String(user._id), user.email, user.role);
@@ -313,7 +329,10 @@ export async function verifyEmail(req: Request, res: Response) {
       emailVerificationTokenExpires: { $gt: new Date() },
     }).select('+emailVerificationToken +emailVerificationTokenExpires');
 
-    if (!user) {
+    // Verificar no cambia la contraseña. Si la cuenta está atada a un enlace
+    // que tuvo otra persona, confirmar el correo la dejaría "verificada" con
+    // una contraseña que no eligió su dueño: ahí la salida es recuperarla.
+    if (!user || user.activationLinkHeldBy || user.claimedViaLinkBy) {
       return res.status(400).json({ success: false, error: 'El enlace es inválido o venció' });
     }
 
@@ -343,18 +362,25 @@ export async function resendVerification(req: Request, res: Response) {
     // "verificada" y sin poder entrar nunca — `/activate` ya no encontraba el
     // token, y era justo el camino al que lleva "Me invitaron" en el login.
     // La respuesta es idéntica en todos los casos: no distingue quién existe.
-    if (user && (!user.email_verified || !user.password)) {
+    // Una cuenta atada a un enlace en mano (`claimedViaLinkBy`) tiene
+    // contraseña pero no dueño probado: para ella, "confirmar el correo" no
+    // alcanza, tiene que elegir una contraseña desde la casilla. Va por activación.
+    const needsActivation = !user?.password || Boolean(user?.claimedViaLinkBy);
+
+    if (user && (!user.email_verified || needsActivation)) {
       const token = randomToken();
       user.emailVerificationToken = token;
+      // El token nuevo sólo existe en la casilla: el enlace en mano, si había, murió.
+      user.activationLinkHeldBy = undefined;
 
-      if (user.password) {
-        user.emailVerificationTokenExpires = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
-        await user.save();
-        await EmailService.sendEmailVerificationEmail(user.email, token, user.name);
-      } else {
+      if (needsActivation) {
         user.emailVerificationTokenExpires = new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS);
         await user.save();
         await EmailService.sendAccountActivationEmail(user.email, token, user.name);
+      } else {
+        user.emailVerificationTokenExpires = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
+        await user.save();
+        await EmailService.sendEmailVerificationEmail(user.email, token, user.name);
       }
     }
 
@@ -450,6 +476,8 @@ export async function confirmEmailChange(req: Request, res: Response) {
 
     user.email = user.pendingEmail;
     user.email_verified = true;
+    user.activationLinkHeldBy = undefined;
+    user.claimedViaLinkBy = undefined;
     user.pendingEmail = undefined;
     user.emailChangeToken = undefined;
     user.emailChangeTokenExpires = undefined;

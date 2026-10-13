@@ -14,19 +14,24 @@ vi.mock('../../services/email.service.js', () => ({
     sendEmailVerificationEmail: vi.fn(),
   },
 }));
-vi.mock('../../services/auth.service.js', () => ({ generateTokens: vi.fn() }));
+vi.mock('../../services/auth.service.js', () => ({
+  generateTokens: vi.fn(() => ({ accessToken: 'access', refreshToken: 'refresh' })),
+}));
 vi.mock('../../services/jwt.service.js', () => ({ JWTService: {} }));
 vi.mock('../../services/organization.service.js', () => ({ createPersonalOrganization: vi.fn() }));
 vi.mock('../../services/recaptcha.service.js', () => ({ verifyRecaptchaFromRequest: vi.fn() }));
 
 const { User } = await import('../../models/User.js');
 const { EmailService } = await import('../../services/email.service.js');
-const { resendVerification } = await import('../../controllers/auth.controller.js');
+const { resendVerification, setPassword, resetPassword, verifyEmail } = await import(
+  '../../controllers/auth.controller.js'
+);
 
 function mockRes() {
   const res = {} as Response;
   res.status = vi.fn().mockReturnValue(res);
   res.json = vi.fn().mockReturnValue(res);
+  res.cookie = vi.fn().mockReturnValue(res);
   return res;
 }
 
@@ -106,3 +111,121 @@ describe('resendVerification', () => {
     );
   });
 });
+
+/**
+ * Cuando el mail de activación no sale, quien invitó se lleva el enlace en
+ * pantalla. Con él puede elegir la contraseña de esa cuenta, así que usarlo
+ * NO prueba que se tenga la casilla: la cuenta anda pero queda sin verificar y
+ * atada a esa persona, hasta que la real recupere la contraseña por mail.
+ */
+describe('cuentas activadas con un enlace que pasó por manos de quien invitó', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  /** `User.findOne(...).select('+...')` resuelve al usuario. */
+  function tokenOwner(fields: Record<string, unknown>) {
+    const user = {
+      _id: 'user-1',
+      email: 'ana@estudio.com',
+      name: 'Ana Pérez',
+      role: 'user',
+      email_verified: false,
+      save: vi.fn().mockResolvedValue(undefined),
+      ...fields,
+    };
+    vi.mocked(User.findOne).mockReturnValue({ select: vi.fn().mockResolvedValue(user) } as never);
+    return user as typeof user & Record<string, unknown>;
+  }
+
+  describe('setPassword', () => {
+    const activate = () =>
+      setPassword({ body: { token: 'tok', password: 'Una-clave-123' } } as never, mockRes());
+
+    it('con un enlace entregado a mano la cuenta anda, pero no queda verificada y queda atada a quien lo tenía', async () => {
+      const user = tokenOwner({ activationLinkHeldBy: 'owner-1' });
+
+      await activate();
+
+      expect(user.password).toEqual(expect.any(String));
+      expect(user.email_verified).toBe(false);
+      expect(user.claimedViaLinkBy).toBe('owner-1');
+      expect(user.activationLinkHeldBy).toBeUndefined();
+      expect(user.save).toHaveBeenCalled();
+    });
+
+    it('con un enlace que sólo viajó por mail verifica la cuenta', async () => {
+      const user = tokenOwner({});
+
+      await activate();
+
+      expect(user.email_verified).toBe(true);
+      expect(user.claimedViaLinkBy).toBeUndefined();
+    });
+
+    it('no le quita la verificación a una casilla que ya estaba probada', async () => {
+      const user = tokenOwner({ activationLinkHeldBy: 'owner-1', email_verified: true });
+
+      await activate();
+
+      expect(user.email_verified).toBe(true);
+      expect(user.claimedViaLinkBy).toBeUndefined();
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('recuperar la contraseña por mail prueba la casilla y borra la marca: la clave anterior ya no vale', async () => {
+      const user = tokenOwner({ claimedViaLinkBy: 'owner-1', password: 'hash-de-quien-tuvo-el-enlace' });
+
+      await resetPassword({ body: { token: 'tok', password: 'Clave-de-la-dueña-1' } } as never, mockRes());
+
+      expect(user.password).not.toBe('hash-de-quien-tuvo-el-enlace');
+      expect(user.email_verified).toBe(true);
+      expect(user.claimedViaLinkBy).toBeUndefined();
+      expect(user.activationLinkHeldBy).toBeUndefined();
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('no verifica una cuenta atada a un enlace: confirmarla dejaría "verificada" una clave que no eligió su dueña', async () => {
+      const user = tokenOwner({ claimedViaLinkBy: 'owner-1' });
+      const res = mockRes();
+
+      await verifyEmail({ query: { token: 'tok' } } as never, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(user.email_verified).toBe(false);
+      expect(user.save).not.toHaveBeenCalled();
+    });
+
+    it('tampoco verifica con un token que quien invitó tiene en pantalla', async () => {
+      const user = tokenOwner({ activationLinkHeldBy: 'owner-1' });
+      const res = mockRes();
+
+      await verifyEmail({ query: { token: 'tok' } } as never, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(user.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resendVerification', () => {
+    it('a una cuenta atada a un enlace le manda ACTIVACIÓN, aunque ya tenga contraseña, y suelta el enlace en mano', async () => {
+      const user = {
+        email: 'ana@estudio.com',
+        name: 'Ana Pérez',
+        email_verified: false,
+        password: 'hash',
+        claimedViaLinkBy: 'owner-1',
+        activationLinkHeldBy: 'owner-1',
+        save: vi.fn().mockResolvedValue(undefined),
+      };
+      vi.mocked(User.findOne).mockReturnValue({ select: vi.fn().mockResolvedValue(user) } as never);
+
+      await resendVerification({ body: { email: 'ana@estudio.com' } } as never, mockRes());
+
+      expect(EmailService.sendAccountActivationEmail).toHaveBeenCalled();
+      expect(EmailService.sendEmailVerificationEmail).not.toHaveBeenCalled();
+      expect(user.activationLinkHeldBy).toBeUndefined();
+    });
+  });
+});
+
