@@ -17,6 +17,7 @@ import {
   findMyOrganizationId,
 } from '../services/organization.service.js';
 import { EmailService } from '../services/email.service.js';
+import { activationDelivery } from '../utils/activation.js';
 import { ACTIVATION_TOKEN_TTL_MS, randomToken } from './auth.controller.js';
 
 function errMsg(error: unknown): string {
@@ -169,6 +170,9 @@ export async function inviteMember(req: Request, res: Response) {
     }
 
     let user = await User.findOne({ email });
+    // Sólo cuando esta invitación crea la cuenta: quien ya existía no recibe
+    // mail de activación, así que no hay nada que contar.
+    let delivery: ReturnType<typeof activationDelivery> | undefined;
 
     if (user) {
       const alreadyMember = await OrganizationMember.exists({
@@ -191,7 +195,8 @@ export async function inviteMember(req: Request, res: Response) {
         emailVerificationTokenExpires: new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS),
       });
       await createPersonalOrganization(String(user._id), name);
-      await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      delivery = activationDelivery(emailSent, activationToken);
     }
 
     const memberRow = await OrganizationMember.create({
@@ -204,7 +209,7 @@ export async function inviteMember(req: Request, res: Response) {
 
     return res
       .status(201)
-      .json({ success: true, data: { member: toMemberSummary(memberRow, user) } });
+      .json({ success: true, data: { member: toMemberSummary(memberRow, user), ...delivery } });
   } catch (error) {
     console.error('❌ [ORG] inviteMember:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
@@ -340,9 +345,19 @@ export async function resendMemberInvitation(req: Request, res: Response) {
     user.emailVerificationToken = activationToken;
     user.emailVerificationTokenExpires = new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS);
     await user.save();
-    await EmailService.sendAccountActivationEmail(user.email, activationToken, user.name);
+    const emailSent = await EmailService.sendAccountActivationEmail(
+      user.email,
+      activationToken,
+      user.name,
+    );
 
-    return res.json({ success: true, data: { member: toMemberSummary(found.row, user) } });
+    return res.json({
+      success: true,
+      data: {
+        member: toMemberSummary(found.row, user),
+        ...activationDelivery(emailSent, activationToken),
+      },
+    });
   } catch (error) {
     console.error('❌ [ORG] resendMemberInvitation:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });

@@ -26,6 +26,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormShell } from '@/components/common/form-shell';
+import {
+  ActivationLinkDialog,
+  type ActivationLink,
+} from '@/components/organization/activation-link-dialog';
 import { GrantAccessDialog } from '@/components/organization/grant-access-dialog';
 import { PersonRow } from '@/components/organization/person-row';
 import {
@@ -175,6 +179,8 @@ export function InviteMemberDialog({
   const { t } = useTranslation();
   const setOpen = onOpenChange;
   const inviteMember = useInviteMember();
+  // El mail de activación no salió: el enlace queda a la vista para pasarlo a mano.
+  const [activationLink, setActivationLink] = useState<ActivationLink | null>(null);
 
   const {
     register,
@@ -188,57 +194,63 @@ export function InviteMemberDialog({
   });
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) reset();
-      }}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('team.inviteTitle')}</DialogTitle>
-        </DialogHeader>
-        <FormShell
-          variant="embedded"
-          className="gap-4"
-          onSubmit={handleSubmit((values) =>
-            inviteMember.mutate(values, {
-              onSuccess: () => {
-                setOpen(false);
-                reset();
-              },
-            }),
-          )}
-          submitLabel={t('team.inviteSubmit')}
-          onCancel={() => setOpen(false)}
-          isSubmitting={inviteMember.isPending}
-          error={inviteMember.error}
-        >
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="member-new-name">{t('team.name')}</Label>
-            <Input id="member-new-name" autoComplete="off" {...register('name')} />
-            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="member-email">{t('team.inviteEmail')}</Label>
-            <Input id="member-email" type="email" autoComplete="email" {...register('email')} />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="member-new-phone">{t('team.phone')}</Label>
-            <Input id="member-new-phone" type="tel" autoComplete="off" {...register('phone')} />
-            {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
-          </div>
-          <StaffRoleField
-            control={control}
-            name="staffRole"
-            id="member-new-role"
-            error={errors.staffRole ? t('team.staffRoleRequired') : undefined}
-          />
-        </FormShell>
-      </DialogContent>
-    </Dialog>
+    <>
+      <ActivationLinkDialog link={activationLink} onClose={() => setActivationLink(null)} />
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) reset();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('team.inviteTitle')}</DialogTitle>
+          </DialogHeader>
+          <FormShell
+            variant="embedded"
+            className="gap-4"
+            onSubmit={handleSubmit((values) =>
+              inviteMember.mutate(values, {
+                onSuccess: (data) => {
+                  setOpen(false);
+                  reset();
+                  if (data.activationUrl) {
+                    setActivationLink({ name: values.name, url: data.activationUrl });
+                  }
+                },
+              }),
+            )}
+            submitLabel={t('team.inviteSubmit')}
+            onCancel={() => setOpen(false)}
+            isSubmitting={inviteMember.isPending}
+            error={inviteMember.error}
+          >
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="member-new-name">{t('team.name')}</Label>
+              <Input id="member-new-name" autoComplete="off" {...register('name')} />
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="member-email">{t('team.inviteEmail')}</Label>
+              <Input id="member-email" type="email" autoComplete="email" {...register('email')} />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="member-new-phone">{t('team.phone')}</Label>
+              <Input id="member-new-phone" type="tel" autoComplete="off" {...register('phone')} />
+              {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+            </div>
+            <StaffRoleField
+              control={control}
+              name="staffRole"
+              id="member-new-role"
+              error={errors.staffRole ? t('team.staffRoleRequired') : undefined}
+            />
+          </FormShell>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -387,9 +399,11 @@ export function StaffList() {
   const [editing, setEditing] = useState<OrganizationMemberSummary | null>(null);
   const [granting, setGranting] = useState<OrganizationMemberSummary | null>(null);
   const [removing, setRemoving] = useState<OrganizationMemberSummary | null>(null);
+  const [activationLink, setActivationLink] = useState<ActivationLink | null>(null);
 
   return (
     <>
+      <ActivationLinkDialog link={activationLink} onClose={() => setActivationLink(null)} />
       {members.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('team.empty')}</p>
       ) : (
@@ -422,7 +436,15 @@ export function StaffList() {
                       variant="outline"
                       size="icon-sm"
                       disabled={resend.isPending}
-                      onClick={() => resend.mutate(member.id)}
+                      onClick={() =>
+                        resend.mutate(member.id, {
+                          onSuccess: (data) => {
+                            if (data.activationUrl) {
+                              setActivationLink({ name: member.name, url: data.activationUrl });
+                            }
+                          },
+                        })
+                      }
                       aria-label={t('team.resend')}
                     >
                       <MailPlus className="size-4" />

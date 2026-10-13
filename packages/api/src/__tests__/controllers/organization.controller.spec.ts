@@ -93,6 +93,70 @@ describe('inviteMember', () => {
     expect(body.data.member).toMatchObject({ name: 'Ana Pérez', staffRole: 'contador' });
   });
 
+  describe('entrega del mail de activación', () => {
+    const invite = async () => {
+      vi.mocked(User.findOne).mockResolvedValue(null as never);
+      vi.mocked(User.create).mockResolvedValue({
+        _id: 'user-9',
+        email: 'ana@estudio.com',
+        name: 'Ana Pérez',
+        email_verified: false,
+      } as never);
+      const res = mockRes();
+      await inviteMember(
+        {
+          user: { sub: 'owner-1' },
+          body: { email: 'ana@estudio.com', name: 'Ana Pérez', staffRole: 'supervisor' },
+        } as never,
+        res,
+      );
+      return vi.mocked(res.json).mock.calls[0]![0] as {
+        data: { emailSent?: boolean; activationUrl?: string };
+      };
+    };
+
+    it('si el mail no salió lo dice y entrega el enlace, para que la persona no quede afuera', async () => {
+      vi.mocked(EmailService.sendAccountActivationEmail).mockResolvedValue(false);
+
+      const body = await invite();
+
+      expect(body.data.emailSent).toBe(false);
+      expect(body.data.activationUrl).toMatch(/\/activate\?token=token$/);
+    });
+
+    it('si el mail salió no entrega el enlace: quien lo tiene elige la contraseña de esa cuenta', async () => {
+      vi.mocked(EmailService.sendAccountActivationEmail).mockResolvedValue(true);
+
+      const body = await invite();
+
+      expect(body.data.emailSent).toBe(true);
+      expect(body.data.activationUrl).toBeUndefined();
+    });
+
+    it('si la cuenta ya existía no habla de mail: no se mandó ninguno', async () => {
+      vi.mocked(User.findOne).mockResolvedValue({
+        _id: 'user-2',
+        email: 'ana@estudio.com',
+        name: 'Ana P.',
+        email_verified: true,
+      } as never);
+      vi.mocked(OrganizationMember.exists).mockResolvedValue(null as never);
+      const res = mockRes();
+
+      await inviteMember(
+        {
+          user: { sub: 'owner-1' },
+          body: { email: 'ana@estudio.com', name: 'Ana', staffRole: 'supervisor' },
+        } as never,
+        res,
+      );
+
+      const body = vi.mocked(res.json).mock.calls[0]![0] as { data: Record<string, unknown> };
+      expect(body.data).not.toHaveProperty('emailSent');
+      expect(body.data).not.toHaveProperty('activationUrl');
+    });
+  });
+
   it('si la cuenta ya existe no le pisa el nombre ni le manda otro mail de activación', async () => {
     vi.mocked(User.findOne).mockResolvedValue({
       _id: 'user-2',

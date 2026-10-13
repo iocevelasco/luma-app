@@ -140,7 +140,23 @@ export interface CreateProjectResponse {
   project: Project;
 }
 
-export interface InviteProjectMemberResponse {
+/**
+ * Qué pasó con el mail de activación cuando una invitación creó la cuenta.
+ *
+ * El mail puede no salir (sin clave de Resend, remitente de prueba, dirección
+ * mal escrita) y antes eso no lo sabía nadie: la API contestaba 201 y la
+ * persona quedaba sin poder entrar. Si no salió, `activationUrl` trae el mismo
+ * enlace que iba en el mail para que quien invita se lo haga llegar.
+ *
+ * Ausente cuando la invitación no creó cuenta (la persona ya existía).
+ */
+export interface ActivationDelivery {
+  emailSent: boolean;
+  /** Sólo viene cuando `emailSent` es false. */
+  activationUrl?: string;
+}
+
+export interface InviteProjectMemberResponse extends Partial<ActivationDelivery> {
   member: ProjectMemberSummary;
 }
 
@@ -176,6 +192,6 @@ export interface OrganizationMembersResponse {
   members: OrganizationMemberSummary[];
 }
 
-export interface InviteMemberResponse {
+export interface InviteMemberResponse extends Partial<ActivationDelivery> {
   member: OrganizationMemberSummary;
 }

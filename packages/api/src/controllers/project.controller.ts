@@ -14,6 +14,7 @@ import { Project, type IProject } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
 import { EmailService } from '../services/email.service.js';
+import { activationDelivery } from '../utils/activation.js';
 import { ACTIVATION_TOKEN_TTL_MS, randomToken } from './auth.controller.js';
 
 function errMsg(error: unknown): string {
@@ -239,6 +240,8 @@ export async function inviteProjectMember(req: Request, res: Response) {
     }
 
     let user = await User.findOne({ email });
+    // Sólo si esta invitación crea la cuenta: ver `activationDelivery`.
+    let delivery: ReturnType<typeof activationDelivery> | undefined;
 
     if (user) {
       const alreadyMember = await ProjectMembership.exists({
@@ -264,7 +267,8 @@ export async function inviteProjectMember(req: Request, res: Response) {
         emailVerificationTokenExpires: new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS),
       });
       await createPersonalOrganization(String(user._id), name);
-      await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      delivery = activationDelivery(emailSent, activationToken);
     }
 
     const membership = await ProjectMembership.create({
@@ -283,7 +287,7 @@ export async function inviteProjectMember(req: Request, res: Response) {
       createdAt: membership.createdAt.toISOString(),
     };
 
-    return res.status(201).json({ success: true, data: { member } });
+    return res.status(201).json({ success: true, data: { member, ...delivery } });
   } catch (error) {
     console.error('❌ [PROJECT] inviteProjectMember:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });

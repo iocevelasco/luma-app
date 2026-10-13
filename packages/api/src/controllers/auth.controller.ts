@@ -336,14 +336,26 @@ export async function resendVerification(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: 'Email inválido' });
     }
 
-    const user = await User.findOne({ email: parsed.data.email });
+    const user = await User.findOne({ email: parsed.data.email }).select('+password');
 
-    if (user && !user.email_verified) {
+    // Una cuenta sin contraseña la creó una invitación: lo que le falta es
+    // elegirla, no confirmar el mail. Mandarle el de verificación la dejaba
+    // "verificada" y sin poder entrar nunca — `/activate` ya no encontraba el
+    // token, y era justo el camino al que lleva "Me invitaron" en el login.
+    // La respuesta es idéntica en todos los casos: no distingue quién existe.
+    if (user && (!user.email_verified || !user.password)) {
       const token = randomToken();
       user.emailVerificationToken = token;
-      user.emailVerificationTokenExpires = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
-      await user.save();
-      await EmailService.sendEmailVerificationEmail(user.email, token, user.name);
+
+      if (user.password) {
+        user.emailVerificationTokenExpires = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
+        await user.save();
+        await EmailService.sendEmailVerificationEmail(user.email, token, user.name);
+      } else {
+        user.emailVerificationTokenExpires = new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS);
+        await user.save();
+        await EmailService.sendAccountActivationEmail(user.email, token, user.name);
+      }
     }
 
     return res.json({ success: true, message: 'Si la cuenta existe, te reenviamos el correo.' });
