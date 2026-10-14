@@ -12,7 +12,7 @@ export function RouteLoading({ inline = false }: { inline?: boolean }) {
   return (
     <div className={cn('flex items-center justify-center', inline ? 'py-16' : 'min-h-screen')}>
       <div className="flex flex-col items-center gap-2">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
         {!inline && <p className="text-sm text-muted-foreground">Cargando...</p>}
       </div>
     </div>

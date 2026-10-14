@@ -78,7 +78,7 @@ const TASKS_PREVIEW_COUNT = 3;
 /** Ícono de sección en círculo, a la izquierda del título de cada card del dashboard. */
 function CardIcon({ icon: Icon }: { icon: ComponentType<{ className?: string }> }) {
   return (
-    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-brand">
       <Icon className="size-4" />
     </div>
   );

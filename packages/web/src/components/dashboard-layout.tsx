@@ -46,6 +46,14 @@ export function DashboardLayout() {
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }, [pathname]);
 
+  // Los portales (dialog, select, toast) cuelgan de <body>: sin la clase ahí
+  // abrirían oscuros arriba del contenido claro. Sale al desmontar, así login
+  // y landing no se enteran.
+  useEffect(() => {
+    document.body.classList.add('surface-light');
+    return () => document.body.classList.remove('surface-light');
+  }, []);
+
   return (
     <TooltipProvider delayDuration={300}>
       {/*
@@ -57,7 +65,7 @@ export function DashboardLayout() {
         la barra del navegador y dejaba parte del contenido tapada.
       */}
       <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground supports-[height:100dvh]:h-dvh">
-        <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border px-4">
+        <header className="surface-dark flex h-14 bg-background text-foreground shrink-0 items-center justify-between gap-4 border-b border-border px-4">
           <div className="flex min-w-0 items-center gap-3">
             <AppLogo />
             <HeaderTitle />
@@ -70,27 +78,20 @@ export function DashboardLayout() {
         </header>
 
         {/* Mobile: las secciones de la obra, como tira scrolleable. */}
-        <ProjectNavScroller />
+        <div className="surface-dark contents">
+          <ProjectNavScroller />
+        </div>
 
         <div className="flex min-h-0 flex-1">
-          {insideProject ? <ProjectSidebar /> : <DashboardRail />}
+          <div className="surface-dark contents">
+            {insideProject ? <ProjectSidebar /> : <DashboardRail />}
+          </div>
           {/*
-            La ilustración vive afuera del que scrollea: adentro se iría con
-            el contenido en vez de quedarse en la esquina.
-
-            Las vistas principales (Obras, Proveedores, Empleados, Nueva obra)
-            la llevan y el contenido va centrado. Adentro de una obra no: ahí
-            hay tablas y cronogramas que necesitan todo el ancho y un fondo
-            que no compita. Va con opacidad baja: son líneas finas, y a todo
-            color hacen ilegible el texto que cae encima.
+            Área de trabajo en superficie clara (ver `.surface-light` en
+            index.css). Sin ilustración de fondo: tablas y formularios
+            necesitan un fondo liso para leerse.
           */}
-          <div className="relative min-w-0 flex-1">
-            {!insideProject && (
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[url('/illustrations/estructura.png')] bg-contain bg-right-bottom bg-no-repeat opacity-[0.14] dark:opacity-20"
-              />
-            )}
+          <div className="surface-light relative min-w-0 flex-1 bg-background text-foreground">
             {/*
               pb-20 en mobile sólo cuando la barra inferior está: adentro de
               una obra no se muestra (la navegación es la tira de arriba), y
@@ -116,7 +117,11 @@ export function DashboardLayout() {
           </div>
         </div>
 
-        {!insideProject && <DashboardBottomNav />}
+        {!insideProject && (
+          <div className="surface-dark contents">
+            <DashboardBottomNav />
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );
