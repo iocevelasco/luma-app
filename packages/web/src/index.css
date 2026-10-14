@@ -146,16 +146,16 @@
     CONTROLES en la escala chica de VoltAgent y sube la escala de SUPERFICIE.
 
       rounded-xs  →  4px   chips micro, indicadores
-      rounded-sm  →  6px   CONTROLES — botón, input, select, textarea, toggle
+      rounded-sm  →  6px   CONTROLES — input, select, textarea, toggle
       rounded-md  →  8px   superficie densa — code block, menú chico
       rounded-lg  → 14px   menú, dropdown, toast, popover chico
       rounded-xl  → 18px   dialog, alert-dialog, popover grande
       rounded-2xl → 22px   panel destacado
       rounded-3xl → 28px   CARD — el radio dominante ahora (ver card.tsx)
 
-    `rounded-full` queda para lo que es un ESTADO, no una acción: badge,
-    avatar, switch, slider, progress, y los tags de estado inline. El botón
-    sigue sin ser píldora — 6px, nunca full.
+    `rounded-full` es la forma de los BOTONES —todas las variantes— y de los
+    estados: badge, avatar, switch, slider, progress. Lo que distingue a uno de
+    otro es el relieve (ver `--shadow-cta` más abajo), no el radio.
 
     Regla de anidado: el hijo va un escalón abajo del padre — un input de 6px
     dentro de una card de 28px.
@@ -192,6 +192,27 @@
   */
   --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
   --shadow-overlay: 0 20px 60px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(148 163 184 / 0.1) inset;
+
+  /*
+    Relieve de los botones. La forma ya no separa un botón de un badge —los dos
+    son píldora—, así que lo separa el volumen: el badge es plano, el botón se
+    levanta del lienzo.
+
+      cta          relleno (verde o rojo): bisel claro abajo, adentro, y una
+                   sombra que lo apoya. Es el que se lee "presionable".
+      raised       superficie neutra un escalón arriba: filete claro arriba y
+                   la misma sombra de apoyo, sin bisel.
+      cta-pressed  el estado :active de los dos — la luz se va adentro.
+
+    Las sombras de afuera son negras: un resplandor verde no es profundidad.
+  */
+  --shadow-cta:
+    inset 0 -3px 6px rgb(255 255 255 / 0.28), inset 0 2px 3px rgb(0 0 0 / 0.08),
+    0 1px 2px rgb(0 0 0 / 0.4), 0 8px 18px -8px rgb(0 0 0 / 0.7);
+  --shadow-raised:
+    inset 0 1px 0 rgb(255 255 255 / 0.07), 0 1px 2px rgb(0 0 0 / 0.5),
+    0 8px 20px -8px rgb(0 0 0 / 0.7);
+  --shadow-cta-pressed: inset 0 2px 4px rgb(0 0 0 / 0.25), 0 1px 1px rgb(0 0 0 / 0.3);
 
   /* Tokens de sección: no caen en la escalera numérica de Tailwind. */
   --spacing-section: 64px;

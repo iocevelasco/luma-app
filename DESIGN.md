@@ -109,17 +109,19 @@ Controles en la escala chica, superficies en la grande.
 |---|---|---|
 | `rounded-xs` | 4px | Chips micro, indicadores |
 | `rounded-sm` | 6px | **Input**, Select, Textarea, ítems de menú |
-| `rounded-md` | 8px | **Botones**, code blocks, filas internas |
+| `rounded-md` | 8px | Code blocks, filas internas |
 | `rounded-lg` | 14px | Dialog, menú, dropdown, toast |
 | `rounded-xl` | 18px | Popover grande, alert dialog |
 | `rounded-2xl` | 22px | Panel destacado |
 | `rounded-3xl` | **28px** | **Card** — el radio dominante |
-| `rounded-full` | píldora | **Sólo** estados: Badge, Avatar, Switch, Slider, Progress |
+| `rounded-full` | píldora | **Botones** —todas las variantes— y estados: Badge, Avatar, Switch, Slider, Progress |
 
 Dos reglas:
 
-1. **No hay botones píldora.** La píldora significa "esto es un estado", no
-   "esto se toca".
+1. **Los botones son píldora, y con relieve.** La forma la comparten con el
+   badge; lo que dice "esto se toca" es el volumen (ver *Profundidad*). Un
+   badge es plano y chico; un botón se levanta del lienzo. Una píldora plana
+   y sin borde no es un botón.
 2. **El hijo va un escalón abajo del padre.** Un input `rounded-sm` dentro de una
    card `rounded-3xl`. Un radio interno mayor que el del contenedor deja una luz
    visible en la esquina.
@@ -149,13 +151,44 @@ lleva una sombra suave de apoyo.
 
 Nada de `shadow-glow`: un resplandor de marca no es profundidad.
 
+### Relieve de los botones
+
+| Rol | Qué es | Uso |
+|---|---|---|
+| `shadow-cta` | Bisel claro abajo, adentro, y sombra negra de apoyo | Botón con relleno: primario y destructivo |
+| `shadow-raised` | Filete claro arriba y la misma sombra, sin bisel | Botón secundario — superficie neutra elevada |
+| `shadow-cta-pressed` | Sombra interna: la luz se va adentro | `:active` de los dos anteriores |
+
+El outline no lleva sombra: lo levanta el borde de 2px. Las sombras de afuera
+son negras siempre — el relieve es luz y sombra, no un halo verde.
+
+`cn()` registra estas sombras en `tailwind-merge` (`lib/utils.ts`): sin eso
+las toma por un color de sombra y no resuelve el conflicto con `shadow-none`.
+
 ## Componentes
 
-**Botón primario** — `bg-primary text-primary-foreground`, `rounded-md`, hover
-`primary-pressed`. Altura `h-9`, o `h-10` en `lg`.
+Los botones salen de una referencia de cuatro estados —elevado, contorno,
+relleno con bisel, relleno con anillo— traducida al lienzo oscuro:
 
-**Botón secundario / outline** — borde `border`, texto `foreground`, hover
-`accent`.
+**Botón primario** — píldora, `bg-primary text-primary-foreground`, filete
+`primary-pressed`, `shadow-cta`. Hover `primary-pressed`, `:active`
+`shadow-cta-pressed`. Altura `h-9`, o `h-10` en `lg`.
+
+**Botón secundario** — píldora, `bg-secondary`, `shadow-raised`. Hover sube el
+brillo; `:active` igual que el primario.
+
+**Botón outline** — píldora sin relleno, borde de 2px en `foreground` al 45%
+(70% en hover), texto `foreground`. No va en verde: son los "Cancelar" y
+"Volver" del panel, y el verde es para la acción principal.
+
+**Foco de un botón** — anillo verde de 2px separado del botón por 2px de aire
+(`outline` + `outline-offset`). Pegado, un anillo verde no se ve contra el
+relleno verde. Va con `outline` y no con `ring` porque el ring es box-shadow y
+pisaría el relieve.
+
+En la landing los CTA son links, no `Button`: usan `CTA_PRIMARY` y
+`CTA_OUTLINE` de `src/lib/cta.ts`, que son las mismas clases. La altura va con
+`h-*`, no con `py-*`: el outline tiene 2px de borde y el primario 1px.
 
 **Card** — `bg-card`, `rounded-3xl`, borde 1px, `shadow-surface`. Padding 16px en
 móvil, 24px desde `sm`.
@@ -172,7 +205,8 @@ En el panel **no va**: una app de trabajo no se firma en cada pantalla.
 
 ## Qué no hacer
 
-- No usar botones píldora.
+- No hacer un botón a escuadra ni una píldora plana: el botón es píldora con
+  relieve.
 - No agregar acentos fuera del verde: los colores de estado son información,
   no paleta.
 - No poner texto blanco sobre el verde: el texto es `primary-foreground`

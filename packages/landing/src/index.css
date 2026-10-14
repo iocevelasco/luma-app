@@ -89,7 +89,8 @@
 
   /* ─────────────── Radio — escala del panel ───────────────
      Controles chicos, superficies grandes: la card es `rounded-3xl`.
-     `rounded-full` queda para estados (badge, progress), no para botones. */
+     `rounded-full` es la forma de los CTA y de los estados (badge, progress);
+     al CTA lo distingue el relieve, no el radio. */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px; /* botones, inputs                              */
@@ -99,6 +100,16 @@
   --radius-3xl: 28px; /* card — el radio dominante                    */
 
   --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+
+  /* Relieve de los CTA — los mismos valores que el panel (ver ahí el porqué).
+     cta: relleno con bisel claro abajo · cta-pressed: el :active. */
+  --shadow-cta:
+    inset 0 -3px 6px rgb(255 255 255 / 0.28), inset 0 2px 3px rgb(0 0 0 / 0.08),
+    0 1px 2px rgb(0 0 0 / 0.4), 0 8px 18px -8px rgb(0 0 0 / 0.7);
+  --shadow-raised:
+    inset 0 1px 0 rgb(255 255 255 / 0.07), 0 1px 2px rgb(0 0 0 / 0.5),
+    0 8px 20px -8px rgb(0 0 0 / 0.7);
+  --shadow-cta-pressed: inset 0 2px 4px rgb(0 0 0 / 0.25), 0 1px 1px rgb(0 0 0 / 0.3);
 }
 
 @layer base {

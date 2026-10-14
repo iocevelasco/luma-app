@@ -58,7 +58,9 @@ export function FloatingActionButton({
   testId,
   className,
 }: FloatingActionButtonProps) {
-  const boton = 'gap-2 h-14 rounded-full px-5 shadow-lg shadow-black/30';
+  // La forma y el relieve los pone Button: una sombra propia acá pisaría el
+  // bisel, y un `shadow-black/30` lo pintaría de negro.
+  const boton = 'gap-2 h-14 px-5';
 
   return (
     <div
