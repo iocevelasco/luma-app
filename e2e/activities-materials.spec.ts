@@ -92,20 +92,37 @@ test.describe('planificación semanal y materiales', () => {
 
     await expect(page.getByText(MATERIAL_NAME)).toBeVisible();
 
-    // Recién cargado, está "por comprar": avanza al paso siguiente y confirma.
-    const toBuy = page.getByRole('region', { name: /por comprar/i });
+    // Recién cargado, está "por comprar" —la pestaña que abre por defecto—:
+    // avanza al paso siguiente y confirma.
+    const toBuy = page.getByRole('tabpanel', { name: /por comprar/i });
     await expect(toBuy.getByText(MATERIAL_NAME)).toBeVisible();
     await toBuy.getByRole('button', { name: /marcar solicitado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
     await expect(page.getByRole('alertdialog')).toBeHidden();
 
     // Sigue por comprar (solicitado todavía no es comprado); al marcarlo
-    // comprado pasa a la otra bolsa.
+    // comprado pasa a la otra pestaña.
     await toBuy.getByRole('button', { name: /marcar comprado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
     await expect(page.getByRole('alertdialog')).toBeHidden();
-    const bought = page.getByRole('region', { name: /comprados/i });
-    await expect(bought.getByText(MATERIAL_NAME)).toBeVisible();
+    // Antes de cambiar de pestaña: la inactiva se desmonta, y ahí un conteo en
+    // cero no probaría nada.
     await expect(toBuy.getByText(MATERIAL_NAME)).toHaveCount(0);
+
+    await page.getByRole('tab', { name: /comprados/i }).click();
+    const bought = page.getByRole('tabpanel', { name: /comprados/i });
+    await expect(bought.getByText(MATERIAL_NAME)).toBeVisible();
+
+    // Desde el resumen de la obra: la card de Compras tiene las mismas
+    // pestañas, y el material lleva a su fila, ya en la pestaña que corresponde.
+    await page.goto(page.url().replace(/\/materiales$/, ''));
+    await page.getByRole('tab', { name: /comprados/i }).click();
+    await page
+      .getByRole('tabpanel', { name: /comprados/i })
+      .getByRole('link', { name: MATERIAL_NAME })
+      .click();
+    await expect(page).toHaveURL(/\/materiales\?material=/);
+    await expect(page.getByRole('tab', { name: /comprados/i })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('li[aria-current="true"]')).toContainText(MATERIAL_NAME);
   });
 });

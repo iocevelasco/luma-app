@@ -52,12 +52,21 @@ export function projectMaterialsPath(projectId: string): string {
   return ROUTES.PROJECT_MATERIALS.replace(':projectId', projectId);
 }
 
-/** Las pestañas de Personal que se abren por link: `board` es el Tablero, la principal. */
+/**
+ * Un material puntual dentro de Compras: abre la pestaña donde está y lo
+ * resalta. No hay una pantalla de detalle aparte; la fila ya muestra todo y
+ * tiene las acciones.
+ */
+export function projectMaterialPath(projectId: string, materialId: string): string {
+  return `${projectMaterialsPath(projectId)}?material=${encodeURIComponent(materialId)}`;
+}
+
+/** Las pestañas de Tareas que se abren por link: `board` es el Tablero, la principal. */
 export type ProjectLaborTab = 'board' | 'day';
 
 /**
  * `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. Sin
- * pestaña abre el Tablero de metas; con `tab: 'day'`, la Jornada — es a donde
+ * pestaña abre el Tablero de tareas; con `tab: 'day'`, la Jornada — es a donde
  * lleva el aviso de faltantes de la card del detalle.
  */
 export function projectLaborPath(projectId: string, tab?: ProjectLaborTab): string {

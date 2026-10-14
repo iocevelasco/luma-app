@@ -120,10 +120,8 @@
     "dashboard": {
       "progress": "Avanço geral",
       "progressCount": "{{completed}} de {{total}} tarefas",
-      "purchases": "Compras realizadas",
+      "purchases": "Compras",
       "noPurchases": "Nenhum material foi comprado ainda.",
-      "toBuy_one": "{{count}} material para comprar",
-      "toBuy_other": "{{count}} materiais para comprar",
       "noDocuments": {
         "render": "Você ainda não carregou renders.",
         "plano": "Você ainda não carregou plantas."

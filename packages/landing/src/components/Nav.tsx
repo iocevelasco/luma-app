@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { switchLanguage } from '../i18n/config';
 import { LOGIN_URL } from '../lib/app-url';
+import { CTA_PRIMARY } from '../lib/cta';
 import { Logo } from './Logo';
 
 const LINKS = [
@@ -53,7 +54,7 @@ export function Nav() {
 
           <a
             href={LOGIN_URL}
-            className="cta-label rounded-md bg-primary px-4 py-2 text-xs text-primary-foreground transition-colors hover:bg-primary-pressed"
+            className={`${CTA_PRIMARY} h-9 px-4 text-xs`}
           >
             {t('nav.login')}
           </a>

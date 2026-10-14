@@ -199,17 +199,20 @@ Usá `bg-primary text-primary-foreground`. El rojo (`destructive`) significa
 | Clase | Valor | Se usa en |
 |---|---|---|
 | `rounded-sm` | 6px | Input, Select, Textarea, ítems de menú |
-| `rounded-md` | 8px | **Botones**, code blocks, filas internas |
+| `rounded-md` | 8px | Code blocks, filas internas |
 | `rounded-lg` | 14px | Dialog, menú, dropdown, toast |
 | `rounded-xl` / `rounded-2xl` | 18 / 22px | Popover grande, panel destacado |
 | `rounded-3xl` | **28px** | **Card** — el dominante |
 | `rounded-xs` | 4px | Chips micro, indicadores |
-| `rounded-full` | píldora | **Sólo**: Badge, Avatar, Switch, Slider, Progress |
+| `rounded-full` | píldora | **Botones** (todas las variantes), Badge, Avatar, Switch, Slider, Progress |
 
 Dos reglas:
 
-1. **No hay botones píldora.** La píldora significa "esto es un estado", no
-   "esto se toca".
+1. **Los botones son píldora, y con relieve.** Al badge también lo es; lo que
+   separa uno de otro es el volumen: `shadow-cta` en los rellenos,
+   `shadow-raised` en el secundario, borde de 2px en el outline. El `Button`
+   ya lo trae — no le pases `rounded-*` ni `shadow-*`. En la landing los CTA
+   son links y usan `CTA_PRIMARY` / `CTA_OUTLINE` de `src/lib/cta.ts`.
 2. **El hijo va un escalón abajo del padre.** Un Input `rounded-sm` dentro de una
    Card `rounded-3xl`. Un radio interno mayor que el del contenedor deja una luz
    visible en la esquina.
@@ -319,7 +322,7 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 | Pieza | Qué hace |
 |---|---|
 | `.claude/settings.json` | Permisos (los scripts del repo y los comandos de lectura no piden aprobación; deploy, `git push` y el seed están denegados) y el hook de post-edición |
-| `.claude/hooks/post-edit-check.sh` | Corre después de cada Edit/Write: paridad i18n, colores crudos, radios fuera de escala, botones píldora, strings inline, `components/ui/` editado, `shared` sin rebuildear |
+| `.claude/hooks/post-edit-check.sh` | Corre después de cada Edit/Write: paridad i18n, colores crudos, radios fuera de escala, CTA a escuadra, strings inline, `components/ui/` editado, `shared` sin rebuildear |
 | `.claude/hooks/pre-push-check.sh` | Bloquea todo `git push` cuyo destino sea main o master. El flujo es rama de feature + PR, y una regla de permisos no puede expresar "salvo a main" |
 | `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e, y cross-browser cuando corresponde |
 | `.claude/commands/feature.md` | `/feature <qué>` — implementa respetando el orden shared → api → capa 1 → capa 2 → UI → i18n |
