@@ -59,14 +59,16 @@ case "$REL" in
     ARB=$(grep -nE 'rounded(-[a-z0-9]+)?-\[' "$FILE" || true)
     [ -n "$ARB" ] && add "Radio arbitrario — el redondeo sale de la escala: rounded-md (8px) en botones, rounded-sm (6px) en inputs, rounded-3xl (28px) en cards. Ver DESIGN.md:"$'\n'"$(lines "$ARB")"
 
-    # La píldora no es la forma de los controles. rounded-full queda para lo
-    # que es un ESTADO — badge, avatar, switch, slider, progress — no para una
-    # acción.
-    PILL=$(grep -nE '<(Button|button)[^>]*rounded-full' "$FILE" || true)
-    [ -n "$PILL" ] && add "Botón píldora — este sistema no usa botones píldora. Los botones van rounded-md (8px); rounded-full queda para badges y avatares. Ver DESIGN.md:"$'\n'"$(lines "$PILL")"
+    # Los CTA son píldora con relieve. Un relleno verde con un radio de la
+    # escala chica es un CTA del sistema anterior que quedó a escuadra. Sólo
+    # cuenta la clase suelta: `data-[selected]:bg-primary` (un día del
+    # calendario) o `bg-primary/15` (un chip) no son un botón.
+    SQUARE=$(grep -nE '(^|[^:a-z-])bg-primary([^-/a-z]|$)' "$FILE" \
+      | grep -E '(^|[^:a-z-])rounded-(xs|sm|md|lg|xl|2xl|3xl)([^-a-z0-9]|$)' || true)
+    [ -n "$SQUARE" ] && add "CTA a escuadra — los botones son píldora con relieve. En el panel usá Button; en la landing, CTA_PRIMARY de src/lib/cta.ts. Ver DESIGN.md:"$'\n'"$(lines "$SQUARE")"
 
-    BTN=$(grep -nE '<Button[^>]*className="[^"]*rounded-' "$FILE" || true)
-    [ -n "$BTN" ] && add "Button con rounded-* propio — Button ya trae el radio del sistema; el override lo saca de la escala:"$'\n'"$(lines "$BTN")"
+    BTN=$(grep -nE '<Button[^>]*className="[^"]*(rounded|shadow)-' "$FILE" || true)
+    [ -n "$BTN" ] && add "Button con rounded-* o shadow-* propio — Button ya trae la píldora y el relieve; un override pisa el bisel (y un shadow-<color> lo pinta entero):"$'\n'"$(lines "$BTN")"
     ;;
 esac
 

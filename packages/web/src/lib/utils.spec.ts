@@ -33,6 +33,14 @@ describe('cn()', () => {
     expect(cn({ 'text-red-500': true, 'text-blue-500': false })).toBe('text-red-500');
   });
 
+  it('treats the theme shadows as shadows, not as shadow colors', () => {
+    expect(cn('shadow-cta', 'shadow-none')).toBe('shadow-none');
+    expect(cn('shadow-cta', 'shadow-lg')).toBe('shadow-lg');
+    expect(cn('shadow-raised', 'shadow-cta')).toBe('shadow-cta');
+    expect(cn('shadow-cta', 'shadow-black/30')).toBe('shadow-cta shadow-black/30');
+    expect(cn('shadow-cta', 'active:shadow-cta-pressed')).toBe('shadow-cta active:shadow-cta-pressed');
+  });
+
   it('returns empty string when no valid classes', () => {
     expect(cn(false, undefined, null)).toBe('');
   });

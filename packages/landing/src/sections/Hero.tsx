@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import obra480 from '../assets/images/obra-480.webp';
 import obra744 from '../assets/images/obra-744.webp';
 import { REGISTER_URL } from '../lib/app-url';
+import { CTA_OUTLINE, CTA_PRIMARY } from '../lib/cta';
 
 /**
  * Estados de la actividad de ejemplo, en el mismo orden que el array de i18n.
@@ -43,14 +44,11 @@ export function Hero() {
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <a
               href={REGISTER_URL}
-              className="cta-label rounded-md bg-primary px-6 py-3 text-sm text-primary-foreground transition-colors hover:bg-primary-pressed active:bg-primary-pressed"
+              className={`${CTA_PRIMARY} h-12 px-7 text-sm`}
             >
               {t('hero.cta')}
             </a>
-            <a
-              href="#how"
-              className="nav-label text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
+            <a href="#how" className={`${CTA_OUTLINE} h-12 px-7 text-sm`}>
               {t('hero.secondary')}
             </a>
           </div>

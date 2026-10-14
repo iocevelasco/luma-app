@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import type { Capability, DocumentCategory } from '@luma/shared';
 import {
+  ChevronRight,
   Gauge,
   Image,
   ListChecks,
@@ -27,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import { useBudget } from '@/hooks/budget/use-budget-queries';
 import { useProjectDocuments } from '@/hooks/documents/use-document-queries';
@@ -39,6 +41,7 @@ import { useProject, useUpdateProject } from '@/hooks/projects/use-project-queri
 import { Switch } from '@/components/ui/switch';
 import { activitiesOnDay, summarizeDayAttendance } from '@/lib/attendance';
 import { formatMoney } from '@/lib/format-money';
+import { organizeMaterials } from '@/lib/materials';
 import { iconForSpecialty } from '@/lib/specialty-icons';
 import { cn } from '@/lib/utils';
 import { currentWeekRange } from '@/lib/week';
@@ -47,6 +50,7 @@ import {
   projectBudgetPath,
   projectDocumentsPath,
   projectLaborPath,
+  projectMaterialPath,
   projectMaterialsPath,
   projectProvidersPath,
   projectTeamPath,
@@ -188,28 +192,31 @@ function ProgressCard({ projectId }: { projectId: string }) {
   );
 }
 
+/**
+ * Las mismas dos pestañas que Compras, resumidas: sólo el nombre de cada
+ * material. Cada uno lleva a su fila en Compras, que es donde están la
+ * cantidad, el proveedor y las acciones. Abre en "Por comprar", igual que la
+ * pantalla: es lo que puede frenar una actividad.
+ */
 function MaterialsCard({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const { data } = useMaterials(projectId);
+  const { data: activitiesData } = useAllActivities(projectId);
 
-  const { purchased, toBuyCount } = useMemo(() => {
-    const materials = data?.materials ?? [];
-    const isPurchased = (status: string) => status === 'comprado' || status === 'en_obra';
-    return {
-      purchased: materials
-        .filter((material) => isPurchased(material.status))
-        .sort((a, b) =>
-          (b.statusChangedAt ?? b.updatedAt).localeCompare(a.statusChangedAt ?? a.updatedAt),
-        )
-        .slice(0, CARD_PREVIEW_COUNT),
-      // Lo que todavía no se compró es lo que puede frenar una actividad: no
-      // se lista (la card es de lo comprado) pero se cuenta, para que quien
-      // mira el resumen no tenga que entrar a Materiales a enterarse.
-      toBuyCount: materials.filter(
-        (material) => material.status === 'pendiente' || material.status === 'solicitado',
-      ).length,
-    };
-  }, [data]);
+  const { toBuy, bought } = useMemo(() => {
+    const activityById = new Map(
+      (activitiesData?.activities ?? []).map((activity) => [
+        activity.id,
+        { name: activity.name, startDate: activity.startDate },
+      ]),
+    );
+    return organizeMaterials(data?.materials ?? [], activityById);
+  }, [data, activitiesData]);
+
+  const tabs = [
+    { value: 'toBuy', label: t('material.list.toBuy'), items: toBuy, empty: t('material.list.toBuyEmpty') },
+    { value: 'bought', label: t('material.list.bought'), items: bought, empty: t('project.dashboard.noPurchases') },
+  ] as const;
 
   return (
     <Card>
@@ -222,32 +229,41 @@ function MaterialsCard({ projectId }: { projectId: string }) {
           <Link to={projectMaterialsPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
         </Button>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {purchased.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('project.dashboard.noPurchases')}</p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {purchased.map((material) => (
-              <li key={material.id} className="flex items-center justify-between gap-2 text-sm">
-                <div>
-                  <p className="font-medium">{material.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {material.quantity} {t(`material.unit.${material.unit}`)}
-                  </p>
-                </div>
-                <Badge variant="secondary">{t(`material.status.${material.status}`)}</Badge>
-              </li>
+      <CardContent>
+        <Tabs defaultValue="toBuy" className="gap-3">
+          <TabsList className="w-full">
+            {/*
+              `text-xs`: en tres columnas la card deja ~230px de contenido, y
+              los dos rótulos con su conteo a `text-sm` no entran.
+            */}
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="px-1.5 text-xs">
+                {tab.label} ({tab.items.length})
+              </TabsTrigger>
             ))}
-          </ul>
-        )}
-        {toBuyCount > 0 && (
-          <Link
-            to={projectMaterialsPath(projectId)}
-            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-          >
-            {t('project.dashboard.toBuy', { count: toBuyCount })}
-          </Link>
-        )}
+          </TabsList>
+          {tabs.map((tab) => (
+            <TabsContent key={tab.value} value={tab.value}>
+              {tab.items.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{tab.empty}</p>
+              ) : (
+                <ul className="flex flex-col">
+                  {tab.items.slice(0, CARD_PREVIEW_COUNT).map((material) => (
+                    <li key={material.id}>
+                      <Link
+                        to={projectMaterialPath(projectId, material.id)}
+                        className="-mx-2 flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span className="truncate">{material.name}</span>
+                        <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
       </CardContent>
     </Card>
   );

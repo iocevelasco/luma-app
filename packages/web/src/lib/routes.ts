@@ -52,6 +52,15 @@ export function projectMaterialsPath(projectId: string): string {
   return ROUTES.PROJECT_MATERIALS.replace(':projectId', projectId);
 }
 
+/**
+ * Un material puntual dentro de Compras: abre la pestaña donde está y lo
+ * resalta. No hay una pantalla de detalle aparte; la fila ya muestra todo y
+ * tiene las acciones.
+ */
+export function projectMaterialPath(projectId: string, materialId: string): string {
+  return `${projectMaterialsPath(projectId)}?material=${encodeURIComponent(materialId)}`;
+}
+
 /** Las pestañas de Personal que se abren por link: `day` es la Jornada, la de siempre. */
 export type ProjectLaborTab = 'day' | 'board';
 
