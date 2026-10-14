@@ -6,7 +6,12 @@ import type { NextFunction, Request, Response } from 'express';
  * donde ya trabaja no se deja, y lo del dueño de la Empresa no cruza a otra.
  */
 vi.mock('../../models/Provider.js', () => ({ Provider: { findOne: vi.fn(), find: vi.fn() } }));
-vi.mock('../../models/CrewMember.js', () => ({ CrewMember: { findOne: vi.fn(), find: vi.fn() } }));
+vi.mock('../../models/CrewMember.js', () => ({
+  CrewMember: { findOne: vi.fn(), find: vi.fn(), create: vi.fn() },
+}));
+vi.mock('../../services/crew-identity.service.js', () => ({
+  assertNoCrewDuplicate: vi.fn(),
+}));
 vi.mock('../../models/ProjectProvider.js', () => ({
   ProjectProvider: { findOne: vi.fn(), find: vi.fn(), updateOne: vi.fn(), insertMany: vi.fn() },
 }));
@@ -20,7 +25,6 @@ vi.mock('../../models/ActivityCrew.js', () => ({ ActivityCrew: { exists: vi.fn()
 vi.mock('../../models/ProviderEngagement.js', () => ({ ProviderEngagement: { exists: vi.fn() } }));
 vi.mock('../../models/Expense.js', () => ({ Expense: { exists: vi.fn() } }));
 vi.mock('../../models/LaborRecord.js', () => ({ LaborRecord: { exists: vi.fn() } }));
-vi.mock('../../models/CrewGoal.js', () => ({ CrewGoal: { exists: vi.fn() } }));
 vi.mock('../../services/organization.service.js', () => ({
   findMyOrganizationId: vi.fn(),
 }));
@@ -32,10 +36,18 @@ const { ProviderEngagement } = await import('../../models/ProviderEngagement.js'
 const { Expense } = await import('../../models/Expense.js');
 const { Project } = await import('../../models/Project.js');
 const { Provider } = await import('../../models/Provider.js');
+const { CrewMember } = await import('../../models/CrewMember.js');
+const { ProjectCrewMember } = await import('../../models/ProjectCrewMember.js');
 const { findMyOrganizationId } = await import('../../services/organization.service.js');
-const { removeProviderFromProject, setOrganizationProviderProjects } = await import(
-  '../../controllers/directory.controller.js'
-);
+const { assertNoCrewDuplicate } = await import('../../services/crew-identity.service.js');
+const { conflict } = await import('../../utils/errors.js');
+const {
+  addCrewMemberToProject,
+  createOrganizationCrewMember,
+  listCrewDirectory,
+  removeProviderFromProject,
+  setOrganizationProviderProjects,
+} = await import('../../controllers/directory.controller.js');
 
 function mockRes(): Response {
   const res = {} as Response;
@@ -116,5 +128,154 @@ describe('setOrganizationProviderProjects', () => {
 
     expect(error?.code).toBe('VALIDATION');
     expect(ProjectProvider.insertMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('addCrewMemberToProject — sumar a alguien que ya está en la Empresa', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const crewMember = (active: boolean) => ({
+    _id: 'crew-1',
+    organization: 'org-1',
+    scope: 'organization',
+    name: 'Juan Pérez',
+    kind: 'persona',
+    isLead: false,
+    active,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    save: vi.fn(),
+  });
+
+  function req(body: Record<string, unknown>, canManage: boolean) {
+    return {
+      project,
+      params: { crewMemberId: 'crew-1' },
+      body,
+      can: (capability: string) => canManage && capability === 'crew.manage',
+    } as never;
+  }
+
+  it('suma al activo sin más', async () => {
+    vi.mocked(CrewMember.findOne).mockResolvedValue(crewMember(true) as never);
+
+    const { res, error } = await run(addCrewMemberToProject, req({}, false));
+
+    expect(error).toBeUndefined();
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(ProjectCrewMember.updateOne).toHaveBeenCalled();
+  });
+
+  it('409 si está dado de baja y no se pidió reactivarlo', async () => {
+    vi.mocked(CrewMember.findOne).mockResolvedValue(crewMember(false) as never);
+
+    const { error } = await run(addCrewMemberToProject, req({}, true));
+
+    expect(error?.code).toBe('CONFLICT');
+    expect(ProjectCrewMember.updateOne).not.toHaveBeenCalled();
+  });
+
+  it('reactivar es del gerente: el supervisor recibe 403', async () => {
+    const member = crewMember(false);
+    vi.mocked(CrewMember.findOne).mockResolvedValue(member as never);
+
+    const { error } = await run(addCrewMemberToProject, req({ reactivate: true }, false));
+
+    expect(error?.code).toBe('FORBIDDEN');
+    expect(member.save).not.toHaveBeenCalled();
+  });
+
+  it('el gerente lo reactiva y lo suma en un paso', async () => {
+    const member = crewMember(false);
+    vi.mocked(CrewMember.findOne).mockResolvedValue(member as never);
+
+    const { res } = await run(addCrewMemberToProject, req({ reactivate: true }, true));
+
+    expect(member.active).toBe(true);
+    expect(member.save).toHaveBeenCalled();
+    expect(ProjectCrewMember.updateOne).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+});
+
+describe('createOrganizationCrewMember — mismo guardia que desde la obra', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('si ya existe no crea y devuelve el 409', async () => {
+    vi.mocked(findMyOrganizationId).mockResolvedValue('org-1' as never);
+    vi.mocked(assertNoCrewDuplicate).mockRejectedValueOnce(conflict('Ya existe', { reason: 'name' }));
+
+    const { error } = await run(createOrganizationCrewMember, {
+      user: { sub: 'user-1' },
+      body: { name: 'Juan Pérez' },
+    } as never);
+
+    expect(error?.code).toBe('CONFLICT');
+    expect(CrewMember.create).not.toHaveBeenCalled();
+  });
+
+  it('consulta al guardia sin obra: desde la Empresa no hay "ya está acá"', async () => {
+    vi.mocked(findMyOrganizationId).mockResolvedValue('org-1' as never);
+    vi.mocked(CrewMember.create).mockResolvedValue({
+      _id: 'crew-2',
+      organization: 'org-1',
+      scope: 'organization',
+      name: 'María',
+      kind: 'persona',
+      isLead: false,
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+
+    await run(createOrganizationCrewMember, {
+      user: { sub: 'user-1' },
+      body: { name: 'María', phone: '1155555555' },
+    } as never);
+
+    expect(assertNoCrewDuplicate).toHaveBeenCalledWith('org-1', {
+      name: 'María',
+      phone: '1155555555',
+      kind: 'persona',
+      allowDuplicateName: undefined,
+    });
+  });
+});
+
+describe('listCrewDirectory — ficha completa, sin plata', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('devuelve teléfono y notas (el supervisor ve todo del obrero) pero nunca el jornal', async () => {
+    vi.mocked(ProjectCrewMember.find).mockReturnValue({
+      distinct: vi.fn().mockResolvedValue([]),
+    } as never);
+    vi.mocked(CrewMember.find).mockReturnValue({
+      sort: vi.fn().mockResolvedValue([
+        {
+          _id: 'crew-1',
+          organization: 'org-1',
+          scope: 'organization',
+          name: 'Juan Pérez',
+          kind: 'persona',
+          isLead: false,
+          phone: '11 5555 5555',
+          notes: 'Trabajó en la obra de Palermo',
+          dailyRate: 25000,
+          active: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]),
+    } as never);
+
+    const { res } = await run(listCrewDirectory, { project } as never);
+
+    const body = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(body.data.crewMembers[0]).toMatchObject({
+      id: 'crew-1',
+      phone: '11 5555 5555',
+      notes: 'Trabajó en la obra de Palermo',
+    });
+    expect(body.data.crewMembers[0]).not.toHaveProperty('dailyRate');
   });
 });

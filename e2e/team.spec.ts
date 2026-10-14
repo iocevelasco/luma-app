@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
-import { pickActivitySpecialty } from './helpers/activity';
+import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
+import { addCrewMember, addTask, boardColumn, moveTask, taskCard } from './helpers/crew';
 
 /**
  * Flujo del Supervisor de obra: se invita **a una obra puntual**, no a la
@@ -53,13 +54,13 @@ test.describe('Supervisor de obra', () => {
     // El gerente planifica. El supervisor reporta sobre esto, no lo crea.
     const projectUrl = page.url();
     await page.goto(`${projectUrl}/actividades`);
-    await page.getByRole('button', { name: /nueva actividad/i }).click();
+    await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(ACTIVITY_NAME);
     await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill('2026-09-05');
     await page.locator('#activity-end').fill('2026-09-10');
-    await page.locator('#activity-responsible').fill('Cuadrilla 1');
-    await page.getByRole('button', { name: /crear actividad/i }).click();
+    await pickActivityResponsible(page);
+    await page.getByRole('button', { name: /crear tarea/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
     // Acceso a ESTA obra, con el rol explícito, desde la pantalla de equipo.
@@ -77,11 +78,15 @@ test.describe('Supervisor de obra', () => {
     await supervisorPage.getByRole('link', { name: PROJECT_NAME }).click();
     await expect(supervisorPage.getByText(ACTIVITY_NAME).first()).toBeVisible();
 
-    // No planifica: el botón de crear actividad no existe para él.
+    // Crea tareas, pero no modifica lo planificado: ve "Nueva tarea" y no
+    // ve "Editar" en la tarea que cargó el gerente.
     await supervisorPage.goto(`${projectUrl}/actividades`);
-    await expect(
-      supervisorPage.getByRole('button', { name: /nueva actividad/i }),
-    ).toHaveCount(0);
+    await expect(supervisorPage.getByRole('button', { name: /nueva tarea/i })).toBeVisible();
+    await supervisorPage.getByRole('gridcell', { name: ACTIVITY_NAME, exact: true }).click();
+    const detail = supervisorPage.getByRole('dialog');
+    await expect(detail.getByText(ACTIVITY_NAME).first()).toBeVisible();
+    await expect(detail.getByRole('button', { name: /^editar$/i })).toHaveCount(0);
+    await detail.getByRole('button', { name: /^atrás$/i }).click();
 
     // No ve plata: ni presupuesto ni Consultor IA, ni como pestaña ni por URL.
     await expect(supervisorPage.getByRole('link', { name: /^presupuesto$/i })).toHaveCount(0);
@@ -94,6 +99,53 @@ test.describe('Supervisor de obra', () => {
     // Y no administra accesos: la pestaña de equipo no existe para él.
     await supervisorPage.goto(projectUrl);
     await expect(supervisorPage.getByRole('link', { name: /^equipo$/i })).toHaveCount(0);
+
+    // Suma personal a SU obra —es quien está cuando llega alguien nuevo—, pero
+    // no administra el roster: ni sacar, ni dar de baja, ni traer de la Empresa.
+    await expect(supervisorPage.getByText(/tareas de la semana/i)).toBeVisible();
+    await supervisorPage.goto(`${projectUrl}/personal`);
+    const worker = `Obrero del supervisor ${RUN_ID}`;
+    await addCrewMember(supervisorPage, { name: worker });
+    await supervisorPage.getByRole('button', { name: /^personal fijo$/i }).click();
+    const roster = supervisorPage.getByRole('dialog');
+    await expect(roster.getByText(worker)).toBeVisible();
+    await expect(roster.getByRole('button', { name: /agregar de la empresa/i })).toHaveCount(0);
+    await expect(roster.getByRole('button', { name: /sacar de la obra|dar de baja/i })).toHaveCount(0);
+    await roster.getByRole('button', { name: /close/i }).click();
+
+    // --- Crea una tarea en el Tablero y la mueve hasta revisión ---
+    const task = `Limpiar el obrador ${RUN_ID}`;
+    await addTask(supervisorPage, worker, task);
+    await moveTask(supervisorPage, task, /mover a en revisión/i);
+    await expect(
+      boardColumn(supervisorPage, /^en revisión$/i).getByRole('article', { name: task }),
+    ).toBeVisible();
+    // Cerrarla, cancelarla o borrarla no es suyo: el menú no lo ofrece.
+    await taskCard(supervisorPage, task)
+      .getByRole('button', { name: /acciones de la tarea/i })
+      .click();
+    await expect(supervisorPage.getByRole('menuitem', { name: /aprobar/i })).toHaveCount(0);
+    await expect(supervisorPage.getByRole('menuitem', { name: /cancelar tarea/i })).toHaveCount(0);
+    await expect(supervisorPage.getByRole('menuitem', { name: /eliminar/i })).toHaveCount(0);
+    await supervisorPage.keyboard.press('Escape');
+
+    // --- La misma tarea está en el Cronograma: es una sola entidad ---
+    await page.goto(`${projectUrl}/actividades`);
+    await expect(page.getByRole('gridcell', { name: task, exact: true })).toBeVisible();
+
+    // --- El gerente la aprueba desde el Tablero ---
+    await page.goto(`${projectUrl}/personal`);
+    await moveTask(page, task, /^aprobar$/i);
+    await expect(boardColumn(page, /^completada$/i).getByRole('article', { name: task })).toBeVisible();
+
+    // Una vez completada, el supervisor ya no la puede mover: no tiene menú.
+    await supervisorPage.reload();
+    await expect(
+      boardColumn(supervisorPage, /^completada$/i).getByRole('article', { name: task }),
+    ).toBeVisible();
+    await expect(
+      taskCard(supervisorPage, task).getByRole('button', { name: /acciones de la tarea/i }),
+    ).toHaveCount(0);
 
     await supervisorContext.close();
   });

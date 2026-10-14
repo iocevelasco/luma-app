@@ -24,7 +24,6 @@ export enum QueryKeys {
   providerActivities = 'provider-activities',
   providerEngagements = 'provider-engagements',
   crewMembers = 'crew-members',
-  crewGoals = 'crew-goals',
   activityCrew = 'activity-crew',
   projectDocuments = 'project-documents',
   milestones = 'milestones',

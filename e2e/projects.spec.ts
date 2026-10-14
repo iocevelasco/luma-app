@@ -42,7 +42,12 @@ test.describe('empresa, obra e invitación del cliente', () => {
     await page.goto(appUrl('/admin/settings/account'));
     await expect(page.locator('#org-name')).toHaveValue(OWNER_NAME);
     await page.locator('#org-name').fill(NEW_ORG_NAME);
-    await page.getByRole('button', { name: /^guardar$/i }).click();
+    // La pantalla de cuenta tiene un "Guardar" por sección: el de la Empresa.
+    await page
+      .locator('form')
+      .filter({ has: page.locator('#org-name') })
+      .getByRole('button', { name: /^guardar$/i })
+      .click();
     await expect(page.getByText(/datos de la empresa guardados/i)).toBeVisible();
     await expect(page.locator('#org-name')).toHaveValue(NEW_ORG_NAME);
 
@@ -89,6 +94,15 @@ test.describe('empresa, obra e invitación del cliente', () => {
     await expect(clientPage.getByRole('link', { name: /^gastos$/i })).toHaveCount(0);
     // Pero sí ve su cronograma de pagos: es su fila de la matriz de roles.
     await expect(clientPage.getByRole('link', { name: /^pagos$/i })).toBeVisible();
+
+    // Ve las tareas de la semana —las mismas del cronograma que ya ve—, pero
+    // no el Tablero ni la Jornada: quién trabaja y quién vino es interno
+    // (regla 4).
+    await expect(clientPage.getByRole('link', { name: /^tareas$/i })).toHaveCount(0);
+    await clientPage.getByRole('link', { name: /^detalle$/i }).click();
+    await expect(clientPage.getByText(/avance general/i)).toBeVisible();
+    await expect(clientPage.getByText(/tareas de la semana/i)).toBeVisible();
+    await expect(clientPage.getByRole('button', { name: /agregar personal/i })).toHaveCount(0);
 
     await clientContext.close();
   });

@@ -131,7 +131,7 @@ export async function createMilestone(req: Request, res: Response) {
     if (activityId) {
       const found = await Activity.findOne({ _id: activityId, project: project._id }).select('_id');
       if (!found) {
-        return res.status(400).json({ success: false, error: 'La actividad no es de esta obra' });
+        return res.status(400).json({ success: false, error: 'La tarea no es de esta obra' });
       }
       activity = String(found._id);
     }

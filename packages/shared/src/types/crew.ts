@@ -1,11 +1,11 @@
 import type { ProviderSpecialty } from './provider.js';
 
 /**
- * Personal fijo de obra y sus metas semanales.
+ * Personal fijo de obra.
  *
- * Distinto de `LaborRecord` (RF-03), que es la asistencia del día: presente o
- * ausente, hoy. Esto es lo que alguien tiene que LOGRAR esta semana, cargado
- * una o dos semanas antes. Las dos cosas conviven sin pisarse.
+ * Lo que cada uno tiene que hacer ya no vive acá: es una tarea (`Activity`)
+ * con la persona como responsable y en su cuadrilla. Las "metas semanales"
+ * que había se migraron a tareas — ver `migrate-crew.ts`.
  *
  * Distinto también de `Provider`: el proveedor entra, termina una tarea y se
  * va; el personal fijo está toda la ejecución haciendo actividades varias.
@@ -47,33 +47,6 @@ export interface CrewMember {
   dailyRate?: number;
 }
 
-/**
- * `pendiente` no es lo mismo que `no_cumplida`: un booleano confunde "todavía
- * no" con "no se logró", y justamente el incumplimiento es el dato que le
- * dice al ejecutante que está planificando de más.
- */
-export type CrewGoalStatus = 'pendiente' | 'cumplida' | 'no_cumplida';
-
-export interface CrewGoal {
-  id: string;
-  projectId: string;
-  crewMemberId: string;
-  /** Lunes de la semana, `YYYY-MM-DD`. Es la unidad de planificación (RF-01). */
-  weekStart: string;
-  description: string;
-  /** Opcional: la meta puede no mapear a una actividad puntual del cronograma. */
-  activityId?: string;
-  status: CrewGoalStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** La meta con el nombre de quien la tiene ya resuelto, para no pedir el roster aparte. */
-export interface CrewGoalWithMember extends CrewGoal {
-  crewMemberName: string;
-  crewMemberKind: CrewMemberKind;
-}
-
 export interface CrewMemberListResponse {
   crewMembers: CrewMember[];
 }
@@ -95,10 +68,30 @@ export interface CrewMemberResponse {
   crewMember: CrewMember;
 }
 
-export interface CrewGoalListResponse {
-  goals: CrewGoalWithMember[];
+
+/**
+ * Con quién chocó un alta: lo justo para nombrarlo en el banner y ofrecer
+ * sumarlo. La ficha completa sale del roster una vez que está en la obra.
+ */
+export interface CrewMemberSummary {
+  id: string;
+  name: string;
+  kind: CrewMemberKind;
+  specialty?: ProviderSpecialty;
+  isLead: boolean;
 }
 
-export interface CrewGoalResponse {
-  goal: CrewGoal;
+/**
+ * `details` del 409 cuando un alta choca con alguien que ya está en la
+ * Empresa. El frontend ramifica por `reason`, nunca por el texto.
+ *
+ * - `phone`: mismo teléfono y mismo tipo. Es la misma persona, sin excepción.
+ * - `name`: mismo nombre. Puede ser un homónimo: se puede insistir con
+ *   `allowDuplicateName`.
+ */
+export interface CrewDuplicateDetails {
+  reason: 'phone' | 'name';
+  existing: CrewMemberSummary & { active: boolean };
+  /** Ya está en la obra desde la que se intentó el alta: no hay nada que sumar. */
+  alreadyInProject: boolean;
 }

@@ -1,19 +1,15 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import {
-  createCrewGoalSchema,
   createCrewMemberSchema,
-  updateCrewGoalSchema,
   updateCrewMemberSchema,
-  type CrewGoal as CrewGoalDTO,
-  type CrewGoalWithMember,
   type CrewMember as CrewMemberDTO,
 } from '@luma/shared';
-import { Activity } from '../models/Activity.js';
 import { ProjectCrewMember } from '../models/ProjectCrewMember.js';
-import { CrewGoal, type ICrewGoal } from '../models/CrewGoal.js';
 import { CrewMember, type ICrewMember } from '../models/CrewMember.js';
 import type { IProject } from '../models/Project.js';
+import { assertNoCrewDuplicate } from '../services/crew-identity.service.js';
 import { visibleCrewFilter } from '../services/directory.service.js';
+import { badRequest } from '../utils/errors.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
@@ -37,20 +33,6 @@ export function toCrewMemberDTO(member: ICrewMember): CrewMemberDTO {
   };
 }
 
-function toGoalDTO(goal: ICrewGoal): CrewGoalDTO {
-  return {
-    id: String(goal._id),
-    projectId: String(goal.project),
-    crewMemberId: String(goal.crewMember),
-    weekStart: goal.weekStart,
-    description: goal.description,
-    activityId: goal.activity ? String(goal.activity) : undefined,
-    status: goal.status,
-    createdAt: goal.createdAt.toISOString(),
-    updatedAt: goal.updatedAt.toISOString(),
-  };
-}
-
 // --- Roster ---
 
 /** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
@@ -69,34 +51,49 @@ export async function listCrewMembers(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
-export async function createCrewMember(req: Request, res: Response) {
+/**
+ * Requiere `requireProjectAccess` + `requireCapability('crew.create')`: lo
+ * hacen el gerente y el supervisor.
+ *
+ * Todo alta va a la libreta de la Empresa y queda asignada a esta obra. Ya no
+ * existe el "sólo para esta obra": un obrero cargado acá tiene que poder
+ * sumarse a la próxima sin recrearlo.
+ *
+ * Antes de crear, el guardia de duplicados (`crew-identity.service.ts`): si
+ * ya está en la Empresa, 409 con la persona existente para sumarla en vez de
+ * duplicarla.
+ *
+ * El jornal es plata: sólo se guarda si quien carga puede ver gastos. El
+ * supervisor no lo ve, así que tampoco lo escribe — ni con un `curl`.
+ */
+export async function createCrewMember(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = createCrewMemberSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
-    }
+    if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
 
     const project = req.project as IProject;
-    const crewMember = await CrewMember.create({
-      ...parsed.data,
-      organization: project.organization,
-      project: parsed.data.scope === 'project' ? project._id : null,
-    });
+    const { allowDuplicateName, dailyRate, ...fields } = parsed.data;
 
-    // Igual que con los proveedores: lo creado desde una obra queda en ella.
-    if (crewMember.scope !== 'project') {
-      await ProjectCrewMember.create({ project: project._id, crewMember: crewMember._id });
-    }
+    await assertNoCrewDuplicate(
+      project.organization,
+      { name: fields.name, phone: fields.phone, kind: fields.kind, allowDuplicateName },
+      String(project._id),
+    );
+
+    const crewMember = await CrewMember.create({
+      ...fields,
+      ...(dailyRate !== undefined && req.can?.('expense.read') ? { dailyRate } : {}),
+      scope: 'organization',
+      organization: project.organization,
+      project: null,
+    });
+    await ProjectCrewMember.create({ project: project._id, crewMember: crewMember._id });
 
     return res
       .status(201)
       .json({ success: true, data: { crewMember: toCrewMemberDTO(crewMember) } });
   } catch (error) {
-    console.error('❌ [CREW] createCrewMember:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
+    return next(error);
   }
 }
 
@@ -148,159 +145,6 @@ export async function deactivateCrewMember(req: Request, res: Response) {
     return res.json({ success: true, data: { crewMember: toCrewMemberDTO(crewMember) } });
   } catch (error) {
     console.error('❌ [CREW] deactivateCrewMember:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
-
-// --- Metas semanales ---
-
-/**
- * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Filtra por
- * `?weekStart=YYYY-MM-DD`; sin el parámetro devuelve todas las de la obra.
- *
- * Trae el nombre de cada destinatario resuelto: la pantalla de metas siempre
- * los necesita, y pedir el roster aparte para cruzarlo a mano es una llamada
- * extra garantizada.
- */
-export async function listCrewGoals(req: Request, res: Response) {
-  try {
-    const project = req.project as IProject;
-    const { weekStart } = req.query as { weekStart?: string };
-
-    const filter: Record<string, unknown> = { project: project._id };
-    if (weekStart) filter.weekStart = weekStart;
-
-    const goals = await CrewGoal.find(filter)
-      .sort({ weekStart: 1, createdAt: 1 })
-      .populate<{ crewMember: ICrewMember }>('crewMember');
-
-    const withMember: CrewGoalWithMember[] = goals
-      .filter((goal) => goal.crewMember)
-      .map((goal) => ({
-        ...toGoalDTO(goal as unknown as ICrewGoal),
-        crewMemberId: String(goal.crewMember._id),
-        crewMemberName: goal.crewMember.name,
-        crewMemberKind: goal.crewMember.kind,
-      }));
-
-    return res.json({ success: true, data: { goals: withMember } });
-  } catch (error) {
-    console.error('❌ [CREW] listCrewGoals:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
-
-/**
- * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Planificar
- * la semana es trabajo operativo: lo hace el dueño o el Asistente de Obra.
- */
-export async function createCrewGoal(req: Request, res: Response) {
-  if (!req.user) {
-    return res.status(401).json({ success: false, error: 'Authentication required' });
-  }
-
-  try {
-    const parsed = createCrewGoalSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
-    }
-
-    const project = req.project as IProject;
-
-    const crewMember = await CrewMember.findOne({
-      _id: parsed.data.crewMemberId,
-      ...(await visibleCrewFilter(project)),
-    });
-    if (!crewMember) {
-      return res.status(404).json({ success: false, error: 'Personal no encontrado' });
-    }
-
-    if (parsed.data.activityId) {
-      const activity = await Activity.findOne({
-        _id: parsed.data.activityId,
-        project: project._id,
-      });
-      if (!activity) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Esa actividad no pertenece a esta obra' });
-      }
-    }
-
-    const goal = await CrewGoal.create({
-      project: project._id,
-      crewMember: crewMember._id,
-      weekStart: parsed.data.weekStart,
-      description: parsed.data.description,
-      activity: parsed.data.activityId ?? null,
-      status: parsed.data.status,
-      createdBy: req.user.sub,
-    });
-
-    return res.status(201).json({ success: true, data: { goal: toGoalDTO(goal) } });
-  } catch (error) {
-    console.error('❌ [CREW] createCrewGoal:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
-
-/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
-export async function updateCrewGoal(req: Request, res: Response) {
-  try {
-    const parsed = updateCrewGoalSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
-    }
-
-    const project = req.project as IProject;
-    const { activityId, ...rest } = parsed.data;
-
-    if (activityId) {
-      const activity = await Activity.findOne({ _id: activityId, project: project._id });
-      if (!activity) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Esa actividad no pertenece a esta obra' });
-      }
-    }
-
-    const goal = await CrewGoal.findOneAndUpdate(
-      { _id: req.params.goalId, project: project._id },
-      { ...rest, ...(activityId ? { activity: activityId } : {}) },
-      { new: true },
-    );
-
-    if (!goal) {
-      return res.status(404).json({ success: false, error: 'Meta no encontrada' });
-    }
-
-    return res.json({ success: true, data: { goal: toGoalDTO(goal) } });
-  } catch (error) {
-    console.error('❌ [CREW] updateCrewGoal:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
-
-/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Borrado duro. */
-export async function deleteCrewGoal(req: Request, res: Response) {
-  try {
-    const project = req.project as IProject;
-    const goal = await CrewGoal.findOneAndDelete({
-      _id: req.params.goalId,
-      project: project._id,
-    });
-
-    if (!goal) {
-      return res.status(404).json({ success: false, error: 'Meta no encontrada' });
-    }
-
-    return res.json({ success: true, data: { goalId: String(goal._id) } });
-  } catch (error) {
-    console.error('❌ [CREW] deleteCrewGoal:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }
 }

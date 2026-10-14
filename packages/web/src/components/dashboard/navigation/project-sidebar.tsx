@@ -5,17 +5,19 @@ import { ROUTES } from '@/lib/routes';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { cn } from '@/lib/utils';
+import { NavRailItem } from './nav-rail-item';
 import { visibleProjectNavItems } from './project-nav-items';
 
 /**
- * Navegación de una obra.
+ * Navegación de una obra, en desktop: un riel de íconos con tooltip.
  *
- * Vivía como pestañas en el header y no entraba: con doce secciones el nav se
- * partía en dos filas y se comía la cabecera. En una columna, doce ítems con
- * ícono y etiqueta se leen de un vistazo y hay lugar para los que vengan.
+ * Primero fueron pestañas en el header (con doce secciones se partían en dos
+ * filas), después una columna de 224px con ícono y etiqueta. Esa columna se
+ * comía el ancho que el Tablero de tareas necesita, así que ahora es el mismo
+ * riel angosto que fuera de una obra: ícono, y en el tooltip el nombre y qué
+ * se hace en cada sección (`NavRailItem`).
  *
- * Sólo se monta adentro de una obra. Fuera, el riel angosto de
- * `dashboard-rail.tsx` sigue siendo la navegación.
+ * Arriba, la vuelta al listado de obras, separada de las secciones.
  */
 export function ProjectSidebar() {
   const { t } = useTranslation();
@@ -31,43 +33,38 @@ export function ProjectSidebar() {
   return (
     <nav
       aria-label={t('project.nav.aria')}
-      className="hidden w-56 shrink-0 flex-col gap-1 overflow-y-auto border-r border-border bg-card p-3 md:flex"
+      className="hidden w-16 shrink-0 flex-col items-center gap-2 overflow-y-auto border-r border-border bg-card py-4 md:flex"
     >
-      <NavLink
+      <NavRailItem
         to={ROUTES.ADMIN}
-        className="mb-2 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-      >
-        <ArrowLeft className="size-4 shrink-0" />
-        {t('layout.projects')}
-      </NavLink>
+        end
+        icon={ArrowLeft}
+        label={t('layout.projects')}
+        description={t('project.navHint.back')}
+        isActive={false}
+      />
+      <div aria-hidden className="h-px w-8 shrink-0 bg-border" />
 
       {/*
         El nombre de la obra NO va acá: el breadcrumb del header lo muestra y
-        ese header está siempre a la vista. Repetirlo a diez centímetros no
-        agrega nada y duplica el mismo texto en la pantalla.
+        ese header está siempre a la vista.
       */}
-
-      {items.map(({ labelKey, path, icon: Icon }) => {
+      {items.map(({ labelKey, path, icon }) => {
         const to = path(projectId);
         // `end` no alcanza: el detalle es prefijo de todas las demás, así que
         // se compara el pathname completo.
         const isActive = pathname === to;
 
         return (
-          <NavLink
+          <NavRailItem
             key={to}
             to={to}
-            data-testid={`project-nav-${labelKey}`}
-            className={cn(
-              'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
-              isActive
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-            )}
-          >
-            <Icon className="size-4 shrink-0" />
-            <span className="truncate">{t(`project.nav.${labelKey}`)}</span>
-          </NavLink>
+            icon={icon}
+            label={t(`project.nav.${labelKey}`)}
+            description={t(`project.navHint.${labelKey}`)}
+            isActive={isActive}
+            testId={`project-nav-${labelKey}`}
+          />
         );
       })}
     </nav>

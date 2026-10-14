@@ -61,9 +61,17 @@ export function projectMaterialPath(projectId: string, materialId: string): stri
   return `${projectMaterialsPath(projectId)}?material=${encodeURIComponent(materialId)}`;
 }
 
-/** `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. */
-export function projectLaborPath(projectId: string): string {
-  return ROUTES.PROJECT_LABOR.replace(':projectId', projectId);
+/** Las pestañas de Tareas que se abren por link: `board` es el Tablero, la principal. */
+export type ProjectLaborTab = 'board' | 'day';
+
+/**
+ * `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. Sin
+ * pestaña abre el Tablero de tareas; con `tab: 'day'`, la Jornada — es a donde
+ * lleva el aviso de faltantes de la card del detalle.
+ */
+export function projectLaborPath(projectId: string, tab?: ProjectLaborTab): string {
+  const path = ROUTES.PROJECT_LABOR.replace(':projectId', projectId);
+  return tab === 'day' ? `${path}?tab=day` : path;
 }
 
 /** `ROUTES.PROJECT_PAYMENTS` con el `:projectId` resuelto, para armar links. */

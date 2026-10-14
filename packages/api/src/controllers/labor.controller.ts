@@ -41,7 +41,7 @@ export async function listActivityCrew(req: Request, res: Response) {
     const project = req.project as IProject;
     const activity = await findActivityInProject(project, String(req.params.activityId));
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     const links = await ActivityCrew.find({ activity: activity._id }).populate<{
@@ -137,7 +137,7 @@ export async function assignCrewToActivity(req: Request, res: Response) {
     const project = req.project as IProject;
     const activity = await findActivityInProject(project, String(req.params.activityId));
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     const member = await CrewMember.findOne({
@@ -152,7 +152,7 @@ export async function assignCrewToActivity(req: Request, res: Response) {
     if (already) {
       return res
         .status(409)
-        .json({ success: false, error: 'Esa persona ya está asignada a la actividad' });
+        .json({ success: false, error: 'Esa persona ya está asignada a la tarea' });
     }
 
     await ActivityCrew.create({ activity: activity._id, crewMember: member._id });
@@ -172,7 +172,7 @@ export async function unassignCrewFromActivity(req: Request, res: Response) {
     const project = req.project as IProject;
     const activity = await findActivityInProject(project, String(req.params.activityId));
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     const link = await ActivityCrew.findOneAndDelete({
@@ -263,7 +263,7 @@ export async function upsertLaborRecord(req: Request, res: Response) {
     if (!activity) {
       return res
         .status(400)
-        .json({ success: false, error: 'La actividad no pertenece a esta obra' });
+        .json({ success: false, error: 'La tarea no pertenece a esta obra' });
     }
 
     // Todos los presentes tienen que ser del roster visible desde esta obra:

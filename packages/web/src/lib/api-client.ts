@@ -25,13 +25,16 @@ export class ApiError extends Error {
   readonly status: number;
   readonly code?: string;
   readonly data?: unknown;
+  /** El `details` del sobre de error: en un `CONFLICT`, con qué chocó. */
+  readonly details?: unknown;
 
-  constructor(message: string, status: number, code?: string, data?: unknown) {
+  constructor(message: string, status: number, code?: string, data?: unknown, details?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.data = data;
+    this.details = details;
     // Sin esto `instanceof ApiError` puede dar false según el target de
     // compilación y el bundler.
     Object.setPrototypeOf(this, ApiError.prototype);
@@ -185,6 +188,7 @@ class ApiClient {
         response.status,
         body?.code,
         body?.data,
+        body?.details,
       );
     }
 

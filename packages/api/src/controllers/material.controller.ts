@@ -84,7 +84,7 @@ export async function createMaterial(req: Request, res: Response) {
     if (!(await activityBelongsToProject(activityId, project._id))) {
       return res
         .status(400)
-        .json({ success: false, error: 'La actividad no pertenece a esta obra' });
+        .json({ success: false, error: 'La tarea no pertenece a esta obra' });
     }
 
     const material = await MaterialItem.create({
@@ -135,7 +135,7 @@ export async function updateMaterial(req: Request, res: Response) {
     if (activityId !== undefined && !(await activityBelongsToProject(activityId, project._id))) {
       return res
         .status(400)
-        .json({ success: false, error: 'La actividad no pertenece a esta obra' });
+        .json({ success: false, error: 'La tarea no pertenece a esta obra' });
     }
 
     const update: Record<string, unknown> = { ...rest };

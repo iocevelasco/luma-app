@@ -131,7 +131,7 @@ export async function createProviderEngagement(req: Request, res: Response) {
     if (!(await activitiesBelongToProject(project, parsed.data.requirements))) {
       return res
         .status(400)
-        .json({ success: false, error: 'Un requisito apunta a una actividad de otra obra' });
+        .json({ success: false, error: 'Un requisito apunta a una tarea de otra obra' });
     }
 
     const engagement = await ProviderEngagement.create({
@@ -186,7 +186,7 @@ export async function updateProviderEngagement(req: Request, res: Response) {
     if (parsed.data.requirements && !(await activitiesBelongToProject(project, parsed.data.requirements))) {
       return res
         .status(400)
-        .json({ success: false, error: 'Un requisito apunta a una actividad de otra obra' });
+        .json({ success: false, error: 'Un requisito apunta a una tarea de otra obra' });
     }
 
     const { requirements, ...rest } = parsed.data;

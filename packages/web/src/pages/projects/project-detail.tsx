@@ -1,13 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import type { Capability, DocumentCategory } from '@luma/shared';
+import type { Activity, Capability, DocumentCategory } from '@luma/shared';
 import {
   ChevronRight,
   Gauge,
   Image,
-  ListChecks,
   Package,
   Ruler,
+  Target,
+  UserPlus,
   Users,
   Wallet,
   Wrench,
@@ -15,8 +16,8 @@ import {
 import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
-import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
+import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { Can } from '@/components/permissions/can';
 import { RouteError } from '@/components/routes/route-error';
@@ -29,16 +30,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import { useBudget } from '@/hooks/budget/use-budget-queries';
 import { useProjectDocuments } from '@/hooks/documents/use-document-queries';
-import { useLaborRecords } from '@/hooks/labor/use-labor-queries';
+import { useCrewMembers } from '@/hooks/crew/use-crew-queries';
+import { useDayAttendance } from '@/hooks/labor/use-labor-queries';
 import { useMaterials } from '@/hooks/materials/use-material-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProject, useUpdateProject } from '@/hooks/projects/use-project-queries';
 import { Switch } from '@/components/ui/switch';
+import { activitiesOnDay, summarizeDayAttendance } from '@/lib/attendance';
 import { formatMoney } from '@/lib/format-money';
 import { organizeMaterials } from '@/lib/materials';
 import { iconForSpecialty } from '@/lib/specialty-icons';
 import { cn } from '@/lib/utils';
+import { isOpenTask, tasksForWeek, weightedProgress } from '@/lib/task-board';
+import { currentWeekRange, isActivityOverdue } from '@/lib/week';
 import {
   projectActivitiesPath,
   projectBudgetPath,
@@ -63,6 +68,12 @@ const CARD_PREVIEW_COUNT = 5;
  * Documentación.
  */
 const DOCUMENT_PREVIEW_COUNT = 3;
+
+/**
+ * Tareas abiertas en la card: tres, como los documentos. La card dice cómo
+ * viene la semana; la lista entera vive en el Tablero.
+ */
+const TASKS_PREVIEW_COUNT = 3;
 
 /** Ícono de sección en círculo, a la izquierda del título de cada card del dashboard. */
 function CardIcon({ icon: Icon }: { icon: ComponentType<{ className?: string }> }) {
@@ -98,68 +109,23 @@ function ProvidersVisibilitySwitch({
   );
 }
 
-function PendingTasksCard({ projectId }: { projectId: string }) {
-  const { t } = useTranslation();
-  const { data } = useAllActivities(projectId);
-
-  const pending = useMemo(() => {
-    return (data?.activities ?? [])
-      .filter((activity) => activity.status !== 'completada' && activity.status !== 'cancelada')
-      .sort((a, b) => a.startDate.localeCompare(b.startDate))
-      .slice(0, CARD_PREVIEW_COUNT);
-  }, [data]);
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <CardIcon icon={ListChecks} />
-          <CardTitle className="text-base">{t('project.dashboard.workPlan')}</CardTitle>
-        </div>
-        <Button variant="ghost" size="sm" asChild>
-          <Link to={projectActivitiesPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {pending.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('project.dashboard.noPendingTasks')}</p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {pending.map((activity) => (
-              <li key={activity.id} className="flex items-center justify-between gap-2 text-sm">
-                <div>
-                  <p className="font-medium">{activity.name}</p>
-                  <p className="text-xs text-muted-foreground"><SpecialtyLabel specialty={activity.specialty} /></p>
-                </div>
-                <ActivityStatusBadge status={activity.status} endDate={activity.endDate} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 /**
- * % de avance (RF-04): completadas sobre el total de actividades no
- * canceladas. Sin ponderación por tamaño de actividad — el documento la
- * sugiere, pero no hay campo de "peso" en `Activity` todavía, y agregar uno
- * es una decisión de modelo que no viene pedida.
+ * % de avance (RF-04): días de tareas completadas sobre días de tareas no
+ * canceladas.
+ *
+ * Ponderado por duración, no por cantidad: desde que las tareas cortas del
+ * Tablero también son actividades, contar de a una hacía que veinte tareas de
+ * un día pesaran lo mismo que "Estructura de hormigón". La duración sale de
+ * las fechas —no hay un campo de peso que mantener—.
  */
 function ProgressCard({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const { data } = useAllActivities(projectId);
 
-  const { percent, completed, relevant } = useMemo(() => {
-    const activities = (data?.activities ?? []).filter((activity) => activity.status !== 'cancelada');
-    const done = activities.filter((activity) => activity.status === 'completada').length;
-    return {
-      percent: activities.length === 0 ? 0 : Math.round((done / activities.length) * 100),
-      completed: done,
-      relevant: activities.length,
-    };
-  }, [data]);
+  const { percent, completed, total } = useMemo(
+    () => weightedProgress(data?.activities ?? []),
+    [data],
+  );
 
   return (
     <Card>
@@ -171,7 +137,7 @@ function ProgressCard({ projectId }: { projectId: string }) {
         <div className="flex items-baseline justify-between">
           <p className="text-2xl font-semibold">{percent}%</p>
           <p className="text-xs text-muted-foreground">
-            {t('project.dashboard.progressCount', { completed, total: relevant })}
+            {t('project.dashboard.progressCount', { completed, total })}
           </p>
         </div>
         <Progress value={percent} />
@@ -257,79 +223,153 @@ function MaterialsCard({ projectId }: { projectId: string }) {
   );
 }
 
-function LaborCard({ projectId }: { projectId: string }) {
+/**
+ * Tareas de la semana: lo que cae en esta semana más lo atrasado de antes.
+ * Reemplazó a la card de Personal, que mostraba la asistencia por actividad y
+ * casi siempre decía `0 / 0`.
+ *
+ * Una tarea es una actividad: son las mismas que el Cronograma, recortadas a
+ * esta semana. Las canceladas no cuentan, igual que en el avance general. Las
+ * atrasadas se dicen aparte: son lo primero que hay que resolver.
+ *
+ * Lo del personal —sumar gente, quién falta hoy— sólo para quien ve el
+ * personal (`crew.read`). El cliente ve las tareas, no la cuadrilla.
+ */
+function WeekTasksCard({
+  projectId,
+  canSeeCrew,
+}: {
+  projectId: string;
+  canSeeCrew: boolean;
+}) {
   const { t } = useTranslation();
-  const today = useMemo(() => toDayKey(new Date()), []);
-  const { data: activitiesData } = useAllActivities(projectId);
-  const { data: laborData } = useLaborRecords(projectId, today);
+  // Cada render y no memorizados: una pestaña abierta de domingo a lunes
+  // tiene que pasar a la semana nueva. Son baratos.
+  const week = currentWeekRange();
+  const today = toDayKey(new Date());
+  const [addCrewOpen, setAddCrewOpen] = useState(false);
 
-  const rows = useMemo(() => {
-    const recordByActivity = new Map((laborData?.laborRecords ?? []).map((r) => [r.activityId, r]));
-    return (activitiesData?.activities ?? [])
-      .filter((activity) => activity.startDate <= today && today <= activity.endDate)
-      .map((activity) => ({ activity, record: recordByActivity.get(activity.id) }));
-  }, [activitiesData, laborData, today]);
+  const { data: activitiesData } = useAllActivities(projectId);
+  const { data: crewData } = useCrewMembers(canSeeCrew ? projectId : undefined);
+  const { data: attendanceData } = useDayAttendance(canSeeCrew ? projectId : undefined, today);
+
+  const { done, total, overdue, open } = useMemo(() => {
+    const tasks = tasksForWeek(activitiesData?.activities ?? [], week, {
+      includeOverdue: true,
+    }).filter((task) => task.status !== 'cancelada');
+    const isLate = (task: Activity) => isActivityOverdue(task.endDate, task.status, today);
+    return {
+      done: tasks.filter((task) => task.status === 'completada').length,
+      total: tasks.length,
+      overdue: tasks.filter(isLate).length,
+      // Lo atrasado primero, después lo que vence antes.
+      open: tasks
+        .filter((task) => isOpenTask(task.status))
+        .sort((a, b) =>
+          isLate(a) !== isLate(b) ? (isLate(a) ? -1 : 1) : a.endDate.localeCompare(b.endDate),
+        )
+        .slice(0, TASKS_PREVIEW_COUNT),
+    };
+    // `week` es un objeto nuevo en cada render: la dependencia es su `from`,
+    // que define la semana entera.
+  }, [activitiesData, week.from, today]);
+
+  const { missing } = useMemo(
+    () =>
+      summarizeDayAttendance(
+        activitiesOnDay(activitiesData?.activities ?? [], today),
+        attendanceData?.attendance ?? [],
+      ),
+    [activitiesData, attendanceData, today],
+  );
+
+  const noCrew = canSeeCrew && crewData !== undefined && crewData.crewMembers.length === 0;
+  const percent = total === 0 ? 0 : Math.round((done / total) * 100);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <CardIcon icon={Users} />
-          <CardTitle className="text-base">{t('project.dashboard.labor')}</CardTitle>
+          <CardIcon icon={Target} />
+          <CardTitle className="text-base">{t('project.dashboard.tasks')}</CardTitle>
         </div>
         <Button variant="ghost" size="sm" asChild>
-          <Link to={projectLaborPath(projectId)}>{t('project.dashboard.viewAll')}</Link>
+          {/* El Tablero es del que ve el personal; el resto, al Cronograma. */}
+          <Link to={canSeeCrew ? projectLaborPath(projectId) : projectActivitiesPath(projectId)}>
+            {t('project.dashboard.viewAll')}
+          </Link>
         </Button>
       </CardHeader>
-      <CardContent>
-        {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('project.dashboard.noActivitiesToday')}</p>
+      <CardContent className="flex flex-col gap-3">
+        {!activitiesData ? null : total === 0 ? (
+          noCrew ? (
+            <>
+              <p className="text-sm text-muted-foreground">{t('project.dashboard.noCrew')}</p>
+              <Can I="crew.create">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="self-start"
+                  onClick={() => setAddCrewOpen(true)}
+                >
+                  <UserPlus className="size-4" />
+                  {t('crew.add.button')}
+                </Button>
+              </Can>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('project.dashboard.noTasks')}</p>
+          )
         ) : (
-          // Una sola columna: la tarjeta vive dentro de una columna angosta
-          // del masonry, y dos nombres de actividad al lado se pisan.
-          <ul className="flex flex-col gap-3">
-            {rows.map(({ activity, record }) => {
-              const expected = record?.expectedCount ?? 0;
-              // `presentCount` en vez de `presentNames.length`: la API vacía
-              // los nombres para el cliente invitado, pero la cuenta sigue
-              // siendo real — este badge es agregado, no expone a nadie.
-              const present = record?.presentCount ?? 0;
-              const deficit = expected - present;
-              return (
-                <li key={activity.id} className="flex items-center justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{activity.name}</p>
-                    {deficit > 0 && (
-                      <p className="text-xs text-destructive">
-                        {t('labor.deficit', { count: deficit })}
+          <>
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-2xl font-semibold tabular-nums">
+                {done}
+                <span className="text-base text-muted-foreground"> / {total}</span>
+              </p>
+              <p className={cn('text-xs', overdue > 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                {overdue > 0
+                  ? t('project.dashboard.tasksOverdue', { count: overdue })
+                  : t('project.dashboard.tasksCount', { done, total })}
+              </p>
+            </div>
+            <Progress value={percent} />
+            {open.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('project.dashboard.tasksAllDone')}</p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {open.map((task) => (
+                  <li key={task.id} className="flex items-center justify-between gap-2 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{task.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {task.responsible.name}
                       </p>
-                    )}
-                  </div>
-                  {/*
-                    La cuenta al frente y en grande: la pregunta de la mañana es
-                    "¿cuántos vinieron de los que esperaba?", y antes eso vivía
-                    en un texto chico y gris debajo del nombre.
-                  */}
-                  <p
-                    className={cn(
-                      'shrink-0 text-base tabular-nums',
-                      deficit > 0 ? 'text-destructive' : 'text-foreground',
-                    )}
-                  >
-                    <span className="font-semibold">{present}</span>
-                    <span className="text-muted-foreground"> / {expected}</span>
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
+                    </div>
+                    <ActivityStatusBadge status={task.status} endDate={task.endDate} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+
+        {canSeeCrew && missing > 0 && (
+          <Link
+            to={projectLaborPath(projectId, 'day')}
+            className="text-sm text-destructive underline-offset-4 hover:underline"
+          >
+            {t('project.dashboard.missingToday', { count: missing })}
+          </Link>
         )}
       </CardContent>
+
+      {canSeeCrew && (
+        <AddCrewDrawer projectId={projectId} open={addCrewOpen} onOpenChange={setAddCrewOpen} />
+      )}
     </Card>
   );
 }
-
-
 
 /**
  * Renders o planos de la obra: una vista de la Documentación filtrada por
@@ -553,8 +593,8 @@ export function ProjectDetailPage() {
      * El orden del DOM es el de prioridad, y como las columnas se llenan de
      * arriba hacia abajo, lo primero es lo que queda arriba a la izquierda.
      * Es el orden que pidió el cliente: cómo viene la obra (avance), lo que
-     * se muestra al cliente (renders y planos), el plan, la plata, las
-     * compras, quién está en obra y con quién se trabaja; y recién al final la
+     * se muestra al cliente (renders y planos), las tareas de la semana, la
+     * plata, las compras y con quién se trabaja; y recién al final la
      * ficha y el equipo. Al dashboard se entra a ver el estado, no a releer la
      * descripción —qué obra es ya lo dice el breadcrumb—.
      */
@@ -570,13 +610,18 @@ export function ProjectDetailPage() {
         <DocumentsCard projectId={project.id} category="plano" icon={Ruler} />
       )}
 
-      {/* El plan, la plata y las compras. */}
-      <PendingTasksCard projectId={project.id} />
+      {/*
+        El trabajo de la semana, la plata y las compras. "Tareas de la semana"
+        ocupa el lugar del viejo "Plan de trabajo": listaban la misma entidad
+        —las tareas— y dos cards con lo mismo es una de más.
+      */}
+      {can('activity.read') && (
+        <WeekTasksCard projectId={project.id} canSeeCrew={can('crew.read')} />
+      )}
       {can('budget.read') && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
       <MaterialsCard projectId={project.id} />
 
-      {/* Quién está en obra y con quién se trabaja. */}
-      <LaborCard projectId={project.id} />
+      {/* Con quién se trabaja. */}
       {can('provider.read') && <ProvidersCard projectId={project.id} />}
 
       {/* La ficha y el directorio: consulta, no urgencia. */}

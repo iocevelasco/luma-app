@@ -175,7 +175,7 @@ export async function createExpense(req: Request, res: Response) {
     if (activityId) {
       const found = await Activity.findOne({ _id: activityId, project: project._id }).select('name');
       if (!found) {
-        return res.status(400).json({ success: false, error: 'La actividad no es de esta obra' });
+        return res.status(400).json({ success: false, error: 'La tarea no es de esta obra' });
       }
       activity = String(found._id);
       activityName = found.name;

@@ -53,6 +53,8 @@ import {
   useUnassignProvider,
 } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { useCrewMembers } from '@/hooks/crew/use-crew-queries';
+import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { isWithinNextDays } from '@/lib/week';
 
@@ -98,19 +100,22 @@ function ActivityFormFields({
   control,
   errors,
   isOwner = false,
+  canCancel = false,
 }: {
   idPrefix: string;
   projectId: string;
   register: UseFormRegister<CreateActivityInput>;
   control: Control<CreateActivityInput>;
   errors: FieldErrors<CreateActivityInput>;
-  /** Cerrar es del supervisor: al resto ni se le ofrece "Completada". */
+  /** Cerrar es del gerente (`activity.review`): al resto ni se le ofrece "Completada". */
   isOwner?: boolean;
+  /** Cancelar es modificar (`activity.plan`): el supervisor crea, pero no cancela. */
+  canCancel?: boolean;
 }) {
   const { t } = useTranslation();
-  const statuses = isOwner
-    ? ACTIVITY_STATUSES
-    : ACTIVITY_STATUSES.filter((status) => status !== 'completada');
+  const statuses = ACTIVITY_STATUSES.filter(
+    (status) => (status !== 'completada' || isOwner) && (status !== 'cancelada' || canCancel),
+  );
 
   return (
     <>
@@ -195,10 +200,19 @@ function ActivityFormFields({
   );
 }
 
-function NewActivityDialog({ projectId, isOwner }: { projectId: string; isOwner: boolean }) {
+function NewActivityDialog({
+  projectId,
+  isOwner,
+  canCancel,
+}: {
+  projectId: string;
+  isOwner: boolean;
+  canCancel: boolean;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const createActivity = useCreateActivity(projectId);
+  const { data: crewData } = useCrewMembers(projectId);
 
   const {
     register,
@@ -229,14 +243,23 @@ function NewActivityDialog({ projectId, isOwner }: { projectId: string; isOwner:
         submitLabel={t('activity.list.newSubmit')}
         isSubmitting={createActivity.isPending}
         error={createActivity.error}
-        onSubmit={handleSubmit((values) =>
-          createActivity.mutate(values, {
-            onSuccess: () => {
-              setOpen(false);
-              reset();
+        onSubmit={handleSubmit((values) => {
+          // Si el responsable es alguien del personal de obra, la tarea nace
+          // con esa persona en la cuadrilla — igual que desde el Tablero —, y
+          // así aparece esperada en la asistencia de la Jornada.
+          const crewMember = values.responsible.user
+            ? undefined
+            : crewData?.crewMembers.find((member) => member.name === values.responsible.name);
+          createActivity.mutate(
+            { ...values, ...(crewMember ? { crewMemberIds: [crewMember.id] } : {}) },
+            {
+              onSuccess: () => {
+                setOpen(false);
+                reset();
+              },
             },
-          }),
-        )}
+          );
+        })}
       >
         <ActivityFormFields
           idPrefix="activity"
@@ -245,6 +268,7 @@ function NewActivityDialog({ projectId, isOwner }: { projectId: string; isOwner:
           control={control}
           errors={errors}
           isOwner={isOwner}
+          canCancel={canCancel}
         />
       </FormDrawer>
     </>
@@ -310,6 +334,7 @@ function EditActivityDialog({
         control={control}
         errors={errors}
         isOwner={isOwner}
+        canCancel
       />
     </FormDrawer>
   );
@@ -638,6 +663,7 @@ function ActivityDetailModal({
   missingMaterials,
   isEditor,
   isOwner,
+  canEdit,
   canReadProviders,
   onClose,
 }: {
@@ -645,8 +671,12 @@ function ActivityDetailModal({
   activity: Activity | undefined;
   materials: MaterialItem[];
   missingMaterials: boolean;
+  /** Fotos y proveedores: gerente y supervisor. */
   isEditor: boolean;
+  /** Aprobar y devolver: `activity.review`. */
   isOwner: boolean;
+  /** Modificar la tarea: `activity.plan`, sólo el gerente. */
+  canEdit: boolean;
   canReadProviders: boolean;
   onClose: () => void;
 }) {
@@ -672,7 +702,7 @@ function ActivityDetailModal({
                   {t('activity.detail.title')}
                 </DialogTitle>
               </div>
-              {isEditor && (
+              {canEdit && (
                 <Button variant="outline" onClick={() => setEditing(true)}>
                   <Pencil className="size-4" />
                   {t('activity.detail.edit')}
@@ -751,7 +781,7 @@ function ActivityDetailModal({
               )}
             </div>
 
-            {isEditor && (
+            {canEdit && (
               <EditActivityDialog
                 projectId={projectId}
                 activity={activity}
@@ -790,8 +820,9 @@ export function ProjectActivitiesPage() {
   const { data: allActivitiesData } = useAllActivities(projectId);
   const { data: materialsData } = useMaterials(projectId);
 
-  const isEditor = Boolean(projectData?.project.isEditor);
-  const canReadProviders = isEditor || Boolean(projectData?.project.providersVisibleToClient);
+  const { can } = useProjectCapabilities(projectId);
+  const isEditor = can('activity.evidence.write');
+  const canReadProviders = can('provider.read');
 
   const missingByActivity = useMemo(() => {
     const map = new Set<string>();
@@ -828,10 +859,12 @@ export function ProjectActivitiesPage() {
     <div className="flex h-[calc(100dvh-5.5rem)] min-w-0 flex-col gap-3 p-3 md:p-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateRangeFilter value={range} onChange={setRange} disableFuture={false} />
-        {isEditor && (
+        {/* El supervisor crea tareas; modificarlas es del gerente. */}
+        {can('activity.create') && (
           <NewActivityDialog
             projectId={projectId!}
-            isOwner={Boolean(projectData?.project.isOwner)}
+            isOwner={can('activity.review')}
+            canCancel={can('activity.plan')}
           />
         )}
       </div>
@@ -857,7 +890,8 @@ export function ProjectActivitiesPage() {
         materials={selectedActivityMaterials}
         missingMaterials={Boolean(selectedActivityId && activitiesWithAlert.has(selectedActivityId))}
         isEditor={isEditor}
-        isOwner={Boolean(projectData?.project.isOwner)}
+        isOwner={can('activity.review')}
+        canEdit={can('activity.plan')}
         canReadProviders={canReadProviders}
         onClose={() => setSelectedActivityId(null)}
       />

@@ -172,7 +172,7 @@ export async function listActivityProviders(req: Request, res: Response) {
       project: project._id,
     });
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     const links = await ActivityProvider.find({ activity: activity._id }).populate<{
@@ -206,7 +206,7 @@ export async function assignProvider(req: Request, res: Response) {
       project: project._id,
     });
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     const provider = await Provider.findOne({
@@ -224,7 +224,7 @@ export async function assignProvider(req: Request, res: Response) {
     if (alreadyAssigned) {
       return res
         .status(409)
-        .json({ success: false, error: 'Ese proveedor ya está asignado a la actividad' });
+        .json({ success: false, error: 'Ese proveedor ya está asignado a la tarea' });
     }
 
     await ActivityProvider.create({ activity: activity._id, provider: provider._id });
@@ -245,7 +245,7 @@ export async function unassignProvider(req: Request, res: Response) {
       project: project._id,
     });
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     const link = await ActivityProvider.findOneAndDelete({
@@ -325,7 +325,7 @@ export async function assignActivityToProvider(req: Request, res: Response) {
       project: project._id,
     });
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     const alreadyAssigned = await ActivityProvider.exists({
@@ -335,7 +335,7 @@ export async function assignActivityToProvider(req: Request, res: Response) {
     if (alreadyAssigned) {
       return res
         .status(409)
-        .json({ success: false, error: 'Ese proveedor ya está asignado a la actividad' });
+        .json({ success: false, error: 'Ese proveedor ya está asignado a la tarea' });
     }
 
     await ActivityProvider.create({ activity: activity._id, provider: provider._id });
@@ -367,7 +367,7 @@ export async function unassignActivityFromProvider(req: Request, res: Response) 
     });
 
     if (!link) {
-      return res.status(404).json({ success: false, error: 'Esa actividad no está asignada' });
+      return res.status(404).json({ success: false, error: 'Esa tarea no está asignada' });
     }
 
     return res.json({ success: true, data: { activityId: req.params.activityId } });

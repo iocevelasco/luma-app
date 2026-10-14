@@ -49,7 +49,12 @@ export const forbidden = (message = 'Tu rol no permite esta acción.') =>
 export const notFound = (message = 'No encontramos lo que buscabas.') =>
   new AppError('NOT_FOUND', message);
 
-export const conflict = (message: string) => new AppError('CONFLICT', message);
+/**
+ * `details` es opcional y es para la máquina: con qué chocó, para que la UI
+ * ofrezca una salida en vez de sólo decir que no (ver `CrewDuplicateDetails`).
+ */
+export const conflict = (message: string, details?: unknown) =>
+  new AppError('CONFLICT', message, details);
 
 export const serviceUnavailable = (message: string) =>
   new AppError('SERVICE_UNAVAILABLE', message);

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
-import { pickActivitySpecialty } from './helpers/activity';
+import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
+import { addCrewMember } from './helpers/crew';
 
 /**
  * Asistencia del día contra la cuadrilla asignada: lo que la vista vieja no
@@ -44,38 +45,28 @@ test.describe('asistencia contra la cuadrilla', () => {
     // Una actividad vigente hoy, para que aparezca en la asistencia.
     await page.getByRole('link', { name: /^cronograma$/i }).click();
     const today = new Date();
-    await page.getByRole('button', { name: /nueva actividad/i }).click();
+    await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(activityName);
     await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill(toDayKey(today));
     await page
       .locator('#activity-end')
       .fill(toDayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5)));
-    await page.locator('#activity-responsible').fill('Juan Pérez');
-    await page.getByRole('button', { name: /crear actividad/i }).click();
+    await pickActivityResponsible(page);
+    await page.getByRole('button', { name: /crear tarea/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
-    await page.getByRole('link', { name: /^personal$/i }).click();
+    await page.getByRole('link', { name: /^tareas$/i }).click();
     await expect(page).toHaveURL(/\/personal$/);
 
     // --- Roster: uno de ellos con teléfono, para poder llamarlo ---
-    await page.getByRole('tab', { name: /metas de la semana/i }).click();
-    await page.getByRole('button', { name: /^personal fijo$/i }).click();
-    const roster = page.getByRole('dialog');
-    for (const [name, phone] of [
-      [presentName, ''],
-      [absentName, '11-5555-1234'],
-      [coverName, ''],
-    ] as const) {
-      await roster.locator('#crew-name').fill(name);
-      if (phone) await roster.locator('#crew-phone').fill(phone);
-      await roster.getByRole('button', { name: /^agregar$/i }).click();
-      await expect(roster.getByText(name)).toBeVisible();
-    }
-    await roster.getByRole('button', { name: /close/i }).click();
+    await addCrewMember(page, { name: presentName });
+    await addCrewMember(page, { name: absentName, phone: '11-5555-1234' });
+    await addCrewMember(page, { name: coverName });
 
     // --- Se asignan dos a la actividad: la cuadrilla esperada ---
-    await page.getByRole('tab', { name: /asistencia del día/i }).click();
+    // La asistencia vive en la Jornada; la pestaña principal es el Tablero.
+    await page.getByRole('tab', { name: /^jornada$/i }).click();
     const card = page.locator('section', { hasText: activityName });
 
     for (const name of [presentName, absentName]) {

@@ -1,12 +1,8 @@
 import type {
   ApiResponse,
-  CreateCrewGoalInput,
   CreateCrewMemberInput,
-  CrewGoalListResponse,
-  CrewGoalResponse,
   CrewMemberListResponse,
   CrewMemberResponse,
-  UpdateCrewGoalInput,
   UpdateCrewMemberInput,
 } from '@luma/shared';
 import { apiClient } from '@/lib/api-client';
@@ -26,9 +22,12 @@ export const crewApi = {
   listDirectory: (projectId: string) =>
     unwrap<CrewMemberListResponse>(apiClient.get(`/api/projects/${projectId}/crew/directory`)),
 
-  addFromDirectory: (projectId: string, crewMemberId: string) =>
+  /** `reactivate` reactiva a alguien dado de baja en el mismo paso. Pide `crew.manage`. */
+  addFromDirectory: (projectId: string, crewMemberId: string, options?: { reactivate?: boolean }) =>
     unwrap<CrewMemberResponse>(
-      apiClient.post(`/api/projects/${projectId}/crew/directory/${crewMemberId}`, {}),
+      apiClient.post(`/api/projects/${projectId}/crew/directory/${crewMemberId}`, {
+        ...(options?.reactivate ? { reactivate: true } : {}),
+      }),
     ),
 
   removeFromProject: (projectId: string, crewMemberId: string) =>
@@ -49,24 +48,4 @@ export const crewApi = {
 
   deactivate: (projectId: string, crewMemberId: string) =>
     unwrap<CrewMemberResponse>(apiClient.delete(`/api/projects/${projectId}/crew/${crewMemberId}`)),
-
-  listGoals: (projectId: string, weekStart?: string) => {
-    const query = weekStart ? `?weekStart=${weekStart}` : '';
-    return unwrap<CrewGoalListResponse>(
-      apiClient.get(`/api/projects/${projectId}/crew/goals${query}`),
-    );
-  },
-
-  createGoal: (projectId: string, payload: CreateCrewGoalInput) =>
-    unwrap<CrewGoalResponse>(apiClient.post(`/api/projects/${projectId}/crew/goals`, payload)),
-
-  updateGoal: (projectId: string, goalId: string, payload: UpdateCrewGoalInput) =>
-    unwrap<CrewGoalResponse>(
-      apiClient.patch(`/api/projects/${projectId}/crew/goals/${goalId}`, payload),
-    ),
-
-  deleteGoal: (projectId: string, goalId: string) =>
-    unwrap<{ goalId: string }>(
-      apiClient.delete(`/api/projects/${projectId}/crew/goals/${goalId}`),
-    ),
 };

@@ -27,7 +27,8 @@ describe('grilla de capacidades por obra', () => {
     // Las dos lecturas de la matriz que ajustan permisos respecto de la v1.
     // Si alguna de estas se afloja, que sea por una decisión y no por un
     // refactor distraído.
-    it('reporta avance pero no planifica', () => {
+    it('crea tareas y reporta avance, pero no replanifica ni cierra', () => {
+      expect(canInProject('supervisor', 'activity.create')).toBe(true);
       expect(canInProject('supervisor', 'activity.report')).toBe(true);
       expect(canInProject('supervisor', 'activity.plan')).toBe(false);
       expect(canInProject('supervisor', 'activity.review')).toBe(false);
@@ -46,6 +47,11 @@ describe('grilla de capacidades por obra', () => {
       expect(canInProject('supervisor', 'activity.evidence.write')).toBe(true);
     });
 
+    it('suma personal a su obra pero no administra el roster', () => {
+      expect(canInProject('supervisor', 'crew.create')).toBe(true);
+      expect(canInProject('supervisor', 'crew.manage')).toBe(false);
+    });
+
     it('asigna proveedores a actividades pero no administra el directorio', () => {
       expect(canInProject('supervisor', 'provider.assign')).toBe(true);
       expect(canInProject('supervisor', 'provider.manage')).toBe(false);
@@ -60,6 +66,7 @@ describe('grilla de capacidades por obra', () => {
         'budget.write',
         'payment.write',
         'expense.write',
+        'activity.create',
         'activity.plan',
         'activity.report',
         'activity.review',
@@ -67,9 +74,9 @@ describe('grilla de capacidades por obra', () => {
         'material.write',
         'milestone.report',
         'milestone.publish',
+        'crew.create',
         'crew.manage',
         'crew.attendance.write',
-        'crew.goals.write',
         'provider.manage',
         'provider.assign',
         'engagement.write',

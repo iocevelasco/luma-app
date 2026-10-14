@@ -46,7 +46,11 @@ export interface ApiErrorBody {
   /** Texto para la persona, ya en castellano. */
   error: string;
   code: ApiErrorCode;
-  /** Sólo en `VALIDATION`: qué campo falló y por qué. */
+  /**
+   * En `VALIDATION`: qué campo falló y por qué. En un `CONFLICT` puede traer
+   * con qué chocó, para que la UI ofrezca una salida (ver
+   * `CrewDuplicateDetails`).
+   */
   details?: unknown;
 }
 

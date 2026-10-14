@@ -9,7 +9,6 @@ import {
 import { Activity } from '../models/Activity.js';
 import { ActivityCrew } from '../models/ActivityCrew.js';
 import { ActivityProvider } from '../models/ActivityProvider.js';
-import { CrewGoal } from '../models/CrewGoal.js';
 import { CrewMember } from '../models/CrewMember.js';
 import { Expense } from '../models/Expense.js';
 import { LaborRecord } from '../models/LaborRecord.js';
@@ -18,8 +17,9 @@ import { ProjectCrewMember } from '../models/ProjectCrewMember.js';
 import { ProjectProvider } from '../models/ProjectProvider.js';
 import { Provider } from '../models/Provider.js';
 import { ProviderEngagement } from '../models/ProviderEngagement.js';
+import { assertNoCrewDuplicate } from '../services/crew-identity.service.js';
 import { findMyOrganizationId } from '../services/organization.service.js';
-import { badRequest, conflict, notFound } from '../utils/errors.js';
+import { badRequest, conflict, forbidden, notFound } from '../utils/errors.js';
 import { toCrewMemberDTO } from './crew.controller.js';
 import { toProviderDTO } from './provider.controller.js';
 
@@ -32,8 +32,9 @@ import { toProviderDTO } from './provider.controller.js';
  *   qué obras está cada uno. Sólo el dueño de la Empresa — la grilla de
  *   permisos es por obra y no tiene celdas para este nivel.
  * - **Desde una obra** (`/api/projects/:id/providers|crew/directory`): sumar a
- *   la obra lo que ya está en la Empresa, o sacarlo. Sale con
- *   `provider.manage` / `crew.manage`, las mismas celdas que ya existían.
+ *   la obra lo que ya está en la Empresa, o sacarlo. Proveedores con
+ *   `provider.manage`. Empleados: buscar y sumar con `crew.create` —también
+ *   el supervisor, que si no sólo podría duplicar—; sacar con `crew.manage`.
  *
  * Express 4 no atrapa el `throw` de un handler async: todo va por `next(error)`.
  */
@@ -87,14 +88,14 @@ async function providerUsedInProject(projectId: unknown, providerId: unknown): P
   return Boolean(inActivity || inEngagement || inExpense);
 }
 
+/** Tareas (por su cuadrilla) o asistencia: las metas de antes ya son tareas. */
 async function crewUsedInProject(projectId: unknown, crewMemberId: unknown): Promise<boolean> {
   const activityIds = await Activity.find({ project: projectId }).distinct('_id');
-  const [inActivity, inAttendance, inGoal] = await Promise.all([
+  const [inActivity, inAttendance] = await Promise.all([
     ActivityCrew.exists({ crewMember: crewMemberId, activity: { $in: activityIds } }),
     LaborRecord.exists({ project: projectId, presentCrewMembers: crewMemberId }),
-    CrewGoal.exists({ project: projectId, crewMember: crewMemberId }),
   ]);
-  return Boolean(inActivity || inAttendance || inGoal);
+  return Boolean(inActivity || inAttendance);
 }
 
 // ===========================================================================
@@ -206,7 +207,7 @@ export const setOrganizationProviderProjects = wrap(async (req, res) => {
     if (await providerUsedInProject(projectId, provider._id)) {
       const project = await Project.findById(projectId).select('name');
       throw conflict(
-        `No se puede sacar a ${provider.name} de «${project?.name ?? 'esa obra'}»: ya tiene actividades, contrataciones o gastos ahí.`,
+        `No se puede sacar a ${provider.name} de «${project?.name ?? 'esa obra'}»: ya tiene tareas, contrataciones o gastos ahí.`,
       );
     }
   }
@@ -254,9 +255,17 @@ export const listOrganizationCrew = wrap(async (req, res) => {
   });
 });
 
+/** Mismo guardia de duplicados que el alta desde una obra: si no, esta sería la puerta para duplicar. */
 export const createOrganizationCrewMember = wrap(async (req, res) => {
   const organizationId = await myOrganizationId(req);
-  const data = parseOrThrow(createCrewMemberSchema, req.body);
+  const { allowDuplicateName, ...data } = parseOrThrow(createCrewMemberSchema, req.body);
+
+  await assertNoCrewDuplicate(organizationId, {
+    name: data.name,
+    phone: data.phone,
+    kind: data.kind,
+    allowDuplicateName,
+  });
 
   const crewMember = await CrewMember.create({
     ...data,
@@ -334,7 +343,7 @@ export const setOrganizationCrewMemberProjects = wrap(async (req, res) => {
     if (await crewUsedInProject(projectId, crewMember._id)) {
       const project = await Project.findById(projectId).select('name');
       throw conflict(
-        `No se puede sacar a ${crewMember.name} de «${project?.name ?? 'esa obra'}»: ya tiene actividades, asistencia o metas ahí.`,
+        `No se puede sacar a ${crewMember.name} de «${project?.name ?? 'esa obra'}»: ya tiene tareas o asistencia ahí.`,
       );
     }
   }
@@ -405,7 +414,7 @@ export const removeProviderFromProject = wrap(async (req, res) => {
 
   if (await providerUsedInProject(project._id, providerId)) {
     throw conflict(
-      'Ese proveedor ya tiene actividades, contrataciones o gastos en esta obra. Para sacarlo, primero quitá lo asignado.',
+      'Ese proveedor ya tiene tareas, contrataciones o gastos en esta obra. Para sacarlo, primero quitá lo asignado.',
     );
   }
 
@@ -413,6 +422,15 @@ export const removeProviderFromProject = wrap(async (req, res) => {
   return res.json({ success: true, data: { providerId: String(providerId) } });
 });
 
+/**
+ * Lo de la libreta de la Empresa que esta obra todavía no tiene. Es lo que
+ * busca el drawer de alta mientras se tipea el nombre.
+ *
+ * Sale la ficha completa, también para el supervisor: es decisión de
+ * producto que vea toda la información de los obreros —es quien los tiene
+ * enfrente—, y el teléfono es lo que distingue a dos homónimos. El jornal no
+ * viaja: `toCrewMemberDTO` no lo incluye, y el supervisor no ve plata.
+ */
 export const listCrewDirectory = wrap(async (req, res) => {
   const project = req.project as IProject;
   const assigned = await ProjectCrewMember.find({ project: project._id }).distinct('crewMember');
@@ -423,18 +441,38 @@ export const listCrewDirectory = wrap(async (req, res) => {
     _id: { $nin: assigned },
   }).sort({ name: 1 });
 
-  return res.json({ success: true, data: { crewMembers: crewMembers.map(toCrewMemberDTO) } });
+  return res.json({
+    success: true,
+    data: { crewMembers: crewMembers.map(toCrewMemberDTO) },
+  });
 });
 
+/**
+ * Suma a esta obra a alguien que ya está en la Empresa.
+ *
+ * Si está dado de baja, `{ reactivate: true }` lo reactiva y lo suma en el
+ * mismo paso. Reactivar es administrar el roster, así que es del gerente
+ * (`crew.manage`); al supervisor le queda pedírselo.
+ */
 export const addCrewMemberToProject = wrap(async (req, res) => {
   const project = req.project as IProject;
+  const reactivate = (req.body as { reactivate?: unknown } | undefined)?.reactivate === true;
+
   const crewMember = await CrewMember.findOne({
     _id: req.params.crewMemberId,
     organization: project.organization,
     scope: { $ne: 'project' },
-    active: true,
   });
   if (!crewMember) throw notFound('No encontramos a esa persona.');
+
+  if (!crewMember.active) {
+    if (!reactivate) throw conflict(`${crewMember.name} está dado de baja en la Empresa.`);
+    if (!req.can?.('crew.manage')) {
+      throw forbidden('Sólo el gerente puede reactivar a alguien dado de baja.');
+    }
+    crewMember.active = true;
+    await crewMember.save();
+  }
 
   await ProjectCrewMember.updateOne(
     { project: project._id, crewMember: crewMember._id },
@@ -454,7 +492,7 @@ export const removeCrewMemberFromProject = wrap(async (req, res) => {
 
   if (await crewUsedInProject(project._id, crewMemberId)) {
     throw conflict(
-      'Esa persona ya tiene actividades, asistencia o metas en esta obra. Para sacarla, primero quitá lo asignado.',
+      'Esa persona ya tiene tareas o asistencia en esta obra. Para sacarla, primero quitá lo asignado.',
     );
   }
 

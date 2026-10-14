@@ -29,7 +29,12 @@
     "openMenu": "Abrir menu",
     "closeMenu": "Fechar menu",
     "crew": "Funcionários",
-    "providers": "Fornecedores"
+    "providers": "Fornecedores",
+    "hints": {
+      "projects": "Todas as suas obras. Entre em uma para ver como está.",
+      "providers": "O diretório de fornecedores da Empresa, compartilhado entre obras.",
+      "crew": "Os funcionários da Empresa: pessoal de obra e administrativo."
+    }
   },
   "appUpdate": {
     "title": "Há uma nova versão",
@@ -78,7 +83,7 @@
       "detail": "Detalhe",
       "gantt": "Cronograma",
       "materials": "Compras",
-      "labor": "Pessoal",
+      "labor": "Tarefas",
       "providers": "Fornecedores",
       "budget": "Orçamento",
       "advisor": "Consultor IA",
@@ -89,33 +94,52 @@
       "expenses": "Despesas",
       "aria": "Seções da obra"
     },
+    "navHint": {
+      "back": "Volte para a lista de todas as suas obras.",
+      "detail": "A obra num relance: avanço, dinheiro, compras e pendências.",
+      "gantt": "Planeje as tarefas com suas datas e responsáveis.",
+      "labor": "Atribua tarefas à sua equipe, acompanhe o andamento e registre a presença.",
+      "materials": "Peça materiais e ferramentas e acompanhe cada compra até a obra.",
+      "milestones": "Registre marcos e eventualidades, e escolha quais o cliente vê.",
+      "documents": "Plantas, renders, licenças e condições do local, num só lugar.",
+      "providers": "Os fornecedores desta obra e o que cada um tem a cargo.",
+      "payments": "Os recebimentos combinados com o cliente e o que ele já pagou.",
+      "expenses": "O que saiu da obra, com data, moeda e comprovante.",
+      "budget": "Cadastre ou importe o orçamento e compare com o comprometido.",
+      "advisor": "Consulte a IA sobre a obra, com seu orçamento e seu avanço.",
+      "team": "Dê acesso à obra a supervisores, contadores e ao cliente."
+    },
     "detail": {
-      "gantt": "Cronograma de atividades",
+      "gantt": "Cronograma de tarefas",
       "providersVisibleToClient": "O cliente vê os fornecedores",
-      "providersVisibleToClientHint": "Se ativar, o cliente vê o diretório desta obra e quem está atribuído a cada atividade.",
+      "providersVisibleToClientHint": "Se ativar, o cliente vê o diretório desta obra e quem está atribuído a cada tarefa.",
       "settingsSaved": "Ajuste salvo",
       "team": "Equipe da obra",
       "memberInvited": "Acesso concedido"
     },
     "dashboard": {
       "progress": "Avanço geral",
-      "progressCount": "{{completed}} de {{total}} atividades",
-      "workPlan": "Plano de trabalho",
-      "noPendingTasks": "Não há tarefas pendentes.",
+      "progressCount": "{{completed}} de {{total}} tarefas",
       "purchases": "Compras",
       "noPurchases": "Nenhum material foi comprado ainda.",
       "noDocuments": {
         "render": "Você ainda não carregou renders.",
         "plano": "Você ainda não carregou plantas."
       },
-      "labor": "Pessoal",
-      "noActivitiesToday": "Não há atividades programadas para hoje.",
-      "laborCount": "presentes",
       "providers": "Fornecedores",
       "noProviders": "Você ainda não adicionou fornecedores.",
       "budget": "Orçamento",
       "noBudget": "Você ainda não carregou o orçamento.",
-      "viewAll": "Ver tudo"
+      "viewAll": "Ver tudo",
+      "noCrew": "Você ainda não cadastrou pessoal de obra.",
+      "missingToday_one": "Falta {{count}} pessoa hoje",
+      "missingToday_other": "Faltam {{count}} pessoas hoje",
+      "tasks": "Tarefas da semana",
+      "tasksCount": "{{done}} de {{total}} tarefas",
+      "tasksOverdue_one": "{{count}} atrasada",
+      "tasksOverdue_other": "{{count}} atrasadas",
+      "tasksAllDone": "Semana em dia.",
+      "noTasks": "Não há tarefas para esta semana."
     },
     "errors": {
       "create": "Não conseguimos criar a obra.",
@@ -132,7 +156,7 @@
     },
     "roleHint": {
       "supervisor": "Reporta avanço, presença e materiais do canteiro. Não vê dinheiro.",
-      "contador": "Apenas recebimentos e despesas. Não vê atividades, pessoal nem fornecedores.",
+      "contador": "Apenas recebimentos e despesas. Não vê tarefas, pessoal nem fornecedores.",
       "cliente": "Acompanha o avanço da obra e seu cronograma de pagamentos. Somente leitura."
     },
     "team": {
@@ -252,13 +276,13 @@
   },
   "activity": {
     "list": {
-      "new": "Nova atividade",
+      "new": "Nova tarefa",
       "navLink": "Planejamento semanal",
-      "newTitle": "Nova atividade",
-      "newSubmit": "Criar atividade",
-      "created": "Atividade criada",
-      "updated": "Atividade atualizada",
-      "deleted": "Atividade excluída",
+      "newTitle": "Nova tarefa",
+      "newSubmit": "Criar tarefa",
+      "created": "Tarefa criada",
+      "updated": "Tarefa atualizada",
+      "deleted": "Tarefa excluída",
       "prevWeek": "Semana anterior",
       "nextWeek": "Próxima semana",
       "currentWeek": "Semana atual",
@@ -266,7 +290,7 @@
       "missingMaterials": "Faltam materiais"
     },
     "new": {
-      "title": "Nova atividade"
+      "title": "Nova tarefa"
     },
     "fields": {
       "name": "Nome",
@@ -297,34 +321,34 @@
       "confirmReturn": "Devolver com este motivo",
       "reasonLabel": "Por que está devolvendo?",
       "reasonPlaceholder": "Ex: falta terminar a borda do rodapé",
-      "returnedTitle": "O supervisor devolveu esta atividade",
+      "returnedTitle": "O supervisor devolveu esta tarefa",
       "waiting": "Reportada como concluída. Aguarda a validação do supervisor.",
-      "rejected": "Atividade devolvida"
+      "rejected": "Tarefa devolvida"
     },
     "emptyState": {
-      "title": "Não há atividades planejadas para esta semana."
+      "title": "Não há tarefas planejadas para esta semana."
     },
     "errors": {
-      "create": "Não conseguimos criar a atividade.",
-      "update": "Não conseguimos atualizar a atividade.",
-      "delete": "Não conseguimos excluir a atividade.",
+      "create": "Não conseguimos criar a tarefa.",
+      "update": "Não conseguimos atualizar a tarefa.",
+      "delete": "Não conseguimos excluir a tarefa.",
       "uploadEvidence": "Não conseguimos enviar a foto.",
       "removeEvidence": "Não conseguimos remover a foto.",
-      "reject": "Não conseguimos devolver a atividade."
+      "reject": "Não conseguimos devolver a tarefa."
     },
     "gantt": {
-      "emptyState": "Não há atividades planejadas neste período."
+      "emptyState": "Não há tarefas planejadas neste período."
     },
     "detail": {
-      "title": "Detalhe da atividade",
+      "title": "Detalhe da tarefa",
       "back": "Voltar",
       "edit": "Editar",
-      "editTitle": "Editar atividade",
+      "editTitle": "Editar tarefa",
       "materials": "Materiais associados",
-      "noMaterials": "Não há materiais associados a esta atividade.",
+      "noMaterials": "Não há materiais associados a esta tarefa.",
       "noSpecialty": "Sem especialidade",
       "providers": "Fornecedores atribuídos",
-      "noProviders": "Você ainda não atribuiu fornecedores a esta atividade.",
+      "noProviders": "Você ainda não atribuiu fornecedores a esta tarefa.",
       "assignProvider": "Atribuir",
       "assignProviderPlaceholder": "Escolha um fornecedor",
       "unassignProvider": "Remover fornecedor",
@@ -357,7 +381,7 @@
       "updated": "Material atualizado",
       "deleted": "Material excluído",
       "empty": "Você ainda não adicionou materiais.",
-      "withoutActivity": "Sem atividade associada",
+      "withoutActivity": "Sem tarefa associada",
       "copyList": "Copiar lista",
       "share": "Compartilhar",
       "copied": "Lista copiada para a área de transferência",
@@ -369,8 +393,8 @@
       "quantity": "Quantidade",
       "unit": "Unidade",
       "unitPlaceholder": "Escolha uma unidade",
-      "activity": "Atividade (opcional)",
-      "activityPlaceholder": "Sem atividade associada",
+      "activity": "Tarefa (opcional)",
+      "activityPlaceholder": "Sem tarefa associada",
       "estimatedCost": "Custo estimado (opcional)",
       "supplier": "Fornecedor (opcional)"
     },
@@ -418,14 +442,14 @@
       "assigned": "Fornecedor atribuído",
       "unassigned": "Fornecedor removido",
       "empty": "Você ainda não adicionou fornecedores.",
-      "emptyOwnerHint": "Adicione seu primeiro contato para poder atribuí-lo a uma atividade.",
+      "emptyOwnerHint": "Adicione seu primeiro contato para poder atribuí-lo a uma tarefa.",
       "confirmDeactivateTitle": "Desativar o fornecedor",
-      "confirmDeactivateBody": "\"{{name}}\" não vai mais aparecer para atribuir a novas atividades. As atividades onde já está atribuído não mudam.",
-      "activitiesTitle": "Atividades de {{name}}",
-      "noActivities": "Você ainda não atribuiu este fornecedor a nenhuma atividade desta obra.",
+      "confirmDeactivateBody": "\"{{name}}\" não vai mais aparecer para atribuir a novas tarefas. As tarefas onde já está atribuído não mudam.",
+      "activitiesTitle": "Tarefas de {{name}}",
+      "noActivities": "Você ainda não atribuiu este fornecedor a nenhuma tarefa desta obra.",
       "assignActivity": "Atribuir",
-      "assignActivityPlaceholder": "Escolha uma atividade",
-      "unassignActivity": "Remover atividade"
+      "assignActivityPlaceholder": "Escolha uma tarefa",
+      "unassignActivity": "Remover tarefa"
     },
     "fields": {
       "name": "Nome",
@@ -435,7 +459,7 @@
       "phone": "Telefone",
       "email": "Email (opcional)",
       "notes": "Notas (opcional)",
-      "assignActivities": "Atribuir a atividades (opcional)",
+      "assignActivities": "Atribuir a tarefas (opcional)",
       "customSpecialtyAcabados": "Qual acabamento faz (opcional)",
       "scope": "Disponível em",
       "scopeHint": "Os de \"Todas as minhas obras\" ficam na sua agenda e aparecem em qualquer obra. Use \"Somente esta obra\" para o fornecedor que o cliente traz."
@@ -505,7 +529,7 @@
       "materiales_en_obra": "Materiais na obra",
       "personal_libre": "Pessoal disponível",
       "area_desocupada": "Área de trabalho desocupada",
-      "actividad_previa": "Atividade anterior concluída",
+      "actividad_previa": "Tarefa anterior concluída",
       "otro": "Outro"
     },
     "errors": {
@@ -518,7 +542,6 @@
   "crew": {
     "list": {
       "title": "Pessoal fixo",
-      "add": "Adicionar",
       "empty": "Você ainda não cadastrou pessoal fixo de obra.",
       "lead": "Encarregado",
       "deactivate": "Desativar",
@@ -536,7 +559,6 @@
       "specialty": "Especialidade (opcional)",
       "specialtyPlaceholder": "Sem especialidade",
       "isLead": "É o encarregado da sua especialidade",
-      "onlyThisProject": "Somente para esta obra",
       "phone": "Telefone (opcional)",
       "dailyRate": "Diária",
       "dailyRateHint": "Usada para calcular a folha contra a presença. Opcional."
@@ -545,28 +567,6 @@
       "persona": "Pessoa",
       "equipo": "Equipe"
     },
-    "goals": {
-      "assignee": "De quem é a meta?",
-      "assigneePlaceholder": "Escolha pessoa ou equipe",
-      "activity": "Atividade (opcional)",
-      "activityPlaceholder": "Sem atividade associada",
-      "description": "Meta da semana",
-      "descriptionPlaceholder": "Ex: terminar o reboco do segundo andar",
-      "add": "Adicionar meta",
-      "delete": "Excluir meta",
-      "created": "Meta adicionada",
-      "deleted": "Meta excluída",
-      "empty": "Não há metas cadastradas para esta semana.",
-      "needRoster": "Cadastre primeiro o pessoal fixo de obra para poder atribuir metas.",
-      "prevWeek": "Semana anterior",
-      "nextWeek": "Próxima semana",
-      "currentWeek": "Semana atual"
-    },
-    "goalStatus": {
-      "pendiente": "Pendente",
-      "cumplida": "Cumprida",
-      "no_cumplida": "Não cumprida"
-    },
     "errors": {
       "create": "Não conseguimos adicionar o pessoal.",
       "update": "Não conseguimos atualizar o pessoal.",
@@ -574,12 +574,24 @@
       "createGoal": "Não conseguimos adicionar a meta.",
       "updateGoal": "Não conseguimos atualizar a meta.",
       "deleteGoal": "Não conseguimos excluir a meta."
+    },
+    "add": {
+      "button": "Adicionar pessoal",
+      "title": "Adicionar pessoal",
+      "description": "Fica nos funcionários da Empresa e atribuído a esta obra.",
+      "submit": "Criar e adicionar à obra",
+      "suggestionsTitle": "Já estão na Empresa",
+      "addExisting": "Adicionar a esta obra",
+      "reactivate": "Reativar e adicionar",
+      "askToReactivate": "Peça ao gerente para reativá-lo.",
+      "differentPerson": "É outra pessoa",
+      "reactivateInCompany": "Reativar"
     }
   },
   "labor": {
     "tabs": {
-      "attendance": "Presença do dia",
-      "goals": "Metas da semana"
+      "day": "Jornada",
+      "board": "Quadro"
     },
     "prevDay": "Dia anterior",
     "nextDay": "Próximo dia",
@@ -587,8 +599,8 @@
     "whoIsHereTitle": "Quem está trabalhando hoje",
     "whoIsHereEmpty": "Ninguém registrado como presente ainda.",
     "whoIsHereCount": "{{count}} pessoas presentes hoje",
-    "byActivityTitle": "Pessoal por atividade",
-    "emptyState": "Não há atividades programadas para este dia.",
+    "byActivityTitle": "Pessoal por tarefa",
+    "emptyState": "Não há tarefas programadas para este dia.",
     "fields": {
       "expected": "Esperado",
       "present": "Presentes",
@@ -607,10 +619,10 @@
     "summary": {
       "present": "Presentes",
       "missing": "Faltam",
-      "activities": "Atividades hoje"
+      "activities": "Tarefas hoje"
     },
     "crew": {
-      "empty": "Você ainda não atribuiu pessoal a esta atividade.",
+      "empty": "Você ainda não atribuiu pessoal a esta tarefa.",
       "assign": "Atribuir pessoal",
       "pickPerson": "Escolha quem atribuir",
       "assigned": "Pessoal atribuído",
@@ -853,7 +865,7 @@
       "occurredOn": "Quando aconteceu",
       "audience": "Quem fica sabendo",
       "severity": "Gravidade",
-      "activity": "Atividade relacionada",
+      "activity": "Tarefa relacionada",
       "activityPlaceholder": "Nenhuma",
       "description": "Descrição"
     },
@@ -988,7 +1000,7 @@
       "description": "Descrição",
       "spentOn": "Data da despesa",
       "provider": "Fornecedor",
-      "activity": "Atividade",
+      "activity": "Tarefa",
       "none": "Nenhum",
       "receipt": "Comprovante",
       "receiptPlaceholder": "Escolher arquivo (opcional)"
@@ -1068,5 +1080,41 @@
     "name": "Nome",
     "contactEmail": "E-mail de contato (opcional)",
     "contactPhone": "Telefone de contato (opcional)"
+  },
+  "task": {
+    "board": {
+      "hint": {
+        "pendiente": "Ninguém começou ainda.",
+        "en_curso": "Alguém está cuidando disso.",
+        "en_revision": "Informada como concluída, aguardando aprovação.",
+        "completada": "Aprovadas."
+      },
+      "newTask": "Nova tarefa",
+      "namePlaceholder": "Ex: limpar o canteiro",
+      "assignee": "Quem faz?",
+      "assigneePlaceholder": "Escolha pessoa ou equipe",
+      "until": "Até",
+      "quickAddSubmit": "Criar",
+      "moveTo": "Mover para {{column}}",
+      "approve": "Aprovar",
+      "cancel": "Cancelar tarefa",
+      "restore": "Restaurar",
+      "delete": "Excluir",
+      "cardActions": "Ações da tarefa",
+      "filterLabel": "Filtrar por pessoa",
+      "filterAll": "Todos",
+      "emptyColumn": "Nada por aqui.",
+      "showCancelled": "Ver canceladas ({{count}})",
+      "hideCancelled": "Ocultar canceladas",
+      "overdue": "Atrasada",
+      "returned": "Devolvida: {{reason}}",
+      "needRoster": "Adicione pessoal à obra para atribuir tarefas daqui.",
+      "rejectTitle": "Devolver a tarefa",
+      "deleteTitle": "Excluir a tarefa?",
+      "deleteBody": "«{{name}}» também é apagada do cronograma. Não dá para desfazer.",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Próxima semana",
+      "currentWeek": "Semana atual"
+    }
   }
 }
