@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { REGISTER_URL } from '../lib/app-url';
+import { CTA_PRIMARY } from '../lib/cta';
 
 export function FinalCTA() {
   const { t } = useTranslation();
@@ -13,7 +14,7 @@ export function FinalCTA() {
         <p className="max-w-xl text-lg text-muted-foreground">{t('finalCta.subtitle')}</p>
         <a
           href={REGISTER_URL}
-          className="cta-label rounded-md bg-primary px-6 py-3 text-sm text-primary-foreground transition-colors hover:bg-primary-pressed active:bg-primary-pressed"
+          className={`${CTA_PRIMARY} h-12 px-7 text-sm`}
         >
           {t('finalCta.cta')}
         </a>
