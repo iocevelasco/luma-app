@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createMaterialSchema,
@@ -10,7 +10,7 @@ import { differenceInCalendarDays, format } from 'date-fns';
 import { Copy, MoreHorizontal, Plus, Share2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -44,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import {
   useCreateMaterial,
@@ -52,6 +53,7 @@ import {
 } from '@/hooks/materials/use-material-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { materialTab, organizeMaterials } from '@/lib/materials';
 import { cn } from '@/lib/utils';
 
 const MATERIAL_UNITS = ['un', 'm', 'm2', 'm3', 'kg', 'l', 'bolsa', 'rollo', 'global'] as const;
@@ -69,9 +71,6 @@ const NEXT_STATUS: Partial<Record<MaterialStatus, MaterialStatus>> = {
   solicitado: 'comprado',
   comprado: 'en_obra',
 };
-
-/** Qué está por comprar y qué ya se compró: las dos bolsas de la pantalla. */
-const TO_BUY: ReadonlySet<MaterialStatus> = new Set(['pendiente', 'solicitado']);
 
 /** Faltan hasta tantos días para que una actividad empiece y se marca como urgente. */
 const URGENT_WITHIN_DAYS = 7;
@@ -236,20 +235,37 @@ function MaterialRow({
   projectId,
   canEdit,
   activityName,
+  highlighted = false,
 }: {
   material: MaterialItem;
   projectId: string;
   canEdit: boolean;
   /** Sólo donde la fila no está bajo el encabezado de su actividad. */
   activityName?: string;
+  /** El material al que se llegó con `?material=` desde el resumen de la obra. */
+  highlighted?: boolean;
 }) {
   const { t } = useTranslation();
   const updateMaterial = useUpdateMaterial(projectId);
   const [pendingStatus, setPendingStatus] = useState<MaterialStatus | null>(null);
   const next = NEXT_STATUS[material.status];
+  const rowRef = useRef<HTMLLIElement>(null);
+
+  // Sin el scroll, la fila puede quedar abajo del pliegue y el click en el
+  // resumen parece no haber hecho nada.
+  useEffect(() => {
+    if (highlighted) rowRef.current?.scrollIntoView({ block: 'center' });
+  }, [highlighted]);
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+    <li
+      ref={rowRef}
+      aria-current={highlighted || undefined}
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-2 py-3 text-sm',
+        highlighted && '-mx-2 rounded-md bg-primary/10 px-2',
+      )}
+    >
       <div className="min-w-0">
         <p className="font-medium">{material.name}</p>
         <p className="text-muted-foreground">
@@ -343,6 +359,7 @@ function ToBuyGroup({
   materials,
   projectId,
   canEdit,
+  highlightedId,
 }: {
   /** `null` = materiales sin actividad. */
   name: string | null;
@@ -350,6 +367,7 @@ function ToBuyGroup({
   materials: MaterialItem[];
   projectId: string;
   canEdit: boolean;
+  highlightedId: string | null;
 }) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
@@ -382,7 +400,13 @@ function ToBuyGroup({
       </div>
       <ul className="flex flex-col divide-y divide-border">
         {materials.map((material) => (
-          <MaterialRow key={material.id} material={material} projectId={projectId} canEdit={canEdit} />
+          <MaterialRow
+            key={material.id}
+            material={material}
+            projectId={projectId}
+            canEdit={canEdit}
+            highlighted={material.id === highlightedId}
+          />
         ))}
       </ul>
     </div>
@@ -398,6 +422,11 @@ function ToBuyGroup({
  * por estado: lo que frena el lunes va arriba aunque se haya cargado último.
  * Lo comprado separa lo que todavía no llegó de lo que ya está en obra, que es
  * lo que se pregunta quien está en el sitio.
+ *
+ * Van en dos pestañas y no una lista abajo de la otra: con una lista de compras
+ * larga, lo comprado quedaba abajo del pliegue y había que scrollear para saber
+ * si existía. Las pestañas muestran los dos conteos de entrada. "Por comprar"
+ * abre por defecto: es la que pide acción.
  */
 export function ProjectMaterialsPage() {
   const { t } = useTranslation();
@@ -417,41 +446,14 @@ export function ProjectMaterialsPage() {
     return map;
   }, [activitiesData]);
 
-  const { toBuy, toBuyGroups, onTheWay, onSite } = useMemo(() => {
-    const materials = materialsData?.materials ?? [];
-    const changedAt = (m: MaterialItem) => m.statusChangedAt ?? m.updatedAt;
-    const newestFirst = (a: MaterialItem, b: MaterialItem) => changedAt(b).localeCompare(changedAt(a));
+  const { toBuy, toBuyGroups, onTheWay, onSite, bought } = useMemo(
+    () => organizeMaterials(materialsData?.materials ?? [], activityById),
+    [materialsData, activityById],
+  );
 
-    const toBuy = materials.filter((m) => TO_BUY.has(m.status));
-
-    // Por actividad, la que empieza antes primero; sin actividad, al final.
-    const byActivity = new Map<string | null, MaterialItem[]>();
-    for (const material of toBuy) {
-      const key = material.activityId && activityById.has(material.activityId) ? material.activityId : null;
-      byActivity.set(key, [...(byActivity.get(key) ?? []), material]);
-    }
-    const toBuyGroups = [...byActivity.entries()]
-      .map(([activityId, items]) => ({
-        activityId,
-        activity: activityId ? activityById.get(activityId)! : null,
-        // Lo que nadie pidió todavía, antes que lo ya solicitado.
-        items: [...items].sort(
-          (a, b) => Number(a.status === 'solicitado') - Number(b.status === 'solicitado'),
-        ),
-      }))
-      .sort((a, b) => {
-        if (!a.activity) return 1;
-        if (!b.activity) return -1;
-        return a.activity.startDate.localeCompare(b.activity.startDate);
-      });
-
-    return {
-      toBuy,
-      toBuyGroups,
-      onTheWay: materials.filter((m) => m.status === 'comprado').sort(newestFirst),
-      onSite: materials.filter((m) => m.status === 'en_obra').sort(newestFirst),
-    };
-  }, [materialsData, activityById]);
+  // El resumen de la obra enlaza a un material puntual con `?material=<id>`.
+  const [searchParams] = useSearchParams();
+  const highlightedId = searchParams.get('material');
 
   function buildCopyText(): string {
     return toBuy
@@ -483,7 +485,7 @@ export function ProjectMaterialsPage() {
 
   const canShare = typeof navigator.share === 'function';
   const total = materialsData.materials.length;
-  const boughtCount = onTheWay.length + onSite.length;
+  const highlighted = materialsData.materials.find((m) => m.id === highlightedId);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-3 md:p-4">
@@ -497,30 +499,37 @@ export function ProjectMaterialsPage() {
       {total === 0 ? (
         <p className="text-sm text-muted-foreground">{t('material.list.empty')}</p>
       ) : (
-        <>
-          <section
-            aria-labelledby="materials-to-buy"
+        // `defaultValue` y no controlado: la pestaña del material pedido se
+        // elige una vez, al llegar. Si después cambia de estado y pasa a la
+        // otra pestaña, la pantalla no salta detrás de él.
+        <Tabs defaultValue={highlighted ? materialTab(highlighted.status) : 'toBuy'} className="gap-4">
+          <TabsList>
+            <TabsTrigger value="toBuy">
+              {t('material.list.toBuy')} ({toBuy.length})
+            </TabsTrigger>
+            <TabsTrigger value="bought">
+              {t('material.list.bought')} ({bought.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent
+            value="toBuy"
             className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
           >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h4 id="materials-to-buy" className="text-sm font-medium">
-                {t('material.list.toBuy')} ({toBuy.length})
-              </h4>
-              {toBuy.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={handleCopy}>
-                    <Copy className="size-4" />
-                    {t('material.list.copyList')}
+            {toBuy.length > 0 && (
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={handleCopy}>
+                  <Copy className="size-4" />
+                  {t('material.list.copyList')}
+                </Button>
+                {canShare && (
+                  <Button variant="outline" size="sm" onClick={handleShare}>
+                    <Share2 className="size-4" />
+                    {t('material.list.share')}
                   </Button>
-                  {canShare && (
-                    <Button variant="outline" size="sm" onClick={handleShare}>
-                      <Share2 className="size-4" />
-                      {t('material.list.share')}
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {toBuyGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t('material.list.toBuyEmpty')}</p>
@@ -534,21 +543,18 @@ export function ProjectMaterialsPage() {
                     materials={group.items}
                     projectId={projectId!}
                     canEdit={isEditor}
+                    highlightedId={highlightedId}
                   />
                 ))}
               </div>
             )}
-          </section>
+          </TabsContent>
 
-          <section
-            aria-labelledby="materials-bought"
+          <TabsContent
+            value="bought"
             className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
           >
-            <h4 id="materials-bought" className="text-sm font-medium">
-              {t('material.list.bought')} ({boughtCount})
-            </h4>
-
-            {boughtCount === 0 ? (
+            {bought.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t('material.list.boughtEmpty')}</p>
             ) : (
               <>
@@ -564,6 +570,7 @@ export function ProjectMaterialsPage() {
                           material={material}
                           projectId={projectId!}
                           canEdit={isEditor}
+                          highlighted={material.id === highlightedId}
                           activityName={
                             material.activityId ? activityById.get(material.activityId)?.name : undefined
                           }
@@ -584,6 +591,7 @@ export function ProjectMaterialsPage() {
                           material={material}
                           projectId={projectId!}
                           canEdit={isEditor}
+                          highlighted={material.id === highlightedId}
                           activityName={
                             material.activityId ? activityById.get(material.activityId)?.name : undefined
                           }
@@ -594,8 +602,8 @@ export function ProjectMaterialsPage() {
                 )}
               </>
             )}
-          </section>
-        </>
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );
