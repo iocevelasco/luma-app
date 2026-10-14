@@ -1,7 +1,14 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@custom-variant dark (&:is(.dark *));
+/*
+  `dark:` aplica en todo lo que cuelga de `.dark`, salvo dentro de una
+  superficie clara — ahí los `dark:` de shadcn (destructive al 60%, tabs,
+  switch) dejaban texto blanco sobre rosa pálido. El chrome oscuro del panel
+  vive dentro de `.surface-light` (por <body>), así que se re-incluye con
+  `.surface-dark`.
+*/
+@custom-variant dark (&:is(.dark *):not(.surface-light *), &:is(.surface-dark *));
 
 /*
   Tokens del panel. La fuente de verdad es DESIGN.md en la raíz del repo; este
@@ -15,7 +22,8 @@
   clase.
 */
 :root,
-.dark {
+.dark,
+.surface-dark {
   --background: #101010; /* canvas — el único fondo de página */
   --foreground: #f2f2f2; /* ink */
   --card: #1a1a1a; /* canvas-soft: la card se despega del fondo por color, no sólo por filete */
@@ -89,6 +97,84 @@
   --status-danger: #e8455a;
   --status-neutral: #8b949e;
   --status-info: #7dd3fc;
+
+  --surface-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  --overlay-shadow: 0 20px 60px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(148 163 184 / 0.1) inset;
+}
+
+/*
+  Superficie clara — el contenido del panel (todo menos header y navegación).
+
+  El dark mode completo cansa la vista: texto claro sobre #101010 en pantallas
+  de trabajo largas, con tablas y formularios. El chrome (header, sidebar,
+  riel, barra inferior) se queda oscuro y es lo que da identidad; el área de
+  trabajo es clara.
+
+  Se aplica como CLASE, no como tema global, por dos motivos:
+    1. La landing y el login siguen oscuros — no los toca.
+    2. Redefine los MISMOS tokens, así que ningún componente cambia: card,
+       input, tabla, badge leen `--card`, `--border`, etc. y los resuelven por
+       su ancestro más cercano.
+
+  `DashboardLayout` pone `surface-dark` en su raíz y `surface-light` en el área
+  de contenido, y además `surface-light` en <body> mientras está montado: los
+  portales de Radix (dialog, select, popover, toast) cuelgan de <body>, no del
+  contenido, y sin eso abrirían oscuros sobre una pantalla clara.
+
+  Contraste (sobre #ffffff): foreground 16.6:1, muted-foreground 7.6:1,
+  brand 5.5:1. El verde #00d992 NO alcanza como texto sobre blanco (1.7:1):
+  como relleno de CTA sigue igual (texto #101010), pero `--brand`, que se usa
+  de tinta e ícono, baja a un esmeralda oscuro.
+*/
+.surface-light {
+  --background: #f4f4f5; /* lienzo gris claro: la card blanca se despega por color */
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+
+  --brand: #047857;
+  --primary: #00d992;
+  --primary-foreground: #101010;
+  --primary-pressed: #10b981;
+  --primary-soft: #047857;
+
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #52525b;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --success: #15803d;
+  --success-foreground: #ffffff;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+  --info: #0369a1;
+  --info-foreground: #ffffff;
+
+  --border: #e4e4e7;
+  --border-strong: #a1a1aa;
+  --input: #8a8a93; /* ~3.3:1 sobre blanco (WCAG 1.4.11) */
+  --ring: #059669;
+
+  --chart-1: #059669;
+  --chart-2: #0d9488;
+  --chart-3: #0369a1;
+  --chart-4: #71717a;
+  --chart-5: #dc2626;
+
+  --status-active: #15803d;
+  --status-warning: #b45309;
+  --status-danger: #dc2626;
+  --status-neutral: #71717a;
+  --status-info: #0369a1;
+
+  --surface-shadow: 0 1px 2px rgb(24 24 27 / 0.06), 0 8px 24px -12px rgb(24 24 27 / 0.12);
+  --overlay-shadow: 0 20px 60px rgb(24 24 27 / 0.18), 0 0 0 1px rgb(24 24 27 / 0.06);
 }
 
 @theme inline {
@@ -190,8 +276,8 @@
     `--shadow-overlay` sigue siendo lo único que flota de verdad — diálogo,
     menú, popover — con más peso que una card en reposo.
   */
-  --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
-  --shadow-overlay: 0 20px 60px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(148 163 184 / 0.1) inset;
+  --shadow-surface: var(--surface-shadow);
+  --shadow-overlay: var(--overlay-shadow);
 
   /*
     Relieve de los botones. La forma ya no separa un botón de un badge —los dos

@@ -164,8 +164,9 @@ Rutas públicas que nunca deben recibir un redirect por 401: `/login`, `/registe
 operativo; ante cualquier duda o contradicción, manda `DESIGN.md`.
 
 Hay **un solo** sistema de diseño, **VoltAgent**: lienzo casi negro `#101010`,
-un único verde `#00d992` como marca y como relleno de CTA, y **un solo tema,
-oscuro**. Rige los dos paquetes con el mismo vocabulario de tokens y los mismos
+un único verde `#00d992` como marca y como relleno de CTA. Landing, login y
+chrome del panel son oscuros; el **área de contenido del panel es clara**
+(`.surface-light`, ver `DESIGN.md`). Rige los dos paquetes con el mismo vocabulario de tokens y los mismos
 valores. El rojo del panel, el "lenguaje de cero" de la landing y el sistema
 naranja/crema que vino después ya no existen: si ves `bg-cream`, `brand-fill`,
 `sunshine-*` o `#fa520f`, es un resto.

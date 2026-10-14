@@ -17,9 +17,11 @@ y cómo lo nombra.
 
 ## La voz
 
-Técnica, sobria, nocturna. Un solo tema, **oscuro**: no hay modo claro ni
-switch, y la landing y el panel comparten fondo y marca para que pasar de
-`/home` a `/app` no se sienta como cambiar de producto.
+Técnica, sobria, nocturna. **No hay switch de tema.** La landing, el login y el
+*chrome* del panel (header, sidebar, riel, barra inferior) son oscuros. El
+**área de contenido del panel** es una superficie clara (`.surface-light`, ver
+abajo): texto claro sobre `#101010` durante horas de tablas y formularios cansa
+la vista.
 
 El verde aparece poco y cuando aparece significa "acá se actúa" (CTA, estado
 activo, foco). No es un color decorativo.
@@ -54,6 +56,24 @@ es siempre correcto.
 El escalón de `secondary` no es capricho: un badge o un hover viven casi siempre
 encima de una card. Si compartieran hex con la superficie que los contiene,
 desaparecerían.
+
+### Superficie clara del panel
+
+`.surface-light` redefine los **mismos tokens** (no hay clases nuevas en los
+componentes). `DashboardLayout` la pone en el área de contenido y en `<body>`
+mientras está montado, para que dialog, select y toast —que son portales— no
+abran oscuros.
+
+| Token | Hex |
+|---|---|
+| `background` | `#f4f4f5` |
+| `card` / `popover` | `#ffffff` — opacos, nunca `bg-card/50` |
+| `foreground` / `muted-foreground` | `#18181b` / `#52525b` |
+| `border` / `input` | `#e4e4e7` / `#d4d4d8` |
+| `brand` | `#047857` — el verde `#00d992` no alcanza como texto sobre blanco |
+| `primary` (relleno de CTA) | `#00d992`, texto `#101010` |
+
+Sin ilustración de fondo en ninguna pantalla del panel.
 
 ### Tinta y filetes
 
