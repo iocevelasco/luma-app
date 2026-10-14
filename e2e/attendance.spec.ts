@@ -45,7 +45,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     // Una actividad vigente hoy, para que aparezca en la asistencia.
     await page.getByRole('link', { name: /^cronograma$/i }).click();
     const today = new Date();
-    await page.getByRole('button', { name: /nueva actividad/i }).click();
+    await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(activityName);
     await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill(toDayKey(today));
@@ -53,10 +53,10 @@ test.describe('asistencia contra la cuadrilla', () => {
       .locator('#activity-end')
       .fill(toDayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5)));
     await pickActivityResponsible(page);
-    await page.getByRole('button', { name: /crear actividad/i }).click();
+    await page.getByRole('button', { name: /crear tarea/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
-    await page.getByRole('link', { name: /^personal$/i }).click();
+    await page.getByRole('link', { name: /^tareas$/i }).click();
     await expect(page).toHaveURL(/\/personal$/);
 
     // --- Roster: uno de ellos con teléfono, para poder llamarlo ---
@@ -65,10 +65,8 @@ test.describe('asistencia contra la cuadrilla', () => {
     await addCrewMember(page, { name: coverName });
 
     // --- Se asignan dos a la actividad: la cuadrilla esperada ---
-    await expect(page.getByRole('tab', { name: /^jornada$/i })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    // La asistencia vive en la Jornada; la pestaña principal es el Tablero.
+    await page.getByRole('tab', { name: /^jornada$/i }).click();
     const card = page.locator('section', { hasText: activityName });
 
     for (const name of [presentName, absentName]) {

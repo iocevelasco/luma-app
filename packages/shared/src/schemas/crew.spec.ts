@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createCrewGoalSchema,
-  createCrewMemberSchema,
-  crewSpecialtySchema,
-  updateCrewGoalSchema,
-} from './crew.js';
+import { createCrewMemberSchema, crewSpecialtySchema } from './crew.js';
 import { providerSpecialtySchema } from './provider.js';
 
 describe('crewSpecialtySchema', () => {
@@ -66,54 +61,5 @@ describe('createCrewMemberSchema', () => {
     expect(createCrewMemberSchema.safeParse({ ...valid, specialty: 'soldadura' }).success).toBe(
       false,
     );
-  });
-});
-
-describe('createCrewGoalSchema', () => {
-  const valid = {
-    crewMemberId: 'crew-1',
-    weekStart: '2026-09-28',
-    description: 'Terminar el revoque del segundo piso',
-  };
-
-  it('acepta una meta válida y nace pendiente', () => {
-    const result = createCrewGoalSchema.safeParse(valid);
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data.status).toBe('pending');
-  });
-
-  it('rechaza una meta sin descripción', () => {
-    expect(createCrewGoalSchema.safeParse({ ...valid, description: '  ' }).success).toBe(false);
-  });
-
-  it('rechaza una semana con formato inválido', () => {
-    expect(createCrewGoalSchema.safeParse({ ...valid, weekStart: '28/09/2026' }).success).toBe(
-      false,
-    );
-  });
-
-  it('rechaza una meta sin destinatario', () => {
-    expect(createCrewGoalSchema.safeParse({ ...valid, crewMemberId: '' }).success).toBe(false);
-  });
-});
-
-describe('updateCrewGoalSchema', () => {
-  it('permite marcarla hecha', () => {
-    expect(updateCrewGoalSchema.safeParse({ status: 'done' }).success).toBe(true);
-  });
-
-  it('distingue "descartada" de "pendiente"', () => {
-    expect(updateCrewGoalSchema.safeParse({ status: 'discarded' }).success).toBe(true);
-    expect(updateCrewGoalSchema.safeParse({ status: 'failed' }).success).toBe(false);
-  });
-
-  it('no deja mover la meta de semana: borraría el dato del atraso', () => {
-    const result = updateCrewGoalSchema.safeParse({ weekStart: '2026-10-12' });
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data).not.toHaveProperty('weekStart');
-  });
-
-  it('ya no acepta los valores en castellano: esos sólo existen guardados', () => {
-    expect(updateCrewGoalSchema.safeParse({ status: 'cumplida' }).success).toBe(false);
   });
 });

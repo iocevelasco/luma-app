@@ -15,7 +15,10 @@ import {
   type ProjectRole,
 } from '@luma/shared';
 import { Activity, type IActivity } from '../models/Activity.js';
+import { ActivityCrew } from '../models/ActivityCrew.js';
+import { CrewMember } from '../models/CrewMember.js';
 import { MaterialItem } from '../models/MaterialItem.js';
+import { visibleCrewFilter } from '../services/directory.service.js';
 import { notifyProject } from '../services/notification.service.js';
 import type { IProject } from '../models/Project.js';
 import {
@@ -107,7 +110,15 @@ export async function listActivities(req: Request, res: Response) {
   }
 }
 
-/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
+/**
+ * Requiere `requireProjectAccess` + `requireCapability('activity.create')`:
+ * gerente y supervisor. La tarea es una sola entidad para el Cronograma y el
+ * Tablero — se cree desde donde se cree, aparece en los dos.
+ *
+ * Con `crewMemberIds` nace con su cuadrilla, que es lo que la lleva a la
+ * asistencia de la Jornada. Va en el alta y no en un paso aparte porque el
+ * supervisor crea tareas pero no administra cuadrillas (`crew.manage`).
+ */
 export async function createActivity(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -122,12 +133,33 @@ export async function createActivity(req: Request, res: Response) {
     }
 
     const project = req.project as IProject;
+    const { crewMemberIds, ...fields } = parsed.data;
+
+    const crewIds = [...new Set(crewMemberIds ?? [])];
+    if (crewIds.length > 0) {
+      const visible = await CrewMember.find({
+        _id: { $in: crewIds },
+        ...(await visibleCrewFilter(project)),
+        active: true,
+      }).select('_id');
+      if (visible.length !== crewIds.length) {
+        return res
+          .status(400)
+          .json({ success: false, error: 'Hay personas que no están en esta obra.' });
+      }
+    }
 
     const activity = await Activity.create({
-      ...parsed.data,
+      ...fields,
       project: project._id,
       createdBy: req.user.sub,
     });
+
+    if (crewIds.length > 0) {
+      await ActivityCrew.insertMany(
+        crewIds.map((crewMember) => ({ activity: activity._id, crewMember })),
+      );
+    }
 
     return res
       .status(201)
@@ -164,18 +196,21 @@ export async function updateActivity(req: Request, res: Response) {
     if (parsed.data.status === 'completada' && !req.can?.('activity.review')) {
       return res.status(403).json({
         success: false,
-        error: 'Sólo quien gestiona la obra puede dar una actividad por terminada',
+        error: 'Sólo quien gestiona la obra puede dar una tarea por terminada',
       });
     }
 
-    // El supervisor reporta sobre lo planificado; no replanifica. Si el body
-    // toca fechas, responsable o alcance, hace falta `activity.plan`.
+    // El supervisor crea tareas y las mueve por el flujo, pero no las
+    // modifica: fechas, responsable, alcance o cancelarla piden
+    // `activity.plan`, que es del gerente.
     const PLANNING_FIELDS = ['name', 'startDate', 'endDate', 'responsible', 'specialty'] as const;
-    const touchesPlanning = PLANNING_FIELDS.some((field) => parsed.data[field] !== undefined);
+    const touchesPlanning =
+      PLANNING_FIELDS.some((field) => parsed.data[field] !== undefined) ||
+      parsed.data.status === 'cancelada';
     if (touchesPlanning && !req.can?.('activity.plan')) {
       return res.status(403).json({
         success: false,
-        error: 'No tenés permiso para replanificar esta actividad',
+        error: 'Sólo el gerente puede modificar o cancelar una tarea',
         code: 'FORBIDDEN_CAPABILITY',
         details: { capability: 'activity.plan' },
       });
@@ -188,7 +223,37 @@ export async function updateActivity(req: Request, res: Response) {
     });
 
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
+    }
+
+    // Reabrir una completada deshace la aprobación del gerente: es suya.
+    if (
+      activity.status === 'completada' &&
+      parsed.data.status &&
+      parsed.data.status !== 'completada' &&
+      !req.can?.('activity.review')
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: 'Sólo el gerente puede reabrir una tarea completada',
+        code: 'FORBIDDEN_CAPABILITY',
+        details: { capability: 'activity.review' },
+      });
+    }
+
+    // Restaurar una cancelada es deshacer una decisión de planificación.
+    if (
+      activity.status === 'cancelada' &&
+      parsed.data.status &&
+      parsed.data.status !== 'cancelada' &&
+      !req.can?.('activity.plan')
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: 'Sólo el gerente puede restaurar una tarea cancelada',
+        code: 'FORBIDDEN_CAPABILITY',
+        details: { capability: 'activity.plan' },
+      });
     }
 
     const now = new Date();
@@ -247,13 +312,13 @@ export async function rejectActivity(req: Request, res: Response) {
     });
 
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     if (activity.status !== 'en_revision') {
       return res
         .status(400)
-        .json({ success: false, error: 'Sólo se puede devolver una actividad en revisión' });
+        .json({ success: false, error: 'Sólo se puede devolver una tarea en revisión' });
     }
 
     activity.set('status', 'en_curso');
@@ -282,7 +347,7 @@ export async function deleteActivity(req: Request, res: Response) {
     const activity = await Activity.findOne({ _id: req.params.activityId, project: project._id });
 
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     await Promise.all(activity.evidence.map((photo) => deleteEvidencePhoto(photo.key)));
@@ -321,7 +386,7 @@ export async function uploadActivityEvidence(req: Request, res: Response) {
     const project = req.project as IProject;
     const activity = await Activity.findOne({ _id: req.params.activityId, project: project._id });
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     const { key } = await uploadEvidencePhoto({
@@ -356,7 +421,7 @@ export async function deleteActivityEvidence(req: Request, res: Response) {
     const project = req.project as IProject;
     const activity = await Activity.findOne({ _id: req.params.activityId, project: project._id });
     if (!activity) {
-      return res.status(404).json({ success: false, error: 'Actividad no encontrada' });
+      return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
     }
 
     const photo = activity.evidence.id(req.params.evidenceId);

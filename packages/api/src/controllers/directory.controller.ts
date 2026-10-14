@@ -9,7 +9,6 @@ import {
 import { Activity } from '../models/Activity.js';
 import { ActivityCrew } from '../models/ActivityCrew.js';
 import { ActivityProvider } from '../models/ActivityProvider.js';
-import { CrewGoal } from '../models/CrewGoal.js';
 import { CrewMember } from '../models/CrewMember.js';
 import { Expense } from '../models/Expense.js';
 import { LaborRecord } from '../models/LaborRecord.js';
@@ -89,14 +88,14 @@ async function providerUsedInProject(projectId: unknown, providerId: unknown): P
   return Boolean(inActivity || inEngagement || inExpense);
 }
 
+/** Tareas (por su cuadrilla) o asistencia: las metas de antes ya son tareas. */
 async function crewUsedInProject(projectId: unknown, crewMemberId: unknown): Promise<boolean> {
   const activityIds = await Activity.find({ project: projectId }).distinct('_id');
-  const [inActivity, inAttendance, inGoal] = await Promise.all([
+  const [inActivity, inAttendance] = await Promise.all([
     ActivityCrew.exists({ crewMember: crewMemberId, activity: { $in: activityIds } }),
     LaborRecord.exists({ project: projectId, presentCrewMembers: crewMemberId }),
-    CrewGoal.exists({ project: projectId, crewMember: crewMemberId }),
   ]);
-  return Boolean(inActivity || inAttendance || inGoal);
+  return Boolean(inActivity || inAttendance);
 }
 
 // ===========================================================================
@@ -208,7 +207,7 @@ export const setOrganizationProviderProjects = wrap(async (req, res) => {
     if (await providerUsedInProject(projectId, provider._id)) {
       const project = await Project.findById(projectId).select('name');
       throw conflict(
-        `No se puede sacar a ${provider.name} de «${project?.name ?? 'esa obra'}»: ya tiene actividades, contrataciones o gastos ahí.`,
+        `No se puede sacar a ${provider.name} de «${project?.name ?? 'esa obra'}»: ya tiene tareas, contrataciones o gastos ahí.`,
       );
     }
   }
@@ -344,7 +343,7 @@ export const setOrganizationCrewMemberProjects = wrap(async (req, res) => {
     if (await crewUsedInProject(projectId, crewMember._id)) {
       const project = await Project.findById(projectId).select('name');
       throw conflict(
-        `No se puede sacar a ${crewMember.name} de «${project?.name ?? 'esa obra'}»: ya tiene actividades, asistencia o metas ahí.`,
+        `No se puede sacar a ${crewMember.name} de «${project?.name ?? 'esa obra'}»: ya tiene tareas o asistencia ahí.`,
       );
     }
   }
@@ -415,7 +414,7 @@ export const removeProviderFromProject = wrap(async (req, res) => {
 
   if (await providerUsedInProject(project._id, providerId)) {
     throw conflict(
-      'Ese proveedor ya tiene actividades, contrataciones o gastos en esta obra. Para sacarlo, primero quitá lo asignado.',
+      'Ese proveedor ya tiene tareas, contrataciones o gastos en esta obra. Para sacarlo, primero quitá lo asignado.',
     );
   }
 
@@ -493,7 +492,7 @@ export const removeCrewMemberFromProject = wrap(async (req, res) => {
 
   if (await crewUsedInProject(project._id, crewMemberId)) {
     throw conflict(
-      'Esa persona ya tiene actividades, asistencia o metas en esta obra. Para sacarla, primero quitá lo asignado.',
+      'Esa persona ya tiene tareas o asistencia en esta obra. Para sacarla, primero quitá lo asignado.',
     );
   }
 

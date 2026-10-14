@@ -41,19 +41,23 @@ function handleUploadError(err: unknown, _req: Request, res: Response, next: Nex
 /**
  * Anidado bajo `/api/projects/:projectId/activities` — ver routes/project.ts.
  *
- * Cada ruta declara QUÉ acción es (`activity.plan`, `activity.report`…) y
+ * Una actividad es una TAREA: la misma entidad para el Cronograma y el
+ * Tablero.
+ *
+ * Cada ruta declara QUÉ acción es (`activity.create`, `activity.report`…) y
  * quién puede hacerla lo decide la grilla de `@luma/shared/permissions`. La
- * división que importa acá: planificar es del gerente, reportar es del
- * supervisor. Por eso crear y borrar van con `activity.plan` y el PATCH con
- * `activity.report` — qué campos puede tocar cada uno lo afina el controller,
- * que es el único que ve el body.
+ * división que importa acá: crear lo hacen el gerente y el supervisor;
+ * modificar y borrar es del gerente (`activity.plan`); mover por el flujo es
+ * de los dos (`activity.report`); cerrar es del gerente (`activity.review`).
+ * El PATCH entra con `activity.report` y qué campos puede tocar cada uno lo
+ * afina el controller, que es el único que ve el body.
  */
 export const activityRouter = Router({ mergeParams: true });
 
 activityRouter.use(isAuthenticated, requireProjectAccess);
 
 activityRouter.get('/', requireCapability('activity.read'), listActivities);
-activityRouter.post('/', requireCapability('activity.plan'), createActivity);
+activityRouter.post('/', requireCapability('activity.create'), createActivity);
 activityRouter.patch('/:activityId', requireCapability('activity.report'), updateActivity);
 // Devolver el trabajo y darlo por terminado son la misma decisión del gerente
 // (`activity.review`). Cerrar se gatea dentro de `updateActivity`, que es

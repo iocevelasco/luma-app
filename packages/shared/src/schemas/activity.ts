@@ -71,6 +71,13 @@ export const createActivitySchema = z
     status: activityStatusSchema.default('pendiente'),
     specialty: activitySpecialtySchema,
     notes: z.string().trim().max(2000, 'Es demasiado largo').optional(),
+    /**
+     * La cuadrilla con la que nace la tarea. Es lo que la conecta con la
+     * Jornada: quien está acá aparece esperado en la asistencia de esos días.
+     * Va en el alta y no en un paso aparte porque el supervisor crea tareas
+     * pero no administra cuadrillas (`crew.manage`).
+     */
+    crewMemberIds: z.array(z.string().trim().min(1)).max(30).optional(),
   })
   .refine((data) => data.endDate >= data.startDate, {
     message: 'La fecha de fin no puede ser anterior al inicio',

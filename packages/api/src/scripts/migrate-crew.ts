@@ -1,15 +1,18 @@
 /**
- * Pone al día el personal de obra y sus metas. Tres pasos:
+ * Pone al día el personal de obra y las tareas. Tres pasos:
  *
- * 1. **Estados de meta a inglés**: `pendiente` → `pending`, `cumplida` →
- *    `done`, `no_cumplida` → `discarded`. Mientras no corra, la API los
- *    traduce al leer; después de correrla, ese shim se borra.
+ * 1. **Metas → tareas**: las "metas semanales" eran una entidad aparte de las
+ *    actividades. Ahora una tarea ES una actividad, así que cada meta se
+ *    convierte en una: dura su semana, la persona queda de responsable y en
+ *    la cuadrilla, y el estado se traduce (ver `lib/goal-to-task.ts`). La meta
+ *    no se borra: queda marcada con `migratedToActivity`, que es lo que hace
+ *    al paso idempotente y lo que permite rastrear de dónde salió cada tarea.
  * 2. **"Sólo para esta obra" → Empresa**: ese alcance ya no existe. Un obrero
  *    tiene que poder sumarse a otra obra sin recrearlo, así que pasa a la
  *    libreta de la Empresa y queda asignado a la obra donde estaba.
  * 3. **Reporte de posibles duplicados** (mismo tipo y mismo nombre o
- *    teléfono). Sólo los LISTA: fusionar mueve asistencia, metas y cuadrillas
- *    de un registro a otro, y eso lo decide una persona mirando el reporte.
+ *    teléfono). Sólo los LISTA: fusionar mueve asistencia y cuadrillas de un
+ *    registro a otro, y eso lo decide una persona mirando el reporte.
  *
  * Idempotente. **En seco por default**: informa sin escribir. `--apply`
  * escribe. El paso 2 puede generar duplicados nuevos (el privado de una obra
@@ -23,22 +26,41 @@
  *     node dist/scripts/migrate-crew.js --apply
  */
 import mongoose from 'mongoose';
-import { LEGACY_CREW_GOAL_STATUS, normalizePersonName, normalizePhone } from '@luma/shared';
+import { normalizePersonName, normalizePhone } from '@luma/shared';
 import { DATABASE_CONFIG } from '../config/app.config.js';
+import { Activity } from '../models/Activity.js';
+import { ActivityCrew } from '../models/ActivityCrew.js';
 import { CrewGoal } from '../models/CrewGoal.js';
 import { CrewMember, type ICrewMember } from '../models/CrewMember.js';
 import { ProjectCrewMember } from '../models/ProjectCrewMember.js';
+import { goalToTask } from './lib/goal-to-task.js';
 
 const apply = process.argv.includes('--apply');
 
-async function migrateGoalStatuses(): Promise<void> {
-  console.log('\n— Estados de meta —');
-  for (const [legacy, current] of Object.entries(LEGACY_CREW_GOAL_STATUS)) {
-    const count = await CrewGoal.countDocuments({ status: legacy });
-    console.log(`  ${legacy} → ${current}: ${count}`);
-    if (apply && count > 0) {
-      await CrewGoal.updateMany({ status: legacy }, { $set: { status: current } });
+async function migrateGoalsToTasks(): Promise<void> {
+  console.log('\n— Metas → tareas —');
+  const goals = await CrewGoal.find({ migratedToActivity: null });
+  console.log(`  ${goals.length} meta(s) a convertir en tarea.`);
+
+  for (const goal of goals) {
+    const owner = await CrewMember.findById(goal.crewMember).select('name specialty');
+    const linked = goal.activity
+      ? await Activity.findById(goal.activity).select('name specialty')
+      : null;
+    const task = goalToTask(goal, owner, linked);
+    console.log(`  · «${task.name}» (${task.startDate} → ${task.endDate}, ${task.status})`);
+
+    if (!apply) continue;
+
+    const activity = await Activity.create(task);
+    if (owner) {
+      await ActivityCrew.updateOne(
+        { activity: activity._id, crewMember: owner._id },
+        { $setOnInsert: { activity: activity._id, crewMember: owner._id } },
+        { upsert: true },
+      );
     }
+    await CrewGoal.updateOne({ _id: goal._id }, { $set: { migratedToActivity: activity._id } });
   }
 }
 
@@ -103,7 +125,7 @@ async function main() {
   await mongoose.connect(DATABASE_CONFIG.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
   console.log(apply ? '✍️  --apply: escribiendo.' : '🔍 En seco: no se escribe nada (usá --apply).');
 
-  await migrateGoalStatuses();
+  await migrateGoalsToTasks();
   await promoteProjectScopedCrew();
   await reportDuplicates();
 

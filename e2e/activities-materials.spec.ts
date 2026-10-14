@@ -48,13 +48,13 @@ test.describe('planificación semanal y materiales', () => {
     const start = toDayKey(today);
     const end = toDayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2));
 
-    await page.getByRole('button', { name: /nueva actividad/i }).click();
+    await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(ACTIVITY_NAME);
     await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill(start);
     await page.locator('#activity-end').fill(end);
     await pickActivityResponsible(page);
-    await page.getByRole('button', { name: /crear actividad/i }).click();
+    await page.getByRole('button', { name: /crear tarea/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
     // Aparece como fila del gantt del rango actual (este mes).

@@ -25,7 +25,6 @@ vi.mock('../../models/ActivityCrew.js', () => ({ ActivityCrew: { exists: vi.fn()
 vi.mock('../../models/ProviderEngagement.js', () => ({ ProviderEngagement: { exists: vi.fn() } }));
 vi.mock('../../models/Expense.js', () => ({ Expense: { exists: vi.fn() } }));
 vi.mock('../../models/LaborRecord.js', () => ({ LaborRecord: { exists: vi.fn() } }));
-vi.mock('../../models/CrewGoal.js', () => ({ CrewGoal: { exists: vi.fn() } }));
 vi.mock('../../services/organization.service.js', () => ({
   findMyOrganizationId: vi.fn(),
 }));

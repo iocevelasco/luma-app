@@ -1,15 +1,11 @@
 import { z } from 'zod';
 
 /**
- * Schemas del personal fijo de obra y sus metas semanales. Mismo criterio que
+ * Schemas del personal fijo de obra. Mismo criterio que
  * el resto: sin imports de `./index.ts`.
  */
 
-const dayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida');
-
 export const crewMemberKindSchema = z.enum(['persona', 'equipo']);
-
-export const crewGoalStatusSchema = z.enum(['pending', 'done', 'discarded']);
 
 /**
  * Duplica los valores de `providerSpecialtySchema` en vez de importarlo: los
@@ -73,30 +69,5 @@ export const updateCrewMemberSchema = z.object({
   active: z.boolean().optional(),
 });
 
-export const createCrewGoalSchema = z.object({
-  crewMemberId: z.string().trim().min(1, 'Elegí a quién le corresponde'),
-  weekStart: dayKeySchema,
-  description: z
-    .string()
-    .trim()
-    .min(1, 'Escribí la meta')
-    .max(500, 'Es demasiado larga'),
-  activityId: z.string().trim().min(1).optional(),
-  status: crewGoalStatusSchema.default('pending'),
-});
-
-/**
- * Sin `weekStart`: una meta no cambia de semana. El arrastre es derivado y
- * cuenta con la semana de origen; moverla borraría justo el dato de que se
- * atrasó.
- */
-export const updateCrewGoalSchema = z.object({
-  description: z.string().trim().min(1).max(500).optional(),
-  activityId: z.string().trim().min(1).optional(),
-  status: crewGoalStatusSchema.optional(),
-});
-
 export type CreateCrewMemberInput = z.infer<typeof createCrewMemberSchema>;
 export type UpdateCrewMemberInput = z.infer<typeof updateCrewMemberSchema>;
-export type CreateCrewGoalInput = z.infer<typeof createCrewGoalSchema>;
-export type UpdateCrewGoalInput = z.infer<typeof updateCrewGoalSchema>;

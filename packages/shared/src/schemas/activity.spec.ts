@@ -20,6 +20,23 @@ describe('createActivitySchema', () => {
     expect(createActivitySchema.safeParse(validActivity).success).toBe(true);
   });
 
+  it('nace con su cuadrilla: es lo que la lleva a la asistencia de la Jornada', () => {
+    const result = createActivitySchema.safeParse({ ...validActivity, crewMemberIds: ['crew-1'] });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.crewMemberIds).toEqual(['crew-1']);
+  });
+
+  it('la cuadrilla es opcional', () => {
+    const result = createActivitySchema.safeParse(validActivity);
+    expect(result.success && result.data.crewMemberIds).toBeUndefined();
+  });
+
+  it('no acepta ids vacíos en la cuadrilla', () => {
+    expect(createActivitySchema.safeParse({ ...validActivity, crewMemberIds: [''] }).success).toBe(
+      false,
+    );
+  });
+
   it('default de status es pendiente', () => {
     const result = createActivitySchema.safeParse(validActivity);
     expect(result.success).toBe(true);

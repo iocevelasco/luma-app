@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import type { CreateActivityInput, UpdateActivityInput } from '@luma/shared';
+import type {
+  ActivityListResponse,
+  ActivityStatus,
+  CreateActivityInput,
+  UpdateActivityInput,
+} from '@luma/shared';
 import { activitiesApi } from '@/api/activities';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
@@ -40,6 +45,8 @@ export function useCreateActivity(projectId: string) {
     mutationFn: (payload: CreateActivityInput) => activitiesApi.create(projectId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
+      // Si nace con cuadrilla, aparece esperada en la asistencia de la Jornada.
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.activityCrew, projectId] });
       toast.success(t('activity.list.created'));
     },
       // Sin `onError`: esta mutación se envía desde un formulario y el banner
@@ -62,6 +69,51 @@ export function useUpdateActivity(projectId: string) {
       // Sin `onError`: esta mutación se envía desde un formulario y el banner
       // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
       // mensaje dos veces, en dos lugares distintos de la pantalla.
+  });
+}
+
+/**
+ * Mover una tarea de columna en el Tablero: sólo cambia el estado.
+ *
+ * Distinta de `useUpdateActivity` a propósito:
+ * - Optimista: la tarjeta salta de columna al soltarla. Esperar a la API la
+ *   dejaba un instante en la columna vieja y parecía que no había andado.
+ * - Sin toast de éxito: mover de a una dispararía un toast por click.
+ * - El error va por toast y la tarjeta vuelve a su lugar: es un cambio
+ *   inline, no hay formulario donde poner un banner.
+ */
+export function useMoveActivity(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const key = [QueryKeys.activities, projectId];
+
+  return useMutation({
+    mutationFn: ({ activityId, status }: { activityId: string; status: ActivityStatus }) =>
+      activitiesApi.update(projectId, activityId, { status }),
+    onMutate: async ({ activityId, status }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueriesData<ActivityListResponse>({ queryKey: key });
+      queryClient.setQueriesData<ActivityListResponse>({ queryKey: key }, (data) =>
+        data
+          ? {
+              ...data,
+              activities: data.activities.map((activity) =>
+                activity.id === activityId ? { ...activity, status } : activity,
+              ),
+            }
+          : data,
+      );
+      return { previous };
+    },
+    onError: (error, _variables, context) => {
+      for (const [queryKey, data] of context?.previous ?? []) {
+        queryClient.setQueryData(queryKey, data);
+      }
+      toast.error(errorMessage(error, t));
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
   });
 }
 

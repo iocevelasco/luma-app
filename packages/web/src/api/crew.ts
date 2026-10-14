@@ -1,12 +1,8 @@
 import type {
   ApiResponse,
-  CreateCrewGoalInput,
   CreateCrewMemberInput,
-  CrewGoalListResponse,
-  CrewGoalResponse,
   CrewMemberListResponse,
   CrewMemberResponse,
-  UpdateCrewGoalInput,
   UpdateCrewMemberInput,
 } from '@luma/shared';
 import { apiClient } from '@/lib/api-client';
@@ -52,30 +48,4 @@ export const crewApi = {
 
   deactivate: (projectId: string, crewMemberId: string) =>
     unwrap<CrewMemberResponse>(apiClient.delete(`/api/projects/${projectId}/crew/${crewMemberId}`)),
-
-  listGoals: (projectId: string, weekStart?: string, options?: { includeCarried?: boolean }) => {
-    const params = new URLSearchParams();
-    if (weekStart) params.set('weekStart', weekStart);
-    if (weekStart && options?.includeCarried) params.set('includeCarried', 'true');
-    // `toString()` y no `params.size`: `size` no existe antes de Safari 17, y
-    // ahí la query se perdía sin error.
-    const search = params.toString();
-    const query = search ? `?${search}` : '';
-    return unwrap<CrewGoalListResponse>(
-      apiClient.get(`/api/projects/${projectId}/crew/goals${query}`),
-    );
-  },
-
-  createGoal: (projectId: string, payload: CreateCrewGoalInput) =>
-    unwrap<CrewGoalResponse>(apiClient.post(`/api/projects/${projectId}/crew/goals`, payload)),
-
-  updateGoal: (projectId: string, goalId: string, payload: UpdateCrewGoalInput) =>
-    unwrap<CrewGoalResponse>(
-      apiClient.patch(`/api/projects/${projectId}/crew/goals/${goalId}`, payload),
-    ),
-
-  deleteGoal: (projectId: string, goalId: string) =>
-    unwrap<{ goalId: string }>(
-      apiClient.delete(`/api/projects/${projectId}/crew/goals/${goalId}`),
-    ),
 };

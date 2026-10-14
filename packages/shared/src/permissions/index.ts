@@ -78,6 +78,9 @@ export type Capability =
   | 'advisor.use'
   // Actividades: planificar es del gerente, reportar es del supervisor
   | 'activity.read'
+  // Crear es distinto de planificar: el supervisor crea tareas, pero
+  // modificarlas (fechas, alcance, cancelar) y borrarlas es del gerente.
+  | 'activity.create'
   | 'activity.plan'
   | 'activity.report'
   | 'activity.review'
@@ -85,12 +88,12 @@ export type Capability =
   // Materiales y herramientas
   | 'material.read'
   | 'material.write'
-  // Personal en obra: sumar gente, administrar el roster, asistencia y metas
+  // Personal en obra: sumar gente, administrar el roster y la asistencia.
+  // Lo que cada uno tiene que hacer son tareas: `activity.*`.
   | 'crew.read'
   | 'crew.create'
   | 'crew.manage'
   | 'crew.attendance.write'
-  | 'crew.goals.write'
   // Cobros del cliente: el cronograma acordado y lo recibido
   | 'payment.read'
   | 'payment.write'
@@ -116,11 +119,12 @@ export type Capability =
  * Dos lecturas de la matriz del cliente que conviene tener a la vista porque
  * son las que ajustan permisos respecto de la v1:
  *
- * 1. **El supervisor no planifica.** La matriz le da "cargar planificación de
- *    obra" al gerente y al supervisor sólo "reportar". Por eso tiene
- *    `activity.report` pero no `activity.plan`: mueve el estado de una
- *    actividad que ya existe, no la crea ni la borra. El Asistente de Obra de
- *    la v1 sí creaba actividades — esto es más estricto a propósito.
+ * 1. **El supervisor crea, pero no replanifica.** Es quien está en la obra y
+ *    reparte el trabajo del día, así que crea tareas (`activity.create`) y
+ *    las mueve por el flujo (`activity.report`). Pero modificar una tarea
+ *    —fechas, alcance, responsable, cancelarla— y borrarla es planificar, y
+ *    eso queda en el gerente (`activity.plan`). Cerrarla tampoco: eso es
+ *    `activity.review`.
  * 2. **El supervisor no ve plata.** Ni presupuesto, ni Consultor, ni montos
  *    de contratación. La matriz le da compras y herramientas, no economía.
  * 3. **El cliente ve cobros, nunca gastos.** `payment.read` sí,
@@ -152,6 +156,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'expense.read',
     'expense.write',
     'activity.read',
+    'activity.create',
     'activity.plan',
     'activity.report',
     'activity.review',
@@ -167,7 +172,6 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'crew.create',
     'crew.manage',
     'crew.attendance.write',
-    'crew.goals.write',
     'provider.read',
     'provider.manage',
     'provider.assign',
@@ -176,6 +180,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
   supervisor: [
     'project.read',
     'activity.read',
+    'activity.create',
     'activity.report',
     'activity.evidence.write',
     'material.read',
@@ -188,7 +193,6 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     // da de baja ni saca: el CRUD del roster sigue siendo del gerente.
     'crew.create',
     'crew.attendance.write',
-    'crew.goals.write',
     'provider.read',
     'provider.assign',
   ],

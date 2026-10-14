@@ -89,13 +89,13 @@ test.describe('directorio de proveedores', () => {
     const end = toDayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2));
 
     for (const name of [ACTIVITY_NAME, ACTIVITY_NAME_2]) {
-      await page.getByRole('button', { name: /nueva actividad/i }).click();
+      await page.getByRole('button', { name: /nueva tarea/i }).click();
       await page.locator('#activity-name').fill(name);
       await pickActivitySpecialty(page);
       await page.locator('#activity-start').fill(start);
       await page.locator('#activity-end').fill(end);
       await pickActivityResponsible(page);
-      await page.getByRole('button', { name: /crear actividad/i }).click();
+      await page.getByRole('button', { name: /crear tarea/i }).click();
       await expect(page.getByRole('dialog')).toBeHidden();
     }
 
@@ -195,13 +195,13 @@ test.describe('directorio de proveedores', () => {
     const end = toDayKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2));
 
     for (const name of [activityA, activityB]) {
-      await page.getByRole('button', { name: /nueva actividad/i }).click();
+      await page.getByRole('button', { name: /nueva tarea/i }).click();
       await page.locator('#activity-name').fill(name);
       await pickActivitySpecialty(page);
       await page.locator('#activity-start').fill(start);
       await page.locator('#activity-end').fill(end);
       await pickActivityResponsible(page);
-      await page.getByRole('button', { name: /crear actividad/i }).click();
+      await page.getByRole('button', { name: /crear tarea/i }).click();
       await expect(page.getByRole('dialog')).toBeHidden();
     }
 
@@ -233,7 +233,7 @@ test.describe('directorio de proveedores', () => {
     await expect(page).toHaveURL(/\/proveedores$/);
 
     await page
-      .getByRole('button', { name: new RegExp(`^Actividades de ${providerName}$`, 'i') })
+      .getByRole('button', { name: new RegExp(`^Tareas de ${providerName}$`, 'i') })
       .first()
       .click();
     const activitiesDialog = page.getByRole('dialog');
@@ -250,7 +250,7 @@ test.describe('directorio de proveedores', () => {
       .getByText(activityA, { exact: true })
       .locator('..')
       .locator('..')
-      .getByRole('button', { name: /quitar actividad/i })
+      .getByRole('button', { name: /quitar tarea/i })
       .click();
     await expect(activitiesDialog.getByText(activityA, { exact: true })).toBeHidden();
     await activitiesDialog.getByRole('button', { name: /close/i }).click();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeCrewGoalStatus, normalizePersonName, normalizePhone } from './crew.js';
+import { normalizePersonName, normalizePhone } from './crew.js';
 
 describe('normalizePersonName', () => {
   it('iguala mayúsculas, tildes y espacios de más', () => {
@@ -32,19 +32,5 @@ describe('normalizePhone', () => {
     expect(normalizePhone('')).toBeUndefined();
     expect(normalizePhone(undefined)).toBeUndefined();
     expect(normalizePhone(null)).toBeUndefined();
-  });
-});
-
-describe('normalizeCrewGoalStatus', () => {
-  it('traduce los valores guardados antes de pasar a inglés', () => {
-    expect(normalizeCrewGoalStatus('pendiente')).toBe('pending');
-    expect(normalizeCrewGoalStatus('cumplida')).toBe('done');
-    expect(normalizeCrewGoalStatus('no_cumplida')).toBe('discarded');
-  });
-
-  it('deja intactos los valores actuales', () => {
-    expect(normalizeCrewGoalStatus('pending')).toBe('pending');
-    expect(normalizeCrewGoalStatus('done')).toBe('done');
-    expect(normalizeCrewGoalStatus('discarded')).toBe('discarded');
   });
 });

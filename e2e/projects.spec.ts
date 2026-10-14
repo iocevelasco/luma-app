@@ -95,12 +95,14 @@ test.describe('empresa, obra e invitación del cliente', () => {
     // Pero sí ve su cronograma de pagos: es su fila de la matriz de roles.
     await expect(clientPage.getByRole('link', { name: /^pagos$/i })).toBeVisible();
 
-    // Ni personal ni metas: quién trabaja en la obra y qué tiene que lograr
-    // es información interna (regla 4).
-    await expect(clientPage.getByRole('link', { name: /^personal$/i })).toHaveCount(0);
+    // Ve las tareas de la semana —las mismas del cronograma que ya ve—, pero
+    // no el Tablero ni la Jornada: quién trabaja y quién vino es interno
+    // (regla 4).
+    await expect(clientPage.getByRole('link', { name: /^tareas$/i })).toHaveCount(0);
     await clientPage.getByRole('link', { name: /^detalle$/i }).click();
     await expect(clientPage.getByText(/avance general/i)).toBeVisible();
-    await expect(clientPage.getByText(/metas de la semana/i)).toHaveCount(0);
+    await expect(clientPage.getByText(/tareas de la semana/i)).toBeVisible();
+    await expect(clientPage.getByRole('button', { name: /agregar personal/i })).toHaveCount(0);
 
     await clientContext.close();
   });

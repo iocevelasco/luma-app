@@ -1,17 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
 import {
-  createCrewGoalSchema,
   createCrewMemberSchema,
-  normalizeCrewGoalStatus,
-  updateCrewGoalSchema,
   updateCrewMemberSchema,
-  type CrewGoal as CrewGoalDTO,
-  type CrewGoalWithMember,
   type CrewMember as CrewMemberDTO,
 } from '@luma/shared';
-import { Activity } from '../models/Activity.js';
 import { ProjectCrewMember } from '../models/ProjectCrewMember.js';
-import { CrewGoal, type ICrewGoal } from '../models/CrewGoal.js';
 import { CrewMember, type ICrewMember } from '../models/CrewMember.js';
 import type { IProject } from '../models/Project.js';
 import { assertNoCrewDuplicate } from '../services/crew-identity.service.js';
@@ -37,23 +30,6 @@ export function toCrewMemberDTO(member: ICrewMember): CrewMemberDTO {
     active: member.active,
     createdAt: member.createdAt.toISOString(),
     updatedAt: member.updatedAt.toISOString(),
-  };
-}
-
-function toGoalDTO(goal: ICrewGoal): CrewGoalDTO {
-  return {
-    id: String(goal._id),
-    projectId: String(goal.project),
-    crewMemberId: String(goal.crewMember),
-    weekStart: goal.weekStart,
-    description: goal.description,
-    activityId: goal.activity ? String(goal.activity) : undefined,
-    // Shim hasta que corra `migrate:crew`: traduce `pendiente`/`cumplida`/
-    // `no_cumplida` al leer. Se borra en el PR que sigue a la migración.
-    status: normalizeCrewGoalStatus(goal.status),
-    completedAt: goal.completedAt ? goal.completedAt.toISOString() : undefined,
-    createdAt: goal.createdAt.toISOString(),
-    updatedAt: goal.updatedAt.toISOString(),
   };
 }
 
@@ -169,203 +145,6 @@ export async function deactivateCrewMember(req: Request, res: Response) {
     return res.json({ success: true, data: { crewMember: toCrewMemberDTO(crewMember) } });
   } catch (error) {
     console.error('❌ [CREW] deactivateCrewMember:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
-
-// --- Metas semanales ---
-
-/**
- * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Filtra por
- * `?weekStart=YYYY-MM-DD`; sin el parámetro devuelve todas las de la obra.
- *
- * Con `?includeCarried=true` además de la semana trae las metas de semanas
- * ANTERIORES que siguen `pending`, más las que se cerraron (`done`) durante
- * la semana pedida. Es el arrastre semana a semana, y es
- * derivado: la meta conserva su `weekStart` de origen y no hay ningún job que
- * la mueva. Así nada se "olvida" de arrastrar, y cuántas vienen de atrás sale
- * de comparar `weekStart` con la semana pedida. `done` y `discarded` están
- * cerradas y dejan de arrastrarse.
- *
- * Trae el nombre de cada destinatario resuelto: la pantalla de metas siempre
- * los necesita, y pedir el roster aparte para cruzarlo a mano es una llamada
- * extra garantizada.
- */
-export async function listCrewGoals(req: Request, res: Response) {
-  try {
-    const project = req.project as IProject;
-    const { weekStart, includeCarried } = req.query as {
-      weekStart?: string;
-      includeCarried?: string;
-    };
-
-    const filter: Record<string, unknown> = { project: project._id };
-    if (weekStart && includeCarried === 'true') {
-      // Lunes de la semana pedida, a medianoche del servidor. El lunes del
-      // cliente puede correrse unas horas por zona horaria: para "se cerró
-      // esta semana" alcanza.
-      const weekStartedAt = new Date(`${weekStart}T00:00:00`);
-      // `YYYY-MM-DD` ordena igual como string que como fecha.
-      filter.$or = [
-        { weekStart },
-        // `pendiente` es el valor viejo: entra hasta que corra `migrate:crew`.
-        { weekStart: { $lt: weekStart }, status: { $in: ['pending', 'pendiente'] } },
-        // Las arrastradas que se cerraron ESTA semana siguen a la vista: si
-        // no, cerrar una la haría desaparecer y el avance nunca la contaría.
-        { weekStart: { $lt: weekStart }, status: 'done', completedAt: { $gte: weekStartedAt } },
-      ];
-    } else if (weekStart) {
-      filter.weekStart = weekStart;
-    }
-
-    const goals = await CrewGoal.find(filter)
-      .sort({ weekStart: 1, createdAt: 1 })
-      .populate<{ crewMember: ICrewMember }>('crewMember');
-
-    const withMember: CrewGoalWithMember[] = goals
-      .filter((goal) => goal.crewMember)
-      .map((goal) => ({
-        ...toGoalDTO(goal as unknown as ICrewGoal),
-        crewMemberId: String(goal.crewMember._id),
-        crewMemberName: goal.crewMember.name,
-        crewMemberKind: goal.crewMember.kind,
-      }));
-
-    return res.json({ success: true, data: { goals: withMember } });
-  } catch (error) {
-    console.error('❌ [CREW] listCrewGoals:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
-
-/**
- * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Planificar
- * la semana es trabajo operativo: lo hace el dueño o el Asistente de Obra.
- */
-export async function createCrewGoal(req: Request, res: Response) {
-  if (!req.user) {
-    return res.status(401).json({ success: false, error: 'Authentication required' });
-  }
-
-  try {
-    const parsed = createCrewGoalSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
-    }
-
-    const project = req.project as IProject;
-
-    const crewMember = await CrewMember.findOne({
-      _id: parsed.data.crewMemberId,
-      ...(await visibleCrewFilter(project)),
-    });
-    if (!crewMember) {
-      return res.status(404).json({ success: false, error: 'Personal no encontrado' });
-    }
-
-    if (parsed.data.activityId) {
-      const activity = await Activity.findOne({
-        _id: parsed.data.activityId,
-        project: project._id,
-      });
-      if (!activity) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Esa actividad no pertenece a esta obra' });
-      }
-    }
-
-    const goal = await CrewGoal.create({
-      project: project._id,
-      crewMember: crewMember._id,
-      weekStart: parsed.data.weekStart,
-      description: parsed.data.description,
-      activity: parsed.data.activityId ?? null,
-      status: parsed.data.status,
-      completedAt: parsed.data.status === 'done' ? new Date() : null,
-      createdBy: req.user.sub,
-    });
-
-    return res.status(201).json({ success: true, data: { goal: toGoalDTO(goal) } });
-  } catch (error) {
-    console.error('❌ [CREW] createCrewGoal:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
-
-/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
-export async function updateCrewGoal(req: Request, res: Response) {
-  try {
-    const parsed = updateCrewGoalSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
-    }
-
-    const project = req.project as IProject;
-    const { activityId, ...rest } = parsed.data;
-
-    if (activityId) {
-      const activity = await Activity.findOne({ _id: activityId, project: project._id });
-      if (!activity) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Esa actividad no pertenece a esta obra' });
-      }
-    }
-
-    const current = await CrewGoal.findOne({ _id: req.params.goalId, project: project._id }).select(
-      'status',
-    );
-    if (!current) {
-      return res.status(404).json({ success: false, error: 'Meta no encontrada' });
-    }
-
-    // `completedAt` marca la transición a `done`, no el último guardado: volver
-    // a mandar `done` no le cambia la fecha, y reabrirla se la borra.
-    const completion: { completedAt?: Date | null } = {};
-    if (rest.status) {
-      const wasDone = normalizeCrewGoalStatus(current.status) === 'done';
-      if (rest.status === 'done' && !wasDone) completion.completedAt = new Date();
-      if (rest.status !== 'done') completion.completedAt = null;
-    }
-
-    const goal = await CrewGoal.findOneAndUpdate(
-      { _id: req.params.goalId, project: project._id },
-      { ...rest, ...completion, ...(activityId ? { activity: activityId } : {}) },
-      { new: true },
-    );
-
-    if (!goal) {
-      return res.status(404).json({ success: false, error: 'Meta no encontrada' });
-    }
-
-    return res.json({ success: true, data: { goal: toGoalDTO(goal) } });
-  } catch (error) {
-    console.error('❌ [CREW] updateCrewGoal:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
-
-/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Borrado duro. */
-export async function deleteCrewGoal(req: Request, res: Response) {
-  try {
-    const project = req.project as IProject;
-    const goal = await CrewGoal.findOneAndDelete({
-      _id: req.params.goalId,
-      project: project._id,
-    });
-
-    if (!goal) {
-      return res.status(404).json({ success: false, error: 'Meta no encontrada' });
-    }
-
-    return res.json({ success: true, data: { goalId: String(goal._id) } });
-  } catch (error) {
-    console.error('❌ [CREW] deleteCrewGoal:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }
 }

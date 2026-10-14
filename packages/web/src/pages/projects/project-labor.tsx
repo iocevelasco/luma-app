@@ -4,8 +4,8 @@ import { ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { TaskBoard } from '@/components/activities/task-board';
 import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
-import { CrewGoalsPanel } from '@/components/crew/crew-goals-panel';
 import { Can } from '@/components/permissions/can';
 import { RouteError } from '@/components/routes/route-error';
 import { RouteLoading } from '@/components/routes/route-loading';
@@ -25,9 +25,9 @@ function shiftDay(date: string, deltaDays: number): string {
   return toDayKey(d);
 }
 
-/** Un valor desconocido en `?tab=` cae en la Jornada: es la pestaña de siempre. */
+/** Un valor desconocido en `?tab=` cae en el Tablero: es la vista principal. */
 function tabFrom(value: string | null): ProjectLaborTab {
-  return value === 'board' ? 'board' : 'day';
+  return value === 'day' ? 'day' : 'board';
 }
 
 export function ProjectLaborPage() {
@@ -70,27 +70,32 @@ export function ProjectLaborPage() {
   const isToday = date === toDayKey(new Date());
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-3 md:p-4">
+    // Sin padding ni ancho máximo propios: el `<main>` del layout ya pone el
+    // aire, y el Tablero necesita el ancho entero para sus tres columnas. La
+    // Jornada, que es una lista, se queda angosta adentro de su pestaña.
+    <div className="flex flex-col gap-4">
       {/*
-        Dos preguntas distintas con su propio navegador de fecha: quién vino
-        (la Jornada, por día) y qué tiene que lograr cada uno (el Tablero, por
-        semana). Mezclarlas en una sola vista dejaría dos calendarios
+        Dos preguntas distintas con su propio navegador de fecha: qué tiene que
+        lograr cada uno (el Tablero, por semana) y quién vino (la Jornada, por
+        día). El Tablero es la principal y va primero; la Jornada es la
+        consulta del día. Mezclarlas en una sola vista dejaría dos calendarios
         compitiendo en la misma pantalla.
 
-        La pestaña va en la URL (`?tab=board`) para que la card de metas del
-        detalle pueda abrir el Tablero directo. `replace`: cambiar de pestaña
-        no es navegar, y "atrás" tiene que volver a la pantalla anterior.
+        La pestaña va en la URL (`?tab=day`) para que el aviso de faltantes de
+        la card del detalle abra la Jornada directo. `replace`: cambiar de
+        pestaña no es navegar, y "atrás" tiene que volver a la pantalla
+        anterior.
       */}
       <Tabs
         value={tab}
         onValueChange={(value) =>
-          setSearchParams(value === 'board' ? { tab: 'board' } : {}, { replace: true })
+          setSearchParams(value === 'day' ? { tab: 'day' } : {}, { replace: true })
         }
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <TabsList>
-            <TabsTrigger value="day">{t('labor.tabs.day')}</TabsTrigger>
             <TabsTrigger value="board">{t('labor.tabs.board')}</TabsTrigger>
+            <TabsTrigger value="day">{t('labor.tabs.day')}</TabsTrigger>
           </TabsList>
           <Can I="crew.create">
             <Button size="sm" onClick={() => setAddCrewOpen(true)}>
@@ -100,15 +105,11 @@ export function ProjectLaborPage() {
           </Can>
         </div>
 
-        <TabsContent value="board" className="pt-4">
-          <CrewGoalsPanel
-            projectId={projectId!}
-            isEditor={can('crew.goals.write')}
-            isOwner={can('crew.manage')}
-          />
+        <TabsContent value="board" className="pt-3">
+          <TaskBoard projectId={projectId!} />
         </TabsContent>
 
-        <TabsContent value="day" className="flex flex-col gap-8 pt-4">
+        <TabsContent value="day" className="flex w-full max-w-3xl flex-col gap-6 pt-3">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => setDate((d) => shiftDay(d, -1))} aria-label={t('labor.prevDay')}>
           <ChevronLeft className="size-4" />

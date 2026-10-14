@@ -1,11 +1,11 @@
 import type { ProviderSpecialty } from './provider.js';
 
 /**
- * Personal fijo de obra y sus metas semanales.
+ * Personal fijo de obra.
  *
- * Distinto de `LaborRecord` (RF-03), que es la asistencia del día: presente o
- * ausente, hoy. Esto es lo que alguien tiene que LOGRAR esta semana, cargado
- * una o dos semanas antes. Las dos cosas conviven sin pisarse.
+ * Lo que cada uno tiene que hacer ya no vive acá: es una tarea (`Activity`)
+ * con la persona como responsable y en su cuadrilla. Las "metas semanales"
+ * que había se migraron a tareas — ver `migrate-crew.ts`.
  *
  * Distinto también de `Provider`: el proveedor entra, termina una tarea y se
  * va; el personal fijo está toda la ejecución haciendo actividades varias.
@@ -47,47 +47,6 @@ export interface CrewMember {
   dailyRate?: number;
 }
 
-/**
- * Valores en inglés, textos en castellano: el código nombra, la traducción
- * habla (`crew.goalStatus.*`).
- *
- * - `pending`: abierta. Es la única que se arrastra a la semana siguiente.
- * - `done`: hecha.
- * - `discarded`: cerrada sin hacer. Con el arrastre es la única salida para
- *   algo que no se va a hacer: sin ella, una meta abandonada rodaría para
- *   siempre. Reemplaza a `no_cumplida`.
- *
- * Los valores viejos (`pendiente`, `cumplida`, `no_cumplida`) los traduce la
- * API al leer hasta que corra `migrate:crew` — ver `LEGACY_CREW_GOAL_STATUS`.
- */
-export type CrewGoalStatus = 'pending' | 'done' | 'discarded';
-
-export interface CrewGoal {
-  id: string;
-  projectId: string;
-  crewMemberId: string;
-  /** Lunes de la semana, `YYYY-MM-DD`. Es la unidad de planificación (RF-01). */
-  weekStart: string;
-  description: string;
-  /** Opcional: la meta puede no mapear a una actividad puntual del cronograma. */
-  activityId?: string;
-  status: CrewGoalStatus;
-  /**
-   * Cuándo pasó a `done`. Es un hecho con fecha, no un derivado: es lo único
-   * que dice si una meta se cerró en su semana o tres después. Las cerradas
-   * antes de que existiera el campo no lo tienen.
-   */
-  completedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** La meta con el nombre de quien la tiene ya resuelto, para no pedir el roster aparte. */
-export interface CrewGoalWithMember extends CrewGoal {
-  crewMemberName: string;
-  crewMemberKind: CrewMemberKind;
-}
-
 export interface CrewMemberListResponse {
   crewMembers: CrewMember[];
 }
@@ -109,13 +68,6 @@ export interface CrewMemberResponse {
   crewMember: CrewMember;
 }
 
-export interface CrewGoalListResponse {
-  goals: CrewGoalWithMember[];
-}
-
-export interface CrewGoalResponse {
-  goal: CrewGoal;
-}
 
 /**
  * Con quién chocó un alta: lo justo para nombrarlo en el banner y ofrecer

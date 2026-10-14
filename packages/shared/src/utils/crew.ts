@@ -1,5 +1,3 @@
-import type { CrewGoalStatus } from '../types/crew.js';
-
 /**
  * Reglas de identidad del personal de obra, compartidas entre la API y la UI.
  *
@@ -32,20 +30,4 @@ export function normalizePersonName(name: string): string {
 export function normalizePhone(phone: string | undefined | null): string | undefined {
   const digits = (phone ?? '').replace(/\D/g, '');
   return digits.length >= 6 ? digits : undefined;
-}
-
-/**
- * Los estados de meta que se guardaban antes de pasar a inglés. La API los
- * traduce al leer hasta que corre `migrate:crew`; después este mapa sólo lo
- * usa la migración, y el shim de lectura se borra.
- */
-export const LEGACY_CREW_GOAL_STATUS: Readonly<Record<string, CrewGoalStatus>> = {
-  pendiente: 'pending',
-  cumplida: 'done',
-  no_cumplida: 'discarded',
-};
-
-/** Un estado guardado, viejo o nuevo, en su valor actual. */
-export function normalizeCrewGoalStatus(status: string): CrewGoalStatus {
-  return LEGACY_CREW_GOAL_STATUS[status] ?? (status as CrewGoalStatus);
 }

@@ -48,7 +48,7 @@ test.describe('validación del supervisor', () => {
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
-    await page.getByRole('button', { name: /nueva actividad/i }).click();
+    await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(activityName);
     await pickActivitySpecialty(page);
     await page.locator('#activity-start').fill(toDayKey(today));
@@ -59,7 +59,7 @@ test.describe('validación del supervisor', () => {
     // La especialidad es opcional, pero se declara para agrupar por rubro.
     await page.locator('#activity-specialty').click();
     await page.getByRole('option', { name: /^carpintería$/i }).click();
-    await page.getByRole('button', { name: /crear actividad/i }).click();
+    await page.getByRole('button', { name: /crear tarea/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
     await page.getByRole('gridcell', { name: activityName, exact: true }).click();
@@ -85,7 +85,7 @@ test.describe('validación del supervisor', () => {
     await detail.getByRole('button', { name: /devolver con este motivo/i }).click();
 
     // El motivo sobrevive y queda visible con la actividad de vuelta en curso.
-    await expect(detail.getByText(/el supervisor devolvió esta actividad/i)).toBeVisible();
+    await expect(detail.getByText(/el supervisor devolvió esta tarea/i)).toBeVisible();
     await expect(detail.getByText(reason)).toBeVisible();
 
     // --- Se corrige, se vuelve a reportar y ahora sí se cierra ---

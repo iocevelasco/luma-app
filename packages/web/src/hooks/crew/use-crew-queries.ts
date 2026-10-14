@@ -2,9 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type {
-  CreateCrewGoalInput,
   CreateCrewMemberInput,
-  UpdateCrewGoalInput,
   UpdateCrewMemberInput,
 } from '@luma/shared';
 import { crewApi } from '@/api/crew';
@@ -22,28 +20,6 @@ export function useCrewMembers(projectId: string | undefined) {
   return useQuery({
     queryKey: [QueryKeys.crewMembers, projectId],
     queryFn: () => crewApi.list(projectId!),
-    enabled: isAuthenticated && !!projectId,
-  });
-}
-
-/**
- * Metas de una semana puntual (`weekStart` = lunes en `YYYY-MM-DD`).
- *
- * Con `includeCarried` suma lo pendiente de semanas anteriores. Sólo tiene
- * sentido para la semana en curso: una semana pasada se mira como era, y
- * mezclarle lo que sigue abierto hoy la falsearía.
- */
-export function useCrewGoals(
-  projectId: string | undefined,
-  weekStart: string | undefined,
-  options?: { includeCarried?: boolean },
-) {
-  const { isAuthenticated } = useAuth();
-  const includeCarried = Boolean(options?.includeCarried);
-
-  return useQuery({
-    queryKey: [QueryKeys.crewGoals, projectId, weekStart, { includeCarried }],
-    queryFn: () => crewApi.listGoals(projectId!, weekStart, { includeCarried }),
     enabled: isAuthenticated && !!projectId,
   });
 }
@@ -95,53 +71,7 @@ export function useDeactivateCrewMember(projectId: string) {
     mutationFn: (crewMemberId: string) => crewApi.deactivate(projectId, crewMemberId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewMembers, projectId] });
-      // Las metas muestran el nombre de quien las tiene: si alguien sale del
-      // roster, la lista de la semana tiene que reflejarlo.
-      void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewGoals, projectId] });
       toast.success(t('crew.list.deactivated'));
-    },
-    onError: (error) => toast.error(errorMessage(error, t)),
-  });
-}
-
-export function useCreateCrewGoal(projectId: string) {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-
-  return useMutation({
-    mutationFn: (payload: CreateCrewGoalInput) => crewApi.createGoal(projectId, payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewGoals, projectId] });
-      toast.success(t('crew.goals.created'));
-    },
-    onError: (error) => toast.error(errorMessage(error, t)),
-  });
-}
-
-/** Sin toast: marcar metas de a una dispararía un toast por click. */
-export function useUpdateCrewGoal(projectId: string) {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-
-  return useMutation({
-    mutationFn: ({ goalId, payload }: { goalId: string; payload: UpdateCrewGoalInput }) =>
-      crewApi.updateGoal(projectId, goalId, payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewGoals, projectId] });
-    },
-    onError: (error) => toast.error(errorMessage(error, t)),
-  });
-}
-
-export function useDeleteCrewGoal(projectId: string) {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-
-  return useMutation({
-    mutationFn: (goalId: string) => crewApi.deleteGoal(projectId, goalId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [QueryKeys.crewGoals, projectId] });
-      toast.success(t('crew.goals.deleted'));
     },
     onError: (error) => toast.error(errorMessage(error, t)),
   });

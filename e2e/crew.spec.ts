@@ -1,20 +1,20 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
-import { addCrewMember } from './helpers/crew';
+import { addCrewMember, addTask, boardColumn, moveTask, taskCard } from './helpers/crew';
 
 /**
- * Personal fijo de obra y metas semanales: cargar el roster desde el drawer
- * (persona, equipo y encargado de especialidad), asignar una meta de la
- * semana, marcarla, y
- * confirmar que las metas viven en SU semana y no se filtran a la siguiente.
+ * Personal fijo de obra y tareas: cargar el roster desde el drawer (persona,
+ * equipo y encargado de especialidad), asignarle una tarea desde el Tablero,
+ * completarla, y confirmar que vive en sus fechas y no se filtra a la semana
+ * siguiente.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
 
 const RUN_ID = Date.now();
 const PASSWORD = 'E2eProyecto1234!';
 
-test.describe('personal fijo y metas semanales', () => {
-  test('carga el roster, asigna una meta y la marca hecha', async ({ page }) => {
+test.describe('personal fijo y tareas', () => {
+  test('carga el roster, le asigna una tarea y la completa', async ({ page }) => {
     const ownerEmail = `e2e-crew-${RUN_ID}@luma.test`;
     const projectName = `Obra personal ${RUN_ID}`;
     const leadName = `Martín Acosta ${RUN_ID}`;
@@ -35,17 +35,23 @@ test.describe('personal fijo y metas semanales', () => {
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^personal$/i }).click();
+    await page.getByRole('link', { name: /^tareas$/i }).click();
     await expect(page).toHaveURL(/\/personal$/);
 
-    // La asistencia diaria sigue siendo la vista por defecto. Ya no hay una
-    // lista suelta de presentes: arriba va el resumen de la obra.
-    await expect(page.getByText(/^presentes$/i)).toBeVisible();
-    await expect(page.getByText(/actividades hoy/i)).toBeVisible();
+    // El Tablero es la vista principal.
+    await expect(page.getByRole('tab', { name: /^tablero$/i })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.getByText(/sumá personal a la obra para asignarle tareas/i)).toBeVisible();
 
+    // La Jornada es la secundaria: arriba va el resumen de asistencia de la obra.
+    await page.getByRole('tab', { name: /^jornada$/i }).click();
+    await expect(page).toHaveURL(/\/personal\?tab=day$/);
+    await expect(page.getByText(/^presentes$/i)).toBeVisible();
+    await expect(page.getByText(/tareas hoy/i)).toBeVisible();
     await page.getByRole('tab', { name: /^tablero$/i }).click();
-    await expect(page).toHaveURL(/\/personal\?tab=board$/);
-    await expect(page.getByText(/primero cargá el personal fijo/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/personal$/);
 
     // --- Roster: un encargado de especialidad y un equipo, desde el drawer ---
     await addCrewMember(page, { name: leadName, specialty: /^electricidad$/i, isLead: true });
@@ -60,33 +66,25 @@ test.describe('personal fijo y metas semanales', () => {
     await roster.getByRole('button', { name: /close/i }).click();
     await expect(roster).toBeHidden();
 
-    // --- Meta de la semana para el equipo ---
-    await page.locator('#goal-crew-member').click();
-    await page.getByRole('option', { name: new RegExp(teamName, 'i') }).click();
-    await page.locator('#goal-description').fill(goalText);
-    await page.getByRole('button', { name: /agregar meta/i }).click();
+    // --- Una tarea para el equipo, desde el alta rápida del Tablero ---
+    await addTask(page, teamName, goalText);
+    await expect(boardColumn(page, /^pendiente$/i).getByRole('article', { name: goalText })).toBeVisible();
+    await expect(taskCard(page, goalText)).toContainText(teamName);
 
-    await expect(page.getByText(goalText)).toBeVisible();
-    // Agrupada bajo el nombre de quien la tiene.
-    await expect(page.getByRole('heading', { name: teamName })).toBeVisible();
-
-    // --- Se marca hecha ---
-    await page.getByRole('combobox').filter({ hasText: /pendiente/i }).click();
-    await page.getByRole('option', { name: /^hecha$/i }).click();
+    // --- El gerente la da por completada desde el menú de la tarjeta ---
+    await moveTask(page, goalText, /mover a completada/i);
     await expect(
-      page.getByRole('combobox').filter({ hasText: /^hecha$/i }),
+      boardColumn(page, /^completada$/i).getByRole('article', { name: goalText }),
     ).toBeVisible();
 
-    // --- La meta vive en SU semana, no se filtra a la siguiente ---
+    // --- Dura hoy: no aparece en la semana siguiente ---
     await page.getByRole('button', { name: /semana siguiente/i }).click();
-    await expect(page.getByText(/no hay metas cargadas para esta semana/i)).toBeVisible();
     await expect(page.getByText(goalText)).toHaveCount(0);
 
-    // Y al volver sigue ahí, con el estado que le pusimos.
+    // Y al volver sigue ahí, en la columna que le pusimos.
     await page.getByRole('button', { name: /semana actual/i }).click();
-    await expect(page.getByText(goalText)).toBeVisible();
     await expect(
-      page.getByRole('combobox').filter({ hasText: /^hecha$/i }),
+      boardColumn(page, /^completada$/i).getByRole('article', { name: goalText }),
     ).toBeVisible();
   });
 });

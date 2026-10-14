@@ -24,7 +24,7 @@ async function createProject(page: Page, name: string) {
   await page.getByRole('option', { name: 'ARS' }).click();
   await page.getByRole('button', { name: /crear obra/i }).click();
   await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
-  await page.getByRole('link', { name: /^personal$/i }).click();
+  await page.getByRole('link', { name: /^tareas$/i }).click();
   await expect(page).toHaveURL(/\/personal$/);
 }
 
