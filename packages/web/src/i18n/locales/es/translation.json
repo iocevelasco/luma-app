@@ -102,10 +102,8 @@
       "progressCount": "{{completed}} de {{total}} actividades",
       "workPlan": "Plan de trabajo",
       "noPendingTasks": "No hay tareas pendientes.",
-      "purchases": "Compras realizadas",
+      "purchases": "Compras",
       "noPurchases": "Todavía no se compró ningún material.",
-      "toBuy_one": "{{count}} material por comprar",
-      "toBuy_other": "{{count}} materiales por comprar",
       "noDocuments": {
         "render": "Todavía no cargaste renders.",
         "plano": "Todavía no cargaste planos."
