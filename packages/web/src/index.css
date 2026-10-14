@@ -140,11 +140,11 @@
   --primary-pressed: #10b981;
   --primary-soft: #047857;
 
-  --secondary: #f4f4f5;
+  --secondary: #ececef; /* un escalón sobre el lienzo: si no, TabsList y hovers desaparecen */
   --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
+  --muted: #ececef; /* un escalón sobre el lienzo: si no, TabsList y hovers desaparecen */
   --muted-foreground: #52525b;
-  --accent: #f4f4f5;
+  --accent: #ececef; /* un escalón sobre el lienzo: si no, TabsList y hovers desaparecen */
   --accent-foreground: #18181b;
 
   --destructive: #dc2626;
