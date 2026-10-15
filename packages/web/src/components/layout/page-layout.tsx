@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { RouteError } from '@/components/routes/route-error';
+import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { cn } from '@/lib/utils';
 
 /**
@@ -27,13 +28,14 @@ export interface PageLayoutEmpty {
 interface PageLayoutProps {
   /**
    * La acción principal de la pantalla: "Nueva tarea", "Agregar material".
-   * Va SIEMPRE arriba a la derecha, con el mismo botón, esté la pantalla
-   * vacía o llena. Una por pantalla: con dos, ninguna es "la" principal.
+   * Va SIEMPRE abajo a la derecha, flotando, con el mismo botón, esté la
+   * pantalla vacía o llena. Una por pantalla: con dos, ninguna es "la"
+   * principal.
    */
   action?: ReactNode;
-  /** Acciones de segundo orden. Van pegadas a la principal, a su izquierda. */
+  /** Acciones de segundo orden. Van en la barra de arriba, a la derecha. */
   secondaryActions?: ReactNode;
-  /** Filtros y controles de la vista. Arriba a la izquierda, en la misma fila que la acción. */
+  /** Filtros y controles de la vista. Arriba a la izquierda, en la misma fila que las acciones de segundo orden. */
   toolbar?: ReactNode;
   /** Muestra la carga unificada en lugar del contenido. */
   isLoading?: boolean;
@@ -57,8 +59,9 @@ interface PageLayoutProps {
 
 /**
  * El esqueleto de toda pantalla del panel: barra superior (filtros a la
- * izquierda, acción principal a la derecha), contenido, y los tres estados que
- * todas comparten —cargando, error, vacío—.
+ * izquierda, acciones de segundo orden a la derecha), contenido, la acción
+ * principal flotando abajo a la derecha, y los tres estados que todas
+ * comparten —cargando, error, vacío—.
  *
  * Existe porque cada pantalla armaba el suyo: el botón principal flotaba abajo
  * a la derecha en unas, estaba arriba en otras y en otras aparecía en el medio
@@ -80,10 +83,12 @@ export function PageLayout({
   className,
   children,
 }: PageLayoutProps) {
+  const insideProject = Boolean(useCurrentProjectId());
+
   if (isError) return <RouteError />;
   if (isLoading) return <LoadingIndicator />;
 
-  const hasBar = Boolean(toolbar || action || secondaryActions);
+  const hasBar = Boolean(toolbar || secondaryActions);
 
   return (
     <div
@@ -105,7 +110,6 @@ export function PageLayout({
             data-testid="page-actions"
           >
             {secondaryActions}
-            {action}
           </div>
         </div>
       )}
@@ -116,6 +120,8 @@ export function PageLayout({
           'mx-auto flex w-full min-w-0 flex-col gap-6',
           WIDTH_CLASS[width],
           fill && 'min-h-0 flex-1',
+          // Lugar para que el botón flotante no tape lo último de la lista.
+          action && !fill && 'pb-16',
         )}
       >
         {empty ? (
@@ -124,6 +130,27 @@ export function PageLayout({
           children
         )}
       </div>
+
+      {/*
+        Acción principal: flotando en la esquina inferior derecha del área de
+        trabajo. En mobile, fuera de una obra sube lo que mide la barra
+        inferior de navegación; adentro de una obra esa barra no está (la
+        navegación es la tira de arriba). `safe-area-inset-bottom` evita que
+        el home indicator de iOS lo tape.
+      */}
+      {action && (
+        <div
+          data-testid="primary-action"
+          className={cn(
+            'fixed right-4 z-30 md:bottom-8 md:right-8 [&_a]:shadow-lg [&_button]:shadow-lg',
+            insideProject
+              ? 'bottom-[calc(1rem+env(safe-area-inset-bottom))]'
+              : 'bottom-[calc(5rem+env(safe-area-inset-bottom))]',
+          )}
+        >
+          {action}
+        </div>
+      )}
     </div>
   );
 }
