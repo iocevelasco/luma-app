@@ -1,14 +1,12 @@
 import { useMemo, useState } from 'react';
 
-import { ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, UserPlus, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { TaskBoard } from '@/components/activities/task-board';
 import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
-import { Can } from '@/components/permissions/can';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivityAttendance } from '@/components/labor/activity-attendance';
 import { Button } from '@/components/ui/button';
@@ -37,6 +35,7 @@ export function ProjectLaborPage() {
   const [date, setDate] = useState(() => toDayKey(new Date()));
   const [searchParams, setSearchParams] = useSearchParams();
   const [addCrewOpen, setAddCrewOpen] = useState(false);
+  const [rosterOpen, setRosterOpen] = useState(false);
 
   const tab = tabFrom(searchParams.get('tab'));
 
@@ -64,52 +63,68 @@ export function ProjectLaborPage() {
     [activitiesToday, attendanceData],
   );
 
-  if (isError) return <RouteError />;
-  if (isLoading || !allActivitiesData) return <RouteLoading />;
+  if (isError) return <PageLayout isError />;
+  if (isLoading || !allActivitiesData) return <PageLayout isLoading />;
 
   const isToday = date === toDayKey(new Date());
 
   return (
-    // Sin padding ni ancho máximo propios: el `<main>` del layout ya pone el
-    // aire, y el Tablero necesita el ancho entero para sus tres columnas. La
-    // Jornada, que es una lista, se queda angosta adentro de su pestaña.
-    <div className="flex flex-col gap-4">
-      {/*
-        Dos preguntas distintas con su propio navegador de fecha: qué tiene que
-        lograr cada uno (el Tablero, por semana) y quién vino (la Jornada, por
-        día). El Tablero es la principal y va primero; la Jornada es la
-        consulta del día. Mezclarlas en una sola vista dejaría dos calendarios
-        compitiendo en la misma pantalla.
+    /*
+      Dos preguntas distintas con su propio navegador de fecha: qué tiene que
+      lograr cada uno (el Tablero, por semana) y quién vino (la Jornada, por
+      día). El Tablero es la principal y va primero; la Jornada es la
+      consulta del día. Mezclarlas en una sola vista dejaría dos calendarios
+      compitiendo en la misma pantalla.
 
-        La pestaña va en la URL (`?tab=day`) para que el aviso de faltantes de
-        la card del detalle abra la Jornada directo. `replace`: cambiar de
-        pestaña no es navegar, y "atrás" tiene que volver a la pantalla
-        anterior.
-      */}
-      <Tabs
-        value={tab}
-        onValueChange={(value) =>
-          setSearchParams(value === 'day' ? { tab: 'day' } : {}, { replace: true })
-        }
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      La pestaña va en la URL (`?tab=day`) para que el aviso de faltantes de
+      la card del detalle abra la Jornada directo. `replace`: cambiar de
+      pestaña no es navegar, y "atrás" tiene que volver a la pantalla
+      anterior.
+
+      Las pestañas van en la barra de arriba, a la izquierda; "Agregar
+      personal" es la acción principal y "Personal fijo" la de segundo orden,
+      a su izquierda. El Tablero necesita el ancho entero para sus columnas.
+    */
+    <Tabs
+      value={tab}
+      onValueChange={(value) =>
+        setSearchParams(value === 'day' ? { tab: 'day' } : {}, { replace: true })
+      }
+    >
+      <PageLayout
+        width="full"
+        toolbar={
           <TabsList>
             <TabsTrigger value="board">{t('labor.tabs.board')}</TabsTrigger>
             <TabsTrigger value="day">{t('labor.tabs.day')}</TabsTrigger>
           </TabsList>
-          <Can I="crew.create">
-            <Button size="sm" onClick={() => setAddCrewOpen(true)}>
+        }
+        secondaryActions={
+          can('crew.create') ? (
+            <Button variant="outline" onClick={() => setRosterOpen(true)}>
+              <Users className="size-4" />
+              {t('crew.list.title')}
+            </Button>
+          ) : undefined
+        }
+        action={
+          can('crew.create') ? (
+            <Button onClick={() => setAddCrewOpen(true)}>
               <UserPlus className="size-4" />
               {t('crew.add.button')}
             </Button>
-          </Can>
-        </div>
-
-        <TabsContent value="board" className="pt-3">
-          <TaskBoard projectId={projectId!} />
+          ) : undefined
+        }
+      >
+        <TabsContent value="board">
+          <TaskBoard
+            projectId={projectId!}
+            rosterOpen={rosterOpen}
+            onRosterOpenChange={setRosterOpen}
+          />
         </TabsContent>
 
-        <TabsContent value="day" className="flex w-full max-w-3xl flex-col gap-6 pt-3">
+        <TabsContent value="day" className="flex w-full max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => setDate((d) => shiftDay(d, -1))} aria-label={t('labor.prevDay')}>
           <ChevronLeft className="size-4" />
@@ -175,10 +190,10 @@ export function ProjectLaborPage() {
         )}
       </div>
         </TabsContent>
-      </Tabs>
 
-      <AddCrewDrawer projectId={projectId!} open={addCrewOpen} onOpenChange={setAddCrewOpen} />
-    </div>
+        <AddCrewDrawer projectId={projectId!} open={addCrewOpen} onOpenChange={setAddCrewOpen} />
+      </PageLayout>
+    </Tabs>
   );
 }
 

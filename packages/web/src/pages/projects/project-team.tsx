@@ -30,8 +30,7 @@ import {
   ActivationLinkDialog,
   type ActivationLink,
 } from '@/components/organization/activation-link-dialog';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -298,21 +297,22 @@ export function ProjectTeamPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { data, isLoading, isError } = useProject(projectId);
 
-  if (isError) return <RouteError />;
-  if (isLoading || !data) return <RouteLoading />;
+  if (isError) return <PageLayout isError />;
+  if (isLoading || !data) return <PageLayout isLoading />;
 
   return (
-    <div className="flex flex-col gap-6 p-3 md:p-4">
-      <div className="flex items-start justify-end gap-4">
-        {/*
-          `hide` y no `disable`: para un supervisor o un contador, invitar
-          gente no es parte de su flujo — un botón apagado ahí sugiere que le
-          falta un permiso que debería tener.
-        */}
+    <PageLayout
+      /*
+        `hide` y no `disable`: para un supervisor o un contador, invitar
+        gente no es parte de su flujo — un botón apagado ahí sugiere que le
+        falta un permiso que debería tener.
+      */
+      action={
         <Can I="project.invite">
           <InviteMemberDrawer projectId={projectId!} />
         </Can>
-      </div>
+      }
+    >
 
       {/* Nunca está vacía: el gerente siempre viene en la lista. */}
       <ul className="flex flex-col gap-2">
@@ -322,7 +322,7 @@ export function ProjectTeamPage() {
       </ul>
 
       <p className="text-xs text-muted-foreground">{t('project.team.activationHint')}</p>
-    </div>
+    </PageLayout>
   );
 }
 

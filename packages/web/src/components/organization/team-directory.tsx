@@ -2,9 +2,9 @@ import { useState } from 'react';
 import type { OrganizationCrewMember } from '@luma/shared';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Fab } from '@/components/common/fab';
 import { CrewDrawer } from '@/components/crew/crew-drawer';
 import { CrewList } from '@/components/crew/crew-list';
+import { PageLayout } from '@/components/layout/page-layout';
 import { InviteMemberDialog, StaffList } from '@/components/organization/organization-panel';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,7 +26,7 @@ type TeamTab = 'crew' | 'staff';
  *
  * Obra va primero y es la pestaña por defecto: es la mayoría de la gente y la
  * lista que más se mueve (altas, bajas, asignaciones). El botón de sumar es
- * uno solo, abajo, y suma lo que muestra la pestaña abierta.
+ * uno solo, arriba a la derecha, y suma lo que muestra la pestaña abierta.
  */
 export function TeamDirectory() {
   const { t } = useTranslation();
@@ -42,8 +42,9 @@ export function TeamDirectory() {
   const crewCount = crewData?.crewMembers.length ?? 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      <Tabs value={tab} onValueChange={(value) => setTab(value as TeamTab)} className="gap-4">
+    <Tabs value={tab} onValueChange={(value) => setTab(value as TeamTab)}>
+    <PageLayout
+      toolbar={
         <TabsList>
           <TabsTrigger value="crew">
             {t('team.groupCrew')} ({crewCount})
@@ -52,7 +53,23 @@ export function TeamDirectory() {
             {t('team.groupStaff')} ({staffCount})
           </TabsTrigger>
         </TabsList>
-
+      }
+      action={
+        <Button
+          onClick={() => {
+            if (tab === 'crew') {
+              setEditingCrew(null);
+              setCrewDrawerOpen(true);
+            } else {
+              setInviteOpen(true);
+            }
+          }}
+        >
+          <Plus className="size-4" />
+          {tab === 'crew' ? t('team.addCrew') : t('team.addStaff')}
+        </Button>
+      }
+    >
         <TabsContent
           value="crew"
           className="rounded-lg border border-border bg-card p-4 shadow-surface"
@@ -70,23 +87,6 @@ export function TeamDirectory() {
         >
           <StaffList />
         </TabsContent>
-      </Tabs>
-
-      <Fab>
-        <Button
-          onClick={() => {
-            if (tab === 'crew') {
-              setEditingCrew(null);
-              setCrewDrawerOpen(true);
-            } else {
-              setInviteOpen(true);
-            }
-          }}
-        >
-          <Plus className="size-4" />
-          {tab === 'crew' ? t('team.addCrew') : t('team.addStaff')}
-        </Button>
-      </Fab>
 
       <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} />
       <CrewDrawer
@@ -97,6 +97,7 @@ export function TeamDirectory() {
           if (!open) setEditingCrew(null);
         }}
       />
-    </div>
+    </PageLayout>
+    </Tabs>
   );
 }

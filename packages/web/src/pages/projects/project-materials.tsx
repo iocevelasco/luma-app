@@ -7,7 +7,7 @@ import {
   type MaterialStatus,
 } from '@luma/shared';
 import { differenceInCalendarDays, format } from 'date-fns';
-import { Copy, MoreHorizontal, Plus, Share2 } from 'lucide-react';
+import { Copy, MoreHorizontal, Package, Plus, Share2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -23,10 +23,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { fromDayKey } from '@/components/common/date-range-filter';
-import { Fab } from '@/components/common/fab';
 import { FormDrawer } from '@/components/common/form-drawer';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -480,132 +478,127 @@ export function ProjectMaterialsPage() {
     }
   }
 
-  if (isError) return <RouteError />;
-  if (isLoading || !materialsData) return <RouteLoading />;
+  if (isError) return <PageLayout isError />;
+  if (isLoading || !materialsData) return <PageLayout isLoading />;
 
   const canShare = typeof navigator.share === 'function';
   const total = materialsData.materials.length;
   const highlighted = materialsData.materials.find((m) => m.id === highlightedId);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-3 md:p-4">
-      {/* Sin título: la sección ya se llama así en el menú y en el encabezado. */}
-      {isEditor && (
-        <Fab>
-          <NewMaterialDrawer projectId={projectId!} />
-        </Fab>
-      )}
+    // Sin título: la sección ya se llama así en el menú y en el encabezado.
+    <PageLayout
+      action={isEditor ? <NewMaterialDrawer projectId={projectId!} /> : undefined}
+      empty={total === 0 ? { icon: Package, title: t('material.list.empty') } : undefined}
+    >
+      {/*
+        `defaultValue` y no controlado: la pestaña del material pedido se
+        elige una vez, al llegar. Si después cambia de estado y pasa a la
+        otra pestaña, la pantalla no salta detrás de él.
+      */}
+      <Tabs defaultValue={highlighted ? materialTab(highlighted.status) : 'toBuy'} className="gap-4">
+        <TabsList>
+          <TabsTrigger value="toBuy">
+            {t('material.list.toBuy')} ({toBuy.length})
+          </TabsTrigger>
+          <TabsTrigger value="bought">
+            {t('material.list.bought')} ({bought.length})
+          </TabsTrigger>
+        </TabsList>
 
-      {total === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('material.list.empty')}</p>
-      ) : (
-        // `defaultValue` y no controlado: la pestaña del material pedido se
-        // elige una vez, al llegar. Si después cambia de estado y pasa a la
-        // otra pestaña, la pantalla no salta detrás de él.
-        <Tabs defaultValue={highlighted ? materialTab(highlighted.status) : 'toBuy'} className="gap-4">
-          <TabsList>
-            <TabsTrigger value="toBuy">
-              {t('material.list.toBuy')} ({toBuy.length})
-            </TabsTrigger>
-            <TabsTrigger value="bought">
-              {t('material.list.bought')} ({bought.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent
-            value="toBuy"
-            className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
-          >
-            {toBuy.length > 0 && (
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={handleCopy}>
-                  <Copy className="size-4" />
-                  {t('material.list.copyList')}
+        <TabsContent
+          value="toBuy"
+          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
+        >
+          {toBuy.length > 0 && (
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={handleCopy}>
+                <Copy className="size-4" />
+                {t('material.list.copyList')}
+              </Button>
+              {canShare && (
+                <Button variant="outline" size="sm" onClick={handleShare}>
+                  <Share2 className="size-4" />
+                  {t('material.list.share')}
                 </Button>
-                {canShare && (
-                  <Button variant="outline" size="sm" onClick={handleShare}>
-                    <Share2 className="size-4" />
-                    {t('material.list.share')}
-                  </Button>
-                )}
-              </div>
-            )}
+              )}
+            </div>
+          )}
 
-            {toBuyGroups.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t('material.list.toBuyEmpty')}</p>
-            ) : (
-              <div className="flex flex-col gap-5">
-                {toBuyGroups.map((group) => (
-                  <ToBuyGroup
-                    key={group.activityId ?? 'none'}
-                    name={group.activity?.name ?? null}
-                    startDate={group.activity?.startDate}
-                    materials={group.items}
-                    projectId={projectId!}
-                    canEdit={isEditor}
-                    highlightedId={highlightedId}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
+          {toBuyGroups.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('material.list.toBuyEmpty')}</p>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {toBuyGroups.map((group) => (
+                <ToBuyGroup
+                  key={group.activityId ?? 'none'}
+                  name={group.activity?.name ?? null}
+                  startDate={group.activity?.startDate}
+                  materials={group.items}
+                  projectId={projectId!}
+                  canEdit={isEditor}
+                  highlightedId={highlightedId}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-          <TabsContent
-            value="bought"
-            className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
-          >
-            {bought.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t('material.list.boughtEmpty')}</p>
-            ) : (
-              <>
-                {onTheWay.length > 0 && (
-                  <div className="flex flex-col">
-                    <p className="border-b border-border pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      {t('material.list.onTheWay')} ({onTheWay.length})
-                    </p>
-                    <ul className="flex flex-col divide-y divide-border">
-                      {onTheWay.map((material) => (
-                        <MaterialRow
-                          key={material.id}
-                          material={material}
-                          projectId={projectId!}
-                          canEdit={isEditor}
-                          highlighted={material.id === highlightedId}
-                          activityName={
-                            material.activityId ? activityById.get(material.activityId)?.name : undefined
-                          }
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {onSite.length > 0 && (
-                  <div className="flex flex-col">
-                    <p className="border-b border-border pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      {t('material.list.onSite')} ({onSite.length})
-                    </p>
-                    <ul className="flex flex-col divide-y divide-border">
-                      {onSite.map((material) => (
-                        <MaterialRow
-                          key={material.id}
-                          material={material}
-                          projectId={projectId!}
-                          canEdit={isEditor}
-                          highlighted={material.id === highlightedId}
-                          activityName={
-                            material.activityId ? activityById.get(material.activityId)?.name : undefined
-                          }
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
-      )}
-    </div>
+        <TabsContent
+          value="bought"
+          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
+        >
+          {bought.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('material.list.boughtEmpty')}</p>
+          ) : (
+            <>
+              {onTheWay.length > 0 && (
+                <div className="flex flex-col">
+                  <p className="border-b border-border pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t('material.list.onTheWay')} ({onTheWay.length})
+                  </p>
+                  <ul className="flex flex-col divide-y divide-border">
+                    {onTheWay.map((material) => (
+                      <MaterialRow
+                        key={material.id}
+                        material={material}
+                        projectId={projectId!}
+                        canEdit={isEditor}
+                        highlighted={material.id === highlightedId}
+                        activityName={
+                          material.activityId ? activityById.get(material.activityId)?.name : undefined
+                        }
+                      />
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {onSite.length > 0 && (
+                <div className="flex flex-col">
+                  <p className="border-b border-border pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t('material.list.onSite')} ({onSite.length})
+                  </p>
+                  <ul className="flex flex-col divide-y divide-border">
+                    {onSite.map((material) => (
+                      <MaterialRow
+                        key={material.id}
+                        material={material}
+                        projectId={projectId!}
+                        canEdit={isEditor}
+                        highlighted={material.id === highlightedId}
+                        activityName={
+                          material.activityId ? activityById.get(material.activityId)?.name : undefined
+                        }
+                      />
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
+    </PageLayout>
   );
 }
 

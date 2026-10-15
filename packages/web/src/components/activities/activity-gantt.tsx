@@ -1,13 +1,14 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { addDays, format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Gantt, WillowDark, type IApi, type IColumnConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
 import type { Activity, ActivityStatus } from '@luma/shared';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { TruncatedText } from '@/components/common/truncated-text';
 import { Badge } from '@/components/ui/badge';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { cn } from '@/lib/utils';
 import { isActivityOverdue } from '@/lib/week';
 
 /**
@@ -68,7 +69,18 @@ interface ActivityGanttProps {
   range: { from: string; to: string };
   onSelectActivity: (activityId: string) => void;
   missingMaterialActivityIds?: Set<string>;
+  /**
+   * Si `true`, al abrir (y cada vez que cambia `focusRequest`) el diagrama se
+   * posiciona en la fecha de hoy y la columna de hoy queda teñida. Una obra se planifica a meses vista: sin
+   * esto, abrir el Cronograma en la mitad de la obra muestra el principio, y
+   * lo que se está haciendo ahora queda fuera de la pantalla.
+   */
+  focusOnToday?: boolean;
+  focusRequest?: number;
 }
+
+/** Días de contexto que se dejan antes de hoy al posicionar el diagrama. */
+const LEAD_DAYS = 3;
 
 /** Diagrama de Gantt de las actividades de una obra, acotado al rango elegido en `range`. */
 export function ActivityGantt({
@@ -76,9 +88,34 @@ export function ActivityGantt({
   range,
   onSelectActivity,
   missingMaterialActivityIds,
+  focusOnToday = false,
+  focusRequest = 0,
 }: ActivityGanttProps) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
+  const apiRef = useRef<IApi | null>(null);
+
+  const todayKey = toDayKey(new Date());
+  // Fuera del rango no hay columna marcada ni scroll: "hoy" no puede cambiar
+  // el rango que se pidió.
+  const todayInRange = todayKey >= range.from && todayKey <= range.to;
+
+  // La edición libre de la librería no trae la línea vertical (`markers` es
+  // PRO): se tiñe la columna del día, que dice lo mismo.
+  const highlightToday = useCallback(
+    (date: Date, unit: 'day' | 'hour') =>
+      unit === 'day' && toDayKey(date) === todayKey ? 'luma-gantt-today' : '',
+    [todayKey],
+  );
+
+  useEffect(() => {
+    if (!focusOnToday || !todayInRange) return;
+    // Un cuadro después: el diagrama mide su ancho recién al montarse.
+    const frame = window.requestAnimationFrame(() => {
+      apiRef.current?.exec('scroll-chart', { date: addDays(fromDayKey(todayKey), -LEAD_DAYS) });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusOnToday, todayInRange, todayKey, range.from, range.to, focusRequest]);
 
   const tasks = useMemo(
     () =>
@@ -115,18 +152,26 @@ export function ActivityGantt({
 
   const handleInit = useCallback(
     (api: IApi) => {
+      apiRef.current = api;
       api.on('select-task', ({ id }: { id: string | number }) => onSelectActivity(String(id)));
     },
     [onSelectActivity],
   );
 
   return (
-    <div className="min-h-0 min-w-0 flex-1 [&_.wx-theme]:h-full">
+    <div
+      className={cn(
+        'min-h-0 min-w-0 flex-1 [&_.wx-theme]:h-full',
+        // La columna de hoy, en el verde de la marca y apenas teñida.
+        '[&_.luma-gantt-today]:bg-primary/20',
+      )}
+    >
       <WillowDark fonts={false}>
         <Gantt
           tasks={tasks}
           links={[]}
           scales={scales}
+          highlightTime={highlightToday}
           columns={columns}
           start={fromDayKey(range.from)}
           end={addDays(fromDayKey(range.to), 1)}

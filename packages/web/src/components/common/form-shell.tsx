@@ -60,7 +60,8 @@ interface FormShellProps {
    * página el shell se encarga de todo eso.
    *
    * `bare` es la página sin tarjeta alrededor: el pie se pega al fondo del
-   * contenedor sobre el fondo de la página, sin el sangrado de la card.
+   * contenedor sobre el fondo de la página, sin el sangrado de la card, y
+   * lleva las acciones centradas.
    */
   variant?: 'page' | 'embedded' | 'bare';
   className?: string;
@@ -104,8 +105,10 @@ export function FormShell({
         viewport. Adentro del drawer, un `fixed` se saldría del panel y
         quedaría flotando sobre la página de atrás.
 
-        En `embedded` NO es sticky: ahí el cuerpo ya scrollea por su cuenta y
-        el pie es un hijo más de la columna, así que queda abajo sin ayuda. Y
+        En `embedded` y `bare` NO es sticky: ahí el cuerpo ya scrollea por su
+        cuenta y el pie es un hijo más de la columna, así que queda abajo sin
+        ayuda. En `bare` además `sticky` falla: se cuenta desde el padding del
+        `main` que scrollea, y el pie subía esa cantidad, tapando campos. Y
         `sticky` rompe en los diálogos: el navegador lo calcula antes del
         `translate-y-[-50%]` que centra el diálogo, así que cuando éste supera
         la mitad del alto de la pantalla el pie se sube y tapa los últimos
@@ -114,8 +117,8 @@ export function FormShell({
       <div
         className={cn(
           'z-10 flex flex-col gap-3 border-t border-border',
-          variant === 'embedded' ? 'relative' : 'sticky bottom-0',
-          variant === 'bare' ? 'bg-background py-4' : 'bg-card',
+          variant === 'page' ? 'sticky bottom-0' : 'relative',
+          variant === 'bare' ? 'bg-background px-4 py-4' : 'bg-card',
           variant === 'page' && 'mt-4 -mx-6 px-6 py-4',
           variant === 'embedded' && 'p-4',
         )}
@@ -130,7 +133,10 @@ export function FormShell({
         {message && (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-md border border-destructive bg-destructive px-3 py-2 text-destructive-foreground"
+            className={cn(
+              'flex items-start gap-2 rounded-md border border-destructive bg-destructive px-3 py-2 text-destructive-foreground',
+              variant === 'bare' && 'mx-auto w-full max-w-2xl',
+            )}
           >
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <div className="flex min-w-0 flex-col">
@@ -141,7 +147,7 @@ export function FormShell({
           </div>
         )}
 
-        <div className="flex justify-end gap-2">
+        <div className={cn('flex gap-2', variant === 'bare' ? 'justify-center' : 'justify-end')}>
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
               {cancelLabel ?? t('common.cancel')}

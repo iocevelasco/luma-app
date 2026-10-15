@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createProviderSchema, type CreateProviderInput, type OrganizationProvider } from '@luma/shared';
-import { MapPin, Pencil, Plus, UserX } from 'lucide-react';
+import { MapPin, Pencil, Plus, UserX, Wrench } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Fab } from '@/components/common/fab';
-import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
+import { PageLayout } from '@/components/layout/page-layout';
 import { ProjectAssignmentDialog } from '@/components/directory/project-assignment-dialog';
 import { ProviderFormFields } from '@/components/providers/provider-form-fields';
 import {
@@ -203,9 +202,12 @@ export function ProvidersDirectoryPage() {
     [t],
   );
 
+  const providers = data?.providers ?? [];
+
   return (
-    <div className="flex flex-col gap-6 p-3 md:p-4">
-      <Fab>
+    <PageLayout
+      isLoading={isLoading}
+      action={
         <Button
           onClick={() => {
             setEditing(null);
@@ -215,23 +217,24 @@ export function ProvidersDirectoryPage() {
           <Plus className="size-4" />
           {t('provider.list.new')}
         </Button>
-      </Fab>
-
+      }
+      empty={
+        !error && providers.length === 0
+          ? {
+              icon: Wrench,
+              title: t('directory.providersEmpty'),
+              description: t('directory.emptyHint'),
+            }
+          : undefined
+      }
+    >
       <ResponsiveTable
         columns={columns}
-        rows={data?.providers ?? []}
+        rows={providers}
         getRowKey={(provider) => provider.id}
-        isLoading={isLoading}
         isFetching={isFetching}
         error={error}
         onRetry={() => void refetch()}
-        empty={
-          <EmptyState
-            variant="list"
-            title={t('directory.providersEmpty')}
-            description={t('directory.emptyHint')}
-          />
-        }
       />
 
       <ProviderDrawer
@@ -286,7 +289,7 @@ export function ProvidersDirectoryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageLayout>
   );
 }
 

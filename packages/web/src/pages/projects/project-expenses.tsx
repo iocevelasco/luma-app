@@ -9,17 +9,15 @@ import {
   type ExpenseCategory,
 } from '@luma/shared';
 import { format } from 'date-fns';
-import { Download, Plus, Trash2, TrendingUp, Upload, Users } from 'lucide-react';
+import { Download, Plus, Receipt, Trash2, TrendingUp, Upload, Users } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Can } from '@/components/permissions/can';
-import { Fab } from '@/components/common/fab';
 import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -404,14 +402,20 @@ export function ProjectExpensesPage() {
     return map;
   }, [data]);
 
-  if (isError) return <RouteError />;
-  if (isLoading || !data || !projectData) return <RouteLoading />;
+  if (isError) return <PageLayout isError />;
+  if (isLoading || !data || !projectData) return <PageLayout isLoading />;
 
   const currency = projectData.project.currency;
   const summary = summaryData?.summary;
 
   return (
-    <div className="flex flex-col gap-6 p-3 md:p-4">
+    <PageLayout
+      action={
+        <Can I="expense.write">
+          <NewExpenseDrawer projectId={projectId!} projectCurrency={currency} />
+        </Can>
+      }
+    >
       {summary && (
         <Card>
           <CardHeader className="flex flex-row items-center gap-3">
@@ -458,15 +462,9 @@ export function ProjectExpensesPage() {
 
       <PayrollCard projectId={projectId!} currency={currency} />
 
-      <Can I="expense.write">
-        <Fab>
-          <NewExpenseDrawer projectId={projectId!} projectCurrency={currency} />
-        </Fab>
-      </Can>
-
       {data.expenses.length === 0 ? (
         <EmptyState
-          variant="money"
+          icon={Receipt}
           title={t('finance.expenses.emptyTitle')}
           description={t('finance.expenses.emptyDescription')}
         />
@@ -552,7 +550,7 @@ export function ProjectExpensesPage() {
           })}
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }
 

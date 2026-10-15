@@ -12,6 +12,8 @@
     "continue": "Continuar",
     "back": "Voltar",
     "loading": "Carregando…",
+    "loadErrorTitle": "Não foi possível carregar.",
+    "loadErrorDescription": "Tente novamente em alguns segundos.",
     "retry": "Tentar de novo",
     "email": "E-mail",
     "password": "Senha",
@@ -52,7 +54,6 @@
       "new": "Nova obra",
       "emptyTitle": "Você ainda não tem obras",
       "emptyBody": "Crie sua primeira obra para começar a gerenciá-la.",
-      "emptyCta": "Criar sua primeira obra",
       "columns": {
         "name": "Obra",
         "location": "Localização",
@@ -64,7 +65,6 @@
       "submit": "Criar obra",
       "created": "Obra criada",
       "sections": {
-        "what": "Que obra é",
         "when": "Prazos",
         "money": "Dinheiro"
       }
@@ -337,6 +337,7 @@
       "reject": "Não conseguimos devolver a tarefa."
     },
     "gantt": {
+      "goToToday": "Ir para hoje",
       "emptyState": "Não há tarefas planejadas neste período."
     },
     "detail": {

@@ -5,7 +5,17 @@ import {
   type CreateProviderInput,
   type Provider,
 } from '@luma/shared';
-import { Building2, CalendarClock, FileSignature, Pencil, Plus, UserMinus, UserX, X } from 'lucide-react';
+import {
+  Building2,
+  CalendarClock,
+  FileSignature,
+  Pencil,
+  Plus,
+  UserMinus,
+  UserX,
+  Wrench,
+  X,
+} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -20,14 +30,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Fab } from '@/components/common/fab';
-import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { ProviderFormFields } from '@/components/providers/provider-form-fields';
 import { DirectoryPickerDialog } from '@/components/directory/directory-picker-dialog';
 import { ProviderEngagementDialog } from '@/components/providers/provider-engagement-dialog';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
-import { RouteError } from '@/components/routes/route-error';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -481,36 +489,35 @@ export function ProjectProvidersPage() {
     ];
   }, [isEditor, isOwner, removeFromProject, t]);
 
-  if (isError) return <RouteError />;
+  if (isError) return <PageLayout isError />;
 
   return (
-    <div className="flex max-w-4xl flex-col gap-6 p-3 md:p-4">
-      {isOwner && (
-        <>
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setPickerOpen(true)}>
-              <Building2 className="size-4" />
-              {t('directory.addFromCompany')}
-            </Button>
-          </div>
-          <Fab>
-            <NewProviderDialog projectId={projectId!} />
-          </Fab>
-        </>
-      )}
-
+    <PageLayout
+      isLoading={isLoading}
+      action={isOwner ? <NewProviderDialog projectId={projectId!} /> : undefined}
+      secondaryActions={
+        isOwner ? (
+          <Button variant="outline" onClick={() => setPickerOpen(true)}>
+            <Building2 className="size-4" />
+            {t('directory.addFromCompany')}
+          </Button>
+        ) : undefined
+      }
+      empty={
+        (providersData?.providers.length ?? 0) === 0
+          ? {
+              icon: Wrench,
+              title: t('provider.list.empty'),
+              description: isOwner ? t('provider.list.emptyOwnerHint') : undefined,
+            }
+          : undefined
+      }
+    >
       <ResponsiveTable
         columns={columns}
         rows={providersData?.providers ?? []}
         getRowKey={(provider) => provider.id}
-        isLoading={isLoading}
         isFetching={isFetching}
-        empty={
-          <EmptyState
-            title={t('provider.list.empty')}
-            description={isOwner ? t('provider.list.emptyOwnerHint') : undefined}
-          />
-        }
       />
 
       <DirectoryPickerDialog
@@ -586,7 +593,7 @@ export function ProjectProvidersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageLayout>
   );
 }
 

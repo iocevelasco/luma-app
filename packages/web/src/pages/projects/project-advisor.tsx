@@ -3,8 +3,7 @@ import type { ChatMessage } from '@luma/shared';
 import { Loader2, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -44,8 +43,8 @@ export function ProjectAdvisorPage() {
   const [input, setInput] = useState('');
   const sendMessage = useAdvisorChat(projectId ?? '');
 
-  if (isError) return <RouteError />;
-  if (isLoading || !projectData) return <RouteLoading />;
+  if (isError) return <PageLayout isError />;
+  if (isLoading || !projectData) return <PageLayout isLoading />;
 
   const notConfigured = isApiError(sendMessage.error) && sendMessage.error.status === 503;
 
@@ -80,8 +79,7 @@ export function ProjectAdvisorPage() {
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4 p-3 md:p-4">
-
+    <PageLayout width="narrow">
       <Card className="flex flex-col gap-0 overflow-hidden py-0">
         <ScrollArea className="h-[50vh]">
           <div className="flex flex-col gap-3 p-4">
@@ -127,7 +125,7 @@ export function ProjectAdvisorPage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </PageLayout>
   );
 }
 

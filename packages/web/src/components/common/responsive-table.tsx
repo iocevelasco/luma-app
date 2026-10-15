@@ -9,8 +9,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { EmptyState } from '@/components/common/empty-state';
+import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -62,8 +63,6 @@ interface ResponsiveTableProps<T> {
   /** Falla de la query. Gana sobre todo lo demás. */
   error?: unknown;
   onRetry?: () => void;
-  /** Filas del esqueleto. Por defecto 5, que es lo que entra sin scrollear. */
-  skeletonRows?: number;
   className?: string;
 }
 
@@ -87,7 +86,6 @@ export function ResponsiveTable<T>({
   isFetching = false,
   error,
   onRetry,
-  skeletonRows = 5,
   className,
 }: ResponsiveTableProps<T>) {
   // PRECEDENCIA: error > cargando > vacío > filas.
@@ -100,9 +98,7 @@ export function ResponsiveTable<T>({
   }
 
   if (isLoading) {
-    return (
-      <TableSkeleton columns={columns} rows={skeletonRows} className={className} />
-    );
+    return <LoadingIndicator className={cn('min-h-40', className)} />;
   }
 
   if (rows.length === 0 && empty) {
@@ -217,79 +213,6 @@ export function ResponsiveTable<T>({
   );
 }
 
-/**
- * Esqueleto de carga, armado desde las MISMAS columnas que la tabla real.
- *
- * Se dibujan las dos vistas —tabla y tarjetas— con los mismos breakpoints que
- * el contenido: si el esqueleto fuera una sola caja gris, al llegar los datos
- * la página saltaría de alto y el encabezado se movería abajo del dedo.
- *
- * Va con los headers de verdad puestos: son texto estático que ya conocemos, y
- * mostrarlos hace que la carga se lea como "esta tabla se está llenando" y no
- * como "acá no hay nada".
- */
-function TableSkeleton<T>({
-  columns,
-  rows,
-  className,
-}: {
-  columns: ResponsiveColumn<T>[];
-  rows: number;
-  className?: string;
-}) {
-  const visibles = columns.filter((c) => (c.mobile ?? 'field') !== 'desktopOnly');
-
-  return (
-    <div className={className} aria-busy="true" aria-live="polite">
-      <div className="hidden md:block">
-        <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-surface">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((c) => (
-                  <TableHead key={c.id} className={c.headerClassName}>
-                    {c.header}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: rows }, (_, i) => (
-                <TableRow key={i}>
-                  {columns.map((c) => (
-                    <TableCell key={c.id} className={c.cellClassName}>
-                      <Skeleton className="h-4 w-full rounded-sm" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      <ul className="flex flex-col gap-3 md:hidden">
-        {Array.from({ length: rows }, (_, i) => (
-          <li key={i} className="rounded-lg border border-border bg-card p-4 shadow-surface">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-3">
-                <Skeleton className="h-4 w-2/5 rounded-sm" />
-                <Skeleton className="h-4 w-16 rounded-sm" />
-              </div>
-              {visibles.slice(1).map((c) => (
-                <div key={c.id} className="flex items-center justify-between gap-3">
-                  <Skeleton className="h-3 w-24 rounded-sm" />
-                  <Skeleton className="h-3 w-20 rounded-sm" />
-                </div>
-              ))}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 /** La query falló y no hay nada que mostrar. */
 function TableError({
   error,
@@ -305,7 +228,7 @@ function TableError({
   return (
     <div className={className}>
       <EmptyState
-        variant="error"
+        icon={AlertTriangle}
         title={t('common.loadErrorTitle')}
         description={error instanceof Error ? error.message : t('common.loadErrorDescription')}
         action={onRetry ? <Button onClick={onRetry}>{t('common.retry')}</Button> : undefined}

@@ -9,9 +9,8 @@ import {
   type MilestoneSeverity,
 } from '@luma/shared';
 import { format } from 'date-fns';
-import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Flag, Plus, Trash2 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
-import { Fab } from '@/components/common/fab';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import {
@@ -24,11 +23,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { EmptyState } from '@/components/common/empty-state';
+import { PageLayout } from '@/components/layout/page-layout';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -362,37 +359,26 @@ export function ProjectMilestonesPage() {
   const canReport = can('milestone.report');
   const canPublish = can('milestone.publish');
 
-  if (isError) return <RouteError />;
-  if (isLoading || !data) return <RouteLoading />;
-
-  if (data.milestones.length === 0) {
-    return (
-      <div className="p-3 md:p-4">
-        <EmptyState
-          variant="notifications"
-          title={t('milestone.empty.title')}
-          description={
-            canReport ? t('milestone.empty.description') : t('milestone.empty.descriptionReadOnly')
-          }
-          action={
-            canReport ? (
-              <NewMilestoneDrawer projectId={projectId!} canPublish={canPublish} />
-            ) : undefined
-          }
-          replacesPrimaryAction
-        />
-      </div>
-    );
-  }
+  if (isError) return <PageLayout isError />;
+  if (isLoading || !data) return <PageLayout isLoading />;
 
   return (
-    <div className="flex flex-col gap-6 p-3 md:p-4">
-      {canReport && (
-        <Fab>
-          <NewMilestoneDrawer projectId={projectId!} canPublish={canPublish} />
-        </Fab>
-      )}
-
+    <PageLayout
+      action={
+        canReport ? <NewMilestoneDrawer projectId={projectId!} canPublish={canPublish} /> : undefined
+      }
+      empty={
+        data.milestones.length === 0
+          ? {
+              icon: Flag,
+              title: t('milestone.empty.title'),
+              description: canReport
+                ? t('milestone.empty.description')
+                : t('milestone.empty.descriptionReadOnly'),
+            }
+          : undefined
+      }
+    >
       {/* Cronología: lo último arriba. La API ya ordena por `occurredOn` desc. */}
       <ul className="flex flex-col gap-2">
         {data.milestones.map((milestone) => (
@@ -404,7 +390,7 @@ export function ProjectMilestonesPage() {
           />
         ))}
       </ul>
-    </div>
+    </PageLayout>
   );
 }
 

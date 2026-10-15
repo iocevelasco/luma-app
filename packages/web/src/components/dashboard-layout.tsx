@@ -33,10 +33,12 @@ export function DashboardLayout() {
   const projectId = useCurrentProjectId();
   const insideProject = Boolean(projectId);
   const { pathname } = useLocation();
-  // Formularios (alta de obra, Mi cuenta): más angostos que un listado.
-  const narrow = [ROUTES.PROJECT_NEW, ROUTES.ACCOUNT_SETTINGS].some((path) => path === pathname);
-  // El listado de obras usa todo el ancho: las cards crecen en columnas.
-  const wide = pathname === ROUTES.ADMIN;
+  // Mi cuenta: un formulario, más angosto que un listado.
+  const narrow = pathname === ROUTES.ACCOUNT_SETTINGS;
+  // El resto va a todo el ancho y cada pantalla angosta su contenido por
+  // dentro (ver `PageLayout`): así la barra de acciones queda en el mismo
+  // lugar en todas, y el pie del alta de obra va de borde a borde.
+  const wide = !narrow;
 
   // El que scrollea es `main`, no la ventana: al cambiar de pantalla el
   // navegador ya no vuelve arriba solo, y se entraba a la sección nueva a la
@@ -108,7 +110,7 @@ export function DashboardLayout() {
                 className={cn(
                   'relative',
                   !insideProject && 'mx-auto w-full',
-                  !insideProject && !wide && (narrow ? 'max-w-2xl' : 'max-w-4xl'),
+                  !insideProject && !wide && 'max-w-2xl',
                 )}
               >
                 <Outlet />

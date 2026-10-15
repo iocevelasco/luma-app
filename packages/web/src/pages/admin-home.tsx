@@ -1,11 +1,10 @@
 import { format } from 'date-fns';
 import type { Project } from '@luma/shared';
-import { MapPin, Plus } from 'lucide-react';
+import { HardHat, MapPin, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { EmptyState } from '@/components/common/empty-state';
 import { fromDayKey } from '@/components/common/date-range-filter';
-import { Fab } from '@/components/common/fab';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDateLocale } from '@/hooks/use-date-locale';
@@ -65,40 +64,28 @@ export function AdminHomePage() {
 
   const projects = data?.projects ?? [];
 
-  if (isLoading) return null;
-
-  if (projects.length === 0) {
-    return (
-      <div className="p-4 md:p-6">
-        <EmptyState
-          variant="list"
-          title={t('project.list.emptyTitle')}
-          description={t('project.list.emptyBody')}
-          action={
-            <Button asChild>
-              <Link to={ROUTES.PROJECT_NEW}>
-                <Plus className="size-4" />
-                {t('project.list.emptyCta')}
-              </Link>
-            </Button>
-          }
-          replacesPrimaryAction
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
-      <Fab>
+    <PageLayout
+      width="full"
+      isLoading={isLoading}
+      action={
         <Button asChild>
           <Link to={ROUTES.PROJECT_NEW}>
             <Plus className="size-4" />
             {t('project.list.new')}
           </Link>
         </Button>
-      </Fab>
-
+      }
+      empty={
+        projects.length === 0
+          ? {
+              icon: HardHat,
+              title: t('project.list.emptyTitle'),
+              description: t('project.list.emptyBody'),
+            }
+          : undefined
+      }
+    >
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-4">
         {projects.map((project) => (
           <li key={project.id} className="flex">
@@ -106,7 +93,7 @@ export function AdminHomePage() {
           </li>
         ))}
       </ul>
-    </div>
+    </PageLayout>
   );
 }
 
