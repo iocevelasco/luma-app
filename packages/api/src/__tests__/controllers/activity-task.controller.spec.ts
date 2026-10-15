@@ -20,6 +20,9 @@ vi.mock('../../services/directory.service.js', () => ({
   visibleCrewFilter: vi.fn(async () => ({ organization: 'org-1' })),
 }));
 vi.mock('../../services/notification.service.js', () => ({ notifyProject: vi.fn() }));
+vi.mock('../../services/activity-crew.service.js', () => ({
+  moveCrewWithResponsible: vi.fn(),
+}));
 vi.mock('../../services/storage.service.js', () => ({
   StorageNotConfiguredError: class extends Error {},
   deleteEvidencePhoto: vi.fn(),
@@ -30,6 +33,7 @@ vi.mock('../../services/storage.service.js', () => ({
 const { Activity } = await import('../../models/Activity.js');
 const { ActivityCrew } = await import('../../models/ActivityCrew.js');
 const { CrewMember } = await import('../../models/CrewMember.js');
+const { moveCrewWithResponsible } = await import('../../services/activity-crew.service.js');
 const { createActivity, updateActivity } = await import(
   '../../controllers/activity.controller.js'
 );
@@ -185,6 +189,37 @@ describe('updateActivity — el supervisor mueve, el gerente modifica', () => {
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(doc.save).not.toHaveBeenCalled();
+  });
+
+  it('el gerente reasigna: la cuadrilla acompaña al responsable nuevo', async () => {
+    const doc = activityDoc({ responsible: { name: 'Ana', user: undefined } });
+    vi.mocked(Activity.findOne).mockResolvedValue(doc as never);
+
+    const res = await update('gerente', { responsible: { name: 'Bruno' } });
+
+    expect(res.status).not.toHaveBeenCalledWith(403);
+    expect(moveCrewWithResponsible).toHaveBeenCalledWith(
+      expect.objectContaining({
+        activityId: 'activity-1',
+        previous: { name: 'Ana', user: undefined },
+        next: { name: 'Bruno' },
+      }),
+    );
+  });
+
+  it('el supervisor no reasigna, y la cuadrilla no se toca', async () => {
+    const res = await update('supervisor', { responsible: { name: 'Bruno' } });
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(moveCrewWithResponsible).not.toHaveBeenCalled();
+  });
+
+  it('moverla por el flujo no toca la cuadrilla', async () => {
+    vi.mocked(Activity.findOne).mockResolvedValue(activityDoc() as never);
+
+    await update('gerente', { status: 'en_curso' });
+
+    expect(moveCrewWithResponsible).not.toHaveBeenCalled();
   });
 
   it('el gerente cancela y restaura', async () => {
