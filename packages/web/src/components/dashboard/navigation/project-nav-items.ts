@@ -53,6 +53,12 @@ export interface ProjectNavItem {
    * explicación.
    */
   capability?: Capability;
+  /**
+   * Fuera de la navegación por ahora. La ruta y la página siguen existiendo
+   * (una URL directa abre la pantalla, y el título del header la resuelve):
+   * sólo se deja de ofrecerla en el sidebar y en la tira de mobile.
+   */
+  hidden?: boolean;
 }
 
 export const PROJECT_NAV_ITEMS: ProjectNavItem[] = [
@@ -66,12 +72,21 @@ export const PROJECT_NAV_ITEMS: ProjectNavItem[] = [
   { labelKey: 'payments', path: projectPaymentsPath, icon: Wallet, capability: 'payment.read' },
   { labelKey: 'expenses', path: projectExpensesPath, icon: Receipt, capability: 'expense.read' },
   { labelKey: 'budget', path: projectBudgetPath, icon: Calculator, capability: 'budget.read' },
-  { labelKey: 'advisor', path: projectAdvisorPath, icon: Sparkles, capability: 'advisor.use' },
+  {
+    labelKey: 'advisor',
+    path: projectAdvisorPath,
+    icon: Sparkles,
+    capability: 'advisor.use',
+    // Oculto por ahora: no está listo para mostrarse al cliente.
+    hidden: true,
+  },
   { labelKey: 'team', path: projectTeamPath, icon: UserCog, capability: 'project.invite' },
 ];
 
 /** Las secciones que este rol puede ver en esta obra, en orden. */
 export function visibleProjectNavItems(capabilities: readonly Capability[]): ProjectNavItem[] {
   const granted = new Set(capabilities);
-  return PROJECT_NAV_ITEMS.filter((item) => !item.capability || granted.has(item.capability));
+  return PROJECT_NAV_ITEMS.filter(
+    (item) => !item.hidden && (!item.capability || granted.has(item.capability)),
+  );
 }

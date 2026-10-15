@@ -12,8 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCrewMembers } from '@/hooks/crew/use-crew-queries';
+import { useAssignableCrew } from '@/hooks/crew/use-crew-queries';
 import { useOrganizationMembers } from '@/hooks/organizations/use-organization-queries';
+import { crewOptionLabel } from '@/lib/assignable-crew';
 import { useAuth } from '@/providers/auth-provider';
 
 /** El valor "responsable actual" cuando no coincide con ningún empleado de la lista. */
@@ -28,7 +29,8 @@ const LEGACY = 'legacy';
  * una lista se elige siempre al mismo.
  *
  * Salen de los dos grupos de Empleados: el personal de obra disponible para
- * esta obra y el administrativo. Quien está logueado va aparte porque el
+ * esta obra —personas y equipos, la misma lista que el Tablero— y el
+ * administrativo. Quien está logueado va aparte porque el
  * dueño no figura entre los integrantes de su propia Empresa y muchas veces
  * es quien está a cargo.
  *
@@ -49,14 +51,8 @@ export function ResponsibleField({
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { data: crewData } = useCrewMembers(projectId);
+  const { members: crew } = useAssignableCrew(projectId);
   const { data: staffData } = useOrganizationMembers();
-
-  const crew = useMemo(
-    // Los equipos (una hormigonera) no responden por una actividad.
-    () => (crewData?.crewMembers ?? []).filter((m) => m.active && m.kind === 'persona'),
-    [crewData],
-  );
   const staff = useMemo(() => staffData?.members ?? [], [staffData]);
 
   return (
@@ -112,7 +108,7 @@ export function ResponsibleField({
                     <SelectLabel>{t('team.groupCrew')}</SelectLabel>
                     {crew.map((member) => (
                       <SelectItem key={member.id} value={`crew:${member.id}`}>
-                        {member.name}
+                        {crewOptionLabel(member, t('crew.kind.equipo'))}
                       </SelectItem>
                     ))}
                   </SelectGroup>

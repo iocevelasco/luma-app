@@ -11,11 +11,7 @@ import { TeamDirectory } from '@/components/organization/team-directory';
  * encontrar al equipo, y con veinte directamente no existía.
  */
 export function EmployeesPage() {
-  return (
-    <div className="flex flex-col gap-6 p-3 md:p-4">
-      <TeamDirectory />
-    </div>
-  );
+  return <TeamDirectory />;
 }
 
 export default EmployeesPage;

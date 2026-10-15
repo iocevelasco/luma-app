@@ -24,6 +24,7 @@
 :root,
 .dark,
 .surface-dark {
+  color-scheme: dark; /* controles nativos (fecha, scroll, autocompletado) en oscuro */
   --background: #101010; /* canvas — el único fondo de página */
   --foreground: #f2f2f2; /* ink */
   --card: #1a1a1a; /* canvas-soft: la card se despega del fondo por color, no sólo por filete */
@@ -127,6 +128,15 @@
   de tinta e ícono, baja a un esmeralda oscuro.
 */
 .surface-light {
+  /*
+    Los controles nativos (el ícono y el calendario de un <input type="date">,
+    las barras de scroll, el relleno del autocompletado) se dibujan según
+    `color-scheme`, no según nuestros tokens. Sin esto heredaban el esquema
+    oscuro del <html> y sobre el lienzo claro salían blanco sobre blanco: el
+    selector de fecha no se veía.
+  */
+  color-scheme: light;
+
   --background: #f4f4f5; /* lienzo gris claro: la card blanca se despega por color */
   --foreground: #18181b;
   --card: #ffffff;
@@ -311,6 +321,24 @@
   */
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1.35;
+}
+
+/*
+  El autocompletado del navegador pinta su propio fondo (un gris azulado en
+  Chrome) y deja un input lleno distinto de uno vacío. Los inputs de la app
+  son transparentes sobre su superficie: el truco es que el fondo nunca llegue
+  a aplicarse, y el texto sale con el color del tema.
+*/
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  transition:
+    background-color 600000s 0s,
+    color 600000s 0s;
 }
 
 @layer base {

@@ -1,7 +1,7 @@
 import { useMemo, useState, type DragEvent } from 'react';
 import { format } from 'date-fns';
 import type { Activity, ActivityStatus } from '@luma/shared';
-import { ChevronLeft, ChevronRight, MoreHorizontal, Plus, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { CrewRosterDialog } from '@/components/crew/crew-roster-dialog';
@@ -49,9 +49,10 @@ import {
   useMoveActivity,
   useRejectActivity,
 } from '@/hooks/activities/use-activity-queries';
-import { useCrewMembers } from '@/hooks/crew/use-crew-queries';
+import { useAssignableCrew, useCrewMembers } from '@/hooks/crew/use-crew-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { crewOptionLabel } from '@/lib/assignable-crew';
 import { errorMessage } from '@/lib/error-message';
 import {
   allowedMoves,
@@ -99,10 +100,9 @@ function QuickAddTask({
   const [name, setName] = useState('');
   const [crewMemberId, setCrewMemberId] = useState('');
   const [until, setUntil] = useState(start);
-  const { data: crewData } = useCrewMembers(projectId);
+  const { members: crewMembers } = useAssignableCrew(projectId);
   const createActivity = useCreateActivity(projectId);
 
-  const crewMembers = crewData?.crewMembers ?? [];
   const endDate = until && until >= start ? until : start;
 
   return (
@@ -146,8 +146,7 @@ function QuickAddTask({
         <SelectContent>
           {crewMembers.map((member) => (
             <SelectItem key={member.id} value={member.id}>
-              {member.name}
-              {member.kind === 'equipo' ? ` · ${t('crew.kind.equipo')}` : ''}
+              {crewOptionLabel(member, t('crew.kind.equipo'))}
             </SelectItem>
           ))}
         </SelectContent>
@@ -322,7 +321,19 @@ function TaskCard({
  * - Quién mueve qué sale de la grilla de permisos: el supervisor crea y mueve
  *   por el flujo; aprobar, devolver, cancelar y borrar es del gerente.
  */
-export function TaskBoard({ projectId }: { projectId: string }) {
+export function TaskBoard({
+  projectId,
+  rosterOpen,
+  onRosterOpenChange,
+}: {
+  projectId: string;
+  /**
+   * El diálogo de "Personal fijo" lo abre un botón que vive en la barra de
+   * acciones de la pantalla, no acá: las acciones van todas en el mismo lugar.
+   */
+  rosterOpen: boolean;
+  onRosterOpenChange: (open: boolean) => void;
+}) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
   const { can } = useProjectCapabilities(projectId);
@@ -331,7 +342,6 @@ export function TaskBoard({ projectId }: { projectId: string }) {
   const [mobileColumn, setMobileColumn] = useState<TaskColumn>('pendiente');
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
-  const [rosterOpen, setRosterOpen] = useState(false);
   const [dragging, setDragging] = useState<Activity | null>(null);
   const [dropTarget, setDropTarget] = useState<TaskColumn | null>(null);
   const [rejecting, setRejecting] = useState<Activity | null>(null);
@@ -430,13 +440,6 @@ export function TaskBoard({ projectId }: { projectId: string }) {
             </Button>
           )}
         </div>
-
-        {can('crew.create') && (
-          <Button variant="outline" size="sm" onClick={() => setRosterOpen(true)}>
-            <Users className="size-4" />
-            {t('crew.list.title')}
-          </Button>
-        )}
       </div>
 
       {canCreate && crewData && !hasCrew && (
@@ -639,7 +642,7 @@ export function TaskBoard({ projectId }: { projectId: string }) {
         projectId={projectId}
         isOwner={can('crew.manage')}
         open={rosterOpen}
-        onOpenChange={setRosterOpen}
+        onOpenChange={onRosterOpenChange}
       />
     </div>
   );

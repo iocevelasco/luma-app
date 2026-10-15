@@ -6,14 +6,13 @@ import {
   type BudgetLine as BudgetLineDTO,
   type CreateBudgetInput,
 } from '@luma/shared';
-import { Plus, Trash2 } from 'lucide-react';
+import { Calculator, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/empty-state';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { FormShell } from '@/components/common/form-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -256,14 +255,14 @@ export function ProjectBudgetPage() {
     useProject(projectId);
   const { data, isLoading, isError } = useBudget(projectId);
 
-  if (isError || isProjectError) return <RouteError />;
-  if (isLoading || isProjectLoading || !data || !projectData) return <RouteLoading />;
+  if (isError || isProjectError) return <PageLayout isError />;
+  if (isLoading || isProjectLoading || !data || !projectData) return <PageLayout isLoading />;
 
   if (!data.budget) {
     return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-8 p-3 md:p-4">
+      <PageLayout>
         <EmptyState
-          variant="money"
+          icon={Calculator}
           title={t('budget.empty.title')}
           description={t('budget.empty.body')}
         />
@@ -288,7 +287,7 @@ export function ProjectBudgetPage() {
             <NewBudgetForm projectId={projectId!} currency={projectData.project.currency} />
           </TabsContent>
         </Tabs>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -297,7 +296,7 @@ export function ProjectBudgetPage() {
   const chapters = groupByChapter(budget.lines);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-3 md:p-4">
+    <PageLayout>
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -341,7 +340,7 @@ export function ProjectBudgetPage() {
           </div>
         ))}
       </div>
-    </div>
+    </PageLayout>
   );
 }
 

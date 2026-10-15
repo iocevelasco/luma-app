@@ -20,8 +20,7 @@ import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { Can } from '@/components/permissions/can';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -572,8 +571,8 @@ export function ProjectDetailPage() {
   const { data, isLoading, isError } = useProject(projectId);
   const dateLocale = useDateLocale();
 
-  if (isError) return <RouteError />;
-  if (isLoading || !data) return <RouteLoading />;
+  if (isError) return <PageLayout isError />;
+  if (isLoading || !data) return <PageLayout isLoading />;
 
   const { project, members } = data;
   const capabilities = new Set<Capability>(project.capabilities);
@@ -598,7 +597,8 @@ export function ProjectDetailPage() {
      * ficha y el equipo. Al dashboard se entra a ver el estado, no a releer la
      * descripción —qué obra es ya lo dice el breadcrumb—.
      */
-    <div className="columns-1 gap-4 p-3 md:p-4 lg:columns-2 xl:columns-3 [&>*]:mb-4 [&>*]:break-inside-avoid">
+    <PageLayout width="full">
+    <div className="columns-1 gap-4 lg:columns-2 xl:columns-3 [&>*]:mb-4 [&>*]:break-inside-avoid">
       {/* Cómo viene la obra. */}
       <ProgressCard projectId={project.id} />
 
@@ -709,6 +709,7 @@ export function ProjectDetailPage() {
         </CardContent>
       </Card>
     </div>
+    </PageLayout>
   );
 }
 

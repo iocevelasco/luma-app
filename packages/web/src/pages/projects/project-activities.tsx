@@ -8,7 +8,7 @@ import {
   type MaterialItem,
   type ProviderSpecialty,
 } from '@luma/shared';
-import { ArrowLeft, Camera, Check, PackageX, Pencil, Plus, Trash2, Undo2, X } from 'lucide-react';
+import { ArrowLeft, CalendarRange, Camera, Check, PackageX, Pencil, Plus, Trash2, Undo2, X } from 'lucide-react';
 import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -16,9 +16,14 @@ import { ResponsibleField } from '@/components/activities/responsible-field';
 import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityGantt } from '@/components/activities/activity-gantt';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
-import { DateRangeFilter, fromDayKey, presetRange } from '@/components/common/date-range-filter';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
+import {
+  DateRangeFilter,
+  fromDayKey,
+  presetRange,
+  toDayKey,
+} from '@/components/common/date-range-filter';
+import { LoadingIndicator } from '@/components/common/loading-indicator';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormDrawer } from '@/components/common/form-drawer';
@@ -53,9 +58,10 @@ import {
   useUnassignProvider,
 } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { useCrewMembers } from '@/hooks/crew/use-crew-queries';
+import { useAssignableCrew } from '@/hooks/crew/use-crew-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useProject } from '@/hooks/projects/use-project-queries';
+import { scheduleRange } from '@/lib/activity-range';
 import { isWithinNextDays } from '@/lib/week';
 
 const ACTIVITY_STATUSES = [
@@ -212,7 +218,7 @@ function NewActivityDialog({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const createActivity = useCreateActivity(projectId);
-  const { data: crewData } = useCrewMembers(projectId);
+  const { members: assignableCrew } = useAssignableCrew(projectId);
 
   const {
     register,
@@ -249,7 +255,7 @@ function NewActivityDialog({
           // así aparece esperada en la asistencia de la Jornada.
           const crewMember = values.responsible.user
             ? undefined
-            : crewData?.crewMembers.find((member) => member.name === values.responsible.name);
+            : assignableCrew.find((member) => member.name === values.responsible.name);
           createActivity.mutate(
             { ...values, ...(crewMember ? { crewMemberIds: [crewMember.id] } : {}) },
             {
@@ -803,21 +809,32 @@ export function ProjectActivitiesPage() {
   const { data: projectData } = useProject(projectId);
   const [range, setRange] = useState<{ from: string; to: string }>(() => presetRange('thisMonth'));
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
-  const rangeInitialized = useRef(false);
+  // Abre ubicado en hoy y con la obra entera hasta que la persona elige un
+  // rango propio: ahí manda lo que pidió, no el default.
+  const [rangeTouched, setRangeTouched] = useState(false);
+  const [todayRequest, setTodayRequest] = useState(0);
 
-  // Rango inicial: el de la obra completa, no "este mes" — una obra planifica
-  // meses a futuro y el default no puede empezar mostrando el gantt vacío.
+  const allActivitiesQuery = useAllActivities(projectId);
+  const { data: allActivitiesData } = allActivitiesQuery;
+  const allActivitiesSettled = allActivitiesQuery.isSuccess || allActivitiesQuery.isError;
+
+  // Rango inicial: la obra completa, no "este mes" — una obra planifica meses a
+  // futuro y el default no puede empezar mostrando el gantt vacío — más
+  // cualquier tarea corrida fuera de las fechas estimadas (ver `scheduleRange`).
+  // Sigue a las tareas mientras la persona no tocó el filtro: una tarea nueva
+  // que cae después de la entrega tiene que aparecer, no esperar a un refresh.
   useEffect(() => {
-    if (rangeInitialized.current || !projectData) return;
-    rangeInitialized.current = true;
-    setRange({
-      from: projectData.project.estimatedStartDate,
-      to: projectData.project.estimatedEndDate,
-    });
-  }, [projectData]);
+    if (rangeTouched || !projectData || !allActivitiesSettled) return;
+    const next = scheduleRange(projectData.project, allActivitiesData?.activities ?? []);
+    setRange((current) =>
+      current.from === next.from && current.to === next.to ? current : next,
+    );
+  }, [rangeTouched, projectData, allActivitiesData, allActivitiesSettled]);
+
+  const todayKey = toDayKey(new Date());
+  const todayInRange = todayKey >= range.from && todayKey <= range.to;
 
   const { data: activitiesData, isLoading, isError } = useActivities(projectId, range);
-  const { data: allActivitiesData } = useAllActivities(projectId);
   const { data: materialsData } = useMaterials(projectId);
 
   const { can } = useProjectCapabilities(projectId);
@@ -847,42 +864,77 @@ export function ProjectActivitiesPage() {
     return result;
   }, [allActivitiesData, missingByActivity]);
 
-  if (isError) return <RouteError />;
-  if (isLoading || !activitiesData) return <RouteLoading />;
+  if (isError) return <PageLayout isError />;
 
-  const selectedActivity = activitiesData.activities.find((a) => a.id === selectedActivityId);
+  const activities = activitiesData?.activities ?? [];
+  const selectedActivity = activities.find((a) => a.id === selectedActivityId);
   const selectedActivityMaterials = selectedActivity
     ? (materialsData?.materials ?? []).filter((m) => m.activityId === selectedActivity.id)
     : [];
 
   return (
-    <div className="flex h-[calc(100dvh-5.5rem)] min-w-0 flex-col gap-3 p-3 md:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <DateRangeFilter value={range} onChange={setRange} disableFuture={false} />
-        {/* El supervisor crea tareas; modificarlas es del gerente. */}
-        {can('activity.create') && (
+    <PageLayout
+      width="full"
+      fill
+      toolbar={
+        <>
+          <DateRangeFilter
+            value={range}
+            onChange={(next) => {
+              setRangeTouched(true);
+              setRange(next);
+            }}
+            disableFuture={false}
+          />
+          {(todayInRange || rangeTouched) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Volver a hoy también vuelve al rango de la obra: es la vista
+                // con la que se abre.
+                setRangeTouched(false);
+                setTodayRequest((n) => n + 1);
+              }}
+            >
+              {t('activity.gantt.goToToday')}
+            </Button>
+          )}
+        </>
+      }
+      /* El supervisor crea tareas; modificarlas es del gerente. */
+      action={
+        can('activity.create') ? (
           <NewActivityDialog
             projectId={projectId!}
             isOwner={can('activity.review')}
             canCancel={can('activity.plan')}
           />
-        )}
-      </div>
-
-      <div className="min-h-0 min-w-0 flex-1">
-        {activitiesData.activities.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <p className="text-sm text-muted-foreground">{t('activity.gantt.emptyState')}</p>
-          </div>
-        ) : (
-          <ActivityGantt
-            activities={activitiesData.activities}
-            range={range}
-            onSelectActivity={setSelectedActivityId}
-            missingMaterialActivityIds={activitiesWithAlert}
-          />
-        )}
-      </div>
+        ) : undefined
+      }
+      empty={
+        !isLoading && activities.length === 0
+          ? { icon: CalendarRange, title: t('activity.gantt.emptyState') }
+          : undefined
+      }
+    >
+      {/*
+        La carga va adentro y no en lugar de la página: el filtro de fechas
+        tiene que seguir en pantalla mientras llegan las tareas del rango nuevo.
+      */}
+      {isLoading ? (
+        <LoadingIndicator />
+      ) : (
+        <ActivityGantt
+          activities={activities}
+          range={range}
+          onSelectActivity={setSelectedActivityId}
+          missingMaterialActivityIds={activitiesWithAlert}
+          focusOnToday={!rangeTouched}
+          focusRequest={todayRequest}
+        />
+      )}
 
       <ActivityDetailModal
         projectId={projectId!}
@@ -895,7 +947,7 @@ export function ProjectActivitiesPage() {
         canReadProviders={canReadProviders}
         onClose={() => setSelectedActivityId(null)}
       />
-    </div>
+    </PageLayout>
   );
 }
 

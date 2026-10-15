@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -6,6 +7,7 @@ import type {
   UpdateCrewMemberInput,
 } from '@luma/shared';
 import { crewApi } from '@/api/crew';
+import { isAssignableCrew } from '@/lib/assignable-crew';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
@@ -132,4 +134,17 @@ export function useRemoveCrewMemberFromProject(projectId: string) {
     },
     onError: (error) => toast.error(errorMessage(error, t)),
   });
+}
+
+/**
+ * El personal que se puede elegir como responsable de una tarea. Lo usan el
+ * Tablero y el Cronograma: la regla vive en `lib/assignable-crew.ts`.
+ */
+export function useAssignableCrew(projectId: string | undefined) {
+  const query = useCrewMembers(projectId);
+  const members = useMemo(
+    () => (query.data?.crewMembers ?? []).filter(isAssignableCrew),
+    [query.data],
+  );
+  return { members, isLoading: query.isLoading };
 }

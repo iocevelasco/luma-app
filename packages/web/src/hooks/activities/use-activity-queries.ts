@@ -64,6 +64,9 @@ export function useUpdateActivity(projectId: string) {
       activitiesApi.update(projectId, activityId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.activities, projectId] });
+      // Reasignar el responsable mueve la cuadrilla en la API: la Jornada y la
+      // cuadrilla de la tarea tienen que volver a pedirla.
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.activityCrew, projectId] });
       toast.success(t('activity.list.updated'));
     },
       // Sin `onError`: esta mutación se envía desde un formulario y el banner

@@ -18,6 +18,7 @@ import { Activity, type IActivity } from '../models/Activity.js';
 import { ActivityCrew } from '../models/ActivityCrew.js';
 import { CrewMember } from '../models/CrewMember.js';
 import { MaterialItem } from '../models/MaterialItem.js';
+import { moveCrewWithResponsible } from '../services/activity-crew.service.js';
 import { visibleCrewFilter } from '../services/directory.service.js';
 import { notifyProject } from '../services/notification.service.js';
 import type { IProject } from '../models/Project.js';
@@ -260,6 +261,10 @@ export async function updateActivity(req: Request, res: Response) {
     // Antes del `set`: después, `activity.status` ya es el nuevo y no habría
     // con qué comparar para saber si hubo transición.
     const previousStatus = activity.status;
+    const previousResponsible = {
+      name: activity.responsible.name,
+      user: activity.responsible.user,
+    };
     activity.set(parsed.data);
 
     // Reportar terminado abre un ciclo de revisión nuevo y limpia el rechazo
@@ -274,6 +279,17 @@ export async function updateActivity(req: Request, res: Response) {
     }
 
     await activity.save();
+
+    // Reasignar no es sólo cambiar un nombre: la Jornada espera a quien está en
+    // la cuadrilla de la tarea, y tiene que esperar al responsable nuevo.
+    if (parsed.data.responsible) {
+      await moveCrewWithResponsible({
+        project,
+        activityId: String(activity._id),
+        previous: previousResponsible,
+        next: parsed.data.responsible,
+      });
+    }
 
     if (parsed.data.status && parsed.data.status !== previousStatus) {
       await notifyForStatusChange(project, activity, parsed.data.status, req.user.sub);

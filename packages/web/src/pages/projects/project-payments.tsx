@@ -16,11 +16,9 @@ import type { FieldErrors, FieldValues, Path, UseFormRegister } from 'react-hook
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Can } from '@/components/permissions/can';
-import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -160,7 +158,7 @@ function NewScheduleItemDrawer({
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+      <Button variant="outline" onClick={() => setOpen(true)}>
         <Plus className="size-4" />
         {t('finance.schedule.new')}
       </Button>
@@ -345,8 +343,8 @@ export function ProjectPaymentsPage() {
   const deleteItem = useDeleteScheduleItem(projectId!);
   const deletePayment = useDeletePayment(projectId!);
 
-  if (isError) return <RouteError />;
-  if (isLoading || !data || !projectData) return <RouteLoading />;
+  if (isError) return <PageLayout isError />;
+  if (isLoading || !data || !projectData) return <PageLayout isLoading />;
 
   const currency = projectData.project.currency;
   const { summary, items } = data;
@@ -357,26 +355,36 @@ export function ProjectPaymentsPage() {
       ? Math.round((summary.paidTotal / summary.scheduledTotal) * 100)
       : 0;
 
+  // Las dos altas de la pantalla van arriba, siempre: registrar un cobro es la
+  // principal; la cuota del cronograma acordado, la de segundo orden.
+  const actions = {
+    action: (
+      <Can I="payment.write">
+        <NewPaymentDrawer projectId={projectId!} projectCurrency={currency} items={items} />
+      </Can>
+    ),
+    secondaryActions: (
+      <Can I="payment.write">
+        <NewScheduleItemDrawer projectId={projectId!} projectCurrency={currency} />
+      </Can>
+    ),
+  };
+
   if (items.length === 0 && payments.length === 0) {
     return (
-      <div className="p-3 md:p-4">
-        <EmptyState
-          variant="money"
-          title={t('finance.empty.title')}
-          description={t('finance.empty.description')}
-          action={
-            <Can I="payment.write">
-              <NewScheduleItemDrawer projectId={projectId!} projectCurrency={currency} />
-            </Can>
-          }
-          replacesPrimaryAction
-        />
-      </div>
+      <PageLayout
+        {...actions}
+        empty={{
+          icon: Wallet,
+          title: t('finance.empty.title'),
+          description: t('finance.empty.description'),
+        }}
+      />
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 p-3 md:p-4">
+    <PageLayout {...actions}>
       <Card>
         <CardHeader className="flex flex-row items-center gap-3">
           <Wallet className="size-4 text-muted-foreground" />
@@ -428,9 +436,6 @@ export function ProjectPaymentsPage() {
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-4">
           <h3 className="text-sm font-medium">{t('finance.schedule.title')}</h3>
-          <Can I="payment.write">
-            <NewScheduleItemDrawer projectId={projectId!} projectCurrency={currency} />
-          </Can>
         </div>
 
         {items.length === 0 ? (
@@ -484,13 +489,6 @@ export function ProjectPaymentsPage() {
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-4">
           <h3 className="text-sm font-medium">{t('finance.payments.title')}</h3>
-          <Can I="payment.write">
-            <NewPaymentDrawer
-              projectId={projectId!}
-              projectCurrency={currency}
-              items={items}
-            />
-          </Can>
         </div>
 
         {payments.length === 0 ? (
@@ -534,7 +532,7 @@ export function ProjectPaymentsPage() {
           </ul>
         )}
       </section>
-    </div>
+    </PageLayout>
   );
 }
 

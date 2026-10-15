@@ -21,7 +21,6 @@ import {
   Upload,
 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
-import { Fab } from '@/components/common/fab';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -34,10 +33,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { EmptyState } from '@/components/common/empty-state';
+import { PageLayout } from '@/components/layout/page-layout';
 import { FormDrawer } from '@/components/common/form-drawer';
-import { RouteError } from '@/components/routes/route-error';
-import { RouteLoading } from '@/components/routes/route-loading';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -545,103 +542,99 @@ export function ProjectDocumentsPage() {
     });
   }, [filtered, groupBy, t]);
 
-  if (isError) return <RouteError />;
-  if (isLoading || !data) return <RouteLoading />;
-
-  if (documents.length === 0) {
-    return (
-      <div className="p-3 md:p-4">
-        <EmptyState
-          title={t('document.empty.title')}
-          description={
-            canWrite ? t('document.empty.description') : t('document.empty.descriptionReadOnly')
-          }
-          action={canWrite ? <NewDocumentDrawer projectId={projectId!} /> : undefined}
-          replacesPrimaryAction
-        />
-      </div>
-    );
-  }
+  if (isError) return <PageLayout isError />;
+  if (isLoading || !data) return <PageLayout isLoading />;
 
   const hasFilters = categoryFilter !== ALL || uploaderFilter !== ALL;
 
+  // Filtros arriba a la izquierda, en la misma fila que la acción principal.
+  const filters = (
+  <div className="flex flex-wrap items-end gap-3">
+    <div className="flex flex-col gap-1">
+      <Label htmlFor="filter-category" className="text-xs">
+        {t('document.filters.category')}
+      </Label>
+      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <SelectTrigger id="filter-category" className="w-48">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>{t('document.filters.allCategories')}</SelectItem>
+          {categoriesInUse.map((category) => (
+            <SelectItem key={category} value={category}>
+              {t(`document.category.${category}`)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+
+    <div className="flex flex-col gap-1">
+      <Label htmlFor="filter-uploader" className="text-xs">
+        {t('document.filters.uploader')}
+      </Label>
+      <Select value={uploaderFilter} onValueChange={setUploaderFilter}>
+        <SelectTrigger id="filter-uploader" className="w-48">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>{t('document.filters.allUploaders')}</SelectItem>
+          {uploaders.map((person) => (
+            <SelectItem key={person.id} value={person.id}>
+              {person.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+
+    <div className="flex flex-col gap-1">
+      <Label htmlFor="group-by" className="text-xs">
+        {t('document.filters.groupBy')}
+      </Label>
+      <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupBy)}>
+        <SelectTrigger id="group-by" className="w-48">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="category">{t('document.filters.groupCategory')}</SelectItem>
+          <SelectItem value="uploader">{t('document.filters.groupUploader')}</SelectItem>
+          <SelectItem value="none">{t('document.filters.groupNone')}</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+
+    {hasFilters && (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          setCategoryFilter(ALL);
+          setUploaderFilter(ALL);
+        }}
+      >
+        <FilterX className="size-4" />
+        {t('document.filters.clear')}
+      </Button>
+    )}
+  </div>
+  );
+
   return (
-    <div className="flex flex-col gap-4 p-3 md:p-4">
-      {canWrite && (
-        <Fab>
-          <NewDocumentDrawer projectId={projectId!} />
-        </Fab>
-      )}
-
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="filter-category" className="text-xs">
-            {t('document.filters.category')}
-          </Label>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger id="filter-category" className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>{t('document.filters.allCategories')}</SelectItem>
-              {categoriesInUse.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {t(`document.category.${category}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="filter-uploader" className="text-xs">
-            {t('document.filters.uploader')}
-          </Label>
-          <Select value={uploaderFilter} onValueChange={setUploaderFilter}>
-            <SelectTrigger id="filter-uploader" className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>{t('document.filters.allUploaders')}</SelectItem>
-              {uploaders.map((person) => (
-                <SelectItem key={person.id} value={person.id}>
-                  {person.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="group-by" className="text-xs">
-            {t('document.filters.groupBy')}
-          </Label>
-          <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupBy)}>
-            <SelectTrigger id="group-by" className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="category">{t('document.filters.groupCategory')}</SelectItem>
-              <SelectItem value="uploader">{t('document.filters.groupUploader')}</SelectItem>
-              <SelectItem value="none">{t('document.filters.groupNone')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {hasFilters && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setCategoryFilter(ALL);
-              setUploaderFilter(ALL);
-            }}
-          >
-            <FilterX className="size-4" />
-            {t('document.filters.clear')}
-          </Button>
-        )}
-      </div>
-
+    <PageLayout
+      toolbar={documents.length > 0 ? filters : undefined}
+      action={canWrite ? <NewDocumentDrawer projectId={projectId!} /> : undefined}
+      empty={
+        documents.length === 0
+          ? {
+              icon: FileText,
+              title: t('document.empty.title'),
+              description: canWrite
+                ? t('document.empty.description')
+                : t('document.empty.descriptionReadOnly'),
+            }
+          : undefined
+      }
+    >
       {filtered.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">
           {t('document.filters.noResults')}
@@ -680,7 +673,7 @@ export function ProjectDocumentsPage() {
           })}
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }
 

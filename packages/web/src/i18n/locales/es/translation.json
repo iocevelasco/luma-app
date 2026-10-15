@@ -12,6 +12,8 @@
     "continue": "Continuar",
     "back": "Volver",
     "loading": "Cargando…",
+    "loadErrorTitle": "No pudimos cargar esto.",
+    "loadErrorDescription": "Probá de nuevo en unos segundos.",
     "retry": "Reintentar",
     "email": "Correo electrónico",
     "password": "Contraseña",
@@ -52,7 +54,6 @@
       "new": "Nueva obra",
       "emptyTitle": "Todavía no tenés obras",
       "emptyBody": "Creá tu primera obra para empezar a gestionarla.",
-      "emptyCta": "Crear tu primera obra",
       "columns": {
         "name": "Obra",
         "location": "Ubicación",
@@ -64,7 +65,6 @@
       "submit": "Crear obra",
       "created": "Obra creada",
       "sections": {
-        "what": "Qué obra es",
         "when": "Plazos",
         "money": "Dinero"
       }
@@ -337,6 +337,7 @@
       "reject": "No pudimos devolver la tarea."
     },
     "gantt": {
+      "goToToday": "Ir a hoy",
       "emptyState": "No hay tareas planificadas en este rango de fechas."
     },
     "detail": {
