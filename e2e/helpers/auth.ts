@@ -1,21 +1,5 @@
 import type { Page } from '@playwright/test';
-
-/**
- * Credenciales de E2E. Los tests nunca escriben un usuario y una contraseña a
- * mano: pasan por acá, para que cambiar el entorno sea cambiar dos variables.
- */
-const DEFAULTS: Record<string, string> = {
-  E2E_ADMIN_EMAIL: 'e2e-admin@luma.test',
-  E2E_ADMIN_PASSWORD: 'E2eAdmin1234!',
-  E2E_USER_EMAIL: 'e2e-user@luma.test',
-  E2E_USER_PASSWORD: 'E2eUser1234!',
-};
-
-function requireEnv(name: string): string {
-  const value = process.env[name] ?? DEFAULTS[name];
-  if (!value) throw new Error(`Falta la variable de E2E: ${name}`);
-  return value;
-}
+import { e2eUser, type E2EUserKey } from './users';
 
 /**
  * URL absoluta a partir de un path.
@@ -37,12 +21,14 @@ export async function loginWith(page: Page, email: string, password: string) {
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15_000 });
 }
 
-export async function loginAsAdmin(page: Page) {
-  await loginWith(page, requireEnv('E2E_ADMIN_EMAIL'), requireEnv('E2E_ADMIN_PASSWORD'));
-}
-
-export async function loginAsUser(page: Page) {
-  await loginWith(page, requireEnv('E2E_USER_EMAIL'), requireEnv('E2E_USER_PASSWORD'));
+/**
+ * Entra con una de las cuentas fijas de E2E (ver `helpers/users.ts`). Para
+ * arrancar un test ya logueado, `test.use({ storageState: authFile(key) })`
+ * es más barato: la sesión la guardó el globalSetup.
+ */
+export async function loginAs(page: Page, key: E2EUserKey) {
+  const { email, password } = e2eUser(key);
+  await loginWith(page, email, password);
 }
 
 /**

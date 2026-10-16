@@ -26,7 +26,7 @@ test.describe('presupuesto (carga manual)', () => {
     await loginWith(page, OWNER_EMAIL, PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
 
-    await page.getByRole('link', { name: /crear tu primera obra/i }).click();
+    await page.getByRole('link', { name: /nueva obra/i }).click();
     await page.locator('#name').fill(PROJECT_NAME);
     await page.locator('#description').fill('Obra para probar la carga de presupuesto.');
     await page.locator('#location').fill('CABA');

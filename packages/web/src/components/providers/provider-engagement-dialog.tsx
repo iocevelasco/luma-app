@@ -33,6 +33,7 @@ import {
   useSetRequirementMet,
   useUpdateEngagement,
 } from '@/hooks/providers/use-engagement-queries';
+import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { formatMoney } from '@/lib/format-money';
 
 const ENGAGEMENT_STATUSES: ProviderEngagementStatus[] = [
@@ -225,14 +226,15 @@ function EngagementCard({
   providerId,
   engagement,
   currency,
-  isOwner,
+  canWrite,
   onEdit,
 }: {
   projectId: string;
   providerId: string;
   engagement: ProviderEngagement;
   currency: string;
-  isOwner: boolean;
+  /** `engagement.write`: montos y fechas son del gerente; los requisitos se tildan igual. */
+  canWrite: boolean;
   onEdit: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -247,7 +249,7 @@ function EngagementCard({
         <Badge variant={statusVariant(engagement.status)}>
           {t(`engagement.status.${engagement.status}`)}
         </Badge>
-        {isOwner && (
+        {canWrite && (
           <div className="flex gap-2">
             <Button
               type="button"
@@ -332,20 +334,19 @@ export function ProviderEngagementDialog({
   projectId,
   provider,
   currency,
-  isOwner,
   open,
   onOpenChange,
 }: {
   projectId: string;
   provider: Provider;
   currency: string;
-  isOwner: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
   const [formFor, setFormFor] = useState<ProviderEngagement | 'new' | null>(null);
   const { data } = useProviderEngagements(projectId, open ? provider.id : undefined);
+  const canWrite = useProjectCapabilities(projectId).can('engagement.write');
 
   const engagements = data?.engagements ?? [];
 
@@ -378,13 +379,13 @@ export function ProviderEngagementDialog({
                   providerId={provider.id}
                   engagement={engagement}
                   currency={currency}
-                  isOwner={isOwner}
+                  canWrite={canWrite}
                   onEdit={() => setFormFor(engagement)}
                 />
               ))
             )}
 
-            {isOwner && (
+            {canWrite && (
               <Button type="button" variant="outline" onClick={() => setFormFor('new')}>
                 <Plus className="size-4" />
                 {t('engagement.new')}

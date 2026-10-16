@@ -61,6 +61,7 @@ import {
   useUnassignActivityFromProvider,
   useUpdateProvider,
 } from '@/hooks/providers/use-provider-queries';
+import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useProject } from '@/hooks/projects/use-project-queries';
 
 /**
@@ -371,10 +372,12 @@ export function ProjectProvidersPage() {
   const [assigningProvider, setAssigningProvider] = useState<Provider | null>(null);
   const [contractingProvider, setContractingProvider] = useState<Provider | null>(null);
 
-  // Dueño administra el directorio (crear, editar, dar de baja). Asignar a
-  // actividades es escritura operativa, como en Activity: dueño o Asistente.
-  const isOwner = Boolean(projectData?.project.isOwner);
-  const isEditor = Boolean(projectData?.project.isEditor);
+  // El directorio (crear, editar, dar de baja, traer de la Empresa) es del
+  // gerente; asignar a tareas y abrir la contratación lo hace también quien
+  // está en la obra. Quién es cada uno lo dice la grilla, no esta pantalla.
+  const { can } = useProjectCapabilities(projectId);
+  const canManage = can('provider.manage');
+  const canAssign = can('provider.assign');
 
   const columns = useMemo<ResponsiveColumn<Provider>[]>(() => {
     const base: ResponsiveColumn<Provider>[] = [
@@ -421,7 +424,7 @@ export function ProjectProvidersPage() {
       },
     ];
 
-    if (!isEditor) return base;
+    if (!canAssign) return base;
 
     return [
       ...base,
@@ -448,7 +451,7 @@ export function ProjectProvidersPage() {
             >
               <FileSignature className="size-4" />
             </Button>
-            {isOwner && (
+            {canManage && (
               <>
                 <Button
                   type="button"
@@ -489,39 +492,43 @@ export function ProjectProvidersPage() {
         mobile: 'actions',
       },
     ];
-  }, [isEditor, isOwner, removeFromProject, t]);
+  }, [canAssign, canManage, removeFromProject, t]);
 
   if (isError) return <PageLayout isError />;
 
   return (
-    <PageLayout
-      isLoading={isLoading}
-      action={isOwner ? <NewProviderDialog projectId={projectId!} /> : undefined}
-      secondaryActions={
-        isOwner ? (
-          <Button variant="outline" onClick={() => setPickerOpen(true)}>
-            <Building2 className="size-4" />
-            {t('directory.addFromCompany')}
-          </Button>
-        ) : undefined
-      }
-      empty={
-        (providersData?.providers.length ?? 0) === 0
-          ? {
-              icon: Wrench,
-              title: t('provider.list.empty'),
-              description: isOwner ? t('provider.list.emptyOwnerHint') : undefined,
-            }
-          : undefined
-      }
-    >
-      <ResponsiveTable
-        columns={columns}
-        rows={providersData?.providers ?? []}
-        getRowKey={(provider) => provider.id}
-        isFetching={isFetching}
-      />
+    <>
+      <PageLayout
+        isLoading={isLoading}
+        action={canManage ? <NewProviderDialog projectId={projectId!} /> : undefined}
+        secondaryActions={
+          canManage ? (
+            <Button variant="outline" onClick={() => setPickerOpen(true)}>
+              <Building2 className="size-4" />
+              {t('directory.addFromCompany')}
+            </Button>
+          ) : undefined
+        }
+        empty={
+          (providersData?.providers.length ?? 0) === 0
+            ? {
+                icon: Wrench,
+                title: t('provider.list.empty'),
+                description: canManage ? t('provider.list.emptyOwnerHint') : undefined,
+              }
+            : undefined
+        }
+      >
+        <ResponsiveTable
+          columns={columns}
+          rows={providersData?.providers ?? []}
+          getRowKey={(provider) => provider.id}
+          isFetching={isFetching}
+        />
+      </PageLayout>
 
+      {/* Afuera de PageLayout: con la obra sin proveedores, "Agregar de la
+          Empresa" es la salida del vacío, y adentro no se montaba. */}
       <DirectoryPickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
@@ -563,7 +570,6 @@ export function ProjectProvidersPage() {
           projectId={projectId!}
           provider={contractingProvider}
           currency={projectData?.project.currency ?? ''}
-          isOwner={isOwner}
           open={Boolean(contractingProvider)}
           onOpenChange={(open) => !open && setContractingProvider(null)}
         />
@@ -595,7 +601,7 @@ export function ProjectProvidersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </PageLayout>
+    </>
   );
 }
 

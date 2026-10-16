@@ -71,19 +71,10 @@ export interface Project {
  * `permissions/` — con los flags de la obra ya aplicados. La UI no vuelve a
  * derivar nada: pregunta por capacidad y muestra o esconde. Mandar la lista
  * y no el rol es lo que permite agregar un rol nuevo sin tocar el frontend.
- *
- * `isOwner`/`isEditor` quedan como azúcar derivada para no reescribir de una
- * sola vez todas las pantallas de la v1. Son lo mismo que preguntar por
- * `role === 'gerente'` y por `activity.evidence.write`; en código nuevo usá
- * `capabilities`.
  */
 export interface ProjectDetail extends Project {
   role: ProjectRole;
   capabilities: Capability[];
-  /** @deprecated Derivado de `role === 'gerente'`. Usá `capabilities`. */
-  isOwner: boolean;
-  /** @deprecated Derivado de `capabilities`. Usá `capabilities`. */
-  isEditor: boolean;
 }
 
 /**

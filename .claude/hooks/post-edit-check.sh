@@ -114,8 +114,11 @@ case "$REL" in
     ROLECMP=$(grep -nE "(projectRole|\.role|role)[[:space:]]*[!=]==[[:space:]]*'(gerente|supervisor|cliente)'" "$FILE" || true)
     [ -n "$ROLECMP" ] && add "Comparación directa contra un rol de obra — quién puede qué vive en la grilla de packages/shared/src/permissions/. En la API preguntá con req.can('la.capacidad'), en la UI con project.capabilities. Si falta la capacidad, agregala a la grilla:"$'\n'"$(lines "$ROLECMP")"
 
-    FLAGS=$(grep -nE "isProjectOwner|isProjectEditor|\.isOwner|\.isEditor" "$FILE" || true)
-    [ -n "$FLAGS" ] && add "isProjectOwner/isProjectEditor están deprecados — son azúcar derivada de la grilla y no distinguen supervisor de cliente. En código nuevo usá req.can(...) o project.capabilities:"$'\n'"$(lines "$FLAGS")"
+    # Los flags isOwner/isEditor ya no existen: un `isOwner` que gateaba "editar
+    # proveedor" y otro que gateaba "cerrar tarea" son dos capacidades distintas
+    # con el mismo nombre. Se pregunta por la de cada acción.
+    FLAGS=$(grep -nE "isProjectOwner|isProjectEditor|\.isOwner|\.isEditor|\bis(Owner|Editor)[=:]" "$FILE" || true)
+    [ -n "$FLAGS" ] && add "isOwner/isEditor ya no existen — cada acción pregunta por SU capacidad: req.can('provider.manage') en la API, useProjectCapabilities(projectId).can(...) o <Can I=...> en la UI. Un prop de permiso se nombra por la acción (canManage, canReview), no por el rol:"$'\n'"$(lines "$FLAGS")"
     ;;
 esac
 
@@ -145,14 +148,25 @@ case "$REL" in
 esac
 
 # ── 10. E2E: lo que necesita la API se saltea sin API ───────────────────────
-# CI corre la suite sin backend. Un spec que inicia sesión y no llama a
-# `requiresApi()` no se saltea: falla esperando un login imposible y tapa con
-# rojo las fallas reales.
+# CI corre la suite sin backend. Un spec que inicia sesión —a mano o con una
+# sesión guardada de las cuentas fijas— y no llama a `requiresApi()` no se
+# saltea: falla esperando un login imposible y tapa con rojo las fallas reales.
 case "$REL" in
   e2e/*.spec.ts)
-    if grep -qE "registerWith|loginWith|loginAsAdmin|loginAsUser" "$FILE" && ! grep -q "requiresApi()" "$FILE"; then
+    if grep -qE "registerWith|loginWith|loginAs|authFile\(" "$FILE" && ! grep -q "requiresApi()" "$FILE"; then
       add "Spec que inicia sesión sin requiresApi() — en CI no hay API y va a fallar en vez de saltearse. Importalo de ./helpers/api y llamalo arriba del test.describe."
     fi
+    ;;
+esac
+
+# ── 11. E2E: las cuentas fijas se piden por clave ───────────────────────────
+# Viven en e2e/fixtures/users.json, que es también lo que siembra el seed. Un
+# email o una contraseña copiados en un spec se desincronizan del fixture y el
+# override por entorno (E2E_<CLAVE>_EMAIL) deja de llegarles.
+case "$REL" in
+  e2e/*.ts)
+    FIXED=$(grep -nE "e2e-(admin|user|gerente|supervisor|contador|cliente|inactive)@luma\.test|E2e(Admin|User|Roles)1234!" "$FILE" || true)
+    [ -n "$FIXED" ] && add "Credenciales de una cuenta fija de E2E escritas a mano — pedila por clave: test.use({ storageState: authFile('supervisor') }), loginAs(page, 'cliente') o e2eUser('inactive') de e2e/helpers/users.ts:"$'\n'"$(lines "$FIXED")"
     ;;
 esac
 

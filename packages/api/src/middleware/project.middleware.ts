@@ -22,10 +22,6 @@ declare global {
        * rol nuevo, la grilla de `@luma/shared` es el único lugar a tocar.
        */
       can?: (capability: Capability) => boolean;
-      /** @deprecated Derivado de `projectRole === 'gerente'`. Usá `req.can`. */
-      isProjectOwner?: boolean;
-      /** @deprecated Derivado de la grilla. Usá `req.can`. */
-      isProjectEditor?: boolean;
     }
   }
 }
@@ -89,15 +85,13 @@ export async function resolveProjectRole(
   return membership?.role ?? null;
 }
 
-/** Deja el rol, el `can` y los flags deprecados colgados de la request. */
+/** Deja la obra, el rol y el `can` colgados de la request. */
 function attachProjectRole(req: Request, project: IProject, role: ProjectRole) {
   const can = (capability: Capability) => canInProject(role, capability, project);
 
   req.project = project;
   req.projectRole = role;
   req.can = can;
-  req.isProjectOwner = role === 'gerente';
-  req.isProjectEditor = can('activity.evidence.write');
 }
 
 /** Todo lo que esta persona puede hacer en esta obra, flags ya aplicados. */

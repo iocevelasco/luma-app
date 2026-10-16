@@ -38,7 +38,7 @@ test.describe('directorio de proveedores', () => {
     await loginWith(page, OWNER_EMAIL, PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
 
-    await page.getByRole('link', { name: /crear tu primera obra/i }).click();
+    await page.getByRole('link', { name: /nueva obra/i }).click();
     await page.locator('#name').fill(PROJECT_NAME);
     await page.locator('#description').fill('Obra para probar el directorio de proveedores.');
     await page.locator('#location').fill('CABA');
@@ -177,7 +177,7 @@ test.describe('directorio de proveedores', () => {
     await loginWith(page, ownerEmail, PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
 
-    await page.getByRole('link', { name: /crear tu primera obra/i }).click();
+    await page.getByRole('link', { name: /nueva obra/i }).click();
     await page.locator('#name').fill(projectName);
     await page.locator('#description').fill('Obra para probar la asignación desde el proveedor.');
     await page.locator('#location').fill('CABA');
@@ -280,10 +280,8 @@ test.describe('directorio de proveedores', () => {
     const libraryProvider = `Electricista de siempre ${runId}`;
     const clientProvider = `Cristalería del cliente ${runId}`;
 
-    async function createProject(name: string, firstOne: boolean) {
-      await page
-        .getByRole('link', { name: firstOne ? /crear tu primera obra/i : /nueva obra/i })
-        .click();
+    async function createProject(name: string) {
+      await page.getByRole('link', { name: /nueva obra/i }).click();
       await page.locator('#name').fill(name);
       await page.locator('#description').fill('Obra para probar el alcance de proveedores.');
       await page.locator('#location').fill('CABA');
@@ -314,7 +312,7 @@ test.describe('directorio de proveedores', () => {
     await loginWith(page, ownerEmail, PASSWORD);
 
     // Obra A: uno de la libreta y uno que "trae el cliente".
-    await createProject(projectA, true);
+    await createProject(projectA);
     await page.getByRole('link', { name: /^proveedores$/i }).click();
     await expect(page).toHaveURL(/\/proveedores$/);
     await createProvider(libraryProvider, /^electricidad$/i, false);
@@ -329,7 +327,7 @@ test.describe('directorio de proveedores', () => {
     // riel) y no vale la pena desambiguar.
     await page.goto('/admin');
     await expect(page).toHaveURL(/\/admin$/);
-    await createProject(projectB, false);
+    await createProject(projectB);
     await page.getByRole('link', { name: /^proveedores$/i }).click();
     await expect(page).toHaveURL(/\/proveedores$/);
 
@@ -356,7 +354,7 @@ test.describe('directorio de proveedores', () => {
     await registerWith(page, `Ejecutante E2E ${runId}`, ownerEmail, PASSWORD);
     await loginWith(page, ownerEmail, PASSWORD);
 
-    await page.getByRole('link', { name: /crear tu primera obra/i }).click();
+    await page.getByRole('link', { name: /nueva obra/i }).click();
     await page.locator('#name').fill(projectName);
     await page.locator('#description').fill('Obra para probar la contratación.');
     await page.locator('#location').fill('CABA');

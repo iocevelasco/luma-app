@@ -26,12 +26,17 @@ import { errorMessage } from '@/lib/error-message';
  */
 export function CrewRosterDialog({
   projectId,
-  isOwner,
+  canManage,
   open,
   onOpenChange,
 }: {
   projectId: string;
-  isOwner: boolean;
+  /**
+   * Administrar el roster: sacar y dar de baja son `crew.manage`. Traer de la
+   * Empresa también queda del gerente acá; el supervisor suma gente por el
+   * alta (`AddCrewDrawer`), que ya busca en la Empresa antes de crear.
+   */
+  canManage: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -79,7 +84,7 @@ export function CrewRosterDialog({
                       </p>
                     )}
                   </div>
-                  {isOwner && (
+                  {canManage && (
                     // De la libreta de la Empresa: se saca DE ESTA OBRA. La baja
                     // es de la Empresa y alcanza a todas las obras.
                     member.scope === 'project' ? (
@@ -109,7 +114,7 @@ export function CrewRosterDialog({
             </ul>
           )}
 
-          {isOwner && (
+          {canManage && (
             <Button
               type="button"
               variant="outline"

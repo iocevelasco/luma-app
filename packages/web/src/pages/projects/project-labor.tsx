@@ -184,7 +184,8 @@ export function ProjectLaborPage() {
               activity={activity}
               attendance={attendanceByActivity.get(activity.id)}
               date={date}
-              isEditor={can('crew.attendance.write')}
+              canMarkAttendance={can('crew.attendance.write')}
+              canManageCrew={can('crew.manage')}
             />
           ))
         )}

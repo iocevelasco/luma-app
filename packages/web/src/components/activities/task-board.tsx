@@ -640,7 +640,7 @@ export function TaskBoard({
 
       <CrewRosterDialog
         projectId={projectId}
-        isOwner={can('crew.manage')}
+        canManage={can('crew.manage')}
         open={rosterOpen}
         onOpenChange={onRosterOpenChange}
       />
