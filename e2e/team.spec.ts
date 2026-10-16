@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { addCrewMember, addTask, boardColumn, moveTask, taskCard } from './helpers/crew';
+import { requiresApi } from './helpers/api';
 
 /**
  * Flujo del Supervisor de obra: se invita **a una obra puntual**, no a la
@@ -26,6 +27,8 @@ const SUPERVISOR_EMAIL = `e2e-team-supervisor-${RUN_ID}@luma.test`;
 const PASSWORD = 'E2eProyecto1234!';
 const PROJECT_NAME = `Obra equipo ${RUN_ID}`;
 const ACTIVITY_NAME = `Instalación eléctrica ${RUN_ID}`;
+
+requiresApi();
 
 test.describe('Supervisor de obra', () => {
   test('el gerente lo invita a la obra; reporta avance pero no planifica ni ve presupuesto', async ({

@@ -144,7 +144,19 @@ case "$REL" in
     ;;
 esac
 
-# ── 10. E2E: las cuentas fijas se piden por clave ───────────────────────────
+# ── 10. E2E: lo que necesita la API se saltea sin API ───────────────────────
+# CI corre la suite sin backend. Un spec que inicia sesión —a mano o con una
+# sesión guardada de las cuentas fijas— y no llama a `requiresApi()` no se
+# saltea: falla esperando un login imposible y tapa con rojo las fallas reales.
+case "$REL" in
+  e2e/*.spec.ts)
+    if grep -qE "registerWith|loginWith|loginAs|authFile\(" "$FILE" && ! grep -q "requiresApi()" "$FILE"; then
+      add "Spec que inicia sesión sin requiresApi() — en CI no hay API y va a fallar en vez de saltearse. Importalo de ./helpers/api y llamalo arriba del test.describe."
+    fi
+    ;;
+esac
+
+# ── 11. E2E: las cuentas fijas se piden por clave ───────────────────────────
 # Viven en e2e/fixtures/users.json, que es también lo que siembra el seed. Un
 # email o una contraseña copiados en un spec se desincronizan del fixture y el
 # override por entorno (E2E_<CLAVE>_EMAIL) deja de llegarles.

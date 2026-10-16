@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
+import { requiresApi } from './helpers/api';
 
 /**
  * Validación del supervisor: el trabajo se reporta terminado, el supervisor
@@ -20,6 +21,8 @@ function toDayKey(date: Date): string {
     date.getDate(),
   ).padStart(2, '0')}`;
 }
+
+requiresApi();
 
 test.describe('validación del supervisor', () => {
   test('reporta terminado, el supervisor devuelve con motivo y después cierra', async ({

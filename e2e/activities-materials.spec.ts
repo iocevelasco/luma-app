@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
+import { requiresApi } from './helpers/api';
 
 /**
  * Flujo principal de RF-01 (planificación semanal) y RF-02 (materiales):
@@ -23,6 +24,8 @@ function toDayKey(date: Date): string {
     date.getDate(),
   ).padStart(2, '0')}`;
 }
+
+requiresApi();
 
 test.describe('planificación semanal y materiales', () => {
   test('crea una obra, planifica una actividad y gestiona sus materiales', async ({ page }) => {

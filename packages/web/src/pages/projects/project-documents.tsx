@@ -55,7 +55,7 @@ import {
 } from '@/hooks/documents/use-document-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { cn } from '@/lib/utils';
+import { cn, formatFileSize } from '@/lib/utils';
 
 /**
  * El orden de las categorías en la pantalla no es el del enum: primero los
@@ -72,12 +72,6 @@ const CATEGORY_ORDER: DocumentCategory[] = [
   'render',
   'otra',
 ];
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 /** Un PDF y una imagen se buscan distinto; el ícono lo dice antes que el nombre. */
 function DocumentIcon({ contentType, className }: { contentType: string; className?: string }) {
@@ -198,7 +192,7 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
             {file ? file.name : t('document.fields.filePlaceholder')}
           </Button>
           {file && (
-            <p className="text-xs text-muted-foreground">{formatSize(file.size)}</p>
+            <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
           )}
           {fileError && <p className="text-sm text-destructive">{fileError}</p>}
           <p className="text-2xs text-muted-foreground">{t('document.fields.fileHint')}</p>
@@ -413,7 +407,7 @@ function DocumentCard({
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-xs font-medium">{doc.uploadedByName || '—'}</span>
             <span className="truncate text-2xs text-muted-foreground">
-              {t('document.uploadedOn', { date })} · {formatSize(doc.sizeBytes)}
+              {t('document.uploadedOn', { date })} · {formatFileSize(doc.sizeBytes)}
             </span>
           </div>
         </div>

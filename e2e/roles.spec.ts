@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { requiresApi } from './helpers/api';
 import { appUrl, loginAs } from './helpers/auth';
 import { authFile, E2E_PROJECT_NAME, e2eUser, type E2EProjectRoleKey } from './helpers/users';
 
@@ -12,6 +13,8 @@ import { authFile, E2E_PROJECT_NAME, e2eUser, type E2EProjectRoleKey } from './h
  * La matriz está escrita a mano y no derivada de la grilla de `@luma/shared`
  * a propósito: derivarla probaría que la grilla coincide consigo misma.
  */
+
+requiresApi();
 
 const SECTIONS = [
   'detail',

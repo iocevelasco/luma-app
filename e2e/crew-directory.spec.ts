@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { addCrewMember } from './helpers/crew';
+import { requiresApi } from './helpers/api';
 
 /**
  * Un obrero existe una sola vez en la Empresa. Se carga en la obra A; en la
@@ -27,6 +28,8 @@ async function createProject(page: Page, name: string) {
   await page.getByRole('link', { name: /^tareas$/i }).click();
   await expect(page).toHaveURL(/\/personal$/);
 }
+
+requiresApi();
 
 test.describe('empleados sin duplicar entre obras', () => {
   test('el obrero de la obra A se suma a la obra B sin recrearlo', async ({ page }) => {

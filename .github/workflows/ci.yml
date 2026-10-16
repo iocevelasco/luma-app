@@ -22,6 +22,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Primero, como en todos los scripts: `api` y `web` importan
+      # `@luma/shared` contra su `dist`, que no está en el repo. Sin esto el
+      # typecheck tira "Cannot find module '@luma/shared'" en cada archivo.
+      - run: pnpm --filter @luma/shared build
+
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
@@ -43,10 +48,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Sólo chromium: es la suite de regresión funcional, y correrla en los dos
-      # motores no encuentra el doble de bugs. WebKit se corre a
-      # mano (`pnpm test:e2e:cross`) antes de mergear algo que toque una API del
-      # browser.
+      # Sólo chromium: es el único motor en el que se testea, en CI y a mano.
       - run: pnpm exec playwright install --with-deps chromium
 
       # Sin backend levantado corren los tests que no necesitan sesión; el

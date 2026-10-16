@@ -9,16 +9,46 @@ import { Activity } from '../models/Activity.js';
 import { User } from '../models/User.js';
 import type { IProject } from '../models/Project.js';
 import { notifyProject } from '../services/notification.service.js';
+import { deleteObject, signObjectUrl } from '../services/storage.service.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
 }
 
-function toMilestoneDTO(
+/**
+ * Una URL que no se pudo firmar no tumba el listado entero: el adjunto se
+ * muestra sin link y el resto de la cronología se sigue viendo.
+ */
+async function signAttachmentUrl(key: string): Promise<string | null> {
+  try {
+    return await signObjectUrl(key);
+  } catch (error) {
+    console.error('❌ [MILESTONE] firmar adjunto:', error);
+    return null;
+  }
+}
+
+/**
+ * Exportado para los endpoints de adjuntos, que devuelven el hito entero: así
+ * el frontend reemplaza una sola entrada de la caché y no arma el hito a mano.
+ */
+export async function toMilestoneDTO(
   milestone: IMilestone,
   reporterName: string,
   activityName?: string,
-): MilestoneDTO {
+): Promise<MilestoneDTO> {
+  // La `key` es la ruta real en el bucket: nunca sale de acá.
+  const attachments = await Promise.all(
+    (milestone.attachments ?? []).map(async (attachment) => ({
+      id: String(attachment._id),
+      fileName: attachment.fileName,
+      contentType: attachment.contentType,
+      sizeBytes: attachment.sizeBytes,
+      url: await signAttachmentUrl(attachment.key),
+      createdAt: attachment.createdAt.toISOString(),
+    })),
+  );
+
   return {
     id: String(milestone._id),
     projectId: String(milestone.project),
@@ -27,6 +57,8 @@ function toMilestoneDTO(
     severity: milestone.severity,
     title: milestone.title,
     description: milestone.description || undefined,
+    attendees: milestone.attendees?.length ? [...milestone.attendees] : undefined,
+    attachments,
     occurredOn: milestone.occurredOn,
     activityId: milestone.activity ? String(milestone.activity) : undefined,
     activityName,
@@ -77,11 +109,13 @@ export async function listMilestones(req: Request, res: Response) {
     const docs = await Milestone.find(filter).sort({ occurredOn: -1, createdAt: -1 }).limit(200);
     const { userNames, activityNames } = await resolveNames(docs);
 
-    const milestones = docs.map((doc) =>
-      toMilestoneDTO(
-        doc,
-        userNames.get(String(doc.reportedBy)) ?? '',
-        doc.activity ? activityNames.get(String(doc.activity)) : undefined,
+    const milestones = await Promise.all(
+      docs.map((doc) =>
+        toMilestoneDTO(
+          doc,
+          userNames.get(String(doc.reportedBy)) ?? '',
+          doc.activity ? activityNames.get(String(doc.activity)) : undefined,
+        ),
       ),
     );
 
@@ -123,7 +157,7 @@ export async function createMilestone(req: Request, res: Response) {
     }
 
     const project = req.project as IProject;
-    const { activityId, ...rest } = parsed.data;
+    const { activityId, attendees, ...rest } = parsed.data;
 
     // Una actividad de otra obra enlazada acá filtraría su nombre a quien no
     // tiene acceso a ella. Se valida la pertenencia antes de guardarla.
@@ -139,6 +173,7 @@ export async function createMilestone(req: Request, res: Response) {
     const milestone = await Milestone.create({
       project: project._id,
       ...rest,
+      attendees: rest.type === 'reunion' ? (attendees ?? []) : [],
       activity,
       reportedBy: req.user.sub,
     });
@@ -149,7 +184,7 @@ export async function createMilestone(req: Request, res: Response) {
 
     return res.status(201).json({
       success: true,
-      data: { milestone: toMilestoneDTO(milestone, reporter?.name ?? '') },
+      data: { milestone: await toMilestoneDTO(milestone, reporter?.name ?? '') },
     });
   } catch (error) {
     console.error('❌ [MILESTONE] createMilestone:', error);
@@ -212,14 +247,41 @@ export async function updateMilestone(req: Request, res: Response) {
         .json({ success: false, error: 'No podés editar un hito publicado al cliente' });
     }
 
-    milestone.set(parsed.data);
+    // El schema no puede ver el tipo guardado: si el body trae asistentes y no
+    // trae `type`, se valida contra el tipo que ya tiene el hito.
+    const nextType = parsed.data.type ?? milestone.type;
+    if (nextType !== 'reunion' && parsed.data.attendees?.length) {
+      return res.status(400).json({
+        success: false,
+        error: 'Sólo una reunión lleva asistentes',
+        code: 'VALIDATION',
+      });
+    }
+
+    const { activityId, ...changes } = parsed.data;
+
+    // Misma validación que en el alta: una actividad de otra obra filtraría su
+    // nombre. `activityId` no es un campo del modelo (es `activity`), así que
+    // sin esto el cambio se descartaba en silencio.
+    if (activityId !== undefined) {
+      const found = await Activity.findOne({ _id: activityId, project: project._id }).select('_id');
+      if (!found) {
+        return res.status(400).json({ success: false, error: 'La tarea no es de esta obra' });
+      }
+      milestone.set('activity', found._id);
+    }
+
+    milestone.set(changes);
+    // Una reunión que pasa a ser otra cosa deja de tener asistentes: quedarían
+    // guardados sin ninguna pantalla que los muestre.
+    if (nextType !== 'reunion') milestone.set('attendees', []);
     await milestone.save();
 
     const reporter = await User.findById(milestone.reportedBy).select('name');
 
     return res.json({
       success: true,
-      data: { milestone: toMilestoneDTO(milestone, reporter?.name ?? '') },
+      data: { milestone: await toMilestoneDTO(milestone, reporter?.name ?? '') },
     });
   } catch (error) {
     console.error('❌ [MILESTONE] updateMilestone:', error);
@@ -247,6 +309,17 @@ export async function deleteMilestone(req: Request, res: Response) {
     }
 
     await Milestone.findByIdAndDelete(milestone._id);
+
+    // Después de borrar el hito, y sin cortar si falla: un archivo huérfano en
+    // el bucket cuesta poco; un hito que no se puede borrar porque el storage
+    // no responde deja a la persona sin salida.
+    await Promise.all(
+      (milestone.attachments ?? []).map((attachment) =>
+        deleteObject(attachment.key).catch((error) =>
+          console.error('❌ [MILESTONE] borrar adjunto del bucket:', attachment.key, error),
+        ),
+      ),
+    );
 
     return res.json({ success: true, data: { milestoneId: String(milestone._id) } });
   } catch (error) {

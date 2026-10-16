@@ -32,7 +32,6 @@ pnpm typecheck
 pnpm lint
 pnpm test         # unit (vitest)
 pnpm test:e2e:ci  # E2E chromium
-pnpm test:e2e:cross
 ```
 
 ## Qué trae la base

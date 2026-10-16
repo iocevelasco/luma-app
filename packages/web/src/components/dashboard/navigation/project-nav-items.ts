@@ -90,3 +90,18 @@ export function visibleProjectNavItems(capabilities: readonly Capability[]): Pro
     (item) => !item.hidden && (!item.capability || granted.has(item.capability)),
   );
 }
+
+/**
+ * Si la sección está activa en esta URL. Cuenta también lo que cuelga de ella
+ * (`hitos/nuevo`, `hitos/:id/editar`): adentro del alta se sigue estando en
+ * Hitos. El detalle es la excepción porque es prefijo de todas las demás.
+ */
+export function isProjectSectionActive(
+  item: ProjectNavItem,
+  projectId: string,
+  pathname: string,
+): boolean {
+  const to = item.path(projectId);
+  if (pathname === to) return true;
+  return item.labelKey !== 'detail' && pathname.startsWith(`${to}/`);
+}

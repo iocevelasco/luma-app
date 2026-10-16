@@ -250,14 +250,12 @@ const { t } = useTranslation();
 
 ## Cross-browsing — obligatorio
 
-Toda feature se desarrolla pensando en Chrome y en Safari. Chrome es donde
-escribimos el código, no donde vive el usuario: en un iPhone *todo* browser corre
-sobre WebKit, y una API que falta ahí no degrada la pantalla, la voltea entera.
+Toda feature se escribe pensando en Chrome y en Safari. Chrome es donde
+escribimos el código, no donde vive el usuario: en un iPhone *todo* browser es
+Safari por dentro, y una API que falta ahí no degrada la pantalla, la voltea entera.
 
-**Firefox no se testea.** No es un olvido: Gecko casi nunca rompe algo que
-Chromium y WebKit pasan los dos, y una tercera suite cuesta tiempo de CI y de
-persona sin encontrar bugs proporcionales. Si algún día aparece un reporte real
-de Firefox, se revisa la decisión.
+Las reglas de abajo se cumplen **al escribir el código**. Los E2E corren sólo en
+Chromium: no se testea en Safari ni en Firefox, y no se instalan otros motores.
 
 ### La regla que más rompe: nunca leas un global del browser como identificador suelto
 
@@ -287,17 +285,11 @@ si falta escribí el fallback **en el mismo commit**. Detectá con
 ### Verificación
 
 ```bash
-pnpm exec playwright install webkit   # una sola vez
-pnpm test:e2e:ci                      # chromium — lo que corre CI
-pnpm test:e2e:cross                   # chromium + webkit
+pnpm test:e2e:ci   # chromium — lo que corre CI
 ```
 
-CI corre **sólo chromium**: es la suite de regresión funcional y duplicarla no
-encuentra el doble de bugs. `test:e2e:cross` se corre a mano antes de mergear una
-feature que toque una API del browser.
-
 Una feature nueva no está terminada hasta que carga sin errores de consola en
-chromium y en webkit.
+chromium.
 
 ## Tests
 
@@ -309,6 +301,9 @@ chromium y en webkit.
 
 - `e2e/global-setup.ts` levanta la sesión y **detecta si no hay backend**: sin API
   corren igual los specs que no necesitan sesión, no revienta la suite.
+- **Un spec que necesita la API llama a `requiresApi()`** (`e2e/helpers/api.ts`)
+  arriba del `test.describe`. CI corre sin backend: sin esa llamada el spec no se
+  saltea, falla esperando el login y tapa con rojo las fallas reales.
 - Los helpers de login viven en `e2e/helpers/auth.ts`. No escribas un login a mano
   en un spec nuevo.
 
@@ -353,7 +348,7 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 | `.claude/settings.json` | Permisos (los scripts del repo y los comandos de lectura no piden aprobación; deploy, `git push` y el seed están denegados) y el hook de post-edición |
 | `.claude/hooks/post-edit-check.sh` | Corre después de cada Edit/Write: paridad i18n, colores crudos, radios fuera de escala, CTA a escuadra, strings inline, `components/ui/` editado, `shared` sin rebuildear, credenciales de E2E escritas a mano |
 | `.claude/hooks/pre-push-check.sh` | Bloquea todo `git push` cuyo destino sea main o master. El flujo es rama de feature + PR, y una regla de permisos no puede expresar "salvo a main" |
-| `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e, y cross-browser cuando corresponde |
+| `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e (chromium) |
 | `.claude/commands/feature.md` | `/feature <qué>` — implementa respetando el orden shared → api → capa 1 → capa 2 → UI → i18n |
 | `.claude/agents/criterio.md` | Agente de producto: afila un pedido vago en un encargo implementable y lo critica antes de que se escriba código |
 | `.mcp.json` | MongoDB en modo lectura (`MONGODB_URI`) y Coolify con lectura y escritura (`COOLIFY_URL`, `COOLIFY_TOKEN`) — 111 herramientas, 24 destructivas; ninguna en `allow`, así que todas piden aprobación. Ver `docs/DEPLOY.md` |

@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Corre la secuencia de cierre de una feature en Luma — typecheck, lint, unit, e2e, y cross-browser cuando el cambio toca una API del browser. Usalo cuando el usuario dice que terminó algo, pide verificar, quiere saber si está listo para commitear o mergear, o antes de abrir un PR.
+description: Corre la secuencia de cierre de una feature en Luma — typecheck, lint, unit y e2e en Chromium. Usalo cuando el usuario dice que terminó algo, pide verificar, quiere saber si está listo para commitear o mergear, o antes de abrir un PR.
 ---
 
 # Verificar una feature
@@ -70,6 +70,9 @@ pnpm test:e2e:ci
 
 Chromium. Es lo mismo que corre CI, así que un verde acá predice el verde del PR.
 
+Sólo Chromium: no se testea en otros motores ni se instalan. Lo de Safari se cuida al
+escribir el código (ver "Cross-browsing" en CLAUDE.md).
+
 Con la API arriba, el `globalSetup` siembra solo las cuentas fijas de
 `e2e/fixtures/users.json` (admin, usuario sin obras, gerente, supervisor,
 contador, cliente, dada de baja) y guarda una sesión por cada una. No hay que
@@ -77,13 +80,9 @@ crear usuarios a mano ni pasar credenciales: si un spec necesita un rol, lo pide
 por clave (ver "Cuentas fijas de E2E" en `CLAUDE.md`). Si en el reporte aparece
 `Sesiones guardadas: n/m` con n < m, la falla es de entorno, no del spec.
 
-### Cuándo además corrés WebKit
+### Revisión a ojo de lo que rompe en Safari
 
-```bash
-pnpm test:e2e:cross
-```
-
-Obligatorio — no opcional — si el diff toca cualquiera de estas cosas:
+Si el diff toca cualquiera de estas cosas, leé ese código buscando el fallback:
 
 - Un global del browser (`requestIdleCallback`, `IntersectionObserver`,
   `structuredClone`, `navigator.*`, `crypto.*`, `ResizeObserver`, `Notification`).
@@ -93,8 +92,6 @@ Obligatorio — no opcional — si el diff toca cualquiera de estas cosas:
   snapping, o cualquier cosa con prefijo.
 - Cookies, storage o el flujo de refresh token — el ITP de Safari cambia el
   comportamiento de las cookies de tercera parte.
-
-Requiere una sola vez: `pnpm exec playwright install webkit`.
 
 Mientras revisás el diff, chequeá a ojo la regla que más se rompe: **un global
 del browser leído como identificador suelto**. `requestIdleCallback?.(fn)` tira
@@ -107,7 +104,7 @@ Decí qué corrió, qué pasó y qué **no** se verificó. Un reporte honesto se
 a esto:
 
 > typecheck ✅ · lint ✅ · unit ✅ (34) · e2e chromium ✅ (12)
-> No corrí `test:e2e:cross`: el diff no toca APIs del browser ni fechas.
+> Revisé a ojo el uso de `ResizeObserver`: tiene fallback.
 > Sin cubrir: el caso de refresh token expirado no tiene test — el cambio lo toca.
 
 No digas "todo listo" si algo se salteó. Si un paso falló y lo arreglaste, volvé

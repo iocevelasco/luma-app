@@ -844,6 +844,7 @@
       "vicio_oculto": "Vicio oculto",
       "retraso": "Retraso",
       "cambio_proyecto": "Cambio en el proyecto",
+      "reunion": "Reunión",
       "otro": "Otro"
     },
     "audience": {
@@ -868,7 +869,11 @@
       "severity": "Gravedad",
       "activity": "Tarea relacionada",
       "activityPlaceholder": "Ninguna",
-      "description": "Descripción"
+      "description": "Descripción",
+      "attendees": "Asistentes",
+      "minutes": "Minuta",
+      "minutesPlaceholder": "Temas que se trataron, qué se decidió y qué quedó pendiente.",
+      "descriptionPlaceholder": "Qué pasó y qué hay que saber."
     },
     "new": {
       "title": "Reportar hito",
@@ -885,7 +890,6 @@
       "description": "Reportá las etapas concluidas, los retrasos y lo que haya que avisar.",
       "descriptionReadOnly": "Cuando pase algo importante en la obra, lo vas a ver acá."
     },
-    "reportedBy": "Reportado por {{name}} · {{date}}",
     "created": "Hito reportado",
     "updated": "Hito actualizado",
     "deleted": "Hito eliminado",
@@ -893,6 +897,49 @@
       "create": "No pudimos reportar el hito.",
       "update": "No pudimos actualizar el hito.",
       "delete": "No pudimos eliminar el hito."
+    },
+    "attendees": {
+      "remove": "Quitar a {{name}}",
+      "placeholder": "Escribí un nombre y apretá Enter",
+      "full": "Llegaste al máximo de asistentes",
+      "more_one": "{{names}} y {{count}} más",
+      "more_other": "{{names}} y {{count}} más"
+    },
+    "edit": {
+      "title": "Editar hito",
+      "submit": "Guardar cambios",
+      "action": "Editar hito"
+    },
+    "showMore": "Ver más",
+    "showLess": "Ver menos",
+    "reportedByName": "Reportado por {{name}}",
+    "linkedTask": "Tarea: {{name}}",
+    "showMinutes": "Ver minuta",
+    "showDetail": "Ver detalle",
+    "actions": "Acciones de «{{title}}»",
+    "attachments": {
+      "title": "Adjuntos",
+      "count": "{{count}} de {{max}}",
+      "add": "Agregar fotos o PDF",
+      "hint": "Fotos o PDF de hasta 20MB. En el celular podés sacar la foto en el momento.",
+      "pending": "se sube al guardar",
+      "uploading": "Subiendo…",
+      "retry": "Reintentar {{name}}",
+      "remove": "Quitar {{name}}",
+      "removeTitle": "¿Quitar este adjunto?",
+      "removeDescription": "Se borra «{{name}}». No se puede deshacer.",
+      "removeConfirm": "Quitar",
+      "removed": "Adjunto quitado",
+      "failedAfterCreate": "El hito se guardó, pero estos archivos no se subieron. Volvé a agregarlos:",
+      "more_one": "+{{count}}",
+      "more_other": "+{{count}}",
+      "open": "Abrir {{name}}",
+      "errors": {
+        "type": "Ese formato no se puede adjuntar: subí una foto o un PDF.",
+        "tooLarge": "Pesa más de 20MB.",
+        "tooMany": "Un hito admite hasta {{max}} adjuntos.",
+        "upload": "No pudimos subir el archivo."
+      }
     }
   },
   "notification": {
@@ -1117,5 +1164,28 @@
       "nextWeek": "Semana siguiente",
       "currentWeek": "Semana actual"
     }
+  },
+  "formPanel": {
+    "close": "Cerrar",
+    "discard": {
+      "title": "¿Descartar los cambios?",
+      "description": "Lo que escribiste no se guardó y se va a perder.",
+      "keepEditing": "Seguir editando",
+      "confirm": "Descartar"
+    }
+  },
+  "markdownEditor": {
+    "toolbar": "Formato del texto",
+    "heading": "Título",
+    "subheading": "Subtítulo",
+    "bold": "Negrita",
+    "italic": "Itálica",
+    "bulletList": "Lista con viñetas",
+    "orderedList": "Lista numerada",
+    "link": "Enlace",
+    "linkUrl": "Dirección del enlace",
+    "linkPlaceholder": "https://…",
+    "applyLink": "Aplicar",
+    "removeLink": "Quitar enlace"
   }
 }

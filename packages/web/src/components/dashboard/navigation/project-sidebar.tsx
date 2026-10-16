@@ -6,7 +6,7 @@ import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { cn } from '@/lib/utils';
 import { NavRailItem } from './nav-rail-item';
-import { visibleProjectNavItems } from './project-nav-items';
+import { isProjectSectionActive, visibleProjectNavItems } from './project-nav-items';
 
 /**
  * Navegación de una obra, en desktop: un riel de íconos con tooltip.
@@ -49,11 +49,11 @@ export function ProjectSidebar() {
         El nombre de la obra NO va acá: el breadcrumb del header lo muestra y
         ese header está siempre a la vista.
       */}
-      {items.map(({ labelKey, path, icon }) => {
+      {items.map((item) => {
+        const { labelKey, path, icon } = item;
         const to = path(projectId);
-        // `end` no alcanza: el detalle es prefijo de todas las demás, así que
-        // se compara el pathname completo.
-        const isActive = pathname === to;
+        // `end` no alcanza: el detalle es prefijo de todas las demás.
+        const isActive = isProjectSectionActive(item, projectId, pathname);
 
         return (
           <NavRailItem
@@ -94,9 +94,10 @@ export function ProjectNavScroller() {
       aria-label={t('project.nav.aria')}
       className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-card px-2 py-2 md:hidden"
     >
-      {items.map(({ labelKey, path, icon: Icon }) => {
+      {items.map((item) => {
+        const { labelKey, path, icon: Icon } = item;
         const to = path(projectId);
-        const isActive = pathname === to;
+        const isActive = isProjectSectionActive(item, projectId, pathname);
 
         return (
           <NavLink

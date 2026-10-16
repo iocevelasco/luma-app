@@ -844,6 +844,7 @@
       "vicio_oculto": "Vício oculto",
       "retraso": "Atraso",
       "cambio_proyecto": "Mudança no projeto",
+      "reunion": "Reunião",
       "otro": "Outro"
     },
     "audience": {
@@ -868,7 +869,11 @@
       "severity": "Gravidade",
       "activity": "Tarefa relacionada",
       "activityPlaceholder": "Nenhuma",
-      "description": "Descrição"
+      "description": "Descrição",
+      "attendees": "Participantes",
+      "minutes": "Ata",
+      "minutesPlaceholder": "Temas tratados, o que foi decidido e o que ficou pendente.",
+      "descriptionPlaceholder": "O que aconteceu e o que é preciso saber."
     },
     "new": {
       "title": "Reportar marco",
@@ -885,7 +890,6 @@
       "description": "Reporte as etapas concluídas, os atrasos e o que precisar ser avisado.",
       "descriptionReadOnly": "Quando algo importante acontecer na obra, você verá aqui."
     },
-    "reportedBy": "Reportado por {{name}} · {{date}}",
     "created": "Marco reportado",
     "updated": "Marco atualizado",
     "deleted": "Marco excluído",
@@ -893,6 +897,49 @@
       "create": "Não foi possível reportar o marco.",
       "update": "Não foi possível atualizar o marco.",
       "delete": "Não foi possível excluir o marco."
+    },
+    "attendees": {
+      "remove": "Remover {{name}}",
+      "placeholder": "Digite um nome e pressione Enter",
+      "full": "Você atingiu o máximo de participantes",
+      "more_one": "{{names}} e mais {{count}}",
+      "more_other": "{{names}} e mais {{count}}"
+    },
+    "edit": {
+      "title": "Editar marco",
+      "submit": "Salvar alterações",
+      "action": "Editar marco"
+    },
+    "showMore": "Ver mais",
+    "showLess": "Ver menos",
+    "reportedByName": "Reportado por {{name}}",
+    "linkedTask": "Tarefa: {{name}}",
+    "showMinutes": "Ver ata",
+    "showDetail": "Ver detalhes",
+    "actions": "Ações de «{{title}}»",
+    "attachments": {
+      "title": "Anexos",
+      "count": "{{count}} de {{max}}",
+      "add": "Adicionar fotos ou PDF",
+      "hint": "Fotos ou PDF de até 20MB. No celular você pode tirar a foto na hora.",
+      "pending": "é enviado ao salvar",
+      "uploading": "Enviando…",
+      "retry": "Tentar de novo {{name}}",
+      "remove": "Remover {{name}}",
+      "removeTitle": "Remover este anexo?",
+      "removeDescription": "«{{name}}» será apagado. Não dá para desfazer.",
+      "removeConfirm": "Remover",
+      "removed": "Anexo removido",
+      "failedAfterCreate": "O marco foi salvo, mas estes arquivos não foram enviados. Adicione-os de novo:",
+      "more_one": "+{{count}}",
+      "more_other": "+{{count}}",
+      "open": "Abrir {{name}}",
+      "errors": {
+        "type": "Esse formato não pode ser anexado: envie uma foto ou um PDF.",
+        "tooLarge": "Tem mais de 20MB.",
+        "tooMany": "Um marco aceita até {{max}} anexos.",
+        "upload": "Não conseguimos enviar o arquivo."
+      }
     }
   },
   "notification": {
@@ -1117,5 +1164,28 @@
       "nextWeek": "Próxima semana",
       "currentWeek": "Semana atual"
     }
+  },
+  "formPanel": {
+    "close": "Fechar",
+    "discard": {
+      "title": "Descartar as alterações?",
+      "description": "O que você escreveu não foi salvo e será perdido.",
+      "keepEditing": "Continuar editando",
+      "confirm": "Descartar"
+    }
+  },
+  "markdownEditor": {
+    "toolbar": "Formatação do texto",
+    "heading": "Título",
+    "subheading": "Subtítulo",
+    "bold": "Negrito",
+    "italic": "Itálico",
+    "bulletList": "Lista com marcadores",
+    "orderedList": "Lista numerada",
+    "link": "Link",
+    "linkUrl": "Endereço do link",
+    "linkPlaceholder": "https://…",
+    "applyLink": "Aplicar",
+    "removeLink": "Remover link"
   }
 }

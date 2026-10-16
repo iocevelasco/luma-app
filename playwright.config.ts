@@ -47,16 +47,9 @@ export default defineConfig({
   // Timeout por test: 30s en local, 60s en CI.
   timeout: IS_CI ? 60_000 : 30_000,
 
-  // Chromium es el default y el único que corre en CI: es la suite de regresión
-  // funcional y duplicarla no encuentra el doble de bugs. WebKit
-  // se corren a mano (`--project=webkit`) antes de mergear una feature que toque
-  // una API del browser — están acá porque el motor de Safari rompe cosas que
-  // Chromium no, y un `requestIdleCallback` ausente voltea una pantalla entera
-  // sin que nadie lo note hasta que alguien abre la app en un iPhone.
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
-  ],
+  // Sólo Chromium, en CI y a mano: no se testea en otros motores. Lo de Safari
+  // se cuida al escribir el código (ver "Cross-browsing" en CLAUDE.md).
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 
   // Servidores de desarrollo — no se levantan si el target es remoto.
   webServer: IS_REMOTE ? [] : [

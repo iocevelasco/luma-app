@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
+import { requiresApi } from './helpers/api';
 
 /**
  * Flujo del importador de planilla (RF-05, corte 2): sube un .csv con los
@@ -19,6 +20,8 @@ const OWNER_NAME = `Ejecutante E2E ${RUN_ID}`;
 const OWNER_EMAIL = `e2e-budget-import-${RUN_ID}@luma.test`;
 const PASSWORD = 'E2eProyecto1234!';
 const PROJECT_NAME = `Obra import presupuesto ${RUN_ID}`;
+
+requiresApi();
 
 test.describe('presupuesto (importador de planilla)', () => {
   test('crea una obra e importa el presupuesto desde un csv', async ({ page }) => {

@@ -26,6 +26,8 @@ export const ROUTES = {
   PROJECT_PROVIDERS: '/admin/proyectos/:projectId/proveedores',
   PROJECT_DOCUMENTS: '/admin/proyectos/:projectId/documentacion',
   PROJECT_MILESTONES: '/admin/proyectos/:projectId/hitos',
+  PROJECT_MILESTONE_NEW: '/admin/proyectos/:projectId/hitos/nuevo',
+  PROJECT_MILESTONE_EDIT: '/admin/proyectos/:projectId/hitos/:milestoneId/editar',
   PROJECT_TEAM: '/admin/proyectos/:projectId/equipo',
   PROJECT_PAYMENTS: '/admin/proyectos/:projectId/pagos',
   PROJECT_EXPENSES: '/admin/proyectos/:projectId/gastos',
@@ -92,6 +94,19 @@ export function projectTeamPath(projectId: string): string {
 /** `ROUTES.PROJECT_MILESTONES` con el `:projectId` resuelto, para armar links. */
 export function projectMilestonesPath(projectId: string): string {
   return ROUTES.PROJECT_MILESTONES.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_MILESTONE_NEW` con el `:projectId` resuelto, para armar links. */
+export function projectMilestoneNewPath(projectId: string): string {
+  return ROUTES.PROJECT_MILESTONE_NEW.replace(':projectId', projectId);
+}
+
+/** `ROUTES.PROJECT_MILESTONE_EDIT` con los dos ids resueltos, para armar links. */
+export function projectMilestoneEditPath(projectId: string, milestoneId: string): string {
+  return ROUTES.PROJECT_MILESTONE_EDIT.replace(':projectId', projectId).replace(
+    ':milestoneId',
+    milestoneId,
+  );
 }
 
 /** `ROUTES.PROJECT_DOCUMENTS` con el `:projectId` resuelto, para armar links. */

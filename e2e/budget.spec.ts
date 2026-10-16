@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
+import { requiresApi } from './helpers/api';
 
 /**
  * Flujo principal de RF-05 corte 1 (presupuesto, carga manual): registra su
@@ -16,6 +17,8 @@ const PASSWORD = 'E2eProyecto1234!';
 const PROJECT_NAME = `Obra presupuesto ${RUN_ID}`;
 const CHAPTER_NAME = `Demolición ${RUN_ID}`;
 const ITEM_NAME = `Retiro de escombros ${RUN_ID}`;
+
+requiresApi();
 
 test.describe('presupuesto (carga manual)', () => {
   test('crea una obra y carga su presupuesto a mano', async ({ page }) => {
