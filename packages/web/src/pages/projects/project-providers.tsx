@@ -492,34 +492,38 @@ export function ProjectProvidersPage() {
   if (isError) return <PageLayout isError />;
 
   return (
-    <PageLayout
-      isLoading={isLoading}
-      action={isOwner ? <NewProviderDialog projectId={projectId!} /> : undefined}
-      secondaryActions={
-        isOwner ? (
-          <Button variant="outline" onClick={() => setPickerOpen(true)}>
-            <Building2 className="size-4" />
-            {t('directory.addFromCompany')}
-          </Button>
-        ) : undefined
-      }
-      empty={
-        (providersData?.providers.length ?? 0) === 0
-          ? {
-              icon: Wrench,
-              title: t('provider.list.empty'),
-              description: isOwner ? t('provider.list.emptyOwnerHint') : undefined,
-            }
-          : undefined
-      }
-    >
-      <ResponsiveTable
-        columns={columns}
-        rows={providersData?.providers ?? []}
-        getRowKey={(provider) => provider.id}
-        isFetching={isFetching}
-      />
+    <>
+      <PageLayout
+        isLoading={isLoading}
+        action={isOwner ? <NewProviderDialog projectId={projectId!} /> : undefined}
+        secondaryActions={
+          isOwner ? (
+            <Button variant="outline" onClick={() => setPickerOpen(true)}>
+              <Building2 className="size-4" />
+              {t('directory.addFromCompany')}
+            </Button>
+          ) : undefined
+        }
+        empty={
+          (providersData?.providers.length ?? 0) === 0
+            ? {
+                icon: Wrench,
+                title: t('provider.list.empty'),
+                description: isOwner ? t('provider.list.emptyOwnerHint') : undefined,
+              }
+            : undefined
+        }
+      >
+        <ResponsiveTable
+          columns={columns}
+          rows={providersData?.providers ?? []}
+          getRowKey={(provider) => provider.id}
+          isFetching={isFetching}
+        />
+      </PageLayout>
 
+      {/* Afuera de PageLayout: con la obra sin proveedores, "Agregar de la
+          Empresa" es la salida del vacío, y adentro no se montaba. */}
       <DirectoryPickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
@@ -593,7 +597,7 @@ export function ProjectProvidersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </PageLayout>
+    </>
   );
 }
 

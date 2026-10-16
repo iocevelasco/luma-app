@@ -45,6 +45,11 @@ interface PageLayoutProps {
    * Si viene, la pantalla no tiene nada para mostrar: se dibuja este vacío en
    * lugar de `children`. La barra de arriba (filtros y acción) se mantiene:
    * la salida de un vacío es la misma acción de siempre, en su lugar.
+   *
+   * Por eso un diálogo que abre una acción de la barra **no va en
+   * `children`**: con la pantalla vacía no se monta, y el botón queda sin
+   * hacer nada justo cuando es la única salida. Va al lado de `PageLayout`,
+   * en un fragmento.
    */
   empty?: PageLayoutEmpty;
   width?: PageLayoutWidth;

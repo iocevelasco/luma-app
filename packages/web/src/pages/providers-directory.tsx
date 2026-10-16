@@ -205,38 +205,42 @@ export function ProvidersDirectoryPage() {
   const providers = data?.providers ?? [];
 
   return (
-    <PageLayout
-      isLoading={isLoading}
-      action={
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setDrawerOpen(true);
-          }}
-        >
-          <Plus className="size-4" />
-          {t('provider.list.new')}
-        </Button>
-      }
-      empty={
-        !error && providers.length === 0
-          ? {
-              icon: Wrench,
-              title: t('directory.providersEmpty'),
-              description: t('directory.emptyHint'),
-            }
-          : undefined
-      }
-    >
-      <ResponsiveTable
-        columns={columns}
-        rows={providers}
-        getRowKey={(provider) => provider.id}
-        isFetching={isFetching}
-        error={error}
-        onRetry={() => void refetch()}
-      />
+    <>
+      <PageLayout
+        isLoading={isLoading}
+        action={
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setDrawerOpen(true);
+            }}
+          >
+            <Plus className="size-4" />
+            {t('provider.list.new')}
+          </Button>
+        }
+        empty={
+          !error && providers.length === 0
+            ? {
+                icon: Wrench,
+                title: t('directory.providersEmpty'),
+                description: t('directory.emptyHint'),
+              }
+            : undefined
+        }
+      >
+        <ResponsiveTable
+          columns={columns}
+          rows={providers}
+          getRowKey={(provider) => provider.id}
+          isFetching={isFetching}
+          error={error}
+          onRetry={() => void refetch()}
+        />
+      </PageLayout>
 
+      {/* Afuera de PageLayout: con el directorio vacío, "Nuevo proveedor" es
+          la salida del vacío, y adentro el drawer no se montaba. */}
       <ProviderDrawer
         provider={editing}
         open={drawerOpen}
@@ -289,7 +293,7 @@ export function ProvidersDirectoryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </PageLayout>
+    </>
   );
 }
 
