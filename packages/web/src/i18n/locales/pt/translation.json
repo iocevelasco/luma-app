@@ -462,6 +462,7 @@
       "notes": "Notas (opcional)",
       "assignActivities": "Atribuir a tarefas (opcional)",
       "customSpecialtyAcabados": "Qual acabamento faz (opcional)",
+      "specialtyPlaceholder": "Escolha uma especialidade",
       "scope": "Disponível em",
       "scopeHint": "Os de \"Todas as minhas obras\" ficam na sua agenda e aparecem em qualquer obra. Use \"Somente esta obra\" para o fornecedor que o cliente traz."
     },

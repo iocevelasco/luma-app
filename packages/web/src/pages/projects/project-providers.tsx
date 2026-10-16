@@ -146,6 +146,8 @@ function NewProviderDialog({ projectId }: { projectId: string }) {
           setOpen(next);
           if (!next) {
             reset();
+            // Sin esto, un error de un intento anterior reaparece al reabrir.
+            createProvider.reset();
             setSelectedActivityIds(new Set());
           }
         }}

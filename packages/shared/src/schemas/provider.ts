@@ -18,26 +18,31 @@ const optionalDayKeySchema = z
   .optional()
   .transform((value) => value || undefined);
 
-export const providerSpecialtySchema = z.enum([
-  'electricidad',
-  'plomeria',
-  'gas',
-  'carpinteria',
-  'cristaleria',
-  'albanileria',
-  'herreria',
-  'redes',
-  'mecanicas',
-  'estructura',
-  'acabados',
-  'pintura',
-  'climatizacion',
-  'techos',
-  'pisos_revestimientos',
-  'jardineria',
-  'demolicion',
-  'otra',
-]);
+// `required_error` y `message`: el formulario arranca sin especialidad elegida,
+// y sin un texto propio la persona vería el "Required" por defecto de Zod.
+export const providerSpecialtySchema = z.enum(
+  [
+    'electricidad',
+    'plomeria',
+    'gas',
+    'carpinteria',
+    'cristaleria',
+    'albanileria',
+    'herreria',
+    'redes',
+    'mecanicas',
+    'estructura',
+    'acabados',
+    'pintura',
+    'climatizacion',
+    'techos',
+    'pisos_revestimientos',
+    'jardineria',
+    'demolicion',
+    'otra',
+  ],
+  { required_error: 'Elegí una especialidad', invalid_type_error: 'Elegí una especialidad' },
+);
 
 export const providerScopeSchema = z.enum(['organization', 'project']);
 

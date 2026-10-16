@@ -79,9 +79,9 @@ export function ProviderFormFields({
           control={control}
           name="specialty"
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id={`${idPrefix}-specialty`}>
-                <SelectValue />
+            <Select value={field.value ?? ''} onValueChange={field.onChange}>
+              <SelectTrigger id={`${idPrefix}-specialty`} aria-invalid={Boolean(errors.specialty)}>
+                <SelectValue placeholder={t('provider.fields.specialtyPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {PROVIDER_SPECIALTIES.map((value) => (
@@ -93,6 +93,9 @@ export function ProviderFormFields({
             </Select>
           )}
         />
+        {errors.specialty && (
+          <p className="text-sm text-destructive">{errors.specialty.message}</p>
+        )}
       </div>
 
       {specialty && allowsCustomSpecialty(specialty) && (
