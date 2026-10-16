@@ -311,6 +311,34 @@ chromium y en webkit.
   corren igual los specs que no necesitan sesión, no revienta la suite.
 - Los helpers de login viven en `e2e/helpers/auth.ts`. No escribas un login a mano
   en un spec nuevo.
+
+### Cuentas fijas de E2E
+
+Hay una cuenta por tipo de usuario, definidas en **`e2e/fixtures/users.json`** y
+nada más que ahí. Para ejecutar E2E —o entrar a mano con un rol— se usan esas:
+
+| Clave | Email | Qué es |
+|---|---|---|
+| `admin` | `e2e-admin@luma.test` | Admin de plataforma. Sesión por defecto de la suite |
+| `user` | `e2e-user@luma.test` | Usuario sin obras: estado vacío |
+| `gerente` | `e2e-gerente@luma.test` | Dueño de la obra compartida `Obra E2E — roles` |
+| `supervisor` · `contador` · `cliente` | `e2e-<rol>@luma.test` | Su rol en esa obra |
+| `inactive` | `e2e-inactive@luma.test` | Dada de baja: el login la rechaza |
+
+- **Las siembra el `globalSetup` solo** antes de cada tanda local (`pnpm seed:e2e`
+  por dentro, idempotente) y guarda una sesión por cuenta en `.auth/<clave>.json`.
+  No hace falta correr nada antes de `pnpm test:e2e:ci`; sólo que la API esté
+  arriba. `E2E_SKIP_SEED=1` lo saltea. Contra un entorno remoto no siembra.
+- En un spec: `test.use({ storageState: authFile('supervisor') })` para arrancar
+  logueado, o `loginAs(page, 'cliente')`. **Nunca** escribas email y contraseña
+  de una cuenta fija en el spec: se piden por clave (`helpers/users.ts`).
+- La obra compartida es para **mirar**: la ven todas las tandas. Un spec que
+  crea, mueve o borra arma su propia obra.
+- Un tipo de usuario nuevo = una entrada en el JSON (y la clave en
+  `E2EUserKey`). El seed y los specs leen el mismo archivo.
+- Para otro entorno, cada cuenta se pisa con `E2E_<CLAVE>_EMAIL` /
+  `E2E_<CLAVE>_PASSWORD`. El seed sólo toca cuentas `.test` y sólo en una base
+  local.
 - **`landing` no tiene script de `test`.** `pnpm -r test` lo saltea en silencio: un
   cambio en la landing no está cubierto por unit tests, sólo por E2E.
 - E2E se agrega por **flujo que una persona recorre**, no por endpoint. Un endpoint
@@ -323,7 +351,7 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 | Pieza | Qué hace |
 |---|---|
 | `.claude/settings.json` | Permisos (los scripts del repo y los comandos de lectura no piden aprobación; deploy, `git push` y el seed están denegados) y el hook de post-edición |
-| `.claude/hooks/post-edit-check.sh` | Corre después de cada Edit/Write: paridad i18n, colores crudos, radios fuera de escala, CTA a escuadra, strings inline, `components/ui/` editado, `shared` sin rebuildear |
+| `.claude/hooks/post-edit-check.sh` | Corre después de cada Edit/Write: paridad i18n, colores crudos, radios fuera de escala, CTA a escuadra, strings inline, `components/ui/` editado, `shared` sin rebuildear, credenciales de E2E escritas a mano |
 | `.claude/hooks/pre-push-check.sh` | Bloquea todo `git push` cuyo destino sea main o master. El flujo es rama de feature + PR, y una regla de permisos no puede expresar "salvo a main" |
 | `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e, y cross-browser cuando corresponde |
 | `.claude/commands/feature.md` | `/feature <qué>` — implementa respetando el orden shared → api → capa 1 → capa 2 → UI → i18n |

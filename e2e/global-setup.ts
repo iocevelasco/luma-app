@@ -1,12 +1,17 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { chromium, request as playwrightRequest, type FullConfig } from '@playwright/test';
-
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@luma.test';
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? 'E2eAdmin1234!';
+import {
+  chromium,
+  request as playwrightRequest,
+  type Browser,
+  type FullConfig,
+} from '@playwright/test';
+import { authFile, canLogIn, e2eUsers, type E2EUser } from './helpers/users';
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:6173';
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:8081';
+const IS_REMOTE = !/localhost/.test(BASE_URL);
 
 /**
  * Si la API responde. CI corre la tanda sin backend: ahí el login real no puede
@@ -27,26 +32,52 @@ async function apiIsUp(): Promise<boolean> {
 }
 
 /**
- * Estado de sesión vacío. `use.storageState` apunta a un archivo fijo: si no
+ * Estado de sesión vacío. `storageState` apunta a un archivo fijo: si no
  * existe, Playwright aborta antes de correr nada.
  */
 function writeEmptyAuthState(outFile: string): void {
   fs.writeFileSync(outFile, JSON.stringify({ cookies: [], origins: [] }));
 }
 
-async function saveAuthState(email: string, password: string, outFile: string): Promise<void> {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+/**
+ * Deja las cuentas de `e2e/fixtures/users.json` creadas y como dice el fixture,
+ * con la obra compartida y sus membresías. Corre el seed de la API con la
+ * lista ya resuelta para que siembre exactamente las cuentas con las que
+ * después se loguea la suite, overrides incluidos.
+ *
+ * Sólo en local: contra un entorno remoto las cuentas tienen que existir de
+ * antes, y el seed se niega a escribir en una base que no sea localhost.
+ */
+function seedUsers(users: E2EUser[]): boolean {
+  const byKey = Object.fromEntries(users.map(({ key, ...user }) => [key, user]));
+  try {
+    execFileSync('pnpm', ['--filter', '@luma/api', 'seed:e2e'], {
+      env: { ...process.env, E2E_USERS_JSON: JSON.stringify(byKey) },
+      stdio: 'pipe',
+    });
+    return true;
+  } catch (error) {
+    const { stdout = '', stderr = '' } = error as { stdout?: Buffer; stderr?: Buffer };
+    console.warn(
+      `[global-setup] Falló el seed de usuarios de E2E — los tests con sesión van a fallar\n${stdout}${stderr}`,
+    );
+    return false;
+  }
+}
+
+async function saveAuthState(browser: Browser, user: E2EUser): Promise<void> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
   try {
     await page.goto(`${BASE_URL}/login`);
     await page.waitForLoadState('networkidle');
-    await page.locator('#email').fill(email);
-    await page.locator('#password').fill(password);
+    await page.locator('#email').fill(user.email);
+    await page.locator('#password').fill(user.password);
     await page.getByRole('button', { name: /entrar|ingresar|login/i }).click();
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
-    await page.context().storageState({ path: outFile });
+    await context.storageState({ path: authFile(user.key) });
   } finally {
-    await browser.close();
+    await context.close();
   }
 }
 
@@ -54,19 +85,41 @@ export default async function globalSetup(_config: FullConfig) {
   const authDir = path.join(process.cwd(), '.auth');
   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
 
-  const adminFile = path.join(authDir, 'admin.json');
+  const users = e2eUsers().filter(canLogIn);
 
   if (!(await apiIsUp())) {
     console.warn(`[global-setup] La API no responde en ${API_URL} — sólo corren los tests sin sesión`);
-    writeEmptyAuthState(adminFile);
+    users.forEach((user) => writeEmptyAuthState(authFile(user.key)));
     return;
   }
 
+  if (!IS_REMOTE && process.env.E2E_SKIP_SEED !== '1') {
+    if (seedUsers(e2eUsers())) console.log('[global-setup] Usuarios de E2E sembrados ✓');
+  }
+
+  // Una sesión guardada por cuenta, en paralelo: cada una en su contexto.
+  const browser = await chromium.launch();
+  const failed: string[] = [];
   try {
-    await saveAuthState(ADMIN_EMAIL, ADMIN_PASSWORD, adminFile);
-    console.log('[global-setup] Sesión de admin guardada ✓');
-  } catch {
-    console.warn('[global-setup] Falló el login de admin — los tests con sesión van a fallar');
-    writeEmptyAuthState(adminFile);
+    await Promise.all(
+      users.map(async (user) => {
+        try {
+          await saveAuthState(browser, user);
+        } catch {
+          failed.push(user.key);
+          writeEmptyAuthState(authFile(user.key));
+        }
+      }),
+    );
+  } finally {
+    await browser.close();
+  }
+
+  const saved = users.length - failed.length;
+  console.log(`[global-setup] Sesiones guardadas: ${saved}/${users.length} ✓`);
+  if (failed.length) {
+    console.warn(
+      `[global-setup] Falló el login de: ${failed.join(', ')} — los tests con esas sesiones van a fallar`,
+    );
   }
 }

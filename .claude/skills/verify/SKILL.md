@@ -70,6 +70,13 @@ pnpm test:e2e:ci
 
 Chromium. Es lo mismo que corre CI, así que un verde acá predice el verde del PR.
 
+Con la API arriba, el `globalSetup` siembra solo las cuentas fijas de
+`e2e/fixtures/users.json` (admin, usuario sin obras, gerente, supervisor,
+contador, cliente, dada de baja) y guarda una sesión por cada una. No hay que
+crear usuarios a mano ni pasar credenciales: si un spec necesita un rol, lo pide
+por clave (ver "Cuentas fijas de E2E" en `CLAUDE.md`). Si en el reporte aparece
+`Sesiones guardadas: n/m` con n < m, la falla es de entorno, no del spec.
+
 ### Cuándo además corrés WebKit
 
 ```bash

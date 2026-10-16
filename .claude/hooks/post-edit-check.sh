@@ -144,6 +144,17 @@ case "$REL" in
     ;;
 esac
 
+# ── 10. E2E: las cuentas fijas se piden por clave ───────────────────────────
+# Viven en e2e/fixtures/users.json, que es también lo que siembra el seed. Un
+# email o una contraseña copiados en un spec se desincronizan del fixture y el
+# override por entorno (E2E_<CLAVE>_EMAIL) deja de llegarles.
+case "$REL" in
+  e2e/*.ts)
+    FIXED=$(grep -nE "e2e-(admin|user|gerente|supervisor|contador|cliente|inactive)@luma\.test|E2e(Admin|User|Roles)1234!" "$FILE" || true)
+    [ -n "$FIXED" ] && add "Credenciales de una cuenta fija de E2E escritas a mano — pedila por clave: test.use({ storageState: authFile('supervisor') }), loginAs(page, 'cliente') o e2eUser('inactive') de e2e/helpers/users.ts:"$'\n'"$(lines "$FIXED")"
+    ;;
+esac
+
 if [ -n "$FINDINGS" ]; then
   printf 'Revisión automática de %s:\n\n%s' "$REL" "$FINDINGS" >&2
   exit 2
