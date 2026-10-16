@@ -1,6 +1,6 @@
 {
   "name": "@luma/web",
-  "version": "0.4.5",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -46,6 +46,11 @@
     "@radix-ui/react-tooltip": "1.1.6",
     "@svar-ui/react-gantt": "^2.7.3",
     "@tanstack/react-query": "^5.90.10",
+    "@tiptap/extension-placeholder": "3.31.4",
+    "@tiptap/markdown": "3.31.4",
+    "@tiptap/pm": "3.31.4",
+    "@tiptap/react": "3.31.4",
+    "@tiptap/starter-kit": "3.31.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
@@ -61,6 +66,7 @@
     "react-dom": "19.2.0",
     "react-hook-form": "^7.60.0",
     "react-i18next": "^16.3.5",
+    "react-markdown": "10.1.0",
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "^6.28.0",
     "read-excel-file": "^9.3.10",

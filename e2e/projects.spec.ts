@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
+import { requiresApi } from './helpers/api';
 
 /**
  * Estos tests registran sus propias cuentas: `storageState` se limpia por
@@ -17,6 +18,8 @@ const CLIENT_EMAIL = `e2e-client-${RUN_ID}@luma.test`;
 const PASSWORD = 'E2eProyecto1234!';
 const PROJECT_NAME = `Baño 2do piso ${RUN_ID}`;
 const NEW_ORG_NAME = `Obras ${RUN_ID}`;
+
+requiresApi();
 
 test.describe('empresa, obra e invitación del cliente', () => {
   test('un ejecutante se registra solo, crea una obra e invita al cliente que la paga', async ({

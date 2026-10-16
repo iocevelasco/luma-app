@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
+import { requiresApi } from './helpers/api';
 
 /**
  * Flujo completo del directorio de proveedores (electricidad, carpintería,
@@ -28,6 +29,8 @@ function toDayKey(date: Date): string {
     date.getDate(),
   ).padStart(2, '0')}`;
 }
+
+requiresApi();
 
 test.describe('directorio de proveedores', () => {
   test('CRUD completo, y asignación N:N a actividades en los dos sentidos', async ({ page }) => {

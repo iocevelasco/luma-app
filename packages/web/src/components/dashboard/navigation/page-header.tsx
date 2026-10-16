@@ -13,7 +13,7 @@ import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { ROUTES } from '@/lib/routes';
 import { DASHBOARD_DESTINATIONS } from './dashboard-destinations';
-import { PROJECT_NAV_ITEMS } from './project-nav-items';
+import { isProjectSectionActive, PROJECT_NAV_ITEMS } from './project-nav-items';
 
 interface Crumb {
   label: string;
@@ -54,7 +54,7 @@ function usePageTitle(): { title: string | null; crumbs: Crumb[] } {
 
   const crumbs: Crumb[] = [{ label: t('layout.projects'), to: ROUTES.ADMIN }];
   const section = PROJECT_NAV_ITEMS.find(
-    (item) => item.labelKey !== 'detail' && item.path(projectId) === pathname,
+    (item) => item.labelKey !== 'detail' && isProjectSectionActive(item, projectId, pathname),
   );
 
   if (!data) return { title: null, crumbs };

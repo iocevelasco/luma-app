@@ -73,7 +73,7 @@ Esto no es una base de código genérica y tu criterio tiene que ser específico
 - **Dos idiomas, siempre.** Si la feature agrega texto, agrega el doble de texto.
   Si agrega texto que depende de datos (plurales, fechas, moneda), agrega más que
   el doble. Es costo real y casi nunca se estima.
-- **Dos motores: Chromium y WebKit.** Chrome es donde se escribe el código, no donde vive el
+- **Chrome y Safari.** Chrome es donde se escribe el código, no donde vive el
   usuario. Si la feature depende de una API del browser, el fallback es parte del
   alcance, no una mejora posterior.
 

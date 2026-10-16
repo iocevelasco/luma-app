@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { addCrewMember } from './helpers/crew';
+import { requiresApi } from './helpers/api';
 
 /**
  * Asistencia del día contra la cuadrilla asignada: lo que la vista vieja no
@@ -18,6 +19,8 @@ function toDayKey(date: Date): string {
     date.getDate(),
   ).padStart(2, '0')}`;
 }
+
+requiresApi();
 
 test.describe('asistencia contra la cuadrilla', () => {
   test('marca presentes, muestra al ausente con su teléfono y lo cubre', async ({ page }) => {

@@ -144,6 +144,18 @@ case "$REL" in
     ;;
 esac
 
+# ── 10. E2E: lo que necesita la API se saltea sin API ───────────────────────
+# CI corre la suite sin backend. Un spec que inicia sesión y no llama a
+# `requiresApi()` no se saltea: falla esperando un login imposible y tapa con
+# rojo las fallas reales.
+case "$REL" in
+  e2e/*.spec.ts)
+    if grep -qE "registerWith|loginWith|loginAsAdmin|loginAsUser" "$FILE" && ! grep -q "requiresApi()" "$FILE"; then
+      add "Spec que inicia sesión sin requiresApi() — en CI no hay API y va a fallar en vez de saltearse. Importalo de ./helpers/api y llamalo arriba del test.describe."
+    fi
+    ;;
+esac
+
 if [ -n "$FINDINGS" ]; then
   printf 'Revisión automática de %s:\n\n%s' "$REL" "$FINDINGS" >&2
   exit 2
