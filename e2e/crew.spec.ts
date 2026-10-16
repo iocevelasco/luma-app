@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { addCrewMember, addTask, boardColumn, moveTask, taskCard } from './helpers/crew';
+import { requiresApi } from './helpers/api';
 
 /**
  * Personal fijo de obra y tareas: cargar el roster desde el drawer (persona,
@@ -12,6 +13,8 @@ test.use({ storageState: { cookies: [], origins: [] } });
 
 const RUN_ID = Date.now();
 const PASSWORD = 'E2eProyecto1234!';
+
+requiresApi();
 
 test.describe('personal fijo y tareas', () => {
   test('carga el roster, le asigna una tarea y la completa', async ({ page }) => {

@@ -56,7 +56,12 @@ export default async function globalSetup(_config: FullConfig) {
 
   const adminFile = path.join(authDir, 'admin.json');
 
-  if (!(await apiIsUp())) {
+  // Lo leen los specs con `requiresApi()` (helpers/api.ts). Playwright pasa
+  // a los workers lo que el globalSetup deja en `process.env`.
+  const apiUp = await apiIsUp();
+  process.env.E2E_API_UP = apiUp ? '1' : '';
+
+  if (!apiUp) {
     console.warn(`[global-setup] La API no responde en ${API_URL} — sólo corren los tests sin sesión`);
     writeEmptyAuthState(adminFile);
     return;

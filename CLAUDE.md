@@ -301,6 +301,9 @@ chromium.
 
 - `e2e/global-setup.ts` levanta la sesión y **detecta si no hay backend**: sin API
   corren igual los specs que no necesitan sesión, no revienta la suite.
+- **Un spec que necesita la API llama a `requiresApi()`** (`e2e/helpers/api.ts`)
+  arriba del `test.describe`. CI corre sin backend: sin esa llamada el spec no se
+  saltea, falla esperando el login y tapa con rojo las fallas reales.
 - Los helpers de login viven en `e2e/helpers/auth.ts`. No escribas un login a mano
   en un spec nuevo.
 - **`landing` no tiene script de `test`.** `pnpm -r test` lo saltea en silencio: un

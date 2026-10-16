@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
+import { requiresApi } from './helpers/api';
 
 /**
  * Hitos y reuniones, de punta a punta.
@@ -48,6 +49,8 @@ async function openNewMilestone(page: Page, type: RegExp, audience: RegExp) {
   await panel.getByRole('button', { name: audience }).click();
   return panel;
 }
+
+requiresApi();
 
 test.describe('Hitos y reuniones', () => {
   test('el gerente deja la minuta de una reunión y el cliente la lee; lo interno no le llega', async ({

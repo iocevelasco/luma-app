@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { addCrewMember, addTask, boardColumn, moveTask, taskCard } from './helpers/crew';
+import { requiresApi } from './helpers/api';
 
 /**
  * Una tarea es UNA entidad: lo que se crea en el Tablero aparece en el
@@ -68,6 +69,8 @@ function tasksCard(page: Page) {
 function cardIn(page: Page, column: RegExp, name: string) {
   return boardColumn(page, column).getByRole('article', { name });
 }
+
+requiresApi();
 
 test.describe('tareas', () => {
   test('una sola entidad: Tablero, Cronograma y Jornada ven la misma tarea', async ({
