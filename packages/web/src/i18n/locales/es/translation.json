@@ -462,6 +462,7 @@
       "notes": "Notas (opcional)",
       "assignActivities": "Asignar a tareas (opcional)",
       "customSpecialtyAcabados": "Qué acabado hace (opcional)",
+      "specialtyPlaceholder": "Elegí una especialidad",
       "scope": "Disponible en",
       "scopeHint": "Los de \"Todas mis obras\" quedan en tu libreta y aparecen en cualquier obra. Usá \"Solo esta obra\" para el proveedor que trae el cliente."
     },

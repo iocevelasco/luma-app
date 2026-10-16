@@ -23,6 +23,15 @@ describe('createProviderSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('sin especialidad responde con un mensaje en castellano sobre ese campo', () => {
+    const { specialty: _omitted, ...withoutSpecialty } = validProvider;
+    const result = createProviderSchema.safeParse(withoutSpecialty);
+    expect(result.success).toBe(false);
+    const issue = !result.success ? result.error.issues[0] : undefined;
+    expect(issue?.path).toEqual(['specialty']);
+    expect(issue?.message).toBe('Elegí una especialidad');
+  });
+
   it('rechaza sin teléfono', () => {
     const result = createProviderSchema.safeParse({ ...validProvider, phone: '' });
     expect(result.success).toBe(false);
