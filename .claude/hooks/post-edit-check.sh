@@ -114,8 +114,11 @@ case "$REL" in
     ROLECMP=$(grep -nE "(projectRole|\.role|role)[[:space:]]*[!=]==[[:space:]]*'(gerente|supervisor|cliente)'" "$FILE" || true)
     [ -n "$ROLECMP" ] && add "Comparación directa contra un rol de obra — quién puede qué vive en la grilla de packages/shared/src/permissions/. En la API preguntá con req.can('la.capacidad'), en la UI con project.capabilities. Si falta la capacidad, agregala a la grilla:"$'\n'"$(lines "$ROLECMP")"
 
-    FLAGS=$(grep -nE "isProjectOwner|isProjectEditor|\.isOwner|\.isEditor" "$FILE" || true)
-    [ -n "$FLAGS" ] && add "isProjectOwner/isProjectEditor están deprecados — son azúcar derivada de la grilla y no distinguen supervisor de cliente. En código nuevo usá req.can(...) o project.capabilities:"$'\n'"$(lines "$FLAGS")"
+    # Los flags isOwner/isEditor ya no existen: un `isOwner` que gateaba "editar
+    # proveedor" y otro que gateaba "cerrar tarea" son dos capacidades distintas
+    # con el mismo nombre. Se pregunta por la de cada acción.
+    FLAGS=$(grep -nE "isProjectOwner|isProjectEditor|\.isOwner|\.isEditor|\bis(Owner|Editor)[=:]" "$FILE" || true)
+    [ -n "$FLAGS" ] && add "isOwner/isEditor ya no existen — cada acción pregunta por SU capacidad: req.can('provider.manage') en la API, useProjectCapabilities(projectId).can(...) o <Can I=...> en la UI. Un prop de permiso se nombra por la acción (canManage, canReview), no por el rol:"$'\n'"$(lines "$FLAGS")"
     ;;
 esac
 
