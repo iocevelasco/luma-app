@@ -21,6 +21,7 @@ import { assertNoCrewDuplicate } from '../services/crew-identity.service.js';
 import { findMyOrganizationId } from '../services/organization.service.js';
 import { badRequest, conflict, forbidden, notFound } from '../utils/errors.js';
 import { toCrewMemberDTO } from './crew.controller.js';
+import { toNewProvider, toProviderUpdate } from '../utils/provider-input.js';
 import { toProviderDTO } from './provider.controller.js';
 
 /**
@@ -135,7 +136,7 @@ export const createOrganizationProvider = wrap(async (req, res) => {
 
   // El alcance no viaja en el body: desde la Empresa siempre es de la Empresa.
   const provider = await Provider.create({
-    ...data,
+    ...toNewProvider(data),
     scope: 'organization',
     organization: organizationId,
     project: null,
@@ -152,7 +153,7 @@ export const updateOrganizationProvider = wrap(async (req, res) => {
 
   const provider = await Provider.findOneAndUpdate(
     { _id: req.params.providerId, organization: organizationId, scope: { $ne: 'project' } },
-    data,
+    toProviderUpdate(data),
     { new: true },
   );
   if (!provider) throw notFound('No encontramos a ese proveedor.');

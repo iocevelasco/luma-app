@@ -25,7 +25,13 @@ vi.mock('../../models/ProjectCrewMember.js', () => ({
   ProjectCrewMember: { create: vi.fn(), find: vi.fn() },
 }));
 vi.mock('../../models/Provider.js', () => ({
-  Provider: { find: vi.fn(), create: vi.fn(), findOne: vi.fn(), findOneAndUpdate: vi.fn() },
+  Provider: {
+    find: vi.fn(),
+    create: vi.fn(),
+    findOne: vi.fn(),
+    findOneAndUpdate: vi.fn(),
+    deleteOne: vi.fn(),
+  },
 }));
 vi.mock('../../models/ActivityProvider.js', () => ({
   ActivityProvider: {
@@ -40,6 +46,7 @@ vi.mock('../../models/Activity.js', () => ({
 }));
 
 const { Provider } = await import('../../models/Provider.js');
+const { ProjectProvider } = await import('../../models/ProjectProvider.js');
 const { ActivityProvider } = await import('../../models/ActivityProvider.js');
 const { Activity } = await import('../../models/Activity.js');
 const {
@@ -123,6 +130,59 @@ describe('createProvider — organization viene del proyecto, nunca del body', (
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(Provider.create).not.toHaveBeenCalled();
+  });
+
+  it('no guarda los campos opcionales en blanco', async () => {
+    vi.mocked(Provider.create).mockResolvedValue(baseProvider as never);
+    vi.mocked(ProjectProvider.create).mockResolvedValue({} as never);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      body: {
+        name: 'Juan',
+        specialty: 'electricidad',
+        phone: '11-1',
+        companyName: '',
+        email: '',
+        notes: '',
+      },
+    } as unknown as Request;
+
+    await createProvider(req, mockRes());
+
+    const saved = vi.mocked(Provider.create).mock.calls[0][0] as Record<string, unknown>;
+    expect(saved).not.toHaveProperty('companyName');
+    expect(saved).not.toHaveProperty('email');
+    expect(saved).not.toHaveProperty('notes');
+  });
+
+  it('si falla el vínculo con la obra, deshace el alta y no deja un proveedor huérfano', async () => {
+    vi.mocked(Provider.create).mockResolvedValue(baseProvider as never);
+    vi.mocked(ProjectProvider.create).mockRejectedValue(new Error('boom'));
+    vi.mocked(Provider.deleteOne).mockReturnValue({ catch: vi.fn() } as never);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      body: { name: 'Juan', specialty: 'electricidad', phone: '11-1', scope: 'organization' },
+    } as unknown as Request;
+    const res = mockRes();
+
+    await createProvider(req, res);
+
+    expect(Provider.deleteOne).toHaveBeenCalledWith({ _id: 'provider-1' });
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+
+  it('el de la obra no pasa por la fila de vínculo, así que no hay nada que deshacer', async () => {
+    vi.mocked(Provider.create).mockResolvedValue({ ...baseProvider, scope: 'project' } as never);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      body: { name: 'Juan', specialty: 'electricidad', phone: '11-1', scope: 'project' },
+    } as unknown as Request;
+
+    await createProvider(req, mockRes());
+
+    expect(ProjectProvider.create).not.toHaveBeenCalled();
+    expect(Provider.deleteOne).not.toHaveBeenCalled();
   });
 
   it('el de la libreta no queda atado a ninguna obra', async () => {

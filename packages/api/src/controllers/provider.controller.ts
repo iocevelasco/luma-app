@@ -13,6 +13,7 @@ import { ActivityProvider } from '../models/ActivityProvider.js';
 import { Activity, type IActivity } from '../models/Activity.js';
 import type { IProject } from '../models/Project.js';
 import { visibleProviderFilter } from '../services/directory.service.js';
+import { toNewProvider, toProviderUpdate } from '../utils/provider-input.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
@@ -89,7 +90,7 @@ export async function createProvider(req: Request, res: Response) {
     // `project` se setea sólo cuando el alcance es de esta obra — nunca viaja
     // en el body, igual que `organization`.
     const provider = await Provider.create({
-      ...parsed.data,
+      ...toNewProvider(parsed.data),
       organization: project.organization,
       project: parsed.data.scope === 'project' ? project._id : null,
     });
@@ -97,7 +98,18 @@ export async function createProvider(req: Request, res: Response) {
     // Lo que se carga desde una obra para toda la Empresa queda disponible en
     // ESA obra: sin esta fila no lo vería después de crearlo.
     if (provider.scope !== 'project') {
-      await ProjectProvider.create({ project: project._id, provider: provider._id });
+      try {
+        await ProjectProvider.create({ project: project._id, provider: provider._id });
+      } catch (linkError) {
+        // Sin la fila, el proveedor existe en la libreta pero esta obra no lo
+        // ve, y quien reintenta el alta lo duplica. Todavía no lo referencia
+        // nadie —se acaba de crear—, así que acá sí se borra de verdad en
+        // lugar de la baja lógica de siempre.
+        await Provider.deleteOne({ _id: provider._id }).catch((cleanupError) =>
+          console.error('❌ [PROVIDER] createProvider: no se pudo deshacer el alta:', cleanupError),
+        );
+        throw linkError;
+      }
     }
 
     return res.status(201).json({ success: true, data: { provider: toProviderDTO(provider) } });
@@ -120,7 +132,7 @@ export async function updateProvider(req: Request, res: Response) {
     const project = req.project as IProject;
     const provider = await Provider.findOneAndUpdate(
       { _id: req.params.providerId, ...(await visibleProviderFilter(project)) },
-      parsed.data,
+      toProviderUpdate(parsed.data),
       { new: true },
     );
 
