@@ -1,0 +1,60 @@
+{
+  "project": {
+    "name": "Obra E2E — roles",
+    "description": "Obra sembrada por el globalSetup para entrar con cada rol de obra.",
+    "location": "CABA",
+    "estimatedStartDate": "2026-09-01",
+    "estimatedEndDate": "2027-03-31",
+    "currency": "ARS",
+    "providersVisibleToClient": false
+  },
+  "users": {
+    "admin": {
+      "email": "e2e-admin@luma.test",
+      "password": "E2eAdmin1234!",
+      "name": "Admin E2E",
+      "platformRole": "admin"
+    },
+    "user": {
+      "email": "e2e-user@luma.test",
+      "password": "E2eUser1234!",
+      "name": "Usuario E2E",
+      "platformRole": "user"
+    },
+    "gerente": {
+      "email": "e2e-gerente@luma.test",
+      "password": "E2eRoles1234!",
+      "name": "Gabriela Gerente E2E",
+      "platformRole": "user",
+      "projectRole": "gerente"
+    },
+    "supervisor": {
+      "email": "e2e-supervisor@luma.test",
+      "password": "E2eRoles1234!",
+      "name": "Sergio Supervisor E2E",
+      "platformRole": "user",
+      "projectRole": "supervisor"
+    },
+    "contador": {
+      "email": "e2e-contador@luma.test",
+      "password": "E2eRoles1234!",
+      "name": "Carla Contadora E2E",
+      "platformRole": "user",
+      "projectRole": "contador"
+    },
+    "cliente": {
+      "email": "e2e-cliente@luma.test",
+      "password": "E2eRoles1234!",
+      "name": "Clara Cliente E2E",
+      "platformRole": "user",
+      "projectRole": "cliente"
+    },
+    "inactive": {
+      "email": "e2e-inactive@luma.test",
+      "password": "E2eRoles1234!",
+      "name": "Ignacio Inactivo E2E",
+      "platformRole": "user",
+      "accountStatus": "inactive"
+    }
+  }
+}

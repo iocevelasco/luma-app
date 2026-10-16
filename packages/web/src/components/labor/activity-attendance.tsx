@@ -36,20 +36,27 @@ export function ActivityAttendance({
   activity,
   attendance,
   date,
-  isEditor,
+  canMarkAttendance,
+  canManageCrew,
 }: {
   projectId: string;
   activity: Activity;
   /** Esperados y presentes del día, ya resueltos por la API. */
   attendance: Attendance | undefined;
   date: string;
-  isEditor: boolean;
+  /** Marcar presentes y cubrir ausentes: `crew.attendance.write`. */
+  canMarkAttendance: boolean;
+  /** Sumar a la cuadrilla de la tarea o sacar de ella: `crew.manage`. */
+  canManageCrew: boolean;
 }) {
   const { t } = useTranslation();
   const [adding, setAdding] = useState(false);
   const [coverFor, setCoverFor] = useState<string | null>(null);
 
-  const { data: rosterData } = useCrewMembers(isEditor ? projectId : undefined);
+  // El roster hace falta para cubrir a un ausente y para sumar a la cuadrilla.
+  const { data: rosterData } = useCrewMembers(
+    canMarkAttendance || canManageCrew ? projectId : undefined,
+  );
   const upsert = useUpsertLaborRecord(projectId);
   const assignCrew = useAssignCrewToActivity(projectId, activity.id);
   const unassignCrew = useUnassignCrewFromActivity(projectId, activity.id);
@@ -147,7 +154,8 @@ export function ActivityAttendance({
               key={member.crewMemberId}
               member={member}
               present={presentIds.has(member.crewMemberId)}
-              isEditor={isEditor}
+              canMarkAttendance={canMarkAttendance}
+              canUnassign={canManageCrew}
               onToggle={() => togglePresent(member.crewMemberId)}
               onRemove={() => unassignCrew.mutate(member.crewMemberId)}
               onCover={() => setCoverFor(member.crewMemberId)}
@@ -170,7 +178,7 @@ export function ActivityAttendance({
                   <UserPlus className="size-4 text-muted-foreground" />
                   {member.name}
                 </span>
-                {isEditor && (
+                {canMarkAttendance && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -187,7 +195,7 @@ export function ActivityAttendance({
         </div>
       )}
 
-      {isEditor && (
+      {canManageCrew && (
         <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
           {adding ? (
             <>
@@ -230,7 +238,8 @@ export function ActivityAttendance({
 function CrewRow({
   member,
   present,
-  isEditor,
+  canMarkAttendance,
+  canUnassign,
   onToggle,
   onRemove,
   onCover,
@@ -241,7 +250,8 @@ function CrewRow({
 }: {
   member: ActivityCrewMember;
   present: boolean;
-  isEditor: boolean;
+  canMarkAttendance: boolean;
+  canUnassign: boolean;
   onToggle: () => void;
   onRemove: () => void;
   onCover: () => void;
@@ -258,11 +268,11 @@ function CrewRow({
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
-          disabled={!isEditor}
+          disabled={!canMarkAttendance}
           onClick={onToggle}
           className={cn(
             'flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left',
-            isEditor && 'hover:bg-accent',
+            canMarkAttendance && 'hover:bg-accent',
           )}
           aria-pressed={present}
         >
@@ -303,7 +313,7 @@ function CrewRow({
 
         {/* Las acciones del ausente: llamarlo o cubrirlo. Es el motivo de ser
             de esta pantalla — antes el que faltaba no existía en los datos. */}
-        {!present && isEditor && (
+        {!present && canMarkAttendance && (
           <div className="flex shrink-0 items-center gap-1">
             {member.phone && (
               <Button type="button" variant="outline" size="icon-sm" asChild>
@@ -325,7 +335,7 @@ function CrewRow({
           </div>
         )}
 
-        {isEditor && present && (
+        {canUnassign && present && (
           <Button
             type="button"
             variant="ghost"

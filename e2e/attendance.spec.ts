@@ -34,7 +34,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     await registerWith(page, `Ejecutante E2E ${RUN_ID}`, ownerEmail, PASSWORD);
     await loginWith(page, ownerEmail, PASSWORD);
 
-    await page.getByRole('link', { name: /crear tu primera obra/i }).click();
+    await page.getByRole('link', { name: /nueva obra/i }).click();
     await page.locator('#name').fill(projectName);
     await page.locator('#description').fill('Obra para probar la asistencia.');
     await page.locator('#location').fill('CABA');

@@ -105,7 +105,7 @@ function ActivityFormFields({
   register,
   control,
   errors,
-  isOwner = false,
+  canReview = false,
   canCancel = false,
 }: {
   idPrefix: string;
@@ -114,13 +114,13 @@ function ActivityFormFields({
   control: Control<CreateActivityInput>;
   errors: FieldErrors<CreateActivityInput>;
   /** Cerrar es del gerente (`activity.review`): al resto ni se le ofrece "Completada". */
-  isOwner?: boolean;
+  canReview?: boolean;
   /** Cancelar es modificar (`activity.plan`): el supervisor crea, pero no cancela. */
   canCancel?: boolean;
 }) {
   const { t } = useTranslation();
   const statuses = ACTIVITY_STATUSES.filter(
-    (status) => (status !== 'completada' || isOwner) && (status !== 'cancelada' || canCancel),
+    (status) => (status !== 'completada' || canReview) && (status !== 'cancelada' || canCancel),
   );
 
   return (
@@ -208,11 +208,11 @@ function ActivityFormFields({
 
 function NewActivityDialog({
   projectId,
-  isOwner,
+  canReview,
   canCancel,
 }: {
   projectId: string;
-  isOwner: boolean;
+  canReview: boolean;
   canCancel: boolean;
 }) {
   const { t } = useTranslation();
@@ -273,7 +273,7 @@ function NewActivityDialog({
           register={register}
           control={control}
           errors={errors}
-          isOwner={isOwner}
+          canReview={canReview}
           canCancel={canCancel}
         />
       </FormDrawer>
@@ -284,13 +284,13 @@ function NewActivityDialog({
 function EditActivityDialog({
   projectId,
   activity,
-  isOwner,
+  canReview,
   open,
   onOpenChange,
 }: {
   projectId: string;
   activity: Activity;
-  isOwner: boolean;
+  canReview: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -339,7 +339,7 @@ function EditActivityDialog({
         register={register}
         control={control}
         errors={errors}
-        isOwner={isOwner}
+        canReview={canReview}
         canCancel
       />
     </FormDrawer>
@@ -378,11 +378,11 @@ function ActivityMaterialsList({ materials }: { materials: MaterialItem[] }) {
 function ActivityReviewSection({
   projectId,
   activity,
-  isOwner,
+  canReview,
 }: {
   projectId: string;
   activity: Activity;
-  isOwner: boolean;
+  canReview: boolean;
 }) {
   const { t } = useTranslation();
   const [rejecting, setRejecting] = useState(false);
@@ -409,7 +409,7 @@ function ActivityReviewSection({
       )}
 
       {activity.status === 'en_revision' &&
-        (isOwner ? (
+        (canReview ? (
           rejecting ? (
             <div className="flex flex-col gap-2">
               <Label htmlFor="reject-reason">{t('activity.review.reasonLabel')}</Label>
@@ -483,12 +483,13 @@ function ActivityReviewSection({
 function ActivityProvidersSection({
   projectId,
   activityId,
-  isEditor,
+  canAssign,
   canRead,
 }: {
   projectId: string;
   activityId: string;
-  isEditor: boolean;
+  /** Sumar y sacar proveedores de la tarea: `provider.assign`. */
+  canAssign: boolean;
   /** Dueño/Asistente siempre; el cliente sólo si la obra lo habilitó. */
   canRead: boolean;
 }) {
@@ -500,7 +501,7 @@ function ActivityProvidersSection({
     canRead ? activityId : undefined,
   );
   // El directorio completo sólo lo necesita quien puede asignar.
-  const { data: directoryData } = useProviders(isEditor ? projectId : undefined);
+  const { data: directoryData } = useProviders(canAssign ? projectId : undefined);
   const assignProvider = useAssignProvider(projectId, activityId);
   const unassignProvider = useUnassignProvider(projectId, activityId);
 
@@ -529,7 +530,7 @@ function ActivityProvidersSection({
               <span className="text-muted-foreground">
                 · {provider.specialty === 'otra' ? provider.customSpecialty : t(`provider.specialty.${provider.specialty}`)}
               </span>
-              {isEditor && (
+              {canAssign && (
                 <button
                   type="button"
                   onClick={() => unassignProvider.mutate(provider.id)}
@@ -544,7 +545,7 @@ function ActivityProvidersSection({
         </ul>
       )}
 
-      {isEditor && (
+      {canAssign && (
         <div className="flex flex-wrap items-center gap-2">
           <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
             <SelectTrigger className="w-56">
@@ -587,11 +588,12 @@ function ActivityProvidersSection({
 function ActivityEvidenceSection({
   projectId,
   activity,
-  isEditor,
+  canWriteEvidence,
 }: {
   projectId: string;
   activity: Activity;
-  isEditor: boolean;
+  /** Subir y borrar fotos: `activity.evidence.write`. */
+  canWriteEvidence: boolean;
 }) {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -609,7 +611,7 @@ function ActivityEvidenceSection({
     <div className="flex flex-col gap-3 border-t border-border pt-6">
       <div className="flex items-center justify-between gap-4">
         <h3 className="text-sm font-medium">{t('activity.detail.evidence')}</h3>
-        {isEditor && (
+        {canWriteEvidence && (
           <>
             <input
               ref={fileInputRef}
@@ -642,7 +644,7 @@ function ActivityEvidenceSection({
               className="group relative overflow-hidden rounded-lg border border-border"
             >
               <img src={photo.url} alt="" className="aspect-square w-full object-cover" />
-              {isEditor && (
+              {canWriteEvidence && (
                 <Button
                   type="button"
                   variant="destructive"
@@ -667,8 +669,9 @@ function ActivityDetailModal({
   activity,
   materials,
   missingMaterials,
-  isEditor,
-  isOwner,
+  canReview,
+  canAssignProviders,
+  canWriteEvidence,
   canEdit,
   canReadProviders,
   onClose,
@@ -677,10 +680,12 @@ function ActivityDetailModal({
   activity: Activity | undefined;
   materials: MaterialItem[];
   missingMaterials: boolean;
-  /** Fotos y proveedores: gerente y supervisor. */
-  isEditor: boolean;
   /** Aprobar y devolver: `activity.review`. */
-  isOwner: boolean;
+  canReview: boolean;
+  /** Sumar y sacar proveedores: `provider.assign`. */
+  canAssignProviders: boolean;
+  /** Fotos de avance: `activity.evidence.write`. */
+  canWriteEvidence: boolean;
   /** Modificar la tarea: `activity.plan`, sólo el gerente. */
   canEdit: boolean;
   canReadProviders: boolean;
@@ -762,7 +767,7 @@ function ActivityDetailModal({
               <ActivityReviewSection
                 projectId={projectId}
                 activity={activity}
-                isOwner={isOwner}
+                canReview={canReview}
               />
 
               <div className="flex flex-col gap-3 border-t border-border pt-6">
@@ -773,11 +778,15 @@ function ActivityDetailModal({
               <ActivityProvidersSection
                 projectId={projectId}
                 activityId={activity.id}
-                isEditor={isEditor}
+                canAssign={canAssignProviders}
                 canRead={canReadProviders}
               />
 
-              <ActivityEvidenceSection projectId={projectId} activity={activity} isEditor={isEditor} />
+              <ActivityEvidenceSection
+                projectId={projectId}
+                activity={activity}
+                canWriteEvidence={canWriteEvidence}
+              />
 
               {activity.notes && (
                 <div className="flex flex-col gap-2 border-t border-border pt-6">
@@ -791,7 +800,7 @@ function ActivityDetailModal({
               <EditActivityDialog
                 projectId={projectId}
                 activity={activity}
-                isOwner={isOwner}
+                canReview={canReview}
                 open={editing}
                 onOpenChange={setEditing}
               />
@@ -838,7 +847,6 @@ export function ProjectActivitiesPage() {
   const { data: materialsData } = useMaterials(projectId);
 
   const { can } = useProjectCapabilities(projectId);
-  const isEditor = can('activity.evidence.write');
   const canReadProviders = can('provider.read');
 
   const missingByActivity = useMemo(() => {
@@ -908,7 +916,7 @@ export function ProjectActivitiesPage() {
         can('activity.create') ? (
           <NewActivityDialog
             projectId={projectId!}
-            isOwner={can('activity.review')}
+            canReview={can('activity.review')}
             canCancel={can('activity.plan')}
           />
         ) : undefined
@@ -941,8 +949,9 @@ export function ProjectActivitiesPage() {
         activity={selectedActivity}
         materials={selectedActivityMaterials}
         missingMaterials={Boolean(selectedActivityId && activitiesWithAlert.has(selectedActivityId))}
-        isEditor={isEditor}
-        isOwner={can('activity.review')}
+        canReview={can('activity.review')}
+        canAssignProviders={can('provider.assign')}
+        canWriteEvidence={can('activity.evidence.write')}
         canEdit={can('activity.plan')}
         canReadProviders={canReadProviders}
         onClose={() => setSelectedActivityId(null)}

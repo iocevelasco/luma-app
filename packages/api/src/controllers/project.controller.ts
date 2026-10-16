@@ -165,8 +165,6 @@ export async function getProject(req: Request, res: Response) {
           // ya aplicados: la UI pregunta por capacidad y no vuelve a derivar
           // nada. Es lo que permite sumar un rol sin tocar el frontend.
           capabilities: capabilitiesInProject(role, project),
-          isOwner: Boolean(req.isProjectOwner),
-          isEditor: Boolean(req.isProjectEditor),
         },
         members: await listProjectMembers(project),
       },

@@ -43,7 +43,7 @@ test.describe('Supervisor de obra', () => {
     await loginWith(page, OWNER_EMAIL, PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
 
-    await page.getByRole('link', { name: /crear tu primera obra/i }).click();
+    await page.getByRole('link', { name: /nueva obra/i }).click();
     await page.locator('#name').fill(PROJECT_NAME);
     await page.locator('#description').fill('Obra para probar el rol de Supervisor de obra.');
     await page.locator('#location').fill('CABA');
@@ -119,6 +119,19 @@ test.describe('Supervisor de obra', () => {
     // --- Crea una tarea en el Tablero y la mueve hasta revisión ---
     const task = `Limpiar el obrador ${RUN_ID}`;
     await addTask(supervisorPage, worker, task);
+
+    // --- En la Jornada toma asistencia, pero no arma la cuadrilla ---
+    // Marcar presentes es suyo (`crew.attendance.write`); sumar o sacar gente
+    // de una tarea es del gerente (`crew.manage`), y la API se lo rechaza.
+    await supervisorPage.getByRole('tab', { name: /^jornada$/i }).click();
+    const dayCard = supervisorPage.locator('section', { hasText: task });
+    const workerRow = dayCard.getByRole('button', { name: new RegExp(worker, 'i') });
+    await workerRow.click();
+    await expect(workerRow).toHaveAttribute('aria-pressed', 'true');
+    await expect(dayCard.getByRole('button', { name: /asignar personal/i })).toHaveCount(0);
+    await expect(dayCard.getByRole('button', { name: /quitar de la cuadrilla/i })).toHaveCount(0);
+    await supervisorPage.getByRole('tab', { name: /^tablero$/i }).click();
+
     await moveTask(supervisorPage, task, /mover a en revisión/i);
     await expect(
       boardColumn(supervisorPage, /^en revisión$/i).getByRole('article', { name: task }),

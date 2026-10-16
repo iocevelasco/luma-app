@@ -1,7 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import path from 'path';
-
-const authFile = path.join(process.cwd(), '.auth/admin.json');
+import { authFile } from './e2e/helpers/users';
 
 // E2E_BASE_URL apunta la suite a un entorno remoto.
 // Local: (default) http://localhost:6173
@@ -29,7 +27,10 @@ export default defineConfig({
 
   use: {
     baseURL: BASE_URL,
-    storageState: authFile,
+    // Sesión por defecto: el admin de E2E. Un spec que necesita otra cuenta
+    // la pide con `test.use({ storageState: authFile('supervisor') })` — el
+    // globalSetup guarda una por cada usuario de `e2e/fixtures/users.json`.
+    storageState: authFile('admin'),
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',

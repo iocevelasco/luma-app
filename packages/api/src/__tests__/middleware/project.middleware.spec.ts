@@ -86,7 +86,7 @@ describe('requireProjectAccess', () => {
 
     expect(next).toHaveBeenCalled();
     expect(req.projectRole).toBe('gerente');
-    expect(req.isProjectOwner).toBe(true);
+    expect(req.can?.('project.invite')).toBe(true);
     expect(ProjectMembership.findOne).not.toHaveBeenCalled();
   });
 
@@ -100,7 +100,7 @@ describe('requireProjectAccess', () => {
 
     expect(next).toHaveBeenCalled();
     expect(req.projectRole).toBe('supervisor');
-    expect(req.isProjectOwner).toBe(false);
+    expect(req.can?.('project.invite')).toBe(false);
   });
 
   it('ser miembro de la Empresa ya no abre la obra por sí solo', async () => {

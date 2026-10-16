@@ -49,7 +49,7 @@ import {
   useMaterials,
   useUpdateMaterial,
 } from '@/hooks/materials/use-material-queries';
-import { useProject } from '@/hooks/projects/use-project-queries';
+import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { materialTab, organizeMaterials } from '@/lib/materials';
 import { cn } from '@/lib/utils';
@@ -429,12 +429,11 @@ function ToBuyGroup({
 export function ProjectMaterialsPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
-  const { data: projectData } = useProject(projectId);
   const { data: materialsData, isLoading, isError } = useMaterials(projectId);
   const { data: activitiesData } = useAllActivities(projectId);
 
-  // Dueño o Asistente de Obra — ambos gestionan materiales operativamente.
-  const isEditor = Boolean(projectData?.project.isEditor);
+  // Gerente y supervisor gestionan las compras; lo decide la grilla.
+  const canWrite = useProjectCapabilities(projectId).can('material.write');
 
   const activityById = useMemo(() => {
     const map = new Map<string, { name: string; startDate: string }>();
@@ -488,7 +487,7 @@ export function ProjectMaterialsPage() {
   return (
     // Sin título: la sección ya se llama así en el menú y en el encabezado.
     <PageLayout
-      action={isEditor ? <NewMaterialDrawer projectId={projectId!} /> : undefined}
+      action={canWrite ? <NewMaterialDrawer projectId={projectId!} /> : undefined}
       empty={total === 0 ? { icon: Package, title: t('material.list.empty') } : undefined}
     >
       {/*
@@ -536,7 +535,7 @@ export function ProjectMaterialsPage() {
                   startDate={group.activity?.startDate}
                   materials={group.items}
                   projectId={projectId!}
-                  canEdit={isEditor}
+                  canEdit={canWrite}
                   highlightedId={highlightedId}
                 />
               ))}
@@ -563,7 +562,7 @@ export function ProjectMaterialsPage() {
                         key={material.id}
                         material={material}
                         projectId={projectId!}
-                        canEdit={isEditor}
+                        canEdit={canWrite}
                         highlighted={material.id === highlightedId}
                         activityName={
                           material.activityId ? activityById.get(material.activityId)?.name : undefined
@@ -584,7 +583,7 @@ export function ProjectMaterialsPage() {
                         key={material.id}
                         material={material}
                         projectId={projectId!}
-                        canEdit={isEditor}
+                        canEdit={canWrite}
                         highlighted={material.id === highlightedId}
                         activityName={
                           material.activityId ? activityById.get(material.activityId)?.name : undefined
