@@ -20,11 +20,16 @@ vi.mock('../../models/User.js', () => ({
 vi.mock('../../services/notification.service.js', () => ({
   notifyProject: vi.fn(),
 }));
+vi.mock('../../services/storage.service.js', () => ({
+  signObjectUrl: vi.fn(),
+  deleteObject: vi.fn(),
+}));
 
 const { Milestone } = await import('../../models/Milestone.js');
 const { Activity } = await import('../../models/Activity.js');
 const { User } = await import('../../models/User.js');
 const { notifyProject } = await import('../../services/notification.service.js');
+const { deleteObject } = await import('../../services/storage.service.js');
 const { createMilestone, listMilestones, updateMilestone, deleteMilestone } = await import(
   '../../controllers/milestone.controller.js'
 );
@@ -70,6 +75,8 @@ function fakeMilestone(overrides: Record<string, unknown> = {}) {
     severity: 'info',
     title: 'Terminó la estructura',
     description: undefined,
+    attendees: [],
+    attachments: [],
     occurredOn: '2026-09-15',
     activity: null,
     reportedBy: 'gerente-1',
@@ -124,9 +131,7 @@ describe('createMilestone', () => {
   });
 
   it('una eventualidad interna no llega al cliente', async () => {
-    vi.mocked(Milestone.create).mockResolvedValue(
-      fakeMilestone({ audience: 'interno' }) as never,
-    );
+    vi.mocked(Milestone.create).mockResolvedValue(fakeMilestone({ audience: 'interno' }) as never);
 
     await createMilestone(reqFor('supervisor', { ...VALID, audience: 'interno' }), mockRes());
 
@@ -167,6 +172,99 @@ describe('createMilestone', () => {
     await createMilestone(reqFor('gerente', sinAudiencia), res);
 
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
+describe('reuniones', () => {
+  const MEETING = { ...VALID, type: 'reunion', attendees: ['Ana Pérez', 'Arq. Gómez'] };
+
+  it('una reunión guarda sus asistentes', async () => {
+    vi.mocked(Milestone.create).mockResolvedValue(
+      fakeMilestone({ type: 'reunion', attendees: MEETING.attendees }) as never,
+    );
+    const res = mockRes();
+
+    await createMilestone(reqFor('gerente', MEETING), res);
+
+    expect(vi.mocked(Milestone.create).mock.calls[0][0]).toMatchObject({
+      attendees: ['Ana Pérez', 'Arq. Gómez'],
+    });
+    expect(vi.mocked(res.json).mock.calls[0][0].data.milestone.attendees).toEqual([
+      'Ana Pérez',
+      'Arq. Gómez',
+    ]);
+  });
+
+  it('400 si un hito que no es reunión trae asistentes', async () => {
+    const res = mockRes();
+
+    await createMilestone(reqFor('gerente', { ...MEETING, type: 'retraso' }), res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(Milestone.create).not.toHaveBeenCalled();
+  });
+
+  it('400 si se le agregan asistentes a un hito guardado que no es reunión', async () => {
+    // El body no trae `type`: el schema no lo puede saber, lo resuelve el controller.
+    const milestone = fakeMilestone({ type: 'retraso' });
+    vi.mocked(Milestone.findOne).mockResolvedValue(milestone as never);
+    const res = mockRes();
+
+    await updateMilestone(
+      reqFor('gerente', { attendees: ['Ana'] }, { milestoneId: 'milestone-1' }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(milestone.save).not.toHaveBeenCalled();
+  });
+
+  it('una reunión que cambia de tipo pierde los asistentes', async () => {
+    const milestone = fakeMilestone({ type: 'reunion', attendees: ['Ana'] });
+    vi.mocked(Milestone.findOne).mockResolvedValue(milestone as never);
+
+    await updateMilestone(
+      reqFor('gerente', { type: 'otro' }, { milestoneId: 'milestone-1' }),
+      mockRes(),
+    );
+
+    expect(milestone.set).toHaveBeenCalledWith('attendees', []);
+    expect(milestone.save).toHaveBeenCalled();
+  });
+});
+
+describe('updateMilestone: actividad enlazada', () => {
+  it('guarda la actividad nueva si es de la obra', async () => {
+    const milestone = fakeMilestone();
+    vi.mocked(Milestone.findOne).mockResolvedValue(milestone as never);
+    vi.mocked(Activity.findOne).mockReturnValue({
+      select: vi.fn().mockResolvedValue({ _id: 'activity-2' }),
+    } as never);
+
+    await updateMilestone(
+      reqFor('gerente', { activityId: 'activity-2' }, { milestoneId: 'milestone-1' }),
+      mockRes(),
+    );
+
+    expect(milestone.set).toHaveBeenCalledWith('activity', 'activity-2');
+    expect(milestone.save).toHaveBeenCalled();
+  });
+
+  it('400 si la actividad es de otra obra', async () => {
+    const milestone = fakeMilestone();
+    vi.mocked(Milestone.findOne).mockResolvedValue(milestone as never);
+    vi.mocked(Activity.findOne).mockReturnValue({
+      select: vi.fn().mockResolvedValue(null),
+    } as never);
+    const res = mockRes();
+
+    await updateMilestone(
+      reqFor('gerente', { activityId: 'activity-ajena' }, { milestoneId: 'milestone-1' }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(milestone.save).not.toHaveBeenCalled();
   });
 });
 
@@ -247,6 +345,26 @@ describe('updateMilestone y deleteMilestone', () => {
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(Milestone.findByIdAndDelete).not.toHaveBeenCalled();
+  });
+
+  it('borrar un hito borra sus adjuntos del bucket, aunque uno falle', async () => {
+    vi.mocked(Milestone.findOne).mockResolvedValue(
+      fakeMilestone({
+        audience: 'interno',
+        attachments: [{ key: 'bucket-a' }, { key: 'bucket-b' }],
+      }) as never,
+    );
+    vi.mocked(deleteObject)
+      .mockRejectedValueOnce(new Error('storage caído'))
+      .mockResolvedValueOnce(undefined);
+    const res = mockRes();
+
+    await deleteMilestone(reqFor('gerente', {}, { milestoneId: 'milestone-1' }), res);
+
+    expect(Milestone.findByIdAndDelete).toHaveBeenCalled();
+    expect(deleteObject).toHaveBeenCalledWith('bucket-a');
+    expect(deleteObject).toHaveBeenCalledWith('bucket-b');
+    expect(res.status).not.toHaveBeenCalledWith(500);
   });
 
   it('404 si el hito no es de esta obra', async () => {

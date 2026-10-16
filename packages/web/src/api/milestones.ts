@@ -34,4 +34,20 @@ export const milestonesApi = {
     unwrap<DeleteMilestoneResponse>(
       apiClient.delete(`/api/projects/${projectId}/milestones/${milestoneId}`),
     ),
+
+  /** Un archivo por request: el progreso y el error son por archivo, no por lote. */
+  uploadAttachment: (projectId: string, milestoneId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return unwrap<MilestoneResponse>(
+      apiClient.post(`/api/projects/${projectId}/milestones/${milestoneId}/attachments`, formData),
+    );
+  },
+
+  removeAttachment: (projectId: string, milestoneId: string, attachmentId: string) =>
+    unwrap<MilestoneResponse>(
+      apiClient.delete(
+        `/api/projects/${projectId}/milestones/${milestoneId}/attachments/${attachmentId}`,
+      ),
+    ),
 };

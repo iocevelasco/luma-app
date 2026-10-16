@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { ROUTES } from '@/lib/routes';
 import { AppLogo } from '@/components/app-logo';
@@ -15,6 +15,7 @@ import { LanguageSelector } from '@/components/language-selector';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
+import { ContentAreaContext } from '@/components/layout/content-area-context';
 
 /**
  * Chrome del panel: header, navegación lateral en desktop, barra inferior en
@@ -43,9 +44,17 @@ export function DashboardLayout() {
   // El que scrollea es `main`, no la ventana: al cambiar de pantalla el
   // navegador ya no vuelve arriba solo, y se entraba a la sección nueva a la
   // altura donde se había dejado la anterior.
+  //
+  // Salvo entre una pantalla y lo que cuelga de ella (`hitos` ↔ `hitos/nuevo`):
+  // ahí el listado sigue montado abajo del `FormPanel`, y al cerrarlo la
+  // persona tiene que volver al mismo lugar donde estaba.
   const mainRef = useRef<HTMLElement>(null);
+  const previousPathname = useRef(pathname);
   useEffect(() => {
-    if (mainRef.current) mainRef.current.scrollTop = 0;
+    const previous = previousPathname.current;
+    previousPathname.current = pathname;
+    const nested = pathname.startsWith(`${previous}/`) || previous.startsWith(`${pathname}/`);
+    if (mainRef.current && !nested) mainRef.current.scrollTop = 0;
   }, [pathname]);
 
   // Los portales (dialog, select, toast) cuelgan de <body>: sin la clase ahí
@@ -55,6 +64,8 @@ export function DashboardLayout() {
     document.body.classList.add('surface-light');
     return () => document.body.classList.remove('surface-light');
   }, []);
+
+  const [contentArea, setContentArea] = useState<HTMLDivElement | null>(null);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -93,7 +104,10 @@ export function DashboardLayout() {
             index.css). Sin ilustración de fondo: tablas y formularios
             necesitan un fondo liso para leerse.
           */}
-          <div className="surface-light relative min-w-0 flex-1 bg-background text-foreground">
+          <div
+            ref={setContentArea}
+            className="surface-light relative min-w-0 flex-1 bg-background text-foreground"
+          >
             {/*
               pb-20 en mobile sólo cuando la barra inferior está: adentro de
               una obra no se muestra (la navegación es la tira de arriba), y
@@ -113,7 +127,9 @@ export function DashboardLayout() {
                   !insideProject && !wide && 'max-w-2xl',
                 )}
               >
-                <Outlet />
+                <ContentAreaContext.Provider value={contentArea}>
+                  <Outlet />
+                </ContentAreaContext.Provider>
               </div>
             </main>
           </div>

@@ -42,7 +42,7 @@ import { useProject } from '@/hooks/projects/use-project-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { formatMoney } from '@/lib/format-money';
-import { cn } from '@/lib/utils';
+import { cn, formatFileSize } from '@/lib/utils';
 
 /** Primer y último día del mes en curso, para el rango por default de la nómina. */
 function currentMonthRange() {
@@ -51,12 +51,6 @@ function currentMonthRange() {
     from: toDayKey(new Date(now.getFullYear(), now.getMonth(), 1)),
     to: toDayKey(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
   };
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function NewExpenseDrawer({
@@ -291,7 +285,7 @@ function NewExpenseDrawer({
             <Upload className="size-4" />
             {receipt ? receipt.name : t('finance.fields.receiptPlaceholder')}
           </Button>
-          {receipt && <p className="text-xs text-muted-foreground">{formatSize(receipt.size)}</p>}
+          {receipt && <p className="text-xs text-muted-foreground">{formatFileSize(receipt.size)}</p>}
           {fileError && <p className="text-sm text-destructive">{fileError}</p>}
         </div>
       </FormDrawer>

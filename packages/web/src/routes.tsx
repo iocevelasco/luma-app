@@ -77,6 +77,16 @@ const ProjectMilestonesPage = lazy(() =>
     default: m.ProjectMilestonesPage,
   })),
 );
+const MilestoneNewPanel = lazy(() =>
+  import('./components/milestones/milestone-form-panel').then((m) => ({
+    default: m.MilestoneNewPanel,
+  })),
+);
+const MilestoneEditPanel = lazy(() =>
+  import('./components/milestones/milestone-form-panel').then((m) => ({
+    default: m.MilestoneEditPanel,
+  })),
+);
 const ProjectDocumentsPage = lazy(() =>
   import('./pages/projects/project-documents').then((m) => ({
     default: m.ProjectDocumentsPage,
@@ -172,10 +182,25 @@ export function AppRoutes() {
             path={ROUTES.PROJECT_TEAM}
             element={<LazyRoute><ProjectTeamPage /></LazyRoute>}
           />
+          {/*
+            Alta y edición son hijas del listado: el `FormPanel` se monta
+            sobre él (ver `Outlet` en la página) en vez de reemplazarlo. Sin
+            el loader de página mientras baja el chunk: aparecería abajo del
+            listado, no en el panel.
+          */}
           <Route
             path={ROUTES.PROJECT_MILESTONES}
             element={<LazyRoute><ProjectMilestonesPage /></LazyRoute>}
-          />
+          >
+            <Route
+              path={ROUTES.PROJECT_MILESTONE_NEW}
+              element={<Suspense fallback={null}><MilestoneNewPanel /></Suspense>}
+            />
+            <Route
+              path={ROUTES.PROJECT_MILESTONE_EDIT}
+              element={<Suspense fallback={null}><MilestoneEditPanel /></Suspense>}
+            />
+          </Route>
           <Route
             path={ROUTES.PROJECT_DOCUMENTS}
             element={<LazyRoute><ProjectDocumentsPage /></LazyRoute>}

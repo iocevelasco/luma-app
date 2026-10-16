@@ -44,7 +44,9 @@ let warned = false;
 function getConfig(): { baseUrl: string; apiKey: string } | null {
   if (!STORAGE_CONFIG.ENABLED) {
     if (!warned) {
-      console.warn('⚠️  [STORAGE] Sin MEDIA_SERVICE_*: el storage de archivos queda deshabilitado.');
+      console.warn(
+        '⚠️  [STORAGE] Sin MEDIA_SERVICE_*: el storage de archivos queda deshabilitado.',
+      );
       warned = true;
     }
     return null;
@@ -191,6 +193,28 @@ export async function uploadProjectDocument(
 ): Promise<{ key: string }> {
   return putObject({
     fileName: `document-${params.projectId}-${randomUUID()}${params.extension}`,
+    buffer: params.buffer,
+    contentType: params.contentType,
+  });
+}
+
+// ── Adjuntos de hitos: fotos del problema, actas, presupuestos ─────────────
+
+export interface UploadMilestoneAttachmentParams {
+  projectId: string;
+  milestoneId: string;
+  buffer: Buffer;
+  contentType: string;
+  /** Con el punto incluido, ej. `.jpg`. */
+  extension: string;
+}
+
+/** Prefijo propio por el mismo motivo que `document-`: distinguirlos en el media-service. */
+export async function uploadMilestoneAttachment(
+  params: UploadMilestoneAttachmentParams,
+): Promise<{ key: string }> {
+  return putObject({
+    fileName: `milestone-${params.projectId}-${params.milestoneId}-${randomUUID()}${params.extension}`,
     buffer: params.buffer,
     contentType: params.contentType,
   });
