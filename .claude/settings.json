@@ -9,7 +9,6 @@
       "Bash(pnpm lint:fix)",
       "Bash(pnpm test)",
       "Bash(pnpm test:e2e:ci)",
-      "Bash(pnpm test:e2e:cross)",
       "Bash(pnpm test:e2e:report)",
       "Bash(pnpm build)",
       "Bash(pnpm build:web)",
