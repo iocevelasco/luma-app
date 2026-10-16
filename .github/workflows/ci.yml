@@ -22,6 +22,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Primero, como en todos los scripts: `api` y `web` importan
+      # `@luma/shared` contra su `dist`, que no está en el repo. Sin esto el
+      # typecheck tira "Cannot find module '@luma/shared'" en cada archivo.
+      - run: pnpm --filter @luma/shared build
+
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
