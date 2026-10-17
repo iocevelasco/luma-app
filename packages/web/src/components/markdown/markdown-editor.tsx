@@ -101,9 +101,10 @@ export function MarkdownEditor({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-sm border border-input shadow-xs transition-[color,box-shadow] dark:bg-input/30',
-        'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
-        invalid && 'border-destructive',
+        'flex flex-col rounded-sm border border-input bg-field shadow-xs transition-[color,box-shadow,border-color]',
+        'hover:border-foreground/65 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
+        invalid &&
+          'border-destructive ring-[3px] ring-destructive/20 hover:border-destructive focus-within:border-destructive focus-within:ring-destructive/20',
       )}
     >
       {editor && <Toolbar editor={editor} />}

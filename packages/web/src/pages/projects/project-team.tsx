@@ -124,7 +124,7 @@ function InviteMemberDrawer({ projectId }: { projectId: string }) {
       >
         <div className="flex flex-col gap-2">
           <Label htmlFor="member-email">{t('project.team.inviteEmail')}</Label>
-          <Input id="member-email" type="email" autoComplete="email" {...register('email')} />
+          <Input aria-invalid={Boolean(errors.email)} id="member-email" type="email" autoComplete="email" {...register('email')} />
           {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
         </div>
 

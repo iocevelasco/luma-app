@@ -39,7 +39,7 @@ export function CrewMemberFormFields({
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${idPrefix}-name`}>{t('crew.fields.name')}</Label>
         {/* Sin autocompletar del browser: tapaba las sugerencias de la Empresa. */}
-        <Input id={`${idPrefix}-name`} autoComplete="off" {...register('name')} />
+        <Input aria-invalid={Boolean(errors.name)} id={`${idPrefix}-name`} autoComplete="off" {...register('name')} />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
         {nameAddon}
       </div>
@@ -94,7 +94,7 @@ export function CrewMemberFormFields({
         {/* Sin teléfono no se puede llamar al que faltó, que es el motivo de
             ser de la pantalla de asistencia. */}
         <Label htmlFor={`${idPrefix}-phone`}>{t('crew.fields.phone')}</Label>
-        <Input id={`${idPrefix}-phone`} type="tel" {...register('phone')} />
+        <Input aria-invalid={Boolean(errors.phone)} id={`${idPrefix}-phone`} type="tel" {...register('phone')} />
         {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
       </div>
 

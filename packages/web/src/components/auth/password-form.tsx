@@ -49,6 +49,7 @@ export function PasswordForm({ submitLabel, isPending, onSubmit }: PasswordFormP
         <Label htmlFor="confirm">{t('auth.resetPassword.confirmPassword')}</Label>
         <PasswordInput
           id="confirm"
+          aria-invalid={Boolean(error)}
           autoComplete="new-password"
           required
           minLength={8}

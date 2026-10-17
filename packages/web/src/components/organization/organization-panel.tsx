@@ -142,7 +142,7 @@ function StaffRoleField<T extends FieldValues>({
         name={name}
         render={({ field }) => (
           <Select value={field.value ?? ''} onValueChange={field.onChange}>
-            <SelectTrigger id={id} className="w-full">
+            <SelectTrigger id={id} aria-invalid={Boolean(error)} className="w-full">
               <SelectValue placeholder={t('team.staffRolePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
@@ -228,17 +228,17 @@ export function InviteMemberDialog({
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="member-new-name">{t('team.name')}</Label>
-              <Input id="member-new-name" autoComplete="off" {...register('name')} />
+              <Input aria-invalid={Boolean(errors.name)} id="member-new-name" autoComplete="off" {...register('name')} />
               {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="member-email">{t('team.inviteEmail')}</Label>
-              <Input id="member-email" type="email" autoComplete="email" {...register('email')} />
+              <Input aria-invalid={Boolean(errors.email)} id="member-email" type="email" autoComplete="email" {...register('email')} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="member-new-phone">{t('team.phone')}</Label>
-              <Input id="member-new-phone" type="tel" autoComplete="off" {...register('phone')} />
+              <Input aria-invalid={Boolean(errors.phone)} id="member-new-phone" type="tel" autoComplete="off" {...register('phone')} />
               {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
             </div>
             <StaffRoleField
@@ -298,13 +298,13 @@ export function OrganizationProfile() {
         <div className="flex flex-col gap-4 p-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="org-name">{t('company.name')}</Label>
-            <Input id="org-name" {...register('name')} />
+            <Input aria-invalid={Boolean(errors.name)} id="org-name" {...register('name')} />
             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="org-email">{t('company.contactEmail')}</Label>
-              <Input id="org-email" type="email" {...register('contactEmail')} />
+              <Input aria-invalid={Boolean(errors.contactEmail)} id="org-email" type="email" {...register('contactEmail')} />
               {errors.contactEmail && (
                 <p className="text-sm text-destructive">{errors.contactEmail.message}</p>
               )}
@@ -359,13 +359,13 @@ function EditMemberDialog({
         >
           <div className="flex flex-col gap-2">
             <Label htmlFor="member-name">{t('team.name')}</Label>
-            <Input id="member-name" {...register('name')} />
+            <Input aria-invalid={Boolean(errors.name)} id="member-name" {...register('name')} />
             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
           <StaffRoleField control={control} name="staffRole" id="member-role" />
           <div className="flex flex-col gap-2">
             <Label htmlFor="member-phone">{t('team.phone')}</Label>
-            <Input id="member-phone" type="tel" autoComplete="off" {...register('phone')} />
+            <Input aria-invalid={Boolean(errors.phone)} id="member-phone" type="tel" autoComplete="off" {...register('phone')} />
             {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
           </div>
           <div className="flex flex-col gap-2">

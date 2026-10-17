@@ -72,6 +72,13 @@
   --border: #3d3a39; /* hairline — el borde universal del sistema */
   --border-strong: #57534e;
   --input: #3d3a39;
+  /*
+    Relleno de los campos de texto. Un token propio y no `--background`: el
+    Dialog, el Sheet y el Drawer pintan su fondo con `--background`, y un campo
+    del mismo color que su contenedor pierde el relleno justo ahí.
+  */
+  --field: #252423;
+  --field-disabled: #161616;
   --ring: #00d992;
 
   --chart-1: #00d992;
@@ -169,6 +176,8 @@
   --border: #e4e4e7;
   --border-strong: #a1a1aa;
   --input: #8a8a93; /* ~3.3:1 sobre blanco (WCAG 1.4.11) */
+  --field: #f0f0f2; /* se lee sobre la card blanca y sobre el fondo gris de un Sheet */
+  --field-disabled: #e4e4e7;
   --ring: #059669;
 
   --chart-1: #059669;
@@ -228,6 +237,8 @@
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-input: var(--input);
+  --color-field: var(--field);
+  --color-field-disabled: var(--field-disabled);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -339,6 +350,36 @@ select:-webkit-autofill {
   transition:
     background-color 600000s 0s,
     color 600000s 0s;
+}
+
+/*
+  Red de seguridad del estado de error. Casi todos los formularios dibujan el
+  mensaje (`<p class="text-destructive">`) debajo del campo pero no le pasan
+  `aria-invalid`, así que el borde rojo nunca aparecía. Un campo seguido de su
+  mensaje se pinta en error sin tocar cada formulario. Es una red, no una
+  excusa: en código nuevo el campo lleva `aria-invalid`, o va en un `FormItem`.
+
+  Va fuera de `@layer` a propósito: tiene que ganarle a `focus-visible:` y a
+  `hover:` de la utilidad, y el error gana siempre.
+*/
+:is([data-slot='input'], [data-slot='textarea'], [data-slot='select-trigger']):not(
+    [aria-invalid='false']
+  ):has(~ p.text-destructive) {
+  border-color: var(--destructive);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent);
+}
+
+/*
+  La etiqueta toma el verde de marca mientras su campo tiene el foco. Con
+  `FormItem` ya lo hace `FormLabel`; esto cubre los formularios armados con
+  `Label` + campo adyacentes. No aplica si el campo está en error.
+*/
+[data-slot='label']:has(
+    + :is([data-slot='input'], [data-slot='textarea'], [data-slot='select-trigger']):focus-visible:not(
+        [aria-invalid='true']
+      )
+  ):not(:has(~ p.text-destructive)) {
+  color: var(--brand);
 }
 
 @layer base {

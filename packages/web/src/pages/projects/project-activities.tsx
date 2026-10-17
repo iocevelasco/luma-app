@@ -127,7 +127,7 @@ function ActivityFormFields({
     <>
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${idPrefix}-name`}>{t('activity.fields.name')}</Label>
-        <Input id={`${idPrefix}-name`} {...register('name')} />
+        <Input aria-invalid={Boolean(errors.name)} id={`${idPrefix}-name`} {...register('name')} />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
       </div>
 
@@ -138,7 +138,7 @@ function ActivityFormFields({
           name="specialty"
           render={({ field }) => (
             <Select value={field.value ?? undefined} onValueChange={field.onChange}>
-              <SelectTrigger id={`${idPrefix}-specialty`}>
+              <SelectTrigger aria-invalid={Boolean(errors.specialty)} id={`${idPrefix}-specialty`}>
                 <SelectValue placeholder={t('activity.fields.specialtyPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
@@ -159,12 +159,12 @@ function ActivityFormFields({
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-start`}>{t('activity.fields.startDate')}</Label>
-          <Input id={`${idPrefix}-start`} type="date" {...register('startDate')} />
+          <Input aria-invalid={Boolean(errors.startDate)} id={`${idPrefix}-start`} type="date" {...register('startDate')} />
           {errors.startDate && <p className="text-sm text-destructive">{errors.startDate.message}</p>}
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-end`}>{t('activity.fields.endDate')}</Label>
-          <Input id={`${idPrefix}-end`} type="date" {...register('endDate')} />
+          <Input aria-invalid={Boolean(errors.endDate)} id={`${idPrefix}-end`} type="date" {...register('endDate')} />
           {errors.endDate && <p className="text-sm text-destructive">{errors.endDate.message}</p>}
         </div>
       </div>

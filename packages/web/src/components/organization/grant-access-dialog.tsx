@@ -105,7 +105,7 @@ export function GrantAccessDialog({
           <div className="flex flex-col gap-2">
             <Label htmlFor="grant-role">{t('team.grantRole')}</Label>
             <Select value={role} onValueChange={(next) => setRole(next as InvitableProjectRole)}>
-              <SelectTrigger id="grant-role" className="w-full">
+              <SelectTrigger id="grant-role" aria-invalid={roleMissing} className="w-full">
                 <SelectValue placeholder={t('team.staffRolePlaceholder')} />
               </SelectTrigger>
               <SelectContent>

@@ -165,6 +165,7 @@ function EngagementForm({
         <div className="flex flex-col gap-2">
           <Label htmlFor="engagement-quoted">{t('engagement.fields.quotedAmount')}</Label>
           <Input
+            aria-invalid={Boolean(errors.quotedAmount)}
             id="engagement-quoted"
             inputMode="decimal"
             {...register('quotedAmount', {
@@ -178,6 +179,7 @@ function EngagementForm({
         <div className="flex flex-col gap-2">
           <Label htmlFor="engagement-advance">{t('engagement.fields.advanceAmount')}</Label>
           <Input
+            aria-invalid={Boolean(errors.advanceAmount)}
             id="engagement-advance"
             inputMode="decimal"
             {...register('advanceAmount', {
@@ -193,7 +195,7 @@ function EngagementForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="engagement-start">{t('engagement.fields.estimatedStartDate')}</Label>
-        <Input id="engagement-start" type="date" {...register('estimatedStartDate')} />
+        <Input aria-invalid={Boolean(errors.estimatedStartDate)} id="engagement-start" type="date" {...register('estimatedStartDate')} />
         {errors.estimatedStartDate && (
           <p className="text-sm text-destructive">{errors.estimatedStartDate.message}</p>
         )}

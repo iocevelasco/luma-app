@@ -205,7 +205,7 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
             name="category"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="document-category">
+                <SelectTrigger aria-invalid={Boolean(errors.category)} id="document-category">
                   <SelectValue placeholder={t('document.fields.categoryPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -225,7 +225,7 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="document-title">{t('document.fields.title')}</Label>
-          <Input id="document-title" {...register('title')} />
+          <Input aria-invalid={Boolean(errors.title)} id="document-title" {...register('title')} />
           {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
         </div>
 
@@ -235,6 +235,7 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
           <div className="flex flex-col gap-2">
             <Label htmlFor="document-space">{t('document.fields.space')}</Label>
             <Input
+              aria-invalid={Boolean(errors.space)}
               id="document-space"
               placeholder={t('document.fields.spacePlaceholder')}
               {...register('space')}
@@ -245,7 +246,7 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="document-notes">{t('document.fields.notes')}</Label>
-          <Textarea id="document-notes" rows={3} {...register('notes')} />
+          <Textarea aria-invalid={Boolean(errors.notes)} id="document-notes" rows={3} {...register('notes')} />
           {errors.notes && <p className="text-sm text-destructive">{errors.notes.message}</p>}
         </div>
       </FormDrawer>
