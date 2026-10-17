@@ -92,7 +92,11 @@ export const createProjectSchema = z
     size: z.string().trim().max(80, 'Es demasiado largo').optional(),
     estimatedStartDate: dayKeySchema,
     estimatedEndDate: dayKeySchema,
-    currency: z.string().trim().min(1, 'La moneda es obligatoria').max(10, 'Moneda inválida'),
+    currency: z
+      .string({ required_error: 'La moneda es obligatoria' })
+      .trim()
+      .min(1, 'La moneda es obligatoria')
+      .max(10, 'Moneda inválida'),
   })
   .refine((data) => data.estimatedEndDate >= data.estimatedStartDate, {
     message: 'La fecha de entrega no puede ser anterior al inicio',

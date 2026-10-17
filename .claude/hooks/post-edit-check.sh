@@ -170,6 +170,22 @@ case "$REL" in
     ;;
 esac
 
+# ── 12. Formularios: el error del form llega al campo ───────────────────────
+# Un mensaje debajo del campo sin `aria-invalid` en el campo deja el borde
+# neutro: la persona ve el texto rojo pero no sabe cuál es el campo. El valor
+# sale de la instancia del form: aria-invalid={Boolean(errors.nombre)}.
+# Heurística: un archivo con mensajes `errors.x && ...` y ningún aria-invalid.
+case "$REL" in
+  packages/web/src/components/ui/*) ;;
+  packages/web/src/*.tsx)
+    MSGS=$(grep -cE "errors(\.|\[)[A-Za-z_]+.*&&" "$FILE" || true)
+    ARIA=$(grep -c "aria-invalid" "$FILE" || true)
+    if [ "${MSGS:-0}" -gt 0 ] && [ "${ARIA:-0}" -eq 0 ]; then
+      add "Formulario con mensajes de error pero ningún campo con aria-invalid — el campo no se pinta en rojo. Agregá aria-invalid={Boolean(errors.campo)} al Input/Textarea/SelectTrigger (o usá FormItem, que lo pone solo). Ver DESIGN.md, \"El error de un campo\"."
+    fi
+    ;;
+esac
+
 if [ -n "$FINDINGS" ]; then
   printf 'Revisión automática de %s:\n\n%s' "$REL" "$FINDINGS" >&2
   exit 2

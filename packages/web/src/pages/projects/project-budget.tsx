@@ -57,14 +57,14 @@ function BudgetLineRow({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1">
           <Label htmlFor={fieldId('chapter')}>{t('budget.fields.chapter')}</Label>
-          <Input id={fieldId('chapter')} {...register(`lines.${index}.chapter` as const)} />
+          <Input aria-invalid={Boolean(lineErrors?.chapter)} id={fieldId('chapter')} {...register(`lines.${index}.chapter` as const)} />
           {lineErrors?.chapter && (
             <p className="text-sm text-destructive">{lineErrors.chapter.message}</p>
           )}
         </div>
         <div className="flex flex-col gap-1">
           <Label htmlFor={fieldId('name')}>{t('budget.fields.name')}</Label>
-          <Input id={fieldId('name')} {...register(`lines.${index}.name` as const)} />
+          <Input aria-invalid={Boolean(lineErrors?.name)} id={fieldId('name')} {...register(`lines.${index}.name` as const)} />
           {lineErrors?.name && <p className="text-sm text-destructive">{lineErrors.name.message}</p>}
         </div>
       </div>
@@ -72,7 +72,7 @@ function BudgetLineRow({
       <div className="grid gap-3 sm:grid-cols-4">
         <div className="flex flex-col gap-1">
           <Label htmlFor={fieldId('unit')}>{t('budget.fields.unit')}</Label>
-          <Input id={fieldId('unit')} {...register(`lines.${index}.unit` as const)} />
+          <Input aria-invalid={Boolean(lineErrors?.unit)} id={fieldId('unit')} {...register(`lines.${index}.unit` as const)} />
           {lineErrors?.unit && <p className="text-sm text-destructive">{lineErrors.unit.message}</p>}
         </div>
         <div className="flex flex-col gap-1">
@@ -98,6 +98,7 @@ function BudgetLineRow({
         <div className="flex flex-col gap-1">
           <Label htmlFor={fieldId('total')}>{t('budget.fields.total')}</Label>
           <Input
+            aria-invalid={Boolean(lineErrors?.total)}
             id={fieldId('total')}
             inputMode="decimal"
             {...register(`lines.${index}.total` as const, { valueAsNumber: true })}
@@ -189,6 +190,7 @@ function NewBudgetForm({ projectId, currency }: { projectId: string; currency: s
             <div className="flex flex-col gap-1 sm:max-w-xs">
               <Label htmlFor="contingencyAmount">{t('budget.fields.contingencyAmount')}</Label>
               <Input
+                aria-invalid={Boolean(errors.contingencyAmount)}
                 id="contingencyAmount"
                 inputMode="decimal"
                 {...register('contingencyAmount', { valueAsNumber: true })}

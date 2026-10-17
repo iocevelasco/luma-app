@@ -211,10 +211,62 @@ En la landing los CTA son links, no `Button`: usan `CTA_PRIMARY` y
 `h-*`, no con `py-*`: el outline tiene 2px de borde y el primario 1px.
 
 **Card** — `bg-card`, `rounded-3xl`, borde 1px, `shadow-surface`. Padding 16px en
-móvil, 24px desde `sm`.
+móvil, 24px desde `sm`. Adentro, dos piezas apoyadas un escalón abajo
+(`rounded-2xl`, relleno `background`, borde 1px):
 
-**Input / Select / Textarea** — `rounded-sm`, borde `input`, foco con
-`ring` verde. El foco se ve, siempre.
+- `CardTile` — acción chica con el ícono arriba y el rótulo abajo (Silenciar,
+  Llamar, Buscar). Se arma en fila con `grid grid-cols-4 gap-2`.
+- `CardList` — filas agrupadas con divisor entre una y otra. Las filas son
+  `Item`s (`size="sm"`): el grupo les saca radio y borde y redondea el conjunto.
+  Lo de la derecha (valor + chevrón) va en `ItemActions`.
+
+`variant="interactive"` es la card que se toca entera: sube 2px y pasa a
+`shadow-overlay`; con `prefers-reduced-motion` no se mueve. Va sobre un link o
+un botón: la card no impone el rol.
+
+**Breadcrumb** — el eslabón ancestro es tinta con subrayado a 40% (100% en
+hover); la página actual va en `muted-foreground`, sin subrayado. El separador es
+un chevrón. Los eslabones aceptan un ícono de 16px antes del rótulo. En el
+header del panel el camino va sin ícono. `BreadcrumbList variant="pill"` es la
+variante contenida: una píldora elevada con la página actual en relieve y sin
+separadores, para una navegación corta que se lee como control.
+
+**Input / Select / Textarea** — `rounded-sm`, relleno `field`. Los seis estados
+salen de un solo lugar, `lib/field-styles.ts`; el editor Markdown, `InputGroup`
+e `InputOTP` los repiten.
+
+`field` es un token propio (`#f0f0f2` en el panel claro, `#252423` en el
+oscuro) y **no** `background`: Dialog, Sheet y Drawer pintan su fondo con
+`background`, y un campo del mismo color que su contenedor pierde el relleno
+justo ahí. Con `field` se ve igual sobre una card, sobre el lienzo y dentro de
+un Sheet.
+
+| Estado | Qué cambia |
+|---|---|
+| Reposo | Borde `input`, relleno `field` |
+| Hover | Borde de tinta al 65% |
+| Foco | Borde y anillo de 3px en `ring` (verde); la etiqueta pasa a `brand` |
+| Completo | Borde de tinta al 90%. Input y Textarea llevan un placeholder de un espacio cuando no traen uno, porque sin placeholder CSS no distingue vacío de lleno. Un `type="date"` no tiene este estado. En el Select, cuando ya tiene valor |
+| Error | Borde `destructive` y anillo rojo **fijo**, sin esperar al foco |
+| Deshabilitado | Relleno `field-disabled`, borde `border`, texto atenuado, `cursor-not-allowed` |
+
+El error y el foco ganan siempre sobre hover y completo. El foco se ve, siempre.
+
+**El error de un campo.** El campo se pinta en error cuando la instancia del
+form dice que lo está: `aria-invalid={Boolean(errors.nombre)}` en el
+`Input` / `Textarea` / `SelectTrigger`, con el mensaje de `errors.nombre`
+debajo. Dentro de un `FormItem` lo pone solo. Todos los formularios de la app
+están cableados así; un `Controller` con un campo propio (editor Markdown) usa
+su prop `invalid`.
+
+`index.css` trae además una red: un campo seguido de un `<p class="text-destructive">`
+se pinta en error aunque nadie le haya puesto `aria-invalid`. Es una red para el
+formulario que se olvidó, no una excusa; el hook de post-edición avisa si un
+archivo tiene mensajes de error y ningún `aria-invalid`. La etiqueta toma
+`brand` con el foco, en un `FormItem` o en un `Label` + campo adyacentes.
+
+Un grupo de opciones (el público de un hito, el rol de un miembro) no es un
+campo de texto: su mensaje queda debajo, sin borde rojo.
 
 **Badge** — `rounded-full`, `text-xs`, peso 500. Para estados usá los tokens
 `status-*` con fondo al 15% de opacidad.

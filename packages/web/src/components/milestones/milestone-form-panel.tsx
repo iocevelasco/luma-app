@@ -227,7 +227,11 @@ function MilestoneForm({
                   if (next !== 'reunion') setValue('attendees', [], { shouldDirty: true });
                 }}
               >
-                <SelectTrigger id="milestone-type" className="w-full">
+                <SelectTrigger
+                  aria-invalid={Boolean(errors.type)}
+                  id="milestone-type"
+                  className="w-full"
+                >
                   <SelectValue placeholder={t('milestone.fields.typePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -245,7 +249,12 @@ function MilestoneForm({
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="milestone-date">{t('milestone.fields.occurredOn')}</Label>
-          <Input id="milestone-date" type="date" {...register('occurredOn')} />
+          <Input
+            aria-invalid={Boolean(errors.occurredOn)}
+            id="milestone-date"
+            type="date"
+            {...register('occurredOn')}
+          />
           {errors.occurredOn && (
             <p className="text-sm text-destructive">{errors.occurredOn.message}</p>
           )}
@@ -254,7 +263,7 @@ function MilestoneForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="milestone-title">{t('milestone.fields.title')}</Label>
-        <Input id="milestone-title" {...register('title')} />
+        <Input aria-invalid={Boolean(errors.title)} id="milestone-title" {...register('title')} />
         {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
       </div>
 
@@ -454,6 +463,7 @@ function AttendeesField({ control }: { control: Control<CreateMilestoneInput> })
             )}
             <Input
               id="milestone-attendees"
+              aria-invalid={Boolean(fieldState.error)}
               value={draft}
               disabled={full}
               onChange={(event) => setDraft(event.target.value)}
