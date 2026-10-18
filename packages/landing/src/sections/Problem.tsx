@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 export function Problem() {
   const { t } = useTranslation();
-  const items = t('problem.items', { returnObjects: true }) as string[];
+  const items = t('problem.items', { returnObjects: true }) as { q: string; a: string }[];
 
   return (
     <section className="px-6 py-section-sm sm:py-section">
@@ -12,11 +12,12 @@ export function Problem() {
           {t('problem.title')}
         </h2>
 
-        <ol className="mt-12 grid gap-8 sm:grid-cols-3">
+        <ol className="mt-12 grid gap-8 sm:grid-cols-2">
           {items.map((item, index) => (
-            <li key={item} className="border-t border-border-strong pt-6">
+            <li key={item.q} className="border-t border-border-strong pt-6">
               <span className="feature-num">{String(index + 1).padStart(2, '0')}</span>
-              <p className="mt-3 text-base leading-relaxed text-muted-foreground">{item}</p>
+              <h3 className="mt-3 text-lg font-medium text-foreground">{item.q}</h3>
+              <p className="mt-2 text-base leading-relaxed text-muted-foreground">{item.a}</p>
             </li>
           ))}
         </ol>
