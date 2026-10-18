@@ -8,6 +8,7 @@ const LINKS = [
   { href: '#roles', key: 'roles' },
   { href: '#features', key: 'features' },
   { href: '#how', key: 'how' },
+  { href: '#pricing', key: 'pricing' },
   { href: '#faq', key: 'faq' },
 ] as const;
 
@@ -22,7 +23,7 @@ export function Nav() {
           <Logo />
         </a>
 
-        <ul className="hidden items-center gap-8 md:flex">
+        <ul className="hidden items-center gap-8 lg:flex">
           {LINKS.map((link) => (
             <li key={link.key}>
               <a

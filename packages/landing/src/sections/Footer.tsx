@@ -1,6 +1,8 @@
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { Logo } from '../components/Logo';
 import { LOGIN_URL } from '../lib/app-url';
+
+const STUDIO_URL = 'https://www.instagram.com/ido.arquitectura/';
 
 export function Footer() {
   const { t } = useTranslation();
@@ -11,6 +13,21 @@ export function Footer() {
         <div className="flex flex-col gap-1">
           <Logo />
           <p className="text-sm text-muted-foreground">{t('footer.tagline')}</p>
+          <p className="text-sm text-muted-foreground">
+            <Trans
+              i18nKey="footer.credit"
+              components={{
+                studio: (
+                  <a
+                    href={STUDIO_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground underline underline-offset-4 hover:text-primary"
+                  />
+                ),
+              }}
+            />
+          </p>
         </div>
 
         <div className="flex items-center gap-6">
