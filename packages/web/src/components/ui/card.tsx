@@ -6,17 +6,60 @@ interface CardProps extends React.ComponentProps<'div'> {
   variant?: 'default' | 'interactive'
 }
 
+/**
+ * `interactive` es una card que se puede tocar entera: sube un pelo y la
+ * sombra pasa a la de lo que flota (`shadow-overlay`). Va sobre un `<a>`, un
+ * `<button>` o con `role` y `tabIndex` propios; la card no los impone.
+ */
 function Card({ className, variant = 'default', ...props }: CardProps) {
-  const interactiveStyles = variant === 'interactive'
-    ? 'cursor-pointer transition-all duration-300 relative overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.08),0_8px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.08)] before:absolute before:inset-0 before:rounded-3xl before:bg-[linear-gradient(to_bottom_right,rgba(255,255,255,0.05),transparent,rgba(0,0,0,0.05))] before:pointer-events-none before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300'
-    : ''
-
   return (
     <div
       data-slot="card"
       className={cn(
         'bg-card text-card-foreground flex flex-col gap-4 sm:gap-6 rounded-3xl border py-4 sm:py-6 shadow-surface',
-        interactiveStyles,
+        variant === 'interactive' &&
+          'cursor-pointer outline-none transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+/**
+ * Acción chica dentro de una card: ícono arriba, rótulo abajo (Silenciar,
+ * Llamar, Buscar). Un escalón abajo de la card —`rounded-2xl` dentro de
+ * `rounded-3xl`— y un tono bajo ella, para que se lea como una pieza apoyada
+ * y no como otra card. Se arma en fila con `grid grid-cols-4 gap-2`.
+ */
+function CardTile({ className, ...props }: React.ComponentProps<'button'>) {
+  return (
+    <button
+      type="button"
+      data-slot="card-tile"
+      className={cn(
+        'bg-background text-muted-foreground flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-3 text-xs font-medium transition-colors outline-none',
+        'hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+        'disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-5 [&>svg]:shrink-0',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+/**
+ * Filas agrupadas dentro de una card, con divisor entre una y otra (Mensajes
+ * temporales · Desactivado ›). Las filas son `Item`s: el grupo les saca el
+ * radio y el borde, y es él quien redondea el conjunto.
+ */
+function CardList({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      role="list"
+      data-slot="card-list"
+      className={cn(
+        'bg-background divide-border flex flex-col divide-y overflow-hidden rounded-2xl border [&>*]:rounded-none [&>*]:border-transparent',
         className,
       )}
       {...props}
@@ -98,4 +141,6 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  CardTile,
+  CardList,
 }

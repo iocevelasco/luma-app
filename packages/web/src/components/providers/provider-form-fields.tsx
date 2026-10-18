@@ -64,7 +64,7 @@ export function ProviderFormFields({
     <>
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${idPrefix}-name`}>{t('provider.fields.name')}</Label>
-        <Input id={`${idPrefix}-name`} {...register('name')} />
+        <Input aria-invalid={Boolean(errors.name)} id={`${idPrefix}-name`} {...register('name')} />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
       </div>
 
@@ -105,7 +105,7 @@ export function ProviderFormFields({
               ? t('provider.fields.customSpecialtyAcabados')
               : t('provider.fields.customSpecialty')}
           </Label>
-          <Input id={`${idPrefix}-custom-specialty`} {...register('customSpecialty')} />
+          <Input aria-invalid={Boolean(errors.customSpecialty)} id={`${idPrefix}-custom-specialty`} {...register('customSpecialty')} />
           {errors.customSpecialty && (
             <p className="text-sm text-destructive">{errors.customSpecialty.message}</p>
           )}
@@ -137,12 +137,12 @@ export function ProviderFormFields({
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-phone`}>{t('provider.fields.phone')}</Label>
-          <Input id={`${idPrefix}-phone`} type="tel" {...register('phone')} />
+          <Input aria-invalid={Boolean(errors.phone)} id={`${idPrefix}-phone`} type="tel" {...register('phone')} />
           {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-email`}>{t('provider.fields.email')}</Label>
-          <Input id={`${idPrefix}-email`} type="email" {...register('email')} />
+          <Input aria-invalid={Boolean(errors.email)} id={`${idPrefix}-email`} type="email" {...register('email')} />
           {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
         </div>
       </div>

@@ -96,6 +96,7 @@ function MoneyFields<T extends MoneyFormValues>({
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${prefix}-amount`}>{t('finance.fields.amount')}</Label>
           <Input
+            aria-invalid={Boolean(errors.amount)}
             id={`${prefix}-amount`}
             inputMode="decimal"
             {...register('amount' as Path<T>, { valueAsNumber: true })}
@@ -108,6 +109,7 @@ function MoneyFields<T extends MoneyFormValues>({
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${prefix}-currency`}>{t('finance.fields.currency')}</Label>
           <Input
+            aria-invalid={Boolean(errors.currency)}
             id={`${prefix}-currency`}
             maxLength={3}
             placeholder={projectCurrency}
@@ -126,6 +128,7 @@ function MoneyFields<T extends MoneyFormValues>({
             {t('finance.fields.exchangeRate', { from: currency, to: projectCurrency })}
           </Label>
           <Input
+            aria-invalid={Boolean(errors.exchangeRate)}
             id={`${prefix}-rate`}
             inputMode="decimal"
             {...register('exchangeRate' as Path<T>, { valueAsNumber: true })}
@@ -186,6 +189,7 @@ function NewScheduleItemDrawer({
         <div className="flex flex-col gap-2">
           <Label htmlFor="schedule-concept">{t('finance.fields.concept')}</Label>
           <Input
+            aria-invalid={Boolean(form.formState.errors.concept)}
             id="schedule-concept"
             placeholder={t('finance.fields.conceptPlaceholder')}
             {...form.register('concept')}
@@ -205,7 +209,7 @@ function NewScheduleItemDrawer({
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="schedule-due">{t('finance.fields.dueOn')}</Label>
-          <Input id="schedule-due" type="date" {...form.register('dueOn')} />
+          <Input aria-invalid={Boolean(form.formState.errors.dueOn)} id="schedule-due" type="date" {...form.register('dueOn')} />
           {form.formState.errors.dueOn && (
             <p className="text-sm text-destructive">{form.formState.errors.dueOn.message}</p>
           )}

@@ -143,13 +143,14 @@ function NewMaterialDrawer({ projectId }: { projectId: string }) {
         <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="material-name">{t('material.fields.name')}</Label>
-              <Input id="material-name" {...register('name')} />
+              <Input aria-invalid={Boolean(errors.name)} id="material-name" {...register('name')} />
               {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="material-quantity">{t('material.fields.quantity')}</Label>
               <Input
+                aria-invalid={Boolean(errors.quantity)}
                 id="material-quantity"
                 inputMode="decimal"
                 {...register('quantity', { valueAsNumber: true })}
@@ -166,7 +167,7 @@ function NewMaterialDrawer({ projectId }: { projectId: string }) {
                 name="unit"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="material-unit">
+                    <SelectTrigger aria-invalid={Boolean(errors.unit)} id="material-unit">
                       <SelectValue placeholder={t('material.fields.unitPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -207,6 +208,7 @@ function NewMaterialDrawer({ projectId }: { projectId: string }) {
             <div className="flex flex-col gap-2">
               <Label htmlFor="material-cost">{t('material.fields.estimatedCost')}</Label>
               <Input
+                aria-invalid={Boolean(errors.estimatedCost)}
                 id="material-cost"
                 inputMode="decimal"
                 {...register('estimatedCost', {

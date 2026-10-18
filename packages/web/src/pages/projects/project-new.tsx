@@ -90,13 +90,18 @@ export function ProjectNewPage() {
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">{t('project.fields.name')}</Label>
-            <Input id="name" {...register('name')} />
+            <Input aria-invalid={Boolean(errors.name)} id="name" {...register('name')} />
             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="description">{t('project.fields.description')}</Label>
-            <Textarea id="description" rows={3} {...register('description')} />
+            <Textarea
+              aria-invalid={Boolean(errors.description)}
+              id="description"
+              rows={3}
+              {...register('description')}
+            />
             {errors.description && (
               <p className="text-sm text-destructive">{errors.description.message}</p>
             )}
@@ -104,7 +109,11 @@ export function ProjectNewPage() {
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="location">{t('project.fields.location')}</Label>
-            <Input id="location" {...register('location')} />
+            <Input
+              aria-invalid={Boolean(errors.location)}
+              id="location"
+              {...register('location')}
+            />
             {errors.location && (
               <p className="text-sm text-destructive">{errors.location.message}</p>
             )}
@@ -120,14 +129,24 @@ export function ProjectNewPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="estimatedStartDate">{t('project.fields.startDate')}</Label>
-              <Input id="estimatedStartDate" type="date" {...register('estimatedStartDate')} />
+              <Input
+                aria-invalid={Boolean(errors.estimatedStartDate)}
+                id="estimatedStartDate"
+                type="date"
+                {...register('estimatedStartDate')}
+              />
               {errors.estimatedStartDate && (
                 <p className="text-sm text-destructive">{errors.estimatedStartDate.message}</p>
               )}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="estimatedEndDate">{t('project.fields.endDate')}</Label>
-              <Input id="estimatedEndDate" type="date" {...register('estimatedEndDate')} />
+              <Input
+                aria-invalid={Boolean(errors.estimatedEndDate)}
+                id="estimatedEndDate"
+                type="date"
+                {...register('estimatedEndDate')}
+              />
               {errors.estimatedEndDate && (
                 <p className="text-sm text-destructive">{errors.estimatedEndDate.message}</p>
               )}
@@ -144,7 +163,7 @@ export function ProjectNewPage() {
                 name="currency"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="currency">
+                    <SelectTrigger aria-invalid={Boolean(errors.currency)} id="currency">
                       <SelectValue placeholder={t('project.fields.currencyPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>

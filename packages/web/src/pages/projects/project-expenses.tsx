@@ -165,7 +165,7 @@ function NewExpenseDrawer({
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="expense-description">{t('finance.fields.description')}</Label>
-          <Input id="expense-description" {...form.register('description')} />
+          <Input aria-invalid={Boolean(form.formState.errors.description)} id="expense-description" {...form.register('description')} />
           {form.formState.errors.description && (
             <p className="text-sm text-destructive">
               {form.formState.errors.description.message}
@@ -177,6 +177,7 @@ function NewExpenseDrawer({
           <div className="flex flex-col gap-2">
             <Label htmlFor="expense-amount">{t('finance.fields.amount')}</Label>
             <Input
+              aria-invalid={Boolean(form.formState.errors.amount)}
               id="expense-amount"
               inputMode="decimal"
               {...form.register('amount', { valueAsNumber: true })}
