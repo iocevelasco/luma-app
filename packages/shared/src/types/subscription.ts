@@ -91,3 +91,21 @@ export interface SubscriptionSummary {
   /** Lo que se le va a cobrar en la próxima renovación. */
   nextCharge: ChargeQuote | null;
 }
+
+/**
+ * La tasa BCV vigente, como la ve quien va a pagar en bolívares.
+ *
+ * `stale`: hace más de 48 horas que no hay una lectura buena del BCV ni una
+ * tasa cargada a mano. El pago en Bs se pausa hasta que vuelva a haberla.
+ */
+export interface BcvRate {
+  /** Bolívares por dólar, con la precisión que publica el BCV. */
+  usd: number;
+  /** "Fecha Valor" del BCV, `YYYY-MM-DD`: el día para el que rige. */
+  valueDate: string;
+  source: 'bcv' | 'manual';
+  /** ISO 8601. Última vez que se confirmó. */
+  lastSeenAt: string;
+  stale: boolean;
+}
+

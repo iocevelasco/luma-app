@@ -115,6 +115,34 @@ Es idempotente: una prueba que ya existe no se reinicia. Si se olvida, no se
 rompe nada —esas Empresas quedan `sin_iniciar` y su prueba arranca con la
 próxima obra que creen—, pero el lanzamiento queda menos prolijo.
 
+## Tarea programada: tasa BCV
+
+El pago de la suscripción en bolívares usa la tasa oficial del BCV, que se lee
+de su home (no tiene API). Nunca se lee en el request de un usuario: una tarea
+programada la guarda y el formulario usa la última.
+
+En Coolify → `app` → **Scheduled Tasks**:
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/refresh-bcv-rate.js` |
+| Container | `app` (el directorio de trabajo ya es `/app/packages/api`) |
+| Frequency | `0 12-23 * * *` — cada hora de 8 a 19 de Caracas (el cron de Coolify es UTC) |
+
+Sale con código 1 si no pudo leer o si la tasa saltó más de un 20% (queda
+marcada y **no se usa**): mirá el historial de la tarea. Una corrida fallida no
+rompe nada; la última tasa buena sigue vigente 48 horas, y después el pago en
+Bs se pausa hasta que vuelva a leerse o un admin cargue una a mano.
+
+**El certificado del BCV está mal armado**: manda un intermedio equivocado y
+sin ayuda no verifica. La API trae el intermedio correcto
+(`src/certs/sectigo-dv-r36.ts`, vence en 2036) y verifica la cadena completa;
+no se desactiva la verificación. Si un día el BCV cambia de certificado y la
+tarea empieza a fallar con `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, ahí está el
+archivo a actualizar.
+
+`BCV_URL` (opcional) cambia de dónde se lee; por defecto `https://www.bcv.org.ve/`.
+
 ## Verificar
 
 ```bash

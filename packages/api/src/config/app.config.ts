@@ -115,6 +115,22 @@ export const STORAGE_CONFIG = {
 } as const;
 
 /**
+ * Tasa oficial del BCV para cobrar la suscripción en bolívares (ver
+ * `services/bcv.service.ts`). Se lee de la home del BCV —no tiene API— con el
+ * certificado verificado.
+ */
+export const BCV_CONFIG = {
+  URL: process.env.BCV_URL ?? 'https://www.bcv.org.ve/',
+  /** Cortar antes de que el request del usuario quede colgado. */
+  TIMEOUT_MS: 20_000,
+  /**
+   * Pasado esto sin una lectura buena (ni una tasa cargada a mano), el pago en
+   * Bs se pausa: cobrar con una tasa de hace días es cobrar mal.
+   */
+  MAX_AGE_HOURS: 48,
+} as const;
+
+/**
  * Consultor IA de obra: chat de sólo lectura sobre UNA obra puntual (ver
  * `services/project-advisor.service.ts`). Sin API key el feature queda
  * deshabilitado — no justifica que el resto de la app no arranque.
