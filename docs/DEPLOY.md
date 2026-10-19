@@ -62,6 +62,9 @@ nombre de la base no admite guiones en el formulario de Coolify.
 | `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails | aviso; los mails quedan deshabilitados |
 | `MEDIA_SERVICE_URL`, `MEDIA_SERVICE_API_KEY` | storage de archivos (evidencia RF-04 y documentación de obra) vía el microservicio `media-service` (ej. `https://media.matflow.site`); la key se emite con `bucket key create luma` | aviso; subir archivos da 503, el resto de la app sigue |
 | `STORAGE_SIGNED_URL_TTL` | opcional: vida de las URLs firmadas de lectura | `3600` segundos (máximo que admite el servicio) |
+| `PAGO_MOVIL_BANK`, `PAGO_MOVIL_PHONE`, `PAGO_MOVIL_ID` | dónde se recibe el Pago Móvil de la suscripción | ese método no se ofrece |
+| `TRANSFER_BANK`, `TRANSFER_ACCOUNT`, `TRANSFER_HOLDER`, `TRANSFER_ID` | cuenta para transferencias en Bs | ese método no se ofrece; sin ninguno de los dos, no hay pago en Bs |
+| `BCV_URL` | opcional: de dónde se lee la tasa | `https://www.bcv.org.ve/` |
 
 > **reCAPTCHA hoy: el front no manda el token.** `executeRecaptcha`
 > (`packages/web/src/lib/recaptcha.ts`) existe pero ninguna pantalla lo llama,

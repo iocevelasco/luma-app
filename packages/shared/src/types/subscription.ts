@@ -109,3 +109,66 @@ export interface BcvRate {
   stale: boolean;
 }
 
+
+/**
+ * Dónde se recibe el pago en bolívares. Sale de la configuración del servidor
+ * (variables de entorno), no del código: cambiar de banco no es un deploy.
+ */
+export interface BolivaresReceivingAccounts {
+  pagoMovil?: { bank: string; phone: string; id: string };
+  transferencia?: { bank: string; account: string; holder: string; id: string };
+}
+
+/** `GET /api/subscription/quote` — lo que hay que pagar hoy en bolívares. */
+export interface BolivaresQuote {
+  quote: ChargeQuote;
+  rate: BcvRate;
+  /** `quote.totalUsd × rate.usd`, redondeado una vez. */
+  amountBs: number;
+  /** Paga desde la prueba para crear la cuarta obra: la prueba termina al aprobarse. */
+  activatesNow: boolean;
+  accounts: BolivaresReceivingAccounts;
+}
+
+export interface SubscriptionReceipt {
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  /** URL firmada, de vida corta. `null` si el storage no la pudo firmar. */
+  url: string | null;
+}
+
+/** Un pago de la suscripción, como lo ve su dueño. */
+export interface SubscriptionPaymentSummary {
+  id: string;
+  method: SubscriptionPaymentMethod;
+  status: SubscriptionPaymentStatus;
+  periodStart: string;
+  periodEnd: string;
+  activatesNow: boolean;
+  lines: ChargeLine[];
+  totalUsd: number;
+  bcvRate: number | null;
+  rateValueDate: string | null;
+  amountBs: number | null;
+  declaredAmountBs: number | null;
+  /**
+   * Lo que dice haber pagado se aleja más de un 1% de lo cotizado. No rechaza
+   * nada solo: le avisa a quien revisa que mire con cuidado.
+   */
+  amountMismatch: boolean;
+  bank: string | null;
+  reference: string | null;
+  payerId: string | null;
+  paidOn: string | null;
+  receipt: SubscriptionReceipt | null;
+  submittedAt: string;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+}
+
+/** El mismo pago en la cola del admin: de qué Empresa es y quién paga. */
+export interface AdminSubscriptionPayment extends SubscriptionPaymentSummary {
+  organization: { id: string; name: string };
+  owner: { id: string; name: string; email: string } | null;
+}

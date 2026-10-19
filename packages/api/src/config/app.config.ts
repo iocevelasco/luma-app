@@ -131,6 +131,28 @@ export const BCV_CONFIG = {
 } as const;
 
 /**
+ * Dónde se reciben los pagos de la suscripción en bolívares. Cada método se
+ * ofrece sólo si tiene todos sus datos; sin ninguno, el pago en Bs no se
+ * ofrece y la app sigue andando.
+ */
+const env = process.env;
+export const BS_PAYMENT_CONFIG = {
+  PAGO_MOVIL:
+    env.PAGO_MOVIL_BANK && env.PAGO_MOVIL_PHONE && env.PAGO_MOVIL_ID
+      ? { bank: env.PAGO_MOVIL_BANK, phone: env.PAGO_MOVIL_PHONE, id: env.PAGO_MOVIL_ID }
+      : undefined,
+  TRANSFERENCIA:
+    env.TRANSFER_BANK && env.TRANSFER_ACCOUNT && env.TRANSFER_HOLDER && env.TRANSFER_ID
+      ? {
+          bank: env.TRANSFER_BANK,
+          account: env.TRANSFER_ACCOUNT,
+          holder: env.TRANSFER_HOLDER,
+          id: env.TRANSFER_ID,
+        }
+      : undefined,
+} as const;
+
+/**
  * Consultor IA de obra: chat de sólo lectura sobre UNA obra puntual (ver
  * `services/project-advisor.service.ts`). Sin API key el feature queda
  * deshabilitado — no justifica que el resto de la app no arranque.

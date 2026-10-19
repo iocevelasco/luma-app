@@ -24,7 +24,9 @@
  * 5. Una extra creada a mitad de un período pago se prorratea por los días
  *    que le quedaban al período, y se cobra en la renovación siguiente.
  * 6. Archivar una obra no devuelve días: deja de cobrarse desde la próxima
- *    renovación.
+ *    renovación. Y el lugar que deja ya está pago: si en el mismo período
+ *    se crea otra, no se prorratea (sólo se prorratea lo que supera las
+ *    extras pagadas por adelantado).
  * 7. Vencida = sólo lectura. Nunca se borra nada.
  */
 
@@ -100,6 +102,8 @@ export interface PaidPeriodFact {
   status: SubscriptionPaymentStatus;
   /** Cuándo lo mandó el usuario. Desde acá corre la gracia de un pendiente. */
   submittedAt: Date;
+  /** Cuántas obras extra se pagaron por adelantado en este período. */
+  prepaidExtras?: number;
 }
 
 export interface StripeFact {
@@ -232,15 +236,14 @@ export function activeProjectsAt(projects: BillableProject[], at: Date): number 
  * Desempata por id cuando dos se crean en el mismo milisegundo, así el
  * resultado no depende del orden en que llegan de la base.
  */
-function wasExtraAtCreation(project: BillableProject, projects: BillableProject[]): boolean {
-  const before = projects.filter(
+function activeBefore(project: BillableProject, projects: BillableProject[]): number {
+  return projects.filter(
     (other) =>
       other.id !== project.id &&
       isActiveAt(other, project.createdAt) &&
       (other.createdAt < project.createdAt ||
         (other.createdAt.getTime() === project.createdAt.getTime() && other.id < project.id)),
   ).length;
-  return before >= PLAN.includedProjects;
 }
 
 export type CreateProjectDecision =
@@ -277,7 +280,17 @@ export interface ChargeInput {
    * caso de quien sale de la prueba, donde plan y extras arrancan juntos el
    * mismo día (regla 4).
    */
-  previousPeriod?: { start: Date; end: Date } | null;
+  previousPeriod?: {
+    start: Date;
+    end: Date;
+    /**
+     * Extras que ya se pagaron por adelantado en ese período. Sin el dato se
+     * deducen de las obras activas al arrancarlo. Hace falta explícito cuando
+     * se activó el plan desde la prueba para crear la cuarta: esa extra se
+     * pagó antes de que la obra existiera.
+     */
+    prepaidExtras?: number;
+  } | null;
 }
 
 /**
@@ -308,9 +321,13 @@ export function quoteCharge(input: ChargeInput): ChargeQuote {
 
   if (previousPeriod) {
     const length = previousPeriod.end.getTime() - previousPeriod.start.getTime();
+    const prepaid =
+      previousPeriod.prepaidExtras ??
+      Math.max(0, activeProjectsAt(projects, previousPeriod.start) - PLAN.includedProjects);
+    const paidSlots = PLAN.includedProjects + prepaid;
     const createdDuring = projects
       .filter((p) => p.createdAt > previousPeriod.start && p.createdAt < previousPeriod.end)
-      .filter((p) => wasExtraAtCreation(p, projects))
+      .filter((p) => activeBefore(p, projects) >= paidSlots)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id));
 
     for (const project of createdDuring) {

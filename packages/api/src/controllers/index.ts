@@ -18,3 +18,4 @@ export * from './payment.controller.js';
 export * from './expense.controller.js';
 export * from './subscription.controller.js';
 export * from './exchange-rate.controller.js';
+export * from './subscription-payment.controller.js';

@@ -28,7 +28,9 @@ export const bolivaresPaymentSchema = z.object({
     .toUpperCase()
     .regex(/^[VEJGP]-?\d{5,10}$/, 'Cédula o RIF inválido (ej: V-12345678)'),
   paidOn: dayKeySchema,
-  amountBs: z
+  // Llega por multipart (va con el comprobante), así que como string: el
+  // coerce vive acá y no en el controller, mismo criterio que los gastos.
+  amountBs: z.coerce
     .number({ invalid_type_error: 'El monto es obligatorio' })
     .positive('El monto tiene que ser mayor a cero')
     .max(1_000_000_000, 'El monto es demasiado grande'),
@@ -37,7 +39,8 @@ export const bolivaresPaymentSchema = z.object({
    * prueba termina ese día y el plan arranca ya (regla A). Sin esto, un pago
    * anticipado arranca cuando termina la prueba y no se pierde ningún día.
    */
-  activateNow: z.boolean().default(false),
+  // `z.coerce.boolean()` convertiría el string "false" en `true`.
+  activateNow: z.preprocess((value) => value === true || value === 'true', z.boolean()),
 });
 
 /** Decisión de un admin sobre un pago en bolívares. */

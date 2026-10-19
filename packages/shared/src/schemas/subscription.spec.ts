@@ -21,6 +21,13 @@ describe('bolivaresPaymentSchema', () => {
     expect(parsed.activateNow).toBe(false);
   });
 
+  it('entiende los campos como llegan por multipart: todo string', () => {
+    const parsed = bolivaresPaymentSchema.parse({ ...valid, amountBs: '1408.81', activateNow: 'false' });
+    expect(parsed.amountBs).toBe(1408.81);
+    expect(parsed.activateNow).toBe(false);
+    expect(bolivaresPaymentSchema.parse({ ...valid, activateNow: 'true' }).activateNow).toBe(true);
+  });
+
   it('acepta RIF con y sin guion', () => {
     expect(bolivaresPaymentSchema.safeParse({ ...valid, payerId: 'J123456789' }).success).toBe(true);
     expect(bolivaresPaymentSchema.safeParse({ ...valid, payerId: 'J-123456789' }).success).toBe(true);

@@ -219,3 +219,23 @@ export async function uploadMilestoneAttachment(
     contentType: params.contentType,
   });
 }
+
+// ── Comprobantes de pago de la suscripción ──────────────────────────────────
+
+/**
+ * Prefijo propio: es plata que entra a Luma, no un documento de obra, y su
+ * ciclo de vida es el de la contabilidad de Luma, no el de una obra.
+ */
+export async function uploadSubscriptionReceipt(params: {
+  organizationId: string;
+  buffer: Buffer;
+  contentType: string;
+  extension: string;
+}): Promise<{ key: string }> {
+  return putObject({
+    fileName: `subscription-receipt-${params.organizationId}-${randomUUID()}${params.extension}`,
+    buffer: params.buffer,
+    contentType: params.contentType,
+  });
+}
+

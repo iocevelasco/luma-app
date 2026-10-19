@@ -1,14 +1,46 @@
+import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
+import multer from 'multer';
+import { DOCUMENT_MAX_BYTES } from '@luma/shared';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
-import { getCurrentRate, getMySubscription } from '../controllers/index.js';
+import {
+  createBolivaresPayment,
+  getBolivaresQuote,
+  getCurrentRate,
+  getMySubscription,
+  listMySubscriptionPayments,
+} from '../controllers/index.js';
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: DOCUMENT_MAX_BYTES } });
+
+function handleUploadError(err: unknown, _req: Request, res: Response, next: NextFunction) {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      error: 'El comprobante es demasiado grande (máximo 20MB)',
+      code: 'PAYLOAD_TOO_LARGE',
+    });
+  }
+  next(err);
+}
 
 /**
- * La suscripción de la Empresa a Luma. Sin `requireWritableSubscription` a
+ * La suscripción de MI Empresa a Luma. Sin `requireWritableSubscription` a
  * propósito: es justo por acá que alguien vencido tiene que poder pagar.
  */
 export const subscriptionRouter = Router();
 
-subscriptionRouter.get('/me', isAuthenticated, getMySubscription);
-subscriptionRouter.get('/rate', isAuthenticated, getCurrentRate);
+subscriptionRouter.use(isAuthenticated);
+
+subscriptionRouter.get('/me', getMySubscription);
+subscriptionRouter.get('/rate', getCurrentRate);
+subscriptionRouter.get('/quote', getBolivaresQuote);
+subscriptionRouter.get('/payments', listMySubscriptionPayments);
+subscriptionRouter.post(
+  '/payments',
+  upload.single('receipt'),
+  handleUploadError,
+  createBolivaresPayment,
+);
 
 export default subscriptionRouter;

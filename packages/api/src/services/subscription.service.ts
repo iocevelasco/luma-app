@@ -30,13 +30,19 @@ type OrgId = mongoose.Types.ObjectId | string;
 
 function toFacts(
   subscription: ISubscription | null,
-  payments: Pick<ISubscriptionPayment, 'periodStart' | 'periodEnd' | 'status' | 'submittedAt'>[],
+  payments: Pick<
+    ISubscriptionPayment,
+    'periodStart' | 'periodEnd' | 'status' | 'submittedAt' | 'lines'
+  >[],
 ): SubscriptionFacts {
   const periods: PaidPeriodFact[] = payments.map((p) => ({
     start: p.periodStart,
     end: p.periodEnd,
     status: p.status,
     submittedAt: p.submittedAt,
+    prepaidExtras: (p.lines ?? [])
+      .filter((line) => line.kind === 'extra')
+      .reduce((sum, line) => sum + line.quantity, 0),
   }));
 
   if (!subscription) {
@@ -68,7 +74,7 @@ export async function loadFacts(organizationId: OrgId): Promise<SubscriptionFact
   const [subscription, payments] = await Promise.all([
     Subscription.findOne({ organization: organizationId }),
     SubscriptionPayment.find({ organization: organizationId, ...LIVE_PAYMENTS }).select(
-      'periodStart periodEnd status submittedAt',
+      'periodStart periodEnd status submittedAt lines',
     ),
   ]);
   return toFacts(subscription, payments);
@@ -94,7 +100,7 @@ export async function statesFor(
   const [subscriptions, payments] = await Promise.all([
     Subscription.find({ organization: { $in: ids } }),
     SubscriptionPayment.find({ organization: { $in: ids }, ...LIVE_PAYMENTS }).select(
-      'organization periodStart periodEnd status submittedAt',
+      'organization periodStart periodEnd status submittedAt lines',
     ),
   ]);
 
@@ -159,13 +165,15 @@ export async function decideProjectCreation(
 }
 
 /** El período pago que termina justo donde arranca el próximo, si lo hay. Para el prorrateo. */
-function previousPaidPeriod(
+export function previousPaidPeriod(
   facts: SubscriptionFacts,
   periodStart: Date,
-): { start: Date; end: Date } | null {
+): { start: Date; end: Date; prepaidExtras?: number } | null {
   const t = periodStart.getTime();
   const approved = facts.periods.find((p) => p.status === 'aprobado' && p.end.getTime() === t);
-  if (approved) return { start: approved.start, end: approved.end };
+  if (approved) {
+    return { start: approved.start, end: approved.end, prepaidExtras: approved.prepaidExtras };
+  }
   if (facts.stripe && facts.stripe.currentPeriodEnd.getTime() === t) {
     return { start: facts.stripe.currentPeriodStart, end: facts.stripe.currentPeriodEnd };
   }

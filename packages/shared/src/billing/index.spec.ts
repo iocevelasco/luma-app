@@ -290,6 +290,55 @@ describe('quoteCharge', () => {
   });
 });
 
+describe('quoteCharge: extras pagadas por adelantado', () => {
+  const previousPeriod = { start: d('2026-10-10T00:00:00Z'), end: d('2026-11-10T00:00:00Z') };
+  const start = previousPeriod.end;
+  const three = [
+    project('a', '2026-10-01T00:00:00Z'),
+    project('b', '2026-10-02T00:00:00Z'),
+    project('c', '2026-10-03T00:00:00Z'),
+  ];
+
+  it('la cuarta pagada al activar el plan desde la prueba no se cobra de nuevo como prorrateo', () => {
+    // Activó el plan el 10 pagando base + 1 extra; creó la cuarta el 10 a la tarde.
+    const projects = [...three, project('d', '2026-10-10T15:00:00Z')];
+    const quote = quoteCharge({
+      periodStart: start,
+      projects,
+      previousPeriod: { ...previousPeriod, prepaidExtras: 1 },
+    });
+    expect(quote.lines.map((l) => l.kind)).toEqual(['base', 'extra']);
+    expect(quote.totalUsd).toBe(47);
+  });
+
+  it('la quinta, más allá de lo pagado, sí se prorratea', () => {
+    const projects = [
+      ...three,
+      project('d', '2026-10-10T15:00:00Z'),
+      project('e', '2026-10-25T00:00:00Z'),
+    ];
+    const quote = quoteCharge({
+      periodStart: start,
+      projects,
+      previousPeriod: { ...previousPeriod, prepaidExtras: 1 },
+    });
+    expect(quote.lines.filter((l) => l.kind === 'prorrateo').map((l) => l.projectId)).toEqual([
+      'e',
+    ]);
+  });
+
+  it('archivar una extra y crear otra en el mismo período no cobra de más: el lugar ya estaba pago', () => {
+    const projects = [
+      ...three,
+      project('d', '2026-09-01T00:00:00Z', '2026-10-20T00:00:00Z'),
+      project('e', '2026-10-25T00:00:00Z'),
+    ];
+    // Al arrancar el período había 4 activas: 1 extra pagada por adelantado.
+    const quote = quoteCharge({ periodStart: start, projects, previousPeriod });
+    expect(quote.lines.some((l) => l.kind === 'prorrateo')).toBe(false);
+  });
+});
+
 describe('activeProjectsAt', () => {
   it('cuenta las creadas hasta ese momento y no archivadas todavía', () => {
     const projects = [
