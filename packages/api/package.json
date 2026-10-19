@@ -20,7 +20,8 @@
     "migrate:directory": "tsx src/scripts/migrate-directory-assignments.ts",
     "migrate:crew": "tsx src/scripts/migrate-crew.ts",
     "migrate:subscriptions": "tsx src/scripts/migrate-subscriptions.ts",
-    "rates:refresh": "tsx src/scripts/refresh-bcv-rate.ts"
+    "rates:refresh": "tsx src/scripts/refresh-bcv-rate.ts",
+    "stripe:setup": "tsx src/scripts/stripe-setup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

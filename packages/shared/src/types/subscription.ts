@@ -172,3 +172,16 @@ export interface AdminSubscriptionPayment extends SubscriptionPaymentSummary {
   organization: { id: string; name: string };
   owner: { id: string; name: string; email: string } | null;
 }
+
+/**
+ * `GET /api/subscription/me`: el resumen más cómo puede pagar.
+ *
+ * `card.status` es lo último que informó Stripe (`null` si nunca cargó
+ * tarjeta). `card.manageable` = tiene cliente en Stripe, así que el portal
+ * (cambiar tarjeta, facturas, baja) tiene algo que mostrar.
+ */
+export interface SubscriptionOverview extends SubscriptionSummary {
+  paymentOptions: { card: boolean; bolivares: boolean };
+  card: { status: StripeSubscriptionStatus | null; manageable: boolean };
+}
+

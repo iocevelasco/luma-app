@@ -15,6 +15,7 @@ import { Project, type IProject } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
 import { decideProjectCreation, statesFor } from '../services/subscription.service.js';
+import { syncStripeExtras } from '../services/stripe.service.js';
 import { AppError, isAppError } from '../utils/errors.js';
 import { EmailService } from '../services/email.service.js';
 import {
@@ -112,6 +113,15 @@ export async function createProject(req: Request, res: Response, next: NextFunct
       organization: organizationId,
       createdBy: req.user.sub,
     });
+
+    // Con tarjeta, la extra se le suma en Stripe (que prorratea el resto del
+    // mes). Si Stripe falla la obra ya existe: se loguea y no se voltea la
+    // creación — la cantidad se corrige en la próxima sincronización.
+    if (decision.isExtra) {
+      syncStripeExtras(organizationId).catch((error) =>
+        console.error('❌ [STRIPE] syncStripeExtras:', error),
+      );
+    }
 
     return res.status(201).json({ success: true, data: { project: toProjectDTO(project) } });
   } catch (error) {

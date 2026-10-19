@@ -153,6 +153,27 @@ export const BS_PAYMENT_CONFIG = {
 } as const;
 
 /**
+ * Pago de la suscripción con tarjeta, en dólares (ver `services/stripe.service.ts`).
+ * Sin `STRIPE_SECRET_KEY` el pago con tarjeta no se ofrece y la app sigue
+ * andando, igual que el resto de las integraciones.
+ *
+ * No hace falta la publishable key: el pago es en Stripe Checkout, la página
+ * de Stripe, y nunca cargamos Stripe.js ni tocamos datos de tarjeta.
+ */
+export const STRIPE_CONFIG = {
+  SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  /**
+   * Los precios se buscan por `lookup_key`, no por id: así sandbox y
+   * producción usan el mismo código y nadie copia ids a mano. Los crea
+   * `scripts/stripe-setup.ts`.
+   */
+  BASE_PRICE_LOOKUP_KEY: process.env.STRIPE_BASE_PRICE_LOOKUP_KEY ?? 'luma_base_monthly',
+  EXTRA_PRICE_LOOKUP_KEY: process.env.STRIPE_EXTRA_PRICE_LOOKUP_KEY ?? 'luma_extra_project_monthly',
+  ENABLED: Boolean(process.env.STRIPE_SECRET_KEY),
+} as const;
+
+/**
  * Consultor IA de obra: chat de sólo lectura sobre UNA obra puntual (ver
  * `services/project-advisor.service.ts`). Sin API key el feature queda
  * deshabilitado — no justifica que el resto de la app no arranque.

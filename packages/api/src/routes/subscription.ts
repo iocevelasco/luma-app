@@ -9,6 +9,8 @@ import {
   getCurrentRate,
   getMySubscription,
   listMySubscriptionPayments,
+  openStripePortal,
+  startStripeCheckout,
 } from '../controllers/index.js';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: DOCUMENT_MAX_BYTES } });
@@ -42,5 +44,8 @@ subscriptionRouter.post(
   handleUploadError,
   createBolivaresPayment,
 );
+
+subscriptionRouter.post('/stripe/checkout', startStripeCheckout);
+subscriptionRouter.post('/stripe/portal', openStripePortal);
 
 export default subscriptionRouter;

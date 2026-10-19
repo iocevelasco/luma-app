@@ -24,6 +24,7 @@ import { notificationRouter } from './routes/notification.js';
 import { projectRouter } from './routes/project.js';
 import { subscriptionRouter } from './routes/subscription.js';
 import { adminRouter } from './routes/admin.js';
+import { stripeWebhook } from './controllers/stripe.controller.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -145,6 +146,10 @@ app.use(
     optionsSuccessStatus: 200,
   }),
 );
+
+// El webhook de Stripe ANTES de `express.json()`: la firma es sobre el cuerpo
+// crudo, y una vez parseado ya no hay forma de reconstruirlo byte por byte.
+app.post('/api/billing/stripe/webhook', express.raw({ type: 'application/json', limit: '1mb' }), stripeWebhook);
 
 // El default (100kb) alcanza para casi todo, pero el import de presupuesto
 // manda hasta 2000 filas de planilla como JSON — eso solo ya pasa los 100kb.
