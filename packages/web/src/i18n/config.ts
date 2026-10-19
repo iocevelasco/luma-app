@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import esTranslations from './locales/es/translation.json';
+import esESTranslations from './locales/es-ES/translation.json';
 import ptTranslations from './locales/pt/translation.json';
 
 i18n
@@ -11,6 +12,9 @@ i18n
     resources: {
       'es-AR': {
         translation: esTranslations,
+      },
+      'es-ES': {
+        translation: esESTranslations, // Español de España: tuteo y vocabulario peninsular
       },
       es: {
         translation: esTranslations, // Fallback para español genérico
@@ -23,7 +27,7 @@ i18n
       },
     },
     fallbackLng: 'es-AR', // Idioma por defecto: Español Latinoamericano (Argentina)
-    supportedLngs: ['es-AR', 'es', 'pt-BR', 'pt'], // Idiomas soportados
+    supportedLngs: ['es-AR', 'es-ES', 'es', 'pt-BR', 'pt'], // Idiomas soportados
     debug: false,
     interpolation: {
       escapeValue: false, // React ya escapa los valores
@@ -33,6 +37,11 @@ i18n
       caches: ['localStorage'],
       // Normalizar idiomas detectados a nuestras variantes
       convertDetectedLanguage: (lng: string) => {
+        // Español de España sólo si el navegador lo pide explícitamente; el
+        // resto del español (es, es-419, es-MX…) va a es-AR.
+        if (lng === 'es-ES') {
+          return 'es-ES';
+        }
         // Si detecta español, usar es-AR
         if (lng.startsWith('es')) {
           return 'es-AR';

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import es from './locales/es/translation.json';
+import esES from './locales/es-ES/translation.json';
 import pt from './locales/pt/translation.json';
 
 /**
@@ -28,6 +29,21 @@ describe('i18n parity es ↔ pt', () => {
 
   it('every pt key exists in es', () => {
     const missing = [...ptKeys].filter((k) => !esKeys.has(k));
+    expect(missing).toEqual([]);
+  });
+});
+
+describe('i18n parity es ↔ es-ES', () => {
+  const esKeys = new Set(flattenKeys(es));
+  const esESKeys = new Set(flattenKeys(esES));
+
+  it('every es key exists in es-ES', () => {
+    const missing = [...esKeys].filter((k) => !esESKeys.has(k));
+    expect(missing).toEqual([]);
+  });
+
+  it('every es-ES key exists in es', () => {
+    const missing = [...esESKeys].filter((k) => !esKeys.has(k));
     expect(missing).toEqual([]);
   });
 });

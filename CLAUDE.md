@@ -242,10 +242,12 @@ const { t } = useTranslation();
 <p>{t('layout.emptyHomeTitle')}</p>
 ```
 
-- `packages/web`: `src/i18n/locales/{es,pt}/translation.json` (`es-AR` default).
+- `packages/web`: `src/i18n/locales/{es,es-ES,pt}/translation.json` (`es-AR` default;
+  `es` es el español de Argentina, `es-ES` el de España: tuteo y vocabulario
+  peninsular — "jefe de obra", "contable", "añadir", "justificante").
 - `packages/landing`: `src/i18n/locales/{es,pt}/translation.json` (`es` default).
-- **Toda clave nueva se agrega a los DOS archivos al mismo tiempo.** Hay un test de
-  paridad que lo verifica en CI.
+- **Toda clave nueva se agrega a TODOS los archivos de su paquete al mismo tiempo**
+  (en `web`, los tres). Hay un test de paridad que lo verifica en CI.
 - Para arrays (listas, pasos): `t('key', { returnObjects: true }) as string[]`.
 
 ## Cross-browsing — obligatorio
