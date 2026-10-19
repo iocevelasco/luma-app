@@ -9,7 +9,11 @@ import type { Response } from 'express';
 vi.mock('../../models/User.js', () => ({
   User: { findById: vi.fn(), findOne: vi.fn(), create: vi.fn(), updateOne: vi.fn() },
 }));
-vi.mock('../../models/Project.js', () => ({ Project: { find: vi.fn() } }));
+vi.mock('../../models/Project.js', () => ({ Project: { find: vi.fn(), create: vi.fn() } }));
+vi.mock('../../services/subscription.service.js', () => ({
+  statesFor: vi.fn(),
+  decideProjectCreation: vi.fn(),
+}));
 vi.mock('../../models/ProjectMembership.js', () => ({
   ProjectMembership: { find: vi.fn(), exists: vi.fn(), create: vi.fn() },
 }));
@@ -30,9 +34,28 @@ const { ProjectMembership } = await import('../../models/ProjectMembership.js');
 const { User } = await import('../../models/User.js');
 const { EmailService } = await import('../../services/email.service.js');
 const { createPersonalOrganization } = await import('../../services/organization.service.js');
-const { listProjects, inviteProjectMember } = await import(
+const { statesFor, decideProjectCreation } = await import(
+  '../../services/subscription.service.js'
+);
+const { findMyOrganizationId } = await import('../../services/organization.service.js');
+const { listProjects, inviteProjectMember, createProject } = await import(
   '../../controllers/project.controller.js'
 );
+
+/** El estado de la suscripción de `org-1`, como lo devuelve `statesFor`. */
+function subscriptionOf(canWrite: boolean) {
+  return new Map([
+    [
+      'org-1',
+      {
+        status: canWrite ? 'activa' : 'vencida',
+        canWrite,
+        accessUntil: null,
+        trialDaysLeft: null,
+      },
+    ],
+  ]);
+}
 
 function mockRes() {
   const res = {} as Response;
@@ -63,6 +86,28 @@ function projectDoc(id: string, createdBy: string) {
 describe('listProjects', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(statesFor).mockResolvedValue(subscriptionOf(true) as never);
+  });
+
+  it('con la suscripción de la Empresa dueña vencida, la obra viene en sólo lectura', async () => {
+    vi.mocked(statesFor).mockResolvedValue(subscriptionOf(false) as never);
+    vi.mocked(ProjectMembership.find).mockReturnValue({
+      select: vi.fn().mockResolvedValue([]),
+    } as never);
+    vi.mocked(Project.find).mockReturnValue({
+      sort: () => ({ limit: () => Promise.resolve([projectDoc('p1', 'user-1')]) }),
+    } as never);
+    const res = mockRes();
+
+    await listProjects({ user: { sub: 'user-1' } } as never, res);
+
+    const body = vi.mocked(res.json).mock.calls[0]![0] as {
+      data: { projects: { readOnly: boolean; capabilities: string[] }[] };
+    };
+    const item = body.data.projects[0]!;
+    expect(item.readOnly).toBe(true);
+    expect(item.capabilities).toContain('activity.read');
+    expect(item.capabilities.every((c) => c.endsWith('.read'))).toBe(true);
   });
 
   it('marca gerente a quien creó la obra y le da project.invite', async () => {
@@ -211,3 +256,63 @@ describe('inviteProjectMember: entrega del mail de activación', () => {
   });
 });
 
+describe('createProject: límites de la suscripción', () => {
+  const body = {
+    name: 'Baño',
+    description: 'Remodelación',
+    location: 'Caracas',
+    estimatedStartDate: '2026-11-01',
+    estimatedEndDate: '2026-12-01',
+    currency: 'USD',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(findMyOrganizationId).mockResolvedValue('org-1');
+  });
+
+  it('en la prueba con 3 activas no crea la cuarta: pasa el error de PAID_PLAN_REQUIRED', async () => {
+    vi.mocked(decideProjectCreation).mockResolvedValue({
+      allowed: false,
+      code: 'PAID_PLAN_REQUIRED',
+    });
+    const res = mockRes();
+    const next = vi.fn();
+
+    await createProject({ user: { sub: 'user-1' }, body } as never, res, next);
+
+    expect(Project.create).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ code: 'PAID_PLAN_REQUIRED', status: 402 }));
+  });
+
+  it('vencida no crea nada', async () => {
+    vi.mocked(decideProjectCreation).mockResolvedValue({
+      allowed: false,
+      code: 'SUBSCRIPTION_REQUIRED',
+    });
+    const next = vi.fn();
+
+    await createProject({ user: { sub: 'user-1' }, body } as never, mockRes(), next);
+
+    expect(Project.create).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ code: 'SUBSCRIPTION_REQUIRED' }));
+  });
+
+  it('si la suscripción lo permite, la crea en mi Empresa', async () => {
+    vi.mocked(decideProjectCreation).mockResolvedValue({
+      allowed: true,
+      startsTrial: false,
+      isExtra: true,
+    });
+    vi.mocked(Project.create).mockResolvedValue(projectDoc('p9', 'user-1') as never);
+    const res = mockRes();
+
+    await createProject({ user: { sub: 'user-1' }, body } as never, res, vi.fn());
+
+    expect(decideProjectCreation).toHaveBeenCalledWith('org-1', 'user-1');
+    expect(Project.create).toHaveBeenCalledWith(
+      expect.objectContaining({ organization: 'org-1', createdBy: 'user-1' }),
+    );
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+});

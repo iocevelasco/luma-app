@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canInProject,
   capabilitiesInProject,
+  isReadCapability,
   PROJECT_CAPABILITIES,
   type Capability,
   type ProjectRole,
@@ -254,3 +255,26 @@ describe('contador', () => {
     ]);
   });
 });
+
+describe('modo sólo lectura (suscripción vencida)', () => {
+  it('deja sólo las capacidades .read, para cualquier rol', () => {
+    for (const role of ['gerente', 'supervisor', 'contador', 'cliente'] as const) {
+      const caps = capabilitiesInProject(role, { providersVisibleToClient: true }, { readOnly: true });
+      expect(caps.length).toBeGreaterThan(0);
+      expect(caps.every(isReadCapability)).toBe(true);
+    }
+  });
+
+  it('el gerente sigue viendo todo lo que veía, pero no puede escribir nada', () => {
+    const caps = capabilitiesInProject('gerente', undefined, { readOnly: true });
+    expect(caps).toContain('budget.read');
+    expect(caps).toContain('expense.read');
+    expect(caps).not.toContain('activity.plan');
+    expect(caps).not.toContain('advisor.use');
+  });
+
+  it('sin readOnly no cambia nada', () => {
+    expect(capabilitiesInProject('gerente', undefined, {})).toEqual(capabilitiesInProject('gerente'));
+  });
+});
+

@@ -20,6 +20,12 @@ export interface IProject extends Document {
   estimatedEndDate: string;
   currency: string;
   status: ProjectStatus;
+  /**
+   * Cuándo se archivó. La suscripción cobra cada obra por los meses en que
+   * estuvo activa, y con sólo `status` no se sabe desde cuándo dejó de
+   * estarlo. Lo pone el hook de abajo: nadie lo escribe a mano.
+   */
+  archivedAt: Date | null;
   providersVisibleToClient: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -42,6 +48,7 @@ const projectSchema = new Schema<IProject>(
     estimatedEndDate: { type: String, required: true },
     currency: { type: String, required: true, trim: true },
     status: { type: String, enum: ['active', 'archived'], default: 'active' },
+    archivedAt: { type: Date, default: null },
     // Default cerrado: el cliente no ve proveedores salvo que el dueño lo
     // habilite — la regla 4 del documento (nada de información operativa
     // interna) es el default, y esto es la excepción explícita.
@@ -49,6 +56,28 @@ const projectSchema = new Schema<IProject>(
   },
   { timestamps: true },
 );
+
+/**
+ * `archivedAt` sigue a `status`, cualquiera sea el camino del cambio: un
+ * `save()` o un `findByIdAndUpdate()`. Reactivar una obra la limpia, y desde
+ * ahí vuelve a contar como activa.
+ */
+projectSchema.pre('save', function stampArchivedAt(next) {
+  if (this.isModified('status')) {
+    this.archivedAt = this.status === 'archived' ? new Date() : null;
+  }
+  next();
+});
+
+projectSchema.pre('findOneAndUpdate', function stampArchivedAtOnUpdate(next) {
+  const update = this.getUpdate() as Record<string, unknown> | null;
+  if (!update || Array.isArray(update)) return next();
+  const status = (update.status ?? (update.$set as Record<string, unknown> | undefined)?.status) as
+    | ProjectStatus
+    | undefined;
+  if (status) this.set('archivedAt', status === 'archived' ? new Date() : null);
+  next();
+});
 
 export const Project: Model<IProject> =
   (mongoose.models.Project as Model<IProject>) ?? mongoose.model<IProject>('Project', projectSchema);

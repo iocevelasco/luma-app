@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import {
+  addMonths,
   INVITABLE_PROJECT_ROLES,
   type AccountStatus,
   type InvitableProjectRole,
@@ -32,11 +33,13 @@ import {
 import { DATABASE_CONFIG, SERVER_CONFIG } from '../config/app.config.js';
 import { Project } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
+import { SubscriptionPayment } from '../models/SubscriptionPayment.js';
 import { User, type IUser } from '../models/User.js';
 import {
   createPersonalOrganization,
   findMyOrganizationId,
 } from '../services/organization.service.js';
+import { startTrialFor } from '../services/subscription.service.js';
 
 const FIXTURE_FILE = fileURLToPath(new URL('../../../../e2e/fixtures/users.json', import.meta.url));
 const BCRYPT_ROUNDS = 10;
@@ -101,8 +104,49 @@ async function upsertUser(fixture: E2EUserFixture): Promise<IUser> {
   if (!(await findMyOrganizationId(userId))) {
     await createPersonalOrganization(userId, `Empresa de ${fixture.name}`);
   }
+  await ensureCourtesyPeriod(userId);
 
   return user;
+}
+
+/**
+ * Un año pago de cortesía para cada Empresa de E2E.
+ *
+ * Los specs crean obras en cada corrida y la base local no se limpia: con el
+ * tope de 3 obras de la prueba, a la segunda tanda ya no se podría crear
+ * ninguna, y un test de obras fallaría por una regla de la suscripción que
+ * no está probando. Los estados de la suscripción (prueba, vencida…) se
+ * prueban con sus propias cuentas, no con éstas.
+ *
+ * Idempotente: si ya hay un período aprobado que cubre hoy, no hace nada.
+ */
+async function ensureCourtesyPeriod(userId: string) {
+  const organization = await findMyOrganizationId(userId);
+  if (!organization) return;
+
+  const now = new Date();
+  const covered = await SubscriptionPayment.exists({
+    organization,
+    status: 'aprobado',
+    periodStart: { $lte: now },
+    periodEnd: { $gt: now },
+  });
+  if (covered) return;
+
+  await startTrialFor(organization, userId, now);
+  await SubscriptionPayment.create({
+    organization,
+    method: 'transferencia',
+    status: 'aprobado',
+    periodStart: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+    periodEnd: addMonths(now, 12),
+    totalUsd: 0,
+    lines: [],
+    bank: 'e2e',
+    reference: `e2e-${organization}-${now.getTime()}`,
+    submittedAt: now,
+    reviewedAt: now,
+  });
 }
 
 async function main() {

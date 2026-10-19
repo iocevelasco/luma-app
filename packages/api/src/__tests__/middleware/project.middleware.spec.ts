@@ -16,9 +16,15 @@ vi.mock('../../models/Project.js', () => ({
 vi.mock('../../models/ProjectMembership.js', () => ({
   ProjectMembership: { findOne: vi.fn() },
 }));
+vi.mock('../../services/subscription.service.js', () => ({ stateFor: vi.fn() }));
 
 const { Project } = await import('../../models/Project.js');
 const { ProjectMembership } = await import('../../models/ProjectMembership.js');
+const { stateFor } = await import('../../services/subscription.service.js');
+
+function subscription(canWrite: boolean) {
+  return { status: canWrite ? 'activa' : 'vencida', canWrite, accessUntil: null, trialDaysLeft: null };
+}
 const { requireProjectAccess, requireCapability } = await import(
   '../../middleware/project.middleware.js'
 );
@@ -50,6 +56,7 @@ describe('requireProjectAccess', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(ProjectMembership.findOne).mockReturnValue(membership(null) as never);
+    vi.mocked(stateFor).mockResolvedValue(subscription(true) as never);
   });
 
   it('404 si la obra no existe', async () => {
@@ -187,5 +194,69 @@ describe('requireCapability', () => {
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(next).not.toHaveBeenCalled();
+  });
+});
+
+describe('suscripción vencida: sólo lectura', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(ProjectMembership.findOne).mockReturnValue(membership(null) as never);
+    vi.mocked(stateFor).mockResolvedValue(subscription(false) as never);
+    vi.mocked(Project.findById).mockResolvedValue(PROJECT as never);
+  });
+
+  it('mira la suscripción de la Empresa dueña de la obra, no la de quien pregunta', async () => {
+    await requireProjectAccess(mockReq('owner-1'), mockRes(), vi.fn());
+    expect(stateFor).toHaveBeenCalledWith('org-1');
+  });
+
+  it('el gerente sigue entrando y viendo, pero `can` niega todo lo que escribe', async () => {
+    const req = mockReq('owner-1');
+    const next = vi.fn();
+
+    await requireProjectAccess(req, mockRes(), next);
+
+    expect(next).toHaveBeenCalled();
+    expect(req.projectReadOnly).toBe(true);
+    expect(req.can?.('activity.read')).toBe(true);
+    expect(req.can?.('budget.read')).toBe(true);
+    expect(req.can?.('activity.plan')).toBe(false);
+    expect(req.can?.('advisor.use')).toBe(false);
+  });
+
+  it('un invitado tampoco escribe en la obra de un dueño vencido', async () => {
+    vi.mocked(ProjectMembership.findOne).mockReturnValue(membership('supervisor') as never);
+    const req = mockReq('supervisor-1');
+
+    await requireProjectAccess(req, mockRes(), vi.fn());
+
+    expect(req.can?.('activity.report')).toBe(false);
+    expect(req.can?.('activity.read')).toBe(true);
+  });
+
+  it('requireCapability contesta 402 SUBSCRIPTION_REQUIRED, no 403, si el rol sí podía', async () => {
+    const req = mockReq('owner-1');
+    await requireProjectAccess(req, mockRes(), vi.fn());
+    const res = mockRes();
+    const next = vi.fn();
+
+    requireCapability('activity.plan')(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(402);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'SUBSCRIPTION_REQUIRED' }),
+    );
+  });
+
+  it('si el rol no podía igual, sigue siendo 403: la suscripción no es la razón', async () => {
+    vi.mocked(ProjectMembership.findOne).mockReturnValue(membership('cliente') as never);
+    const req = mockReq('cliente-1');
+    await requireProjectAccess(req, mockRes(), vi.fn());
+    const res = mockRes();
+
+    requireCapability('budget.read')(req, res, vi.fn());
+
+    expect(res.status).toHaveBeenCalledWith(403);
   });
 });

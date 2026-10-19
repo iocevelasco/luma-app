@@ -100,6 +100,21 @@ Donde `/tmp/admin.env` trae `ADMIN_EMAIL`, `ADMIN_PASSWORD` y opcionalmente
 `ADMIN_NAME`. El script es idempotente: si el usuario ya existe, le resetea la
 contraseña y lo deja como admin activo.
 
+## Lanzamiento de la suscripción (una sola vez)
+
+Al desplegar por primera vez la versión con suscripción, las Empresas que ya
+tienen obras arrancan su mes gratis **ese día**. Mismo patrón que el seed:
+compilado, dentro del contenedor.
+
+```bash
+docker exec -w /app/packages/api <container> node dist/scripts/migrate-subscriptions.js --dry-run
+docker exec -w /app/packages/api <container> node dist/scripts/migrate-subscriptions.js
+```
+
+Es idempotente: una prueba que ya existe no se reinicia. Si se olvida, no se
+rompe nada —esas Empresas quedan `sin_iniciar` y su prueba arranca con la
+próxima obra que creen—, pero el lanzamiento queda menos prolijo.
+
 ## Verificar
 
 ```bash

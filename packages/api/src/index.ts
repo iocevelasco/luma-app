@@ -22,6 +22,7 @@ import { authRouter } from './routes/auth.js';
 import { organizationRouter } from './routes/organization.js';
 import { notificationRouter } from './routes/notification.js';
 import { projectRouter } from './routes/project.js';
+import { subscriptionRouter } from './routes/subscription.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -166,6 +167,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/organizations', organizationRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/subscription', subscriptionRouter);
 
 if (isProduction) {
   // Proxy /home/* → la landing, un servicio aparte en la red interna de Docker.

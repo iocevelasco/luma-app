@@ -75,6 +75,12 @@ export interface Project {
 export interface ProjectDetail extends Project {
   role: ProjectRole;
   capabilities: Capability[];
+  /**
+   * La suscripción de la Empresa dueña de la obra venció: `capabilities` ya
+   * viene recortada a lo `.read`. El flag está para que la UI pueda explicar
+   * POR QUÉ no hay botones, no para que vuelva a filtrar nada.
+   */
+  readOnly: boolean;
 }
 
 /**
@@ -115,6 +121,8 @@ export interface ProjectMemberSummary {
 export interface ProjectListItem extends Project {
   role: ProjectRole;
   capabilities: Capability[];
+  /** Ver `ProjectDetail.readOnly`. */
+  readOnly: boolean;
 }
 
 export interface ProjectListResponse {

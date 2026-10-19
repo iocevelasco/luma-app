@@ -39,10 +39,16 @@ const KEY_BY_CODE: Record<ApiErrorCode, string> = {
  *   además está traducido.
  * - `UNAUTHENTICATED`: "No token provided" es correcto y no le dice nada a
  *   nadie.
+ * - `SUBSCRIPTION_REQUIRED` / `PAID_PLAN_REQUIRED`: el servidor no sabe nada
+ *   que el código no diga, y el nuestro está traducido.
  */
 const PREFER_OWN_MESSAGE: ReadonlySet<string> = new Set<ApiErrorCode>([
   'INTERNAL',
   'UNAUTHENTICATED',
+  // Los límites de la suscripción no dependen de nada que sólo sepa el
+  // servidor, y el texto propio está en el idioma de quien lo lee.
+  'SUBSCRIPTION_REQUIRED',
+  'PAID_PLAN_REQUIRED',
 ]);
 
 export function errorMessage(error: unknown, t: TFunction): string | null {

@@ -19,6 +19,7 @@ vi.mock('../../services/auth.service.js', () => ({
 }));
 vi.mock('../../services/jwt.service.js', () => ({ JWTService: {} }));
 vi.mock('../../services/organization.service.js', () => ({ createPersonalOrganization: vi.fn() }));
+vi.mock('../../services/subscription.service.js', () => ({ startTrialFor: vi.fn() }));
 vi.mock('../../services/recaptcha.service.js', () => ({ verifyRecaptchaFromRequest: vi.fn() }));
 
 const { User } = await import('../../models/User.js');

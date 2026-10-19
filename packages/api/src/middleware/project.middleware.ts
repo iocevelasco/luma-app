@@ -3,11 +3,13 @@ import type { NextFunction, Request, Response } from 'express';
 import {
   canInProject,
   capabilitiesInProject,
+  isReadCapability,
   type Capability,
   type ProjectRole,
 } from '@luma/shared';
 import { Project, type IProject } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
+import { stateFor } from '../services/subscription.service.js';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -22,6 +24,12 @@ declare global {
        * rol nuevo, la grilla de `@luma/shared` es el único lugar a tocar.
        */
       can?: (capability: Capability) => boolean;
+      /**
+       * La suscripción de la Empresa dueña de la obra venció: `can` ya
+       * niega todo lo que no sea `.read`. Vale para todos los roles —un
+       * supervisor invitado tampoco escribe en la obra de un dueño vencido—.
+       */
+      projectReadOnly?: boolean;
     }
   }
 }
@@ -58,7 +66,8 @@ export async function requireProjectAccess(req: Request, res: Response, next: Ne
       return res.status(404).json({ success: false, error: 'Obra no encontrada' });
     }
 
-    attachProjectRole(req, project, role);
+    const subscription = await stateFor(project.organization);
+    attachProjectRole(req, project, role, !subscription.canWrite);
     next();
   } catch (error) {
     // Un id con formato inválido también "no existe" — no es un 500.
@@ -85,18 +94,29 @@ export async function resolveProjectRole(
   return membership?.role ?? null;
 }
 
-/** Deja la obra, el rol y el `can` colgados de la request. */
-function attachProjectRole(req: Request, project: IProject, role: ProjectRole) {
-  const can = (capability: Capability) => canInProject(role, capability, project);
+/** Deja la obra, el rol, el `can` y el modo sólo lectura colgados de la request. */
+function attachProjectRole(
+  req: Request,
+  project: IProject,
+  role: ProjectRole,
+  readOnly: boolean,
+) {
+  const can = (capability: Capability) =>
+    canInProject(role, capability, project) && (!readOnly || isReadCapability(capability));
 
   req.project = project;
   req.projectRole = role;
+  req.projectReadOnly = readOnly;
   req.can = can;
 }
 
-/** Todo lo que esta persona puede hacer en esta obra, flags ya aplicados. */
-export function projectCapabilitiesFor(project: IProject, role: ProjectRole): Capability[] {
-  return capabilitiesInProject(role, project);
+/** Todo lo que esta persona puede hacer en esta obra, flags y suscripción ya aplicados. */
+export function projectCapabilitiesFor(
+  project: IProject,
+  role: ProjectRole,
+  readOnly = false,
+): Capability[] {
+  return capabilitiesInProject(role, project, { readOnly });
 }
 
 /**
@@ -107,6 +127,19 @@ export function projectCapabilitiesFor(project: IProject, role: ProjectRole): Ca
 export function requireCapability(capability: Capability) {
   return function capabilityGate(req: Request, res: Response, next: NextFunction) {
     if (req.can?.(capability)) return next();
+
+    // El rol sí podría, pero la obra está en sólo lectura: no es un permiso
+    // que falta, es una suscripción vencida, y la UI tiene que poder decirlo.
+    if (req.projectReadOnly && req.projectRole && req.project) {
+      if (canInProject(req.projectRole, capability, req.project)) {
+        return res.status(402).json({
+          success: false,
+          error: 'La suscripción de esta obra venció: está en sólo lectura.',
+          code: 'SUBSCRIPTION_REQUIRED',
+          details: { capability },
+        });
+      }
+    }
 
     return res.status(403).json({
       success: false,
