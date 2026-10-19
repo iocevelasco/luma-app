@@ -26,6 +26,8 @@ const KEY_BY_CODE: Record<ApiErrorCode, string> = {
   PAYLOAD_TOO_LARGE: 'errors.payloadTooLarge',
   RATE_LIMITED: 'errors.rateLimited',
   SERVICE_UNAVAILABLE: 'errors.serviceUnavailable',
+  SUBSCRIPTION_REQUIRED: 'errors.subscriptionRequired',
+  PAID_PLAN_REQUIRED: 'errors.paidPlanRequired',
   INTERNAL: 'errors.internal',
 };
 

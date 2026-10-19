@@ -1084,6 +1084,8 @@
     "payloadTooLarge": "El archivo es demasiado grande.",
     "rateLimited": "Demasiados intentos. Esperá un momento y probá de nuevo.",
     "serviceUnavailable": "Ese servicio no está disponible en este momento.",
+    "subscriptionRequired": "Tu suscripción venció: tus obras están en sólo lectura. Renová el plan para volver a editar.",
+    "paidPlanRequired": "En el mes gratis podés tener hasta 3 obras activas. Activá el plan para crear la cuarta.",
     "internal": "Algo falló de nuestro lado. Probá de nuevo en un momento.",
     "network": "No pudimos conectarnos. Revisá tu conexión.",
     "title": "No se pudo guardar"

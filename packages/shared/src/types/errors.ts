@@ -31,6 +31,13 @@ export type ApiErrorCode =
   | 'RATE_LIMITED'
   /** Una dependencia no está configurada o no responde (storage, IA). */
   | 'SERVICE_UNAVAILABLE'
+  /** La suscripción de la Empresa venció: las obras están en sólo lectura. */
+  | 'SUBSCRIPTION_REQUIRED'
+  /**
+   * En la prueba ya tiene 3 obras activas: para crear la cuarta tiene que
+   * activar el plan pago, y eso termina la prueba ese día.
+   */
+  | 'PAID_PLAN_REQUIRED'
   /** Cualquier otra cosa. Nunca lleva el detalle interno hacia afuera. */
   | 'INTERNAL';
 
@@ -64,6 +71,9 @@ export const STATUS_BY_ERROR_CODE: Record<ApiErrorCode, number> = {
   PAYLOAD_TOO_LARGE: 413,
   RATE_LIMITED: 429,
   SERVICE_UNAVAILABLE: 503,
+  // 402 Payment Required. `errorCodeForStatus(402)` devuelve el primero.
+  SUBSCRIPTION_REQUIRED: 402,
+  PAID_PLAN_REQUIRED: 402,
   INTERNAL: 500,
 };
 
