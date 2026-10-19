@@ -72,7 +72,8 @@ const chargeLineSchema = new Schema<ChargeLine>(
     kind: { type: String, enum: ['base', 'extra', 'prorrateo'], required: true },
     quantity: { type: Number, required: true, min: 0 },
     unitUsd: { type: Number, required: true, min: 0 },
-    amountUsd: { type: Number, required: true, min: 0, set: roundMoney },
+    // Sin `min: 0`: un prorrateo de Stripe puede ser un crédito.
+    amountUsd: { type: Number, required: true, set: roundMoney },
     projectId: { type: String },
     days: { type: Number },
   },

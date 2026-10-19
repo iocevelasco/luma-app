@@ -376,7 +376,7 @@ export async function recordPaidInvoice(invoice: StripeInvoice) {
   }
 
   const prices = await resolvePrices();
-  const lines: ChargeLine[] = invoice.lines.data.map((line) => {
+  const rawLines: ChargeLine[] = invoice.lines.data.map((line) => {
     const priceId = line.price?.id ?? line.pricing?.price_details?.price;
     const proration = line.proration ?? line.parent?.subscription_item_details?.proration ?? false;
     const quantity = line.quantity ?? 1;
@@ -389,11 +389,26 @@ export async function recordPaidInvoice(invoice: StripeInvoice) {
     return { kind, quantity, unitUsd: quantity ? amountUsd / quantity : amountUsd, amountUsd };
   });
 
+  // Stripe prorratea un cambio de cantidad en DOS líneas: un crédito por lo
+  // que no se usó con la cantidad vieja y un cargo por el resto con la nueva
+  // (de 1 a 2 extras: −$8 y +$16 → +$8). Se guardan como una línea neta:
+  // es la que se corresponde con "una obra extra prorrateada".
+  const prorations = rawLines.filter((line) => line.kind === 'prorrateo');
+  const netProration = Math.round(prorations.reduce((sum, l) => sum + l.amountUsd, 0) * 100) / 100;
+  const lines: ChargeLine[] = [
+    ...rawLines.filter((line) => line.kind !== 'prorrateo'),
+    ...(prorations.length
+      ? [{ kind: 'prorrateo' as const, quantity: 1, unitUsd: netProration, amountUsd: netProration }]
+      : []),
+  ];
+
   // El período que cubre: el de las líneas que no son prorrateo (el mes que
-  // se paga por adelantado). Un prorrateo es del mes que ya pasó.
-  const periods = invoice.lines.data
-    .filter((line, i) => line.period && lines[i]!.kind !== 'prorrateo')
-    .map((line) => line.period!);
+  // se paga por adelantado). Un prorrateo es del mes en curso, ya cubierto;
+  // sólo se usa si la factura no trae otra cosa (una factura suelta de
+  // prorrateos), y entonces el período cae dentro de lo que ya estaba pago.
+  const withPeriod = invoice.lines.data.filter((line) => line.period);
+  const advance = withPeriod.filter((line) => rawLines[invoice.lines.data.indexOf(line)]!.kind !== 'prorrateo');
+  const periods = (advance.length ? advance : withPeriod).map((line) => line.period!);
   if (periods.length === 0) {
     console.warn(`⚠️  [STRIPE] Factura ${invoice.id} sin período: no se registra`);
     return;

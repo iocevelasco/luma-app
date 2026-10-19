@@ -170,6 +170,13 @@ export const STRIPE_CONFIG = {
    */
   BASE_PRICE_LOOKUP_KEY: process.env.STRIPE_BASE_PRICE_LOOKUP_KEY ?? 'luma_base_monthly',
   EXTRA_PRICE_LOOKUP_KEY: process.env.STRIPE_EXTRA_PRICE_LOOKUP_KEY ?? 'luma_extra_project_monthly',
+  /**
+   * Código de impuesto del producto: "Software as a service (SaaS) - business
+   * use". Stripe lo exige cuando la cuenta tiene Managed Payments (Stripe como
+   * vendedor registrado, activado por defecto en cuentas nuevas) y lo usa
+   * Stripe Tax si se activa. Luma es software para empresas, no consumidores.
+   */
+  PRODUCT_TAX_CODE: process.env.STRIPE_PRODUCT_TAX_CODE ?? 'txcd_10103001',
   ENABLED: Boolean(process.env.STRIPE_SECRET_KEY),
 } as const;
 

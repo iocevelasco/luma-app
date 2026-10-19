@@ -3,6 +3,7 @@ import {
   PLAN,
   activeProjectsAt,
   canCreateProject,
+  effectiveTrialEnd,
   nextPeriodStart,
   quoteCharge,
   startTrial,
@@ -205,7 +206,8 @@ export async function summaryFor(
     status: state.status,
     canWrite: state.canWrite,
     accessUntil: state.accessUntil?.toISOString() ?? null,
-    trialEndsAt: facts.trialEndsAt?.toISOString() ?? null,
+    // El fin efectivo: si se cortó para crear la cuarta obra, ése.
+    trialEndsAt: effectiveTrialEnd(facts)?.toISOString() ?? null,
     trialDaysLeft: state.trialDaysLeft,
     activeProjects: activeProjectsAt(projects, now),
     includedProjects: PLAN.includedProjects,

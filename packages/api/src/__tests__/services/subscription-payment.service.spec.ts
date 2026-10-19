@@ -270,6 +270,30 @@ describe('reviewSubscriptionPayment', () => {
   });
 });
 
+describe('toPaymentSummary', () => {
+  it('las líneas salen limpias, sin la maquinaria de Mongoose', async () => {
+    // Imita un subdocumento: propiedades internas además de las del esquema.
+    const subdoc = Object.assign(Object.create({ $__parent: {} }), {
+      kind: 'base',
+      quantity: 1,
+      unitUsd: 39,
+      amountUsd: 39,
+      __parentArray: [],
+    });
+    const summary = await svc.toPaymentSummary({
+      _id: 'p1',
+      method: 'stripe',
+      status: 'aprobado',
+      periodStart: d('2026-11-09T00:00:00Z'),
+      periodEnd: d('2026-12-09T00:00:00Z'),
+      lines: [subdoc],
+      submittedAt: d('2026-11-09T00:00:00Z'),
+      receipt: null,
+    } as never);
+    expect(summary.lines).toEqual([{ kind: 'base', quantity: 1, unitUsd: 39, amountUsd: 39 }]);
+  });
+});
+
 describe('detalles', () => {
   it('hasAmountMismatch avisa a partir de más de un 1% de diferencia', () => {
     const p = (declared: number) => ({ amountBs: 1000, declaredAmountBs: declared }) as never;

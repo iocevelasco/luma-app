@@ -274,7 +274,16 @@ export async function toPaymentSummary(
     periodStart: payment.periodStart.toISOString(),
     periodEnd: payment.periodEnd.toISOString(),
     activatesNow: payment.activatesNow,
-    lines: payment.lines.map((line) => ({ ...line })),
+    // Campo por campo: un spread de un subdocumento de Mongoose arrastra su
+    // maquinaria interna (`$__parent`, `__parentArray`…) hasta el JSON.
+    lines: payment.lines.map((line) => ({
+      kind: line.kind,
+      quantity: line.quantity,
+      unitUsd: line.unitUsd,
+      amountUsd: line.amountUsd,
+      ...(line.projectId ? { projectId: line.projectId } : {}),
+      ...(line.days != null ? { days: line.days } : {}),
+    })),
     totalUsd: payment.totalUsd,
     bcvRate: payment.bcvRate,
     rateValueDate: payment.rateValueDate,

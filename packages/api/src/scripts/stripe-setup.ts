@@ -50,11 +50,26 @@ async function main() {
     const product = await stripeRequest<{ id: string }>(
       'POST',
       '/products',
-      { name: 'Luma', description: 'Gestión de obras y remodelaciones' },
-      { idempotencyKey: 'luma-product-v1' },
+      {
+        name: 'Luma',
+        description: 'Gestión de obras y remodelaciones',
+        tax_code: STRIPE_CONFIG.PRODUCT_TAX_CODE,
+      },
+      { idempotencyKey: 'luma-product-v2' },
     );
     productId = product.id;
     console.log(`🆕 Producto ${productId}`);
+  } else {
+    // Un producto creado antes de que el código de impuesto fuera obligatorio.
+    const product = await stripeRequest<{ tax_code: string | null }>('GET', `/products/${productId}`);
+    if (product.tax_code !== STRIPE_CONFIG.PRODUCT_TAX_CODE) {
+      await stripeRequest('POST', `/products/${productId}`, {
+        tax_code: STRIPE_CONFIG.PRODUCT_TAX_CODE,
+      });
+      console.log(`🔧 Producto ${productId}: código de impuesto ${STRIPE_CONFIG.PRODUCT_TAX_CODE}`);
+    } else {
+      console.log(`✅ Producto ${productId} (impuesto ${product.tax_code})`);
+    }
   }
 
   for (const price of wanted) {

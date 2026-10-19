@@ -209,7 +209,9 @@ describe('recordPaidInvoice', () => {
       data: [
         { amount: 3900, quantity: 1, pricing: { price_details: { price: 'price_base' } }, period: { start: sec('2026-11-09T00:00:00Z'), end: sec('2026-12-09T00:00:00Z') } },
         { amount: 800, quantity: 1, pricing: { price_details: { price: 'price_extra' } }, period: { start: sec('2026-11-09T00:00:00Z'), end: sec('2026-12-09T00:00:00Z') } },
-        { amount: 400, quantity: 1, parent: { subscription_item_details: { proration: true } }, pricing: { price_details: { price: 'price_extra' } }, period: { start: sec('2026-10-25T00:00:00Z'), end: sec('2026-11-09T00:00:00Z') } },
+        // Así prorratea Stripe un 1 → 2: crédito por la cantidad vieja, cargo por la nueva.
+        { amount: -400, quantity: 1, parent: { subscription_item_details: { proration: true } }, pricing: { price_details: { price: 'price_extra' } }, period: { start: sec('2026-10-25T00:00:00Z'), end: sec('2026-11-09T00:00:00Z') } },
+        { amount: 800, quantity: 2, parent: { subscription_item_details: { proration: true } }, pricing: { price_details: { price: 'price_extra' } }, period: { start: sec('2026-10-25T00:00:00Z'), end: sec('2026-11-09T00:00:00Z') } },
       ],
     },
     ...extra,
@@ -229,7 +231,31 @@ describe('recordPaidInvoice', () => {
       periodStart: d('2026-11-09T00:00:00Z'),
       periodEnd: d('2026-12-09T00:00:00Z'),
     });
-    expect((update as any).$setOnInsert.lines.map((l: any) => l.kind)).toEqual(['base', 'extra', 'prorrateo']);
+    const lines = (update as any).$setOnInsert.lines;
+    expect(lines.map((l: any) => l.kind)).toEqual(['base', 'extra', 'prorrateo']);
+    // El crédito y el cargo del prorrateo quedan como una línea neta: −4 + 8 = 4.
+    expect(lines[2].amountUsd).toBe(4);
+  });
+
+  it('una factura suelta de prorrateos se registra igual, con el período de los prorrateos', async () => {
+    const onlyProration = invoice({
+      amount_paid: 400,
+      parent: null,
+      lines: { data: invoice().lines.data.slice(2) },
+    });
+    vi.mocked(Subscription.findOne).mockReturnValue({
+      select: () => Promise.resolve({ organization: 'org-1' }),
+    } as never);
+
+    await svc.recordPaidInvoice(onlyProration as never);
+
+    const [, update] = vi.mocked(SubscriptionPayment.updateOne).mock.calls[0]!;
+    expect((update as any).$setOnInsert).toMatchObject({
+      organization: 'org-1',
+      totalUsd: 4,
+      periodStart: d('2026-10-25T00:00:00Z'),
+      periodEnd: d('2026-11-09T00:00:00Z'),
+    });
   });
 
   it('la factura de $0 de una prueba no se registra', async () => {
