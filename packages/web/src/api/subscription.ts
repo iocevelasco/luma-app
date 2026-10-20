@@ -8,6 +8,7 @@ import type {
   ExchangeRatesResponse,
   ManualExchangeRateInput,
   ReviewSubscriptionPaymentInput,
+  StripeCheckoutStart,
   SubscriptionOverview,
   SubscriptionPaymentStatus,
   SubscriptionPaymentSummary,
@@ -34,7 +35,9 @@ export const subscriptionApi = {
     if (activateNow) params.set('activateNow', 'true');
     if (activateNow && includeNextProject) params.set('includeNextProject', 'true');
     const query = params.toString();
-    return unwrap<BolivaresQuote>(apiClient.get(`/api/subscription/quote${query ? `?${query}` : ''}`));
+    return unwrap<BolivaresQuote>(
+      apiClient.get(`/api/subscription/quote${query ? `?${query}` : ''}`),
+    );
   },
 
   payments: () =>
@@ -58,7 +61,7 @@ export const subscriptionApi = {
   },
 
   stripeCheckout: (options: { activateNow: boolean; includeNextProject?: boolean }) =>
-    unwrap<{ url: string }>(apiClient.post('/api/subscription/stripe/checkout', options)),
+    unwrap<StripeCheckoutStart>(apiClient.post('/api/subscription/stripe/checkout', options)),
 
   stripePortal: () => unwrap<{ url: string }>(apiClient.post('/api/subscription/stripe/portal')),
 };

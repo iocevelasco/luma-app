@@ -1235,7 +1235,7 @@
     "pay": {
       "title": "Pagar",
       "card": "Pagar com cartão (USD)",
-      "cardHint": "Levamos você à página segura do Stripe. Se estiver no mês grátis, nada é cobrado até ele terminar.",
+      "cardHint": "O pagamento é processado com segurança pela Stripe. Se você está no mês grátis, nada é cobrado até ele terminar.",
       "manageCard": "Gerenciar cartão",
       "manageCardHint": "Trocar o cartão, ver faturas ou cancelar, no Stripe.",
       "bolivares": "Pagar em bolívares",
@@ -1325,6 +1325,13 @@
       "totalNow": "Hoje você paga {{amount}} pelo primeiro mês.",
       "totalLater": "Você paga {{amount}} pelo primeiro mês, que começa em {{date}}.",
       "payCard": "Pagar com cartão"
+    },
+    "cardCheckout": {
+      "title": "Pagar com cartão",
+      "description": "O pagamento é processado pela Stripe: a Luma nunca vê os dados do seu cartão.",
+      "loading": "Carregando o pagamento seguro…",
+      "error": "Não conseguimos carregar o formulário de pagamento. Verifique sua conexão e tente de novo.",
+      "retry": "Tentar de novo"
     }
   },
   "platform": {

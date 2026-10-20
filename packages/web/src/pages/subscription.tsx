@@ -13,6 +13,7 @@ import type {
 } from '@luma/shared';
 import { PageLayout } from '@/components/layout/page-layout';
 import { BolivaresPaymentDrawer } from '@/components/subscription/bolivares-payment-drawer';
+import { useCardCheckout } from '@/components/subscription/card-checkout-dialog';
 import { PaymentStatusBadge } from '@/components/subscription/payment-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   useInvalidateSubscription,
   useMySubscription,
-  useStripeCheckout,
   useStripePortal,
   useSubscriptionPayments,
 } from '@/hooks/subscription/use-subscription-queries';
@@ -133,13 +133,14 @@ function PayCard({
   subscription,
   hasPendingPayment,
   onPayInBolivares,
+  cardPayment,
 }: {
   subscription: SubscriptionOverview;
   hasPendingPayment: boolean;
   onPayInBolivares: () => void;
+  cardPayment: CardPayment;
 }) {
   const { t } = useTranslation();
-  const checkout = useStripeCheckout();
   const portal = useStripePortal();
   const liveCard = hasLiveCard(subscription);
   // Con un pago en Bs esperando revisión no se manda otro (la API contesta 409).
@@ -183,8 +184,8 @@ function PayCard({
             t('subscription.pay.card'),
             t('subscription.pay.cardHint'),
             <Button
-              onClick={() => checkout.mutate({ activateNow: false })}
-              disabled={checkout.isPending || inReview}
+              onClick={() => cardPayment.start({ activateNow: false })}
+              disabled={cardPayment.isPending || inReview}
             >
               {t('subscription.pay.card')}
             </Button>,
@@ -209,6 +210,12 @@ function PayCard({
 
 type UpgradeStart = 'now' | 'trialEnd';
 
+/** Abrir el pago con tarjeta (ver `useCardCheckout`). */
+interface CardPayment {
+  start: (options: { activateNow: boolean }) => void;
+  isPending: boolean;
+}
+
 /**
  * Pasar de Gratis a Pro cuando la persona quiera, sin esperar a la cuarta obra.
  *
@@ -224,13 +231,14 @@ type UpgradeStart = 'now' | 'trialEnd';
 function UpgradeCard({
   subscription,
   onPayInBolivares,
+  cardPayment,
 }: {
   subscription: SubscriptionOverview;
   onPayInBolivares: (activateNow: boolean) => void;
+  cardPayment: CardPayment;
 }) {
   const { t, i18n } = useTranslation();
   const formatDate = useFormatDate();
-  const checkout = useStripeCheckout();
   const [start, setStart] = useState<UpgradeStart>('now');
   const { card, bolivares } = subscription.paymentOptions;
   const activateNow = start === 'now';
@@ -300,7 +308,10 @@ function UpgradeCard({
             </Button>
           )}
           {card && (
-            <Button onClick={() => checkout.mutate({ activateNow })} disabled={checkout.isPending}>
+            <Button
+              onClick={() => cardPayment.start({ activateNow })}
+              disabled={cardPayment.isPending}
+            >
               <CreditCard className="size-4" />
               {t('subscription.upgrade.payCard')}
             </Button>
@@ -377,8 +388,9 @@ function HistoryCard({ payments }: { payments: SubscriptionPaymentSummary[] }) {
  * y qué pagué. Todo lo que se muestra viene resuelto de la API; acá no se
  * calcula ni un día ni un dólar.
  *
- * Al volver de Stripe (`?stripe=ok`) el webhook puede tardar unos segundos:
- * la pantalla consulta seguido un rato hasta que se refleja.
+ * Después de pagar con tarjeta —en el modal, o al volver de la página de
+ * Stripe con `?stripe=ok`— el webhook puede tardar unos segundos: la pantalla
+ * consulta seguido un rato hasta que se refleja.
  */
 export function SubscriptionPage() {
   const { t } = useTranslation();
@@ -393,14 +405,20 @@ export function SubscriptionPage() {
   const { data: payments = [] } = useSubscriptionPayments();
   const hasPendingPayment = payments.some((payment) => payment.status === 'pendiente');
 
+  const waitForStripe = () => {
+    toast.success(t('subscription.stripeReturn.ok'));
+    setWaitingStripe(true);
+    invalidate();
+    window.setTimeout(() => setWaitingStripe(false), STRIPE_RETURN_POLL_MS);
+  };
+  const cardCheckout = useCardCheckout({ onComplete: waitForStripe });
+  const cardPayment: CardPayment = { start: cardCheckout.start, isPending: cardCheckout.isPending };
+
   useEffect(() => {
     const stripe = searchParams.get('stripe');
     if (!stripe) return;
     if (stripe === 'ok') {
-      toast.success(t('subscription.stripeReturn.ok'));
-      setWaitingStripe(true);
-      invalidate();
-      window.setTimeout(() => setWaitingStripe(false), STRIPE_RETURN_POLL_MS);
+      waitForStripe();
     } else {
       toast(t('subscription.stripeReturn.cancel'));
     }
@@ -430,6 +448,7 @@ export function SubscriptionPage() {
               <UpgradeCard
                 subscription={subscription}
                 onPayInBolivares={(activateNow) => setBolivaresMode({ activateNow })}
+                cardPayment={cardPayment}
               />
             ) : (
               subscription.status !== 'sin_iniciar' && (
@@ -437,6 +456,7 @@ export function SubscriptionPage() {
                   subscription={subscription}
                   hasPendingPayment={hasPendingPayment}
                   onPayInBolivares={() => setBolivaresMode({ activateNow: false })}
+                  cardPayment={cardPayment}
                 />
               )
             )}
@@ -449,6 +469,7 @@ export function SubscriptionPage() {
         onOpenChange={(open) => !open && setBolivaresMode(null)}
         activateNow={bolivaresMode?.activateNow ?? false}
       />
+      {cardCheckout.dialog}
     </>
   );
 }

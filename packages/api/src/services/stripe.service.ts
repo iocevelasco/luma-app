@@ -5,6 +5,7 @@ import {
   nextPeriodStart,
   subscriptionState,
   type ChargeLine,
+  type StripeCheckoutStart,
   type StripeSubscriptionStatus,
 } from '@luma/shared';
 import { STRIPE_CONFIG } from '../config/app.config.js';
@@ -138,7 +139,7 @@ export async function createCheckoutSession(params: {
   /** Con `activateNow`: la cuarta obra, que se va a crear, entra ya en el primer cobro. */
   includeNextProject?: boolean;
   now?: Date;
-}): Promise<{ url: string }> {
+}): Promise<StripeCheckoutStart> {
   ensureEnabled();
   const now = params.now ?? new Date();
   const [facts, projects, subscription] = await Promise.all([
@@ -176,7 +177,10 @@ export async function createCheckoutSession(params: {
     activateNow: String(params.activateNow),
   };
 
-  const session = await stripeRequest<{ url: string }>('POST', '/checkout/sessions', {
+  const embedded = Boolean(STRIPE_CONFIG.PUBLISHABLE_KEY);
+  const returnUrl = appUrl(`${SUBSCRIPTION_PAGE}?stripe=ok`);
+
+  const session = await stripeRequest<{ url: string | null; client_secret: string | null }>('POST', '/checkout/sessions', {
     mode: 'subscription',
     customer,
     client_reference_id: String(params.organizationId),
@@ -191,10 +195,31 @@ export async function createCheckoutSession(params: {
     },
     metadata,
     locale: 'es',
-    success_url: appUrl(`${SUBSCRIPTION_PAGE}?stripe=ok`),
-    cancel_url: appUrl(`${SUBSCRIPTION_PAGE}?stripe=cancel`),
+    ...(embedded
+      ? {
+          // En el modal: al terminar con tarjeta avisa `onComplete` y no hay
+          // salto. Sólo vuelve por `return_url` un medio que necesite irse
+          // del sitio para confirmar.
+          ui_mode: 'embedded',
+          redirect_on_completion: 'if_required',
+          return_url: returnUrl,
+        }
+      : {
+          success_url: returnUrl,
+          cancel_url: appUrl(`${SUBSCRIPTION_PAGE}?stripe=cancel`),
+        }),
   });
-  return { url: session.url };
+
+  if (embedded) {
+    if (!session.client_secret) throw serviceUnavailable('Stripe no devolvió el checkout.');
+    return {
+      mode: 'embedded',
+      clientSecret: session.client_secret,
+      publishableKey: STRIPE_CONFIG.PUBLISHABLE_KEY!,
+    };
+  }
+  if (!session.url) throw serviceUnavailable('Stripe no devolvió el checkout.');
+  return { mode: 'hosted', url: session.url };
 }
 
 /** El portal de Stripe: cambiar tarjeta, ver facturas, dar de baja. */

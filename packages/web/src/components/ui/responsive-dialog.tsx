@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,29 @@ export interface ResponsiveDialogProps {
    * Radix exige un título accesible aunque el diseño no lo muestre.
    */
   hideHeader?: boolean;
+  /**
+   * `false` para contenido de terceros que abre sus propias capas fuera del
+   * diálogo (el checkout de Stripe: captcha, 3D Secure). Un diálogo modal
+   * atrapa el foco y bloquea los clics fuera de él, y esas capas quedan
+   * inutilizables. Sin modal se dibuja igual el fondo oscuro, pero tocar
+   * afuera no cierra: se cierra con la X, Escape o deslizando.
+   */
+  modal?: boolean;
 }
+
+/** Fondo de un diálogo no modal: Radix sólo dibuja el suyo en modo modal. */
+function NonModalBackdrop() {
+  return createPortal(
+    <div aria-hidden className="fixed inset-0 z-50 bg-black/50" />,
+    document.body,
+  );
+}
+
+/** Que tocar afuera (o que el foco se vaya a un iframe de afuera) no cierre. */
+const stayOpen = {
+  onInteractOutside: (event: Event) => event.preventDefault(),
+  onFocusOutside: (event: Event) => event.preventDefault(),
+};
 
 export function ResponsiveDialog({
   open,
@@ -47,15 +70,18 @@ export function ResponsiveDialog({
   children,
   className,
   hideHeader,
+  modal = true,
 }: ResponsiveDialogProps) {
   const isMobile = useIsMobile();
+  const nonModal = modal ? {} : stayOpen;
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+      <Drawer open={open} onOpenChange={onOpenChange} direction="bottom" modal={modal}>
+        {!modal && open && <NonModalBackdrop />}
         {/* 85vh y no 100: dejar ver un poco del fondo es lo que comunica que
             esto se cierra deslizando hacia abajo. */}
-        <DrawerContent className={cn('max-h-[85vh]', className)}>
+        <DrawerContent className={cn('max-h-[85vh]', className)} {...nonModal}>
           <DrawerHeader className={hideHeader ? 'sr-only' : 'text-left'}>
             <DrawerTitle>{title}</DrawerTitle>
             {description ? <DrawerDescription>{description}</DrawerDescription> : null}
@@ -67,8 +93,9 @@ export function ResponsiveDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn('sm:max-w-lg', className)}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={modal}>
+      {!modal && open && <NonModalBackdrop />}
+      <DialogContent className={cn('sm:max-w-lg', className)} {...nonModal}>
         <DialogHeader className={hideHeader ? 'sr-only' : undefined}>
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}

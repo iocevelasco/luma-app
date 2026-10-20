@@ -68,8 +68,10 @@ TRANSFER_ACCOUNT=0102-0000-11-2222222222
 TRANSFER_HOLDER=Luma Pruebas C.A.
 TRANSFER_ID=J-50000000-1
 
-# Pago con tarjeta: la secret key del sandbox de Stripe (sk_test_…).
+# Pago con tarjeta: las claves del sandbox de Stripe (Developers → API keys).
 STRIPE_SECRET_KEY=sk_test_...
+# Con la publishable el pago se abre en un modal; sin ella, va a la página de Stripe.
+STRIPE_PUBLISHABLE_KEY=pk_test_...
 # Lo imprime `stripe listen` (ver 2.4). Sin él, el pago con tarjeta se hace
 # en Stripe pero la app no se entera.
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -185,18 +187,21 @@ dejó uno pendiente (con monto que no coincide).
 
 Requiere 2.4 funcionando (`stripe listen` corriendo).
 
-1. *Suscripción → Pasar a Pro → Pagar con tarjeta* → te lleva a Stripe Checkout.
+1. *Suscripción → Pasar a Pro → Pagar con tarjeta* → se abre el formulario de
+   Stripe en un modal (en el celular, un panel desde abajo). Sin
+   `STRIPE_PUBLISHABLE_KEY` te lleva a la página de Stripe.
 2. Tarjetas de prueba de Stripe (vencimiento: cualquier fecha futura; CVC:
    cualquiera; código postal: cualquiera):
 
    | Tarjeta | Qué pasa |
    |---|---|
    | `4242 4242 4242 4242` | pago aprobado |
-   | `4000 0025 0000 3155` | pide autenticación 3D Secure (aprobala en la ventana de prueba) |
+   | `4000 0025 0000 3155` | pide autenticación 3D Secure (aprobala en la ventana de prueba, que se abre dentro del modal) |
    | `4000 0000 0000 9995` | rechazada por fondos insuficientes |
    | `4000 0000 0000 0341` | la guarda bien pero **falla al cobrar**: sirve para ver *Cobro fallido* en una renovación |
 
-3. Al volver, la pantalla dice "Stripe confirmó el pago" y en unos segundos
+3. Al terminar se cierra el modal (o volvés de Stripe), la pantalla dice
+   "Stripe confirmó el pago" y en unos segundos
    (cuando llega el webhook) queda en **Pro**, con la factura en el historial.
 4. **Administrar tarjeta** abre el portal de Stripe: cambiar tarjeta, ver
    facturas, cancelar.
@@ -247,6 +252,8 @@ Con `seed:subscription-demo`, `demo-por-vencer` recibe el de 3 días y
 | No está la opción de pagar en bolívares | faltan `PAGO_MOVIL_*` y/o `TRANSFER_*` | 2.1 y reiniciar la API |
 | "No tenemos una tasa BCV actualizada" | no hay ninguna tasa guardada y el BCV no respondió | 2.2 |
 | No está la opción de tarjeta | falta `STRIPE_SECRET_KEY` | 2.1 |
+| Pagar con tarjeta va a la página de Stripe y no abre el modal | falta `STRIPE_PUBLISHABLE_KEY`, o es de otro modo que la secret (`pk_live_` con `sk_test_`; la API lo avisa al arrancar) | 2.1 y reiniciar la API |
+| El modal queda en "No pudimos cargar el formulario" | el navegador no llega a `js.stripe.com` (bloqueador de anuncios, red) | probar sin el bloqueador |
 | "Faltan los precios en Stripe" | no se corrió `stripe:setup` en ese sandbox | 2.4 |
 | Checkout dice "the product tax code is missing" | la cuenta tiene Managed Payments y el producto no tiene código de impuesto | volver a correr `stripe:setup` (lo completa) |
 | Pagué con tarjeta y sigue en Gratis | no llegó el webhook | `stripe listen` corriendo y `STRIPE_WEBHOOK_SECRET` igual al que imprime |
@@ -275,7 +282,7 @@ Con `seed:subscription-demo`, `demo-por-vencer` recibe el de 3 días y
 | `GET /api/subscription/quote?activateNow=&includeNextProject=` | cuánto pagar en Bs y dónde |
 | `GET /api/subscription/rate` | tasa BCV vigente |
 | `GET` / `POST /api/subscription/payments` | historial / mandar un pago en Bs (multipart, campo `receipt`) |
-| `POST /api/subscription/stripe/checkout` | `{ activateNow?, includeNextProject? }` → URL de Stripe Checkout |
+| `POST /api/subscription/stripe/checkout` | `{ activateNow?, includeNextProject? }` → `{ mode: 'embedded', clientSecret, publishableKey }` para el modal, o `{ mode: 'hosted', url }` |
 | `POST /api/subscription/stripe/portal` | URL del portal de Stripe |
 | `POST /api/billing/stripe/webhook` | lo llama Stripe; autentica la firma |
 | `GET /api/admin/subscription-payments?status=` | cola del admin (`pendiente`, `aprobado`, `rechazado`) |

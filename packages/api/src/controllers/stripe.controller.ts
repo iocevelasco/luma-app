@@ -19,18 +19,19 @@ async function myOrganization(req: Request): Promise<string> {
 
 /**
  * `POST /api/subscription/stripe/checkout` `{ activateNow?, includeNextProject? }`
- * → `{ url }` de Stripe Checkout.
+ * → `StripeCheckoutStart`: el `clientSecret` para el modal, o la `url` de la
+ * página de Stripe si no hay publishable key.
  */
 export async function startStripeCheckout(req: Request, res: Response, next: NextFunction) {
   try {
     const organizationId = await myOrganization(req);
-    const { url } = await createCheckoutSession({
+    const start = await createCheckoutSession({
       organizationId,
       userId: req.user!.sub,
       activateNow: req.body?.activateNow === true,
       includeNextProject: req.body?.includeNextProject === true,
     });
-    return res.json({ success: true, data: { url } });
+    return res.json({ success: true, data: start });
   } catch (error) {
     next(error);
   }

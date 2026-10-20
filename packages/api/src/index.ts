@@ -110,12 +110,26 @@ app.use(
       ? {
           directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
+            // Stripe: Stripe.js y el checkout embebido de la suscripción.
+            scriptSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://js.stripe.com'],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-            imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com'],
-            frameSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
-            connectSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
+            imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://*.stripe.com'],
+            frameSrc: [
+              "'self'",
+              'https://www.google.com',
+              'https://www.gstatic.com',
+              'https://js.stripe.com',
+              'https://hooks.stripe.com',
+              'https://checkout.stripe.com',
+            ],
+            connectSrc: [
+              "'self'",
+              'https://www.google.com',
+              'https://www.gstatic.com',
+              'https://api.stripe.com',
+              'https://checkout.stripe.com',
+            ],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             formAction: ["'self'"],

@@ -66,7 +66,8 @@ function stripeAnswers(extra: Record<string, unknown> = {}) {
       } as never;
     }
     if (path === '/customers') return { id: 'cus_1' } as never;
-    if (path === '/checkout/sessions') return { url: 'https://checkout.stripe.test/s' } as never;
+    if (path === '/checkout/sessions')
+      return { url: 'https://checkout.stripe.test/s', client_secret: 'cs_secret_1' } as never;
     if (path in extra) return extra[path] as never;
     throw new Error(`ruta inesperada ${path}`);
   });
@@ -92,14 +93,15 @@ beforeEach(() => {
 
 describe('createCheckoutSession', () => {
   it('en prueba: Stripe espera al fin de la prueba para cobrar (no pierde días)', async () => {
-    const { url } = await svc.createCheckoutSession({
+    const start = await svc.createCheckoutSession({
       organizationId: 'org-1',
       userId: 'user-1',
       activateNow: false,
       now: NOW,
     });
 
-    expect(url).toBe('https://checkout.stripe.test/s');
+    // Sin publishable key: la página de Stripe.
+    expect(start).toEqual({ mode: 'hosted', url: 'https://checkout.stripe.test/s' });
     const params = checkoutParams();
     expect(params.mode).toBe('subscription');
     expect(params.customer).toBe('cus_1');
@@ -111,6 +113,32 @@ describe('createCheckoutSession', () => {
       { organization: 'org-1', stripeCustomerId: null },
       { $set: { stripeCustomerId: 'cus_1' } },
     );
+  });
+
+  it('con publishable key: checkout embebido en el modal, sin success/cancel_url', async () => {
+    const { STRIPE_CONFIG } = await import('../../config/app.config.js');
+    const config = STRIPE_CONFIG as { PUBLISHABLE_KEY?: string };
+    config.PUBLISHABLE_KEY = 'pk_test_x';
+    try {
+      const start = await svc.createCheckoutSession({
+        organizationId: 'org-1',
+        userId: 'user-1',
+        activateNow: false,
+        now: NOW,
+      });
+
+      expect(start).toEqual({ mode: 'embedded', clientSecret: 'cs_secret_1', publishableKey: 'pk_test_x' });
+      const params = checkoutParams();
+      expect(params.ui_mode).toBe('embedded');
+      expect(params.redirect_on_completion).toBe('if_required');
+      expect(params.return_url).toBe('https://luma.test/app/admin/settings/subscription?stripe=ok');
+      expect(params.success_url).toBeUndefined();
+      expect(params.cancel_url).toBeUndefined();
+      // Las reglas del cobro no cambian con el modo.
+      expect(params.subscription_data.trial_end).toBe(sec('2026-11-09T00:00:00.000Z'));
+    } finally {
+      config.PUBLISHABLE_KEY = undefined;
+    }
   });
 
   it('pasar a Pro ya con 3 obras: cobra hoy sólo el plan, sin esperar a la prueba', async () => {

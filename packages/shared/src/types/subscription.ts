@@ -109,7 +109,6 @@ export interface BcvRate {
   stale: boolean;
 }
 
-
 /**
  * Dónde se recibe el pago en bolívares. Sale de la configuración del servidor
  * (variables de entorno), no del código: cambiar de banco no es un deploy.
@@ -185,6 +184,17 @@ export interface SubscriptionOverview extends SubscriptionSummary {
   card: { status: StripeSubscriptionStatus | null; manageable: boolean };
 }
 
+/**
+ * `POST /api/subscription/stripe/checkout`: cómo se abre el pago con tarjeta.
+ *
+ * - `embedded`: el formulario de Stripe se monta en un modal de Luma, con
+ *   Stripe.js y la publishable key.
+ * - `hosted`: la página de Stripe, en otra pestaña de navegación. Es lo que
+ *   queda cuando el servidor no tiene `STRIPE_PUBLISHABLE_KEY`.
+ */
+export type StripeCheckoutStart =
+  | { mode: 'embedded'; clientSecret: string; publishableKey: string }
+  | { mode: 'hosted'; url: string };
 
 /** Una lectura de la tasa, como la ve el admin. */
 export interface ExchangeRateRecord {

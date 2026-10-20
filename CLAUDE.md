@@ -149,7 +149,9 @@ cómo probar en local: `docs/SUSCRIPCION.md`.
   `requireProjectAccess` recorta las capacidades a las `.read` según la Empresa
   **dueña de la obra**. No agregues chequeos de suscripción en los controllers:
   si una ruta escribe, ya declara una capacidad que no es `.read`.
-- **Pagos**: tarjeta por Stripe Checkout (el webhook es la fuente de verdad) o
+- **Pagos**: tarjeta por Stripe Checkout embebido en un modal
+  (`card-checkout-dialog.tsx`; Stripe.js se carga a mano desde
+  `lib/stripe-js.ts`, sin paquetes npm; el webhook es la fuente de verdad) o
   bolívares a la tasa BCV, con aprobación manual de un admin de plataforma.
   La tasa la lee una tarea programada, nunca un request de usuario.
 - **Avisos por mail** (`subscription-notify.service.ts`): nunca hacen fallar la

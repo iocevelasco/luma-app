@@ -80,14 +80,23 @@ export function usePayInBolivares() {
   });
 }
 
-/** Va a la página de Stripe. La vuelta la recibe la pantalla de Suscripción. */
+/**
+ * Pide a la API el checkout de Stripe.
+ *
+ * Si vuelve `embedded`, quien llama lo monta en `CardCheckoutDialog` (ver
+ * `useCardCheckout`). Si vuelve `hosted` (el servidor no tiene publishable
+ * key) se va a la página de Stripe, y la vuelta la recibe la pantalla de
+ * Suscripción con `?stripe=ok`.
+ */
 export function useStripeCheckout() {
   const { t } = useTranslation();
 
   return useMutation({
     mutationFn: (options: { activateNow: boolean; includeNextProject?: boolean }) =>
       subscriptionApi.stripeCheckout(options),
-    onSuccess: ({ url }) => window.location.assign(url),
+    onSuccess: (start) => {
+      if (start.mode === 'hosted') window.location.assign(start.url);
+    },
     onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

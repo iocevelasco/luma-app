@@ -157,11 +157,27 @@ export const BS_PAYMENT_CONFIG = {
  * Sin `STRIPE_SECRET_KEY` el pago con tarjeta no se ofrece y la app sigue
  * andando, igual que el resto de las integraciones.
  *
- * No hace falta la publishable key: el pago es en Stripe Checkout, la página
- * de Stripe, y nunca cargamos Stripe.js ni tocamos datos de tarjeta.
+ * Con `STRIPE_PUBLISHABLE_KEY` el formulario de Stripe Checkout se monta en
+ * un modal de Luma (Embedded Checkout); sin ella, se va a la página de Stripe.
+ * En los dos casos la tarjeta la carga la persona dentro de un iframe o una
+ * página de Stripe: nunca pasa por nuestro servidor.
  */
+const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+const secretKey = process.env.STRIPE_SECRET_KEY;
+/** `pk_test_` con `sk_test_`, `pk_live_` con `sk_live_`: mezclarlas da un modal que no carga. */
+const sameStripeMode = (pk?: string, sk?: string) =>
+  Boolean(pk && sk && pk.startsWith('pk_live_') === sk.startsWith('sk_live_'));
+
+if (publishableKey && secretKey && !sameStripeMode(publishableKey, secretKey)) {
+  console.warn(
+    '⚠️  [Stripe] STRIPE_PUBLISHABLE_KEY y STRIPE_SECRET_KEY son de modos distintos (test/live): el pago con tarjeta usa la página de Stripe.',
+  );
+}
+
 export const STRIPE_CONFIG = {
-  SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  SECRET_KEY: secretKey,
+  /** Pública por diseño: va al navegador para montar el checkout embebido. */
+  PUBLISHABLE_KEY: sameStripeMode(publishableKey, secretKey) ? publishableKey : undefined,
   WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   /**
    * Los precios se buscan por `lookup_key`, no por id: así sandbox y
