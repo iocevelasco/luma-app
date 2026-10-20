@@ -387,7 +387,35 @@
       "share": "Compartir",
       "copied": "Lista copiada al portapapeles",
       "confirmStatusTitle": "Confirmar cambio de estado",
-      "confirmStatusBody": "Vas a cambiar el estado a \"{{status}}\"."
+      "confirmStatusBody": "Vas a cambiar el estado a \"{{status}}\".",
+      "editTitle": "Editar material",
+      "editSubmit": "Guardar cambios",
+      "editLabel": "Editar",
+      "edit": "Editar {{name}}",
+      "moreActions": "Más acciones de {{name}}",
+      "delete": "Eliminar",
+      "deleteTitle": "¿Eliminar este material?",
+      "deleteBody": "Vas a eliminar \"{{name}}\" ({{quantity}} {{unit}}). No se puede deshacer.",
+      "lockedHint": "Podés editar o eliminar un material mientras esté Pendiente. Después de solicitarlo queda como registro.",
+      "lockedNote": "Ya no se puede editar ni eliminar: salió de Pendiente.",
+      "confirmStatusLockWarning": "Después ya no vas a poder editarlo ni eliminarlo.",
+      "lockedClose": "Cerrar",
+      "downloadPdf": "Descargar PDF",
+      "generatingPdf": "Generando…",
+      "pdfDownloaded": "PDF descargado",
+      "requestedTag": "ya pedido",
+      "noSupplier": "Sin proveedor"
+    },
+    "pdf": {
+      "title": "Lista de compras",
+      "materials_one": "{{count}} material",
+      "materials_other": "{{count}} materiales",
+      "suppliers_one": "{{count}} proveedor",
+      "suppliers_other": "{{count}} proveedores",
+      "columnMaterial": "Material",
+      "columnQuantity": "Cantidad",
+      "columnSupplier": "Proveedor",
+      "page": "Página {{page}} de {{total}}"
     },
     "fields": {
       "name": "Nombre",
@@ -425,7 +453,8 @@
       "create": "No pudimos agregar el material.",
       "update": "No pudimos actualizar el material.",
       "delete": "No pudimos eliminar el material.",
-      "copy": "No pudimos copiar la lista."
+      "copy": "No pudimos copiar la lista.",
+      "pdf": "No pudimos generar el PDF. Probá de nuevo."
     }
   },
   "provider": {
@@ -1081,6 +1110,7 @@
     "forbidden": "Tu rol no permite esta acción.",
     "notFound": "No encontramos lo que buscabas. Puede que alguien lo haya borrado.",
     "conflict": "Eso choca con algo que ya existe.",
+    "materialLocked": "Este material ya cambió de estado y no se puede editar ni eliminar.",
     "payloadTooLarge": "El archivo es demasiado grande.",
     "rateLimited": "Demasiados intentos. Esperá un momento y probá de nuevo.",
     "serviceUnavailable": "Ese servicio no está disponible en este momento.",

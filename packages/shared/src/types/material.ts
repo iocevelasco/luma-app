@@ -17,6 +17,8 @@ export interface MaterialItem {
   status: MaterialStatus;
   statusChangedBy?: string;
   statusChangedAt?: string;
+  /** La API ya lo resolvió con `isMaterialEditable`: la UI lo lee, no lo deriva. */
+  editable: boolean;
   estimatedCost?: number;
   supplier?: string;
   createdBy: string;

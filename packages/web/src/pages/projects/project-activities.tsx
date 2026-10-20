@@ -16,6 +16,7 @@ import { ResponsibleField } from '@/components/activities/responsible-field';
 import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityGantt } from '@/components/activities/activity-gantt';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
+import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
 import {
   DateRangeFilter,
   fromDayKey,
@@ -24,7 +25,6 @@ import {
 } from '@/components/common/date-range-filter';
 import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormDrawer } from '@/components/common/form-drawer';
 // El detalle de la actividad sigue siendo un Dialog a pantalla completa: es
@@ -360,9 +360,7 @@ function ActivityMaterialsList({ materials }: { materials: MaterialItem[] }) {
           <span>
             {material.name} — {material.quantity} {t(`material.unit.${material.unit}`)}
           </span>
-          <Badge variant={MATERIAL_STATUSES_BLOCKING.has(material.status) ? 'destructive' : 'secondary'}>
-            {t(`material.status.${material.status}`)}
-          </Badge>
+          <MaterialStatusBadge status={material.status} />
         </li>
       ))}
     </ul>

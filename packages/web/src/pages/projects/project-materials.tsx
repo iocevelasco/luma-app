@@ -1,14 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  createMaterialSchema,
-  type CreateMaterialInput,
-  type MaterialItem,
-  type MaterialStatus,
-} from '@luma/shared';
+import { type MaterialItem, type MaterialStatus } from '@luma/shared';
 import { differenceInCalendarDays, format } from 'date-fns';
-import { Copy, MoreHorizontal, Package, Plus, Share2 } from 'lucide-react';
-import { Controller, useForm } from 'react-hook-form';
+import { Copy, FileDown, MoreHorizontal, Package, Pencil, Plus, Share2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -23,38 +16,39 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { fromDayKey } from '@/components/common/date-range-filter';
-import { FormDrawer } from '@/components/common/form-drawer';
+import { MaterialDrawer } from '@/components/materials/material-drawer';
+import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import {
-  useCreateMaterial,
+  useDeleteMaterial,
   useMaterials,
   useUpdateMaterial,
 } from '@/hooks/materials/use-material-queries';
+import { useProject } from '@/hooks/projects/use-project-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { materialTab, organizeMaterials } from '@/lib/materials';
+import {
+  buildPurchaseRows,
+  buildPurchaseText,
+  countSuppliers,
+  materialTab,
+  organizeMaterials,
+} from '@/lib/materials';
 import { cn } from '@/lib/utils';
 
-const MATERIAL_UNITS = ['un', 'm', 'm2', 'm3', 'kg', 'l', 'bolsa', 'rollo', 'global'] as const;
 const MATERIAL_STATUSES: MaterialStatus[] = ['pendiente', 'solicitado', 'comprado', 'en_obra'];
 
 /**
@@ -99,19 +93,9 @@ function copyText(text: string) {
  * se viene a leer— abajo del pliegue. Se entra muchas más veces a mirar la
  * lista que a cargar un material.
  */
-function NewMaterialDrawer({ projectId }: { projectId: string }) {
+function NewMaterialButton({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const createMaterial = useCreateMaterial(projectId);
-  const { data: activitiesData } = useAllActivities(projectId);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control,
-    formState: { errors },
-  } = useForm<CreateMaterialInput>({ resolver: zodResolver(createMaterialSchema) });
 
   return (
     <>
@@ -119,113 +103,7 @@ function NewMaterialDrawer({ projectId }: { projectId: string }) {
         <Plus className="size-4" />
         {t('material.list.newTitle')}
       </Button>
-
-      <FormDrawer
-        open={open}
-        onOpenChange={(next) => {
-          setOpen(next);
-          if (!next) reset();
-        }}
-        title={t('material.list.newTitle')}
-        fieldCount={6}
-        submitLabel={t('material.list.newSubmit')}
-        isSubmitting={createMaterial.isPending}
-        error={createMaterial.error}
-        onSubmit={handleSubmit((values) =>
-          createMaterial.mutate(values, {
-            onSuccess: () => {
-              reset();
-              setOpen(false);
-            },
-          }),
-        )}
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="material-name">{t('material.fields.name')}</Label>
-              <Input aria-invalid={Boolean(errors.name)} id="material-name" {...register('name')} />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="material-quantity">{t('material.fields.quantity')}</Label>
-              <Input
-                aria-invalid={Boolean(errors.quantity)}
-                id="material-quantity"
-                inputMode="decimal"
-                {...register('quantity', { valueAsNumber: true })}
-              />
-              {errors.quantity && (
-                <p className="text-sm text-destructive">{errors.quantity.message}</p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="material-unit">{t('material.fields.unit')}</Label>
-              <Controller
-                control={control}
-                name="unit"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger aria-invalid={Boolean(errors.unit)} id="material-unit">
-                      <SelectValue placeholder={t('material.fields.unitPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MATERIAL_UNITS.map((unit) => (
-                        <SelectItem key={unit} value={unit}>
-                          {t(`material.unit.${unit}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.unit && <p className="text-sm text-destructive">{errors.unit.message}</p>}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="material-activity">{t('material.fields.activity')}</Label>
-              <Controller
-                control={control}
-                name="activityId"
-                render={({ field }) => (
-                  <Select value={field.value ?? undefined} onValueChange={field.onChange}>
-                    <SelectTrigger id="material-activity">
-                      <SelectValue placeholder={t('material.fields.activityPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(activitiesData?.activities ?? []).map((activity) => (
-                        <SelectItem key={activity.id} value={activity.id}>
-                          {activity.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="material-cost">{t('material.fields.estimatedCost')}</Label>
-              <Input
-                aria-invalid={Boolean(errors.estimatedCost)}
-                id="material-cost"
-                inputMode="decimal"
-                {...register('estimatedCost', {
-                  setValueAs: (value) => (value === '' ? undefined : Number(value)),
-                })}
-              />
-              {errors.estimatedCost && (
-                <p className="text-sm text-destructive">{errors.estimatedCost.message}</p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="material-supplier">{t('material.fields.supplier')}</Label>
-              <Input id="material-supplier" {...register('supplier')} />
-            </div>
-        </div>
-      </FormDrawer>
+      <MaterialDrawer projectId={projectId} open={open} onOpenChange={setOpen} />
     </>
   );
 }
@@ -236,10 +114,15 @@ function MaterialRow({
   canEdit,
   activityName,
   highlighted = false,
+  onEdit,
+  onDelete,
 }: {
   material: MaterialItem;
   projectId: string;
   canEdit: boolean;
+  /** Los diálogos viven en la página: una lista larga no monta uno por fila. */
+  onEdit: (material: MaterialItem) => void;
+  onDelete: (material: MaterialItem) => void;
   /** Sólo donde la fila no está bajo el encabezado de su actividad. */
   activityName?: string;
   /** El material al que se llegó con `?material=` desde el resumen de la obra. */
@@ -276,22 +159,35 @@ function MaterialRow({
       </div>
 
       <div className="flex items-center gap-2">
-        {/*
-          Rojo sólo lo que todavía no se pidió: eso es lo que puede frenar una
-          actividad. Lo ya solicitado está en camino, y pintarlo igual que lo
-          que nadie encargó borra la diferencia entre "hay que hacer algo" y
-          "hay que esperar".
-        */}
-        <Badge
-          variant={material.status === 'pendiente' ? 'destructive' : 'secondary'}
-          className={cn(material.status === 'solicitado' && 'bg-warning text-warning-foreground')}
-        >
-          {t(`material.status.${material.status}`)}
-        </Badge>
+        <MaterialStatusBadge status={material.status} />
 
         {canEdit && next && (
-          <Button type="button" variant="outline" size="sm" onClick={() => setPendingStatus(next)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="max-sm:min-h-11"
+            onClick={() => setPendingStatus(next)}
+          >
             {t(`material.action.${next}`)}
+          </Button>
+        )}
+
+        {/*
+          Sólo se ofrece lo que se puede hacer: un lápiz gris en un celular no
+          explica nada, y no hay tooltip. Por qué no está lo dice la nota del
+          menú y la línea de arriba de la lista.
+        */}
+        {canEdit && material.editable && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="max-sm:size-11"
+            aria-label={t('material.list.edit', { name: material.name })}
+            onClick={() => onEdit(material)}
+          >
+            <Pencil className="size-4" />
           </Button>
         )}
 
@@ -302,17 +198,45 @@ function MaterialRow({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                aria-label={t('material.list.changeStatus')}
+                className="max-sm:size-11"
+                aria-label={t('material.list.moreActions', { name: material.name })}
               >
                 <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {MATERIAL_STATUSES.filter((status) => status !== material.status).map((status) => (
-                <DropdownMenuItem key={status} onSelect={() => setPendingStatus(status)}>
+                <DropdownMenuItem
+                  key={status}
+                  className="max-sm:min-h-11"
+                  onSelect={() => setPendingStatus(status)}
+                >
                   {t(`material.status.${status}`)}
                 </DropdownMenuItem>
               ))}
+
+              <DropdownMenuSeparator />
+              {material.editable ? (
+                <>
+                  <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onEdit(material)}>
+                    <Pencil className="size-4" />
+                    {t('material.list.editLabel')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    className="max-sm:min-h-11"
+                    onSelect={() => onDelete(material)}
+                  >
+                    <Trash2 className="size-4" />
+                    {t('material.list.delete')}
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                // Texto, no un ítem deshabilitado: se lee tocando el menú.
+                <DropdownMenuLabel className="max-w-56 whitespace-normal font-normal text-muted-foreground">
+                  {t('material.list.lockedNote')}
+                </DropdownMenuLabel>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -326,6 +250,8 @@ function MaterialRow({
               {t('material.list.confirmStatusBody', {
                 status: pendingStatus ? t(`material.status.${pendingStatus}`) : '',
               })}
+              {/* Que el bloqueo no sea una sorpresa: se avisa antes de salir de Pendiente. */}
+              {material.editable && ` ${t('material.list.confirmStatusLockWarning')}`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -360,6 +286,8 @@ function ToBuyGroup({
   projectId,
   canEdit,
   highlightedId,
+  onEdit,
+  onDelete,
 }: {
   /** `null` = materiales sin actividad. */
   name: string | null;
@@ -368,6 +296,8 @@ function ToBuyGroup({
   projectId: string;
   canEdit: boolean;
   highlightedId: string | null;
+  onEdit: (material: MaterialItem) => void;
+  onDelete: (material: MaterialItem) => void;
 }) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
@@ -387,7 +317,7 @@ function ToBuyGroup({
               })}
             </span>
             {urgent && (
-              <Badge variant={days! < 0 ? 'destructive' : 'default'} className={cn(days! >= 0 && 'bg-warning text-warning-foreground')}>
+              <Badge variant={days! < 0 ? 'danger' : 'warning'} icon>
                 {days! < 0
                   ? t('material.list.startedAlready')
                   : days === 0
@@ -406,6 +336,8 @@ function ToBuyGroup({
             projectId={projectId}
             canEdit={canEdit}
             highlighted={material.id === highlightedId}
+            onEdit={onEdit}
+            onDelete={onDelete}
           />
         ))}
       </ul>
@@ -429,10 +361,19 @@ function ToBuyGroup({
  * abre por defecto: es la que pide acción.
  */
 export function ProjectMaterialsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const dateLocale = useDateLocale();
   const { projectId } = useParams<{ projectId: string }>();
   const { data: materialsData, isLoading, isError } = useMaterials(projectId);
+  const { data: projectData } = useProject(projectId);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const { data: activitiesData } = useAllActivities(projectId);
+  const deleteMaterial = useDeleteMaterial(projectId!);
+
+  // Un solo drawer y un solo diálogo de borrado para toda la lista.
+  const [editing, setEditing] = useState<MaterialItem | null>(null);
+  const [deleting, setDeleting] = useState<MaterialItem | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Gerente y supervisor gestionan las compras; lo decide la grilla.
   const canWrite = useProjectCapabilities(projectId).can('material.write');
@@ -454,10 +395,89 @@ export function ProjectMaterialsPage() {
   const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('material');
 
+  // La misma lista para copiar, compartir y el PDF: agrupada por proveedor.
+  const purchaseRows = useMemo(() => buildPurchaseRows(toBuy, i18n.language), [toBuy, i18n.language]);
+
+  // El PDF y su librería pesan: se bajan apenas hay algo que descargar, no al
+  // tocar el botón. En Safari, descargar o compartir tiene que ocurrir dentro
+  // del gesto, y esperar un chunk grande lo deja afuera.
+  const hasToBuy = toBuy.length > 0;
+  useEffect(() => {
+    if (!hasToBuy) return;
+    void import('@/lib/materials-pdf');
+    void import('jspdf');
+    void import('jspdf-autotable');
+  }, [hasToBuy]);
+
   function buildCopyText(): string {
-    return toBuy
-      .map((m) => `- ${m.name}: ${m.quantity} ${t(`material.unit.${m.unit}`)}`)
-      .join('\n');
+    return buildPurchaseText(purchaseRows, {
+      unit: (unit) => t(`material.unit.${unit}`),
+      requested: t('material.list.requestedTag'),
+    });
+  }
+
+  async function handleDownloadPdf() {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+    try {
+      const { buildPurchasePdf, purchaseFileName } = await import('@/lib/materials-pdf');
+      const now = new Date();
+      const blob = await buildPurchasePdf({
+        projectName: projectData?.project.name ?? '',
+        date: now,
+        dateLabel: format(now, 'P', { locale: dateLocale }),
+        rows: purchaseRows,
+        labels: {
+          title: t('material.pdf.title'),
+          summary: `${t('material.pdf.materials', { count: purchaseRows.length })} · ${t('material.pdf.suppliers', { count: countSuppliers(purchaseRows) })}`,
+          columns: {
+            material: t('material.pdf.columnMaterial'),
+            quantity: t('material.pdf.columnQuantity'),
+            supplier: t('material.pdf.columnSupplier'),
+          },
+          noSupplier: t('material.list.noSupplier'),
+          requested: t('material.list.requestedTag'),
+          page: (page, total) => t('material.pdf.page', { page, total }),
+          unit: (unit) => t(`material.unit.${unit}`),
+        },
+      });
+      const fileName = purchaseFileName(projectData?.project.name ?? '', now);
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+
+      // En el celular lo útil es mandarlo —por WhatsApp al proveedor, o
+      // guardarlo en Archivos—, así que abre la hoja de compartir. En
+      // escritorio esa hoja es un estorbo: descarga directa.
+      const isTouch = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+      if (
+        isTouch &&
+        typeof navigator.canShare === 'function' &&
+        typeof navigator.share === 'function' &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({ files: [file], title: fileName });
+        } catch (error) {
+          // Cancelar la hoja no es un error. Cualquier otra cosa sí.
+          if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
+        }
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      // Revocar de inmediato cancela la descarga en algunos navegadores.
+      window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      toast.success(t('material.list.pdfDownloaded'));
+    } catch {
+      toast.error(t('material.errors.pdf'));
+    } finally {
+      setGeneratingPdf(false);
+    }
   }
 
   async function handleCopy() {
@@ -489,7 +509,7 @@ export function ProjectMaterialsPage() {
   return (
     // Sin título: la sección ya se llama así en el menú y en el encabezado.
     <PageLayout
-      action={canWrite ? <NewMaterialDrawer projectId={projectId!} /> : undefined}
+      action={canWrite ? <NewMaterialButton projectId={projectId!} /> : undefined}
       empty={total === 0 ? { icon: Package, title: t('material.list.empty') } : undefined}
     >
       {/*
@@ -497,6 +517,10 @@ export function ProjectMaterialsPage() {
         elige una vez, al llegar. Si después cambia de estado y pasa a la
         otra pestaña, la pantalla no salta detrás de él.
       */}
+      {canWrite && (
+        <p className="text-sm text-muted-foreground">{t('material.list.lockedHint')}</p>
+      )}
+      <div ref={panelRef} tabIndex={-1} className="outline-none">
       <Tabs defaultValue={highlighted ? materialTab(highlighted.status) : 'toBuy'} className="gap-4">
         <TabsList>
           <TabsTrigger value="toBuy">
@@ -513,12 +537,23 @@ export function ProjectMaterialsPage() {
         >
           {toBuy.length > 0 && (
             <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={handleCopy}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="max-sm:min-h-11"
+                onClick={handleDownloadPdf}
+                disabled={generatingPdf}
+                aria-busy={generatingPdf}
+              >
+                {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+                {generatingPdf ? t('material.list.generatingPdf') : t('material.list.downloadPdf')}
+              </Button>
+              <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={handleCopy}>
                 <Copy className="size-4" />
                 {t('material.list.copyList')}
               </Button>
               {canShare && (
-                <Button variant="outline" size="sm" onClick={handleShare}>
+                <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={handleShare}>
                   <Share2 className="size-4" />
                   {t('material.list.share')}
                 </Button>
@@ -539,6 +574,8 @@ export function ProjectMaterialsPage() {
                   projectId={projectId!}
                   canEdit={canWrite}
                   highlightedId={highlightedId}
+                  onEdit={setEditing}
+                  onDelete={setDeleting}
                 />
               ))}
             </div>
@@ -566,6 +603,8 @@ export function ProjectMaterialsPage() {
                         projectId={projectId!}
                         canEdit={canWrite}
                         highlighted={material.id === highlightedId}
+                        onEdit={setEditing}
+                        onDelete={setDeleting}
                         activityName={
                           material.activityId ? activityById.get(material.activityId)?.name : undefined
                         }
@@ -587,6 +626,8 @@ export function ProjectMaterialsPage() {
                         projectId={projectId!}
                         canEdit={canWrite}
                         highlighted={material.id === highlightedId}
+                        onEdit={setEditing}
+                        onDelete={setDeleting}
                         activityName={
                           material.activityId ? activityById.get(material.activityId)?.name : undefined
                         }
@@ -599,6 +640,49 @@ export function ProjectMaterialsPage() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
+
+      <MaterialDrawer
+        projectId={projectId!}
+        material={editing}
+        open={editing !== null}
+        onOpenChange={(open) => !open && setEditing(null)}
+      />
+
+      <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent
+          // La fila que abrió el diálogo se desmonta al borrar: sin esto el
+          // foco se pierde en el <body>. Va al panel de la lista.
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            panelRef.current?.focus();
+          }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('material.list.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleting &&
+                t('material.list.deleteBody', {
+                  name: deleting.name,
+                  quantity: deleting.quantity,
+                  unit: t(`material.unit.${deleting.unit}`),
+                })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => {
+                if (deleting) deleteMaterial.mutate(deleting.id);
+                setDeleting(null);
+              }}
+            >
+              {t('material.list.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 }

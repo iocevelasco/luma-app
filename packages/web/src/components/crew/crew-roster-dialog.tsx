@@ -74,9 +74,9 @@ export function CrewRosterDialog({
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{member.name}</span>
                       {member.kind === 'equipo' && (
-                        <Badge variant="secondary">{t('crew.kind.equipo')}</Badge>
+                        <Badge>{t('crew.kind.equipo')}</Badge>
                       )}
-                      {member.isLead && <Badge>{t('crew.list.lead')}</Badge>}
+                      {member.isLead && <Badge variant="info">{t('crew.list.lead')}</Badge>}
                     </div>
                     {member.specialty && (
                       <p className="text-xs text-muted-foreground">

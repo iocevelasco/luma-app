@@ -37,9 +37,22 @@ export const updateMaterialSchema = z.object({
   quantity: z.number().positive('Tiene que ser mayor a 0').optional(),
   unit: materialUnitSchema.optional(),
   status: materialStatusSchema.optional(),
-  estimatedCost: z.number().min(0).optional(),
-  supplier: z.string().trim().max(120).optional(),
+  // `null` vacía el campo: sin esto, un costo o un proveedor cargados por
+  // error no se podían sacar.
+  estimatedCost: z.number().min(0).nullable().optional(),
+  supplier: z.string().trim().max(120).nullable().optional(),
+});
+
+/**
+ * Lo que manda el formulario de edición. El estado no está: cambia por su
+ * propio flujo (botón de paso siguiente), no corrigiendo el material.
+ */
+export const editMaterialSchema = updateMaterialSchema.omit({ status: true }).extend({
+  name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Es demasiado largo'),
+  quantity: z.number({ invalid_type_error: 'La cantidad es obligatoria' }).positive('Tiene que ser mayor a 0'),
+  unit: materialUnitSchema,
 });
 
 export type CreateMaterialInput = z.infer<typeof createMaterialSchema>;
 export type UpdateMaterialInput = z.infer<typeof updateMaterialSchema>;
+export type EditMaterialInput = z.infer<typeof editMaterialSchema>;

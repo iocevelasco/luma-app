@@ -1,7 +1,7 @@
 import type { ActivityStatus } from '@luma/shared';
-import { Clock } from 'lucide-react';
+import { ArrowRight, Check, Clock, Plus, X, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { isActivityOverdue } from '@/lib/week';
 
@@ -13,17 +13,18 @@ import { isActivityOverdue } from '@/lib/week';
  * pared roja donde no se distinguía lo que estaba en marcha de lo que nadie
  * había empezado. Si todo es urgente, nada lo es.
  *
- * Ahora el color dice en qué estado está —verde cerrado, ámbar esperando una
- * decisión, neutro en marcha o sin empezar— y el atraso va aparte, como un
- * reloj rojo al lado. Se leen los dos hechos de un vistazo en vez de que uno
- * tape al otro.
- *
- * `Badge` no trae variantes de éxito/advertencia, así que se envuelve con los
- * tokens del tema en vez de editar el componente de `ui/` (ver CLAUDE.md).
+ * Ahora el color dice en qué estado está —verde cerrado, naranja esperando una
+ * decisión, azul en marcha, gris sin empezar o cancelada— y el atraso va
+ * aparte, como un reloj rojo al lado. Se leen los dos hechos de un vistazo en
+ * vez de que uno tape al otro. El rojo queda para el atraso: acá ningún estado
+ * es "peligro".
  */
-const STATUS_CLASSES: Partial<Record<ActivityStatus, string>> = {
-  completada: 'bg-success text-success-foreground',
-  en_revision: 'bg-warning text-warning-foreground',
+const STATUS_TAG: Record<ActivityStatus, { variant: BadgeVariant; icon: LucideIcon }> = {
+  pendiente: { variant: 'neutral', icon: Plus },
+  en_curso: { variant: 'info', icon: ArrowRight },
+  en_revision: { variant: 'warning', icon: Clock },
+  completada: { variant: 'success', icon: Check },
+  cancelada: { variant: 'neutral', icon: X },
 };
 
 export function ActivityStatusBadge({
@@ -38,7 +39,7 @@ export function ActivityStatusBadge({
 }) {
   const { t } = useTranslation();
   const overdue = endDate ? isActivityOverdue(endDate, status) : false;
-  const statusClass = STATUS_CLASSES[status];
+  const tag = STATUS_TAG[status];
 
   return (
     <span className={cn('flex shrink-0 items-center gap-1.5', className)}>
@@ -48,9 +49,7 @@ export function ActivityStatusBadge({
           aria-label={t('activity.list.overdue')}
         />
       )}
-      {/* `en_curso`, `pendiente` y `cancelada` van en neutro: están donde
-          tienen que estar, no piden nada a nadie. */}
-      <Badge variant={statusClass ? 'default' : 'secondary'} className={statusClass}>
+      <Badge variant={tag.variant} icon={tag.icon}>
         {t(`activity.status.${status}`)}
       </Badge>
     </span>

@@ -68,9 +68,9 @@ export function CrewList({ onEdit }: { onEdit: (member: OrganizationCrewMember) 
               name={member.name}
               badges={
                 <>
-                  {member.isLead && <Badge variant="secondary">{t('directory.lead')}</Badge>}
+                  {member.isLead && <Badge variant="info">{t('directory.lead')}</Badge>}
                   {member.kind === 'equipo' && (
-                    <Badge variant="outline">{t('crew.kind.equipo')}</Badge>
+                    <Badge>{t('crew.kind.equipo')}</Badge>
                   )}
                 </>
               }

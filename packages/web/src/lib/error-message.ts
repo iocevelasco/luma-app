@@ -23,6 +23,7 @@ const KEY_BY_CODE: Record<ApiErrorCode, string> = {
   FORBIDDEN: 'errors.forbidden',
   NOT_FOUND: 'errors.notFound',
   CONFLICT: 'errors.conflict',
+  MATERIAL_LOCKED: 'errors.materialLocked',
   PAYLOAD_TOO_LARGE: 'errors.payloadTooLarge',
   RATE_LIMITED: 'errors.rateLimited',
   SERVICE_UNAVAILABLE: 'errors.serviceUnavailable',

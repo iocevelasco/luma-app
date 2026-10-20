@@ -6,10 +6,9 @@ import '@svar-ui/react-gantt/style.css';
 import type { Activity, ActivityStatus } from '@luma/shared';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { TruncatedText } from '@/components/common/truncated-text';
-import { Badge } from '@/components/ui/badge';
+import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { cn } from '@/lib/utils';
-import { isActivityOverdue } from '@/lib/week';
 
 /**
  * Progreso mostrado en la barra del Gantt (relleno de la librería) — no hay
@@ -51,15 +50,11 @@ function ResponsibleCell({ row }: { row: unknown }) {
 }
 
 function StatusCell({ row }: { row: unknown }) {
-  const { t } = useTranslation();
   const { activity } = row as GanttTaskRow;
-  const overdue = isActivityOverdue(activity.endDate, activity.status);
 
   return (
     <div className="flex items-center gap-1">
-      <Badge variant={overdue ? 'destructive' : 'secondary'}>
-        {t(`activity.status.${activity.status}`)}
-      </Badge>
+      <ActivityStatusBadge status={activity.status} endDate={activity.endDate} />
     </div>
   );
 }

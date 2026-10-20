@@ -394,8 +394,8 @@ function DocumentCard({
           {doc.title}
         </p>
         <div className="flex flex-wrap items-center gap-1">
-          <Badge variant="outline">{t(`document.category.${doc.category}`)}</Badge>
-          {doc.space && <Badge variant="secondary">{doc.space}</Badge>}
+          <Badge>{t(`document.category.${doc.category}`)}</Badge>
+          {doc.space && <Badge variant="info">{doc.space}</Badge>}
         </div>
         {doc.notes && <p className="line-clamp-2 text-xs text-muted-foreground">{doc.notes}</p>}
       </div>
