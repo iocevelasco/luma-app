@@ -1,0 +1,34 @@
+{
+  "name": "@pnpm/exe",
+  "description": "Fast, disk space efficient package manager",
+  "version": "8.6.12",
+  "bugs": {
+    "url": "https://github.com/pnpm/pnpm/issues"
+  },
+  "optionalDependencies": {
+    "@pnpm/linux-arm64": "8.6.12",
+    "@pnpm/linux-x64": "8.6.12",
+    "@pnpm/macos-arm64": "8.6.12",
+    "@pnpm/macos-x64": "8.6.12",
+    "@pnpm/win-x64": "8.6.12"
+  },
+  "devDependencies": {
+    "execa": "npm:safe-execa@0.1.2",
+    "pkg": "5.8.1",
+    "@pnpm/exe": "8.6.12"
+  },
+  "funding": "https://opencollective.com/pnpm",
+  "homepage": "https://github.com/pnpm/pnpm/blob/master/packages/exe#readme",
+  "license": "MIT",
+  "preferGlobal": true,
+  "repository": "https://github.com/pnpm/pnpm/blob/master/packages/exe",
+  "keywords": [
+    "pnpm8"
+  ],
+  "scripts": {
+    "preinstall": "node setup.js"
+  },
+  "bin": {
+    "pnpm": "pnpm"
+  }
+}

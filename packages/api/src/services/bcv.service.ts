@@ -1,5 +1,6 @@
 import https from 'node:https';
 import tls from 'node:tls';
+import mongoose from 'mongoose';
 import { isPlausibleRate, type BcvRate } from '@luma/shared';
 import { BCV_CONFIG } from '../config/app.config.js';
 import { SECTIGO_DV_R36_PEM } from '../certs/sectigo-dv-r36.js';
@@ -8,12 +9,14 @@ import { ExchangeRate, type IExchangeRate } from '../models/ExchangeRate.js';
 /**
  * La tasa oficial del BCV, leída de su home (no tiene API).
  *
- * Nunca se lee el BCV en el request de un usuario: el sitio es lento y a
- * veces no responde. Una tarea programada lo lee cada tanto
- * (`scripts/refresh-bcv-rate.ts`), cada lectura se guarda, y el formulario de
- * pago usa la última guardada. Si el BCV deja de responder, la última sigue
- * valiendo hasta `BCV_CONFIG.MAX_AGE_HOURS`; después el pago en Bs se pausa
- * hasta que alguien cargue una a mano.
+ * Cada lectura se guarda con su fecha valor. El pago consulta esa colección:
+ * si la página del BCV no responde o el scrap falla, se usa la última tasa
+ * guardada. `stale` avisa que hace más de `BCV_CONFIG.MAX_AGE_HOURS` que no
+ * pudimos confirmarla; no deja de cotizarse.
+ *
+ * El proceso la refresca al conectar a la base y después cada hora. La tarea
+ * de Coolify (`scripts/refresh-bcv-rate.ts`) hace lo mismo por si este
+ * proceso no está corriendo.
  */
 
 export class BcvUnavailableError extends Error {
@@ -248,4 +251,78 @@ export async function currentRate(now: Date = new Date()): Promise<BcvRate | nul
     lastSeenAt: lastSeen.toISOString(),
     stale,
   };
+}
+
+// ─────────────────────────── Refresco automático ───────────────────────────
+
+const REFRESH_EVERY_MS = 60 * 60 * 1000;
+
+/** Una sola lectura en vuelo: el arranque y un quote no pegan dos veces al BCV. */
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
+
+function refreshShared(
+  now: Date = new Date(),
+  fetchPage: () => Promise<string> = () => fetchBcvPage(),
+): Promise<RefreshOutcome> {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = refreshBcvRate(now, fetchPage).finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
+}
+
+/**
+ * La tasa con la que se cotiza.
+ *
+ * Si la guardada está fresca, sale de la base y no se toca el BCV. Si no hay
+ * ninguna, se scrapea ahora y se guarda. Si el scrap falla, vuelve la última
+ * guardada —vieja incluida— o `null` si nunca hubo una.
+ */
+export async function ensureCurrentRate(
+  now: Date = new Date(),
+  fetchPage?: () => Promise<string>,
+): Promise<BcvRate | null> {
+  const stored = await currentRate(now);
+  if (stored && !stored.stale) return stored;
+
+  // Con `fetchPage` (tests) no se comparte la lectura en vuelo de producción.
+  const refresh = () => (fetchPage ? refreshBcvRate(now, fetchPage) : refreshShared(now));
+
+  if (stored) {
+    // Hay una tasa guardada: se cotiza ya y el scrap no frena el pago.
+    void refresh().catch((error) => {
+      console.error(`BCV: ${error instanceof Error ? error.message : error}`);
+    });
+    return stored;
+  }
+
+  try {
+    await refresh();
+  } catch (error) {
+    console.error(`BCV: ${error instanceof Error ? error.message : error}`);
+  }
+  return currentRate(now);
+}
+
+/** Lee el BCV al tener base, y después cada hora. Idempotente. */
+export function startBcvRateRefresh(): void {
+  if (refreshTimer) return;
+
+  const run = () => {
+    if (mongoose.connection.readyState !== 1) return;
+    void refreshShared()
+      .then((outcome) => {
+        const { usd, valueDate } = outcome.rate;
+        console.log(`BCV ${outcome.status}: ${usd} Bs/USD · fecha valor ${valueDate}`);
+      })
+      .catch((error) => {
+        console.error(`BCV: ${error instanceof Error ? error.message : error}`);
+      });
+  };
+
+  mongoose.connection.on('connected', run);
+  run();
+  refreshTimer = setInterval(run, REFRESH_EVERY_MS);
+  refreshTimer.unref();
 }

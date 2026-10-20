@@ -15,6 +15,7 @@ import {
   validateConfig,
 } from './config/app.config.js';
 import { connectDatabase, isDatabaseConnected } from './config/database.js';
+import { startBcvRateRefresh } from './services/bcv.service.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { normalizeErrors } from './middleware/normalizeErrors.js';
 import { CACHE_REVALIDATE, setSpaCacheHeaders } from './middleware/spaCache.js';
@@ -290,6 +291,8 @@ async function startServer() {
   if (!connected) {
     console.warn('⚠️  El servidor arrancó sin conexión a MongoDB.');
   }
+  // Con o sin base todavía: cuando Mongo conecte, lee el BCV y guarda la tasa.
+  startBcvRateRefresh();
 }
 
 process.on('SIGTERM', () => {

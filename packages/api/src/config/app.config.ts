@@ -124,8 +124,8 @@ export const BCV_CONFIG = {
   /** Cortar antes de que el request del usuario quede colgado. */
   TIMEOUT_MS: 20_000,
   /**
-   * Pasado esto sin una lectura buena (ni una tasa cargada a mano), el pago en
-   * Bs se pausa: cobrar con una tasa de hace días es cobrar mal.
+   * Pasado esto sin una lectura buena (ni una tasa cargada a mano), la tasa
+   * queda marcada como vieja. El pago en Bs sigue usando la última guardada.
    */
   MAX_AGE_HOURS: 48,
 } as const;

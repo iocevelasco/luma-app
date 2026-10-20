@@ -96,7 +96,7 @@ export interface SubscriptionSummary {
  * La tasa BCV vigente, como la ve quien va a pagar en bolívares.
  *
  * `stale`: hace más de 48 horas que no hay una lectura buena del BCV ni una
- * tasa cargada a mano. El pago en Bs se pausa hasta que vuelva a haberla.
+ * tasa cargada a mano. El pago en Bs igual usa esta, que es la última guardada.
  */
 export interface BcvRate {
   /** Bolívares por dólar, con la precisión que publica el BCV. */

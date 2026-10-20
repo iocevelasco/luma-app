@@ -18,7 +18,7 @@ vi.mock('../../models/SubscriptionPayment.js', () => ({
 vi.mock('../../models/Subscription.js', () => ({ Subscription: { updateOne: vi.fn() } }));
 vi.mock('../../models/Organization.js', () => ({ Organization: { find: vi.fn() } }));
 vi.mock('../../models/User.js', () => ({ User: { find: vi.fn() } }));
-vi.mock('../../services/bcv.service.js', () => ({ currentRate: vi.fn() }));
+vi.mock('../../services/bcv.service.js', () => ({ ensureCurrentRate: vi.fn() }));
 vi.mock('../../services/storage.service.js', () => ({
   deleteObject: vi.fn().mockResolvedValue(undefined),
   signObjectUrl: vi.fn().mockResolvedValue(null),
@@ -31,7 +31,7 @@ vi.mock('../../services/subscription.service.js', () => ({
 
 const { SubscriptionPayment } = await import('../../models/SubscriptionPayment.js');
 const { Subscription } = await import('../../models/Subscription.js');
-const { currentRate } = await import('../../services/bcv.service.js');
+const { ensureCurrentRate } = await import('../../services/bcv.service.js');
 const { deleteObject } = await import('../../services/storage.service.js');
 const { loadFacts, billableProjects } = await import('../../services/subscription.service.js');
 const svc = await import('../../services/subscription-payment.service.js');
@@ -69,7 +69,7 @@ const input = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(currentRate).mockResolvedValue(RATE as never);
+  vi.mocked(ensureCurrentRate).mockResolvedValue(RATE as never);
   vi.mocked(loadFacts).mockResolvedValue(trialFacts);
   vi.mocked(billableProjects).mockResolvedValue(threeProjects());
   vi.mocked(SubscriptionPayment.exists).mockResolvedValue(null as never);
@@ -104,11 +104,18 @@ describe('bolivaresQuote', () => {
     expect(q.quote.periodStart).toBe('2026-11-09T00:00:00.000Z');
   });
 
-  it('sin tasa vigente no cotiza: el pago en Bs se pausa', async () => {
-    vi.mocked(currentRate).mockResolvedValue({ ...RATE, stale: true } as never);
+  it('sin ninguna tasa guardada no cotiza', async () => {
+    vi.mocked(ensureCurrentRate).mockResolvedValue(null);
     await expect(svc.bolivaresQuote('org-1', false, NOW)).rejects.toMatchObject({
       code: 'SERVICE_UNAVAILABLE',
     });
+  });
+
+  it('si el scrap falló, cotiza igual con la última tasa guardada', async () => {
+    vi.mocked(ensureCurrentRate).mockResolvedValue({ ...RATE, stale: true } as never);
+    const q = await svc.bolivaresQuote('org-1', false, NOW);
+    expect(q.rate.stale).toBe(true);
+    expect(q.amountBs).toBe(34393.2);
   });
 
   it('activar ya fuera de la prueba no tiene sentido', async () => {

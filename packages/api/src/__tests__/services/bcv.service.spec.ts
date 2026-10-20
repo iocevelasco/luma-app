@@ -6,9 +6,8 @@ vi.mock('../../models/ExchangeRate.js', () => ({
 }));
 
 const { ExchangeRate } = await import('../../models/ExchangeRate.js');
-const { caracasDayKey, currentRate, parseBcvAmount, parseBcvPage, refreshBcvRate } = await import(
-  '../../services/bcv.service.js'
-);
+const { caracasDayKey, currentRate, ensureCurrentRate, parseBcvAmount, parseBcvPage, refreshBcvRate } =
+  await import('../../services/bcv.service.js');
 
 /** Recorte real de la home del BCV del 2026-10-19 (fecha valor 2026-10-20). */
 const REAL_PAGE = readFileSync(new URL('../fixtures/bcv-home.html', import.meta.url), 'utf8');
@@ -147,5 +146,49 @@ describe('currentRate', () => {
   it('sin ninguna tasa, null', async () => {
     findOneReturns(null, null);
     expect(await currentRate(new Date())).toBeNull();
+  });
+});
+
+describe('ensureCurrentRate', () => {
+  const now = new Date('2026-10-19T20:00:00.000Z');
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('si la guardada está fresca, no vuelve a leer el BCV', async () => {
+    findOneReturns(
+      { usd: 875.1, valueDate: '2026-10-19', source: 'bcv', lastSeenAt: now },
+      { lastSeenAt: now },
+    );
+    const fetchPage = vi.fn();
+
+    const rate = await ensureCurrentRate(now, fetchPage);
+
+    expect(rate).toMatchObject({ usd: 875.1, stale: false });
+    expect(fetchPage).not.toHaveBeenCalled();
+  });
+
+  it('sin tasa guardada, scrapea, guarda y devuelve esa', async () => {
+    vi.mocked(ExchangeRate.findOneAndUpdate).mockResolvedValue(null);
+    vi.mocked(ExchangeRate.create).mockImplementation((doc) => Promise.resolve(doc) as never);
+    const saved = { usd: 881.8769, valueDate: '2026-10-20', source: 'bcv', lastSeenAt: now };
+    findOneReturns(null, null, null, saved, { lastSeenAt: now });
+
+    const rate = await ensureCurrentRate(now, () => Promise.resolve(REAL_PAGE));
+
+    expect(rate).toMatchObject({ usd: 881.8769, valueDate: '2026-10-20', stale: false });
+    expect(ExchangeRate.create).toHaveBeenCalledWith(
+      expect.objectContaining({ usd: 881.8769, valueDate: '2026-10-20', source: 'bcv' }),
+    );
+  });
+
+  it('si el scrap falla, devuelve la última guardada aunque esté vieja', async () => {
+    const old = new Date('2026-10-10T20:00:00.000Z');
+    const saved = { usd: 800, valueDate: '2026-10-10', source: 'bcv', lastSeenAt: old };
+    findOneReturns(saved, { lastSeenAt: old });
+
+    const rate = await ensureCurrentRate(now, () => Promise.reject(new Error('timeout')));
+
+    expect(rate).toMatchObject({ usd: 800, valueDate: '2026-10-10', stale: true });
+    expect(ExchangeRate.create).not.toHaveBeenCalled();
   });
 });

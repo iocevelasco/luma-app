@@ -22,7 +22,7 @@ import {
 } from '../models/SubscriptionPayment.js';
 import { User } from '../models/User.js';
 import { badRequest, conflict, notFound, serviceUnavailable } from '../utils/errors.js';
-import { currentRate } from './bcv.service.js';
+import { ensureCurrentRate } from './bcv.service.js';
 import { deleteObject, signObjectUrl } from './storage.service.js';
 import { billableProjects, loadFacts, previousPaidPeriod } from './subscription.service.js';
 
@@ -101,8 +101,8 @@ export async function bolivaresQuote(
     throw serviceUnavailable('El pago en bolívares todavía no está habilitado.');
   }
 
-  const rate = await currentRate(now);
-  if (!rate || rate.stale) {
+  const rate = await ensureCurrentRate(now);
+  if (!rate) {
     throw serviceUnavailable(
       'No tenemos una tasa BCV actualizada en este momento. Probá en unas horas o pagá con tarjeta.',
     );

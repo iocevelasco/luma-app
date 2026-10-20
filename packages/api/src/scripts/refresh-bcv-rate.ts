@@ -4,8 +4,8 @@
  *   node dist/scripts/refresh-bcv-rate.js
  *
  * Sale con código 1 si no pudo leer, para que Coolify lo marque como fallido
- * y se vea en su historial. Una corrida fallida no rompe nada: la última tasa
- * buena sigue vigente hasta `BCV_CONFIG.MAX_AGE_HOURS`.
+ * y se vea en su historial. Una corrida fallida no rompe nada: el pago sigue
+ * con la última tasa guardada.
  *
  * Frecuencia sugerida: cada hora entre las 8 y las 20 de Caracas. El BCV
  * publica a la tarde, y leerlo de más no cuesta: si la tasa no cambió, sólo
