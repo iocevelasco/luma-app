@@ -50,14 +50,16 @@ export function receivingAccounts(): BolivaresReceivingAccounts {
  *
  * - Normal: el próximo período, que arranca cuando termina lo ya cubierto
  *   (prueba incluida) — pagar antes no pierde días.
- * - `activateNow`: sólo desde la prueba, para crear la cuarta obra. Arranca
- *   hoy, con base + extras completas y sin prorrateo; la cuarta, que todavía
- *   no existe, ya va cobrada.
+ * - `activateNow`: pasar a Pro durante la prueba. Arranca hoy, con base +
+ *   las extras que haya, completas y sin prorrateo; la prueba termina.
+ * - `includeNextProject` (con `activateNow`): se pasa a Pro para crear la
+ *   cuarta obra, que todavía no existe pero ya va cobrada.
  */
 export async function chargeFor(
   organizationId: OrgId,
   activateNow: boolean,
   now: Date = new Date(),
+  includeNextProject = false,
 ): Promise<ChargeQuote> {
   const [facts, projects] = await Promise.all([
     loadFacts(organizationId),
@@ -73,8 +75,10 @@ export async function chargeFor(
     if (state.status !== 'prueba') {
       throw badRequest('Activar el plan antes de tiempo sólo tiene sentido durante el mes gratis.');
     }
-    const withNext = [...projects, { id: 'proxima-obra', createdAt: now, archivedAt: null }];
-    return quoteCharge({ periodStart: now, projects: withNext, previousPeriod: null });
+    const charged = includeNextProject
+      ? [...projects, { id: 'proxima-obra', createdAt: now, archivedAt: null }]
+      : projects;
+    return quoteCharge({ periodStart: now, projects: charged, previousPeriod: null });
   }
 
   const periodStart = nextPeriodStart(facts, now);
@@ -90,6 +94,7 @@ export async function bolivaresQuote(
   organizationId: OrgId,
   activateNow: boolean,
   now: Date = new Date(),
+  includeNextProject = false,
 ): Promise<BolivaresQuote> {
   const accounts = receivingAccounts();
   if (!accounts.pagoMovil && !accounts.transferencia) {
@@ -103,7 +108,7 @@ export async function bolivaresQuote(
     );
   }
 
-  const quote = await chargeFor(organizationId, activateNow, now);
+  const quote = await chargeFor(organizationId, activateNow, now, activateNow && includeNextProject);
   return {
     quote,
     rate,
@@ -148,6 +153,7 @@ export async function submitBolivaresPayment(params: {
     params.organizationId,
     input.activateNow,
     now,
+    input.includeNextProject,
   );
 
   const receipt = params.uploadReceipt ? await params.uploadReceipt() : null;

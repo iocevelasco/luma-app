@@ -58,7 +58,10 @@ export function ActivatePlanDialog({
             </Button>
           )}
           {subscription.paymentOptions.card && (
-            <Button onClick={() => checkout.mutate(true)} disabled={checkout.isPending}>
+            <Button
+              onClick={() => checkout.mutate({ activateNow: true, includeNextProject: true })}
+              disabled={checkout.isPending}
+            >
               <CreditCard className="size-4" />
               {t('subscription.activate.card')}
             </Button>

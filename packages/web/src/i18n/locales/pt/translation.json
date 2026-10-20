@@ -1197,20 +1197,20 @@
   },
   "subscription": {
     "title": "Assinatura",
-    "statusTitle": "Status",
+    "statusTitle": "Seu plano",
     "status": {
       "sin_iniciar": "Não iniciada",
-      "prueba": "Mês grátis",
-      "activa": "Ativa",
+      "prueba": "Grátis",
+      "activa": "Pro",
       "en_revision": "Pagamento em análise",
       "pago_fallido": "Cobrança falhou",
       "vencida": "Vencida"
     },
     "statusDetail": {
-      "sin_iniciar": "Seu mês grátis começa quando você criar sua primeira obra.",
-      "prueba_one": "Resta {{count}} dia de teste grátis, até {{date}}.",
-      "prueba_other": "Restam {{count}} dias de teste grátis, até {{date}}.",
-      "activa": "Em dia até {{date}}.",
+      "sin_iniciar": "Seu plano Grátis de 30 dias começa quando você criar sua primeira obra.",
+      "prueba_one": "Plano Grátis: resta {{count}} dia, até {{date}}. Até 3 obras.",
+      "prueba_other": "Plano Grátis: restam {{count}} dias, até {{date}}. Até 3 obras.",
+      "activa": "Plano Pro, em dia até {{date}}.",
       "en_revision": "Seu pagamento está em análise. Enquanto isso, você continua com acesso completo até {{date}}.",
       "pago_fallido": "Não conseguimos cobrar a renovação. O Stripe tenta de novo; você continua com acesso até {{date}}.",
       "vencida": "Suas obras estão somente para leitura. Pague para voltar a editar: nada foi perdido."
@@ -1222,7 +1222,7 @@
       "title": "Próxima cobrança",
       "from": "A partir de {{date}}",
       "lines": {
-        "base": "Plano Luma, 3 obras incluídas",
+        "base": "Plano Pro, 3 obras incluídas",
         "extra_one": "{{count}} obra extra",
         "extra_other": "{{count}} obras extras",
         "prorrateo_one": "Obra extra do mês anterior ({{count}} dia)",
@@ -1265,8 +1265,8 @@
       "cancel": "O pagamento com cartão não foi concluído."
     },
     "notice": {
-      "trialEnding_one": "Resta {{count}} dia de teste grátis.",
-      "trialEnding_other": "Restam {{count}} dias de teste grátis.",
+      "trialEnding_one": "Resta {{count}} dia do plano Grátis.",
+      "trialEnding_other": "Restam {{count}} dias do plano Grátis.",
       "inReview": "Seu pagamento está em análise. Enquanto isso, você continua com acesso completo.",
       "paymentFailed": "Não conseguimos cobrar seu cartão. Atualize-o para não perder o acesso.",
       "expired": "Sua assinatura venceu: suas obras estão somente para leitura.",
@@ -1305,14 +1305,27 @@
       "quoteError": "Não conseguimos calcular o valor em bolívares."
     },
     "activate": {
-      "title": "Ative o plano para criar sua quarta obra",
-      "body": "No mês grátis você pode ter até 3 obras ativas. Para criar a quarta, o plano começa hoje: $39 por mês com 3 obras incluídas, mais $8 por mês por obra extra. Os dias grátis restantes são perdidos.",
+      "title": "Mude para o Pro para criar sua quarta obra",
+      "body": "O plano Grátis vai até 3 obras ativas. No Pro não há limite: $39 por mês com 3 obras incluídas, mais $8 por mês por obra extra. O Pro começa hoje e os dias grátis restantes são perdidos.",
       "total": "Hoje você paga {{amount}} USD pelo primeiro mês.",
       "card": "Pagar com cartão",
       "bolivares": "Pagar em bolívares",
       "cancel": "Agora não"
     },
-    "pendingPayment": "Você enviou um pagamento em bolívares: estamos analisando."
+    "pendingPayment": "Você enviou um pagamento em bolívares: estamos analisando.",
+    "upgrade": {
+      "title": "Mudar para o Pro",
+      "pitch": "Obras sem limite: $39 por mês com 3 incluídas e $8 por mês por obra extra.",
+      "when": "A partir de quando?",
+      "now": "A partir de hoje",
+      "nowHint_one": "Você passa para o Pro já, sem o limite de 3 obras. O dia grátis restante é perdido.",
+      "nowHint_other": "Você passa para o Pro já, sem o limite de 3 obras. Os {{count}} dias grátis restantes são perdidos.",
+      "trialEnd": "Quando terminar o plano Grátis",
+      "trialEndHint": "Começa em {{date}} e você não perde nenhum dia. Até lá, continua com até 3 obras.",
+      "totalNow": "Hoje você paga {{amount}} pelo primeiro mês.",
+      "totalLater": "Você paga {{amount}} pelo primeiro mês, que começa em {{date}}.",
+      "payCard": "Pagar com cartão"
+    }
   },
   "platform": {
     "title": "Pagamentos da plataforma",

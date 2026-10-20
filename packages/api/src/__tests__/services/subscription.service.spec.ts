@@ -12,6 +12,11 @@ vi.mock('../../models/SubscriptionPayment.js', () => ({
   SubscriptionPayment: { find: vi.fn() },
 }));
 vi.mock('../../models/Project.js', () => ({ Project: { find: vi.fn() } }));
+vi.mock('../../models/OrganizationMember.js', () => ({
+  OrganizationMember: {
+    findOne: () => ({ select: () => Promise.resolve({ user: 'owner-1' }) }),
+  },
+}));
 
 const { Subscription } = await import('../../models/Subscription.js');
 const { SubscriptionPayment } = await import('../../models/SubscriptionPayment.js');
@@ -151,3 +156,33 @@ describe('summaryFor', () => {
     expect(summary.nextCharge).toBeNull();
   });
 });
+
+describe('summaryFor: Empresas de antes del sistema de suscripción', () => {
+  it('con obras y sin suscripción, le arranca el mes gratis hoy en vez de decir que arranca con la primera obra', async () => {
+    vi.clearAllMocks();
+    vi.mocked(Subscription.findOne)
+      .mockResolvedValueOnce(null as never)
+      .mockResolvedValueOnce({
+        trialStartedAt: NOW,
+        trialEndsAt: new Date('2026-11-19T12:00:00.000Z'),
+        trialEndedEarlyAt: null,
+      } as never);
+    vi.mocked(SubscriptionPayment.find).mockReturnValue({
+      select: vi.fn().mockResolvedValue([]),
+    } as never);
+    vi.mocked(Project.find).mockReturnValue({
+      select: vi.fn().mockResolvedValue(projects(2)),
+    } as never);
+
+    const summary = await summaryFor('org-1', NOW);
+
+    expect(Subscription.updateOne).toHaveBeenCalledWith(
+      { organization: 'org-1' },
+      { $setOnInsert: expect.objectContaining({ owner: 'owner-1', trialStartedAt: NOW }) },
+      { upsert: true },
+    );
+    expect(summary.status).toBe('prueba');
+    expect(summary.trialDaysLeft).toBe(30);
+  });
+});
+

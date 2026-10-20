@@ -111,10 +111,26 @@ describe('createCheckoutSession', () => {
     );
   });
 
-  it('activar ya con 3 obras: cobra hoy base + la cuarta', async () => {
+  it('pasar a Pro ya con 3 obras: cobra hoy sólo el plan, sin esperar a la prueba', async () => {
     vi.mocked(billableProjects).mockResolvedValue(projects(3));
 
     await svc.createCheckoutSession({ organizationId: 'org-1', userId: 'user-1', activateNow: true, now: NOW });
+
+    const params = checkoutParams();
+    expect(params.line_items).toEqual([{ price: 'price_base', quantity: 1 }]);
+    expect(params.subscription_data.trial_end).toBeUndefined();
+  });
+
+  it('pasar a Pro para crear la cuarta: cobra hoy base + la cuarta', async () => {
+    vi.mocked(billableProjects).mockResolvedValue(projects(3));
+
+    await svc.createCheckoutSession({
+      organizationId: 'org-1',
+      userId: 'user-1',
+      activateNow: true,
+      includeNextProject: true,
+      now: NOW,
+    });
 
     const params = checkoutParams();
     expect(params.line_items).toEqual([

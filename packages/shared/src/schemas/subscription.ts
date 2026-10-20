@@ -41,6 +41,13 @@ export const bolivaresPaymentSchema = z.object({
    */
   // `z.coerce.boolean()` convertiría el string "false" en `true`.
   activateNow: z.preprocess((value) => value === true || value === 'true', z.boolean()),
+  /**
+   * Sólo con `activateNow`, cuando se pasa a Pro para crear la cuarta obra:
+   * esa obra, que todavía no existe, entra ya en el primer cobro (plan y
+   * extra arrancan el mismo día, sin prorrateo). Pasar a Pro desde la
+   * pantalla de Suscripción no la incluye: cobra sólo las obras que hay.
+   */
+  includeNextProject: z.preprocess((value) => value === true || value === 'true', z.boolean()),
 });
 
 /** Decisión de un admin sobre un pago en bolívares. */

@@ -27,7 +27,7 @@ import { fromDayKey } from '@/components/common/date-range-filter';
 
 const RECEIPT_ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp';
 
-type FormValues = Omit<BolivaresPaymentInput, 'activateNow'>;
+type FormValues = Omit<BolivaresPaymentInput, 'activateNow' | 'includeNextProject'>;
 
 /** Un dato para copiar y pegar en la app del banco. */
 function CopyRow({ label, value }: { label: string; value: string }) {
@@ -120,14 +120,17 @@ export function BolivaresPaymentDrawer({
   open,
   onOpenChange,
   activateNow = false,
+  includeNextProject = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Desde la prueba, para crear la cuarta obra: arranca hoy. */
+  /** Pasar a Pro desde hoy, cortando el plan Gratis. */
   activateNow?: boolean;
+  /** Para crear la cuarta obra: esa obra entra ya en el cobro. */
+  includeNextProject?: boolean;
 }) {
   const { t } = useTranslation();
-  const quote = useBolivaresQuote(activateNow, open);
+  const quote = useBolivaresQuote(activateNow, includeNextProject, open);
   const pay = usePayInBolivares();
   const [receipt, setReceipt] = useState<File | null>(null);
 
@@ -143,7 +146,7 @@ export function BolivaresPaymentDrawer({
     reset,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(bolivaresPaymentSchema.omit({ activateNow: true })),
+    resolver: zodResolver(bolivaresPaymentSchema.omit({ activateNow: true, includeNextProject: true })),
     defaultValues: { paidOn: format(new Date(), 'yyyy-MM-dd') },
   });
 
@@ -174,7 +177,7 @@ export function BolivaresPaymentDrawer({
         quote.data
           ? handleSubmit((values) =>
               pay.mutate(
-                { payload: { ...values, activateNow }, receipt },
+                { payload: { ...values, activateNow, includeNextProject }, receipt },
                 { onSuccess: () => onOpenChange(false) },
               ),
             )

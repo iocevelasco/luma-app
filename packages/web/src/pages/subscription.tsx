@@ -4,6 +4,7 @@ import { CreditCard, ExternalLink, Landmark, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { PLAN } from '@luma/shared';
 import type {
   ChargeQuote,
   SubscriptionOverview,
@@ -16,6 +17,7 @@ import { PaymentStatusBadge } from '@/components/subscription/payment-status-bad
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   useInvalidateSubscription,
   useMySubscription,
@@ -180,7 +182,10 @@ function PayCard({
             CreditCard,
             t('subscription.pay.card'),
             t('subscription.pay.cardHint'),
-            <Button onClick={() => checkout.mutate(false)} disabled={checkout.isPending || inReview}>
+            <Button
+              onClick={() => checkout.mutate({ activateNow: false })}
+              disabled={checkout.isPending || inReview}
+            >
               {t('subscription.pay.card')}
             </Button>,
           )}
@@ -197,6 +202,113 @@ function PayCard({
         {!liveCard && !card && !bolivares && (
           <p className="text-sm text-muted-foreground">{t('subscription.pay.none')}</p>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+type UpgradeStart = 'now' | 'trialEnd';
+
+/**
+ * Pasar de Gratis a Pro cuando la persona quiera, sin esperar a la cuarta obra.
+ *
+ * Dos momentos posibles, y la diferencia se dice antes de pagar:
+ * - **Desde hoy**: Pro ya, sin el límite de 3 obras. Los días gratis que
+ *   quedan se pierden (la regla que se acordó para cortar la prueba).
+ * - **Cuando termine el plan Gratis**: deja el pago hecho y no pierde ningún
+ *   día; hasta entonces sigue con el límite de 3.
+ *
+ * Cuánto se cobra viene del servidor: hoy, el plan más las extras que ya
+ * haya; al terminar la prueba, el próximo cobro que ya calculó.
+ */
+function UpgradeCard({
+  subscription,
+  onPayInBolivares,
+}: {
+  subscription: SubscriptionOverview;
+  onPayInBolivares: (activateNow: boolean) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const formatDate = useFormatDate();
+  const checkout = useStripeCheckout();
+  const [start, setStart] = useState<UpgradeStart>('now');
+  const { card, bolivares } = subscription.paymentOptions;
+  const activateNow = start === 'now';
+
+  const extrasToday = Math.max(0, subscription.activeProjects - subscription.includedProjects);
+  const totalToday = PLAN.basePriceUsd + extrasToday * PLAN.extraProjectPriceUsd;
+  const totalLater = subscription.nextCharge?.totalUsd ?? PLAN.basePriceUsd;
+  const usd = (amount: number) => formatMoney(amount, 'USD', i18n.language);
+
+  const options: { value: UpgradeStart; title: string; hint: string }[] = [
+    {
+      value: 'now',
+      title: t('subscription.upgrade.now'),
+      hint: t('subscription.upgrade.nowHint', { count: subscription.trialDaysLeft ?? 0 }),
+    },
+    {
+      value: 'trialEnd',
+      title: t('subscription.upgrade.trialEnd'),
+      hint: t('subscription.upgrade.trialEndHint', { date: formatDate(subscription.trialEndsAt) }),
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{t('subscription.upgrade.title')}</CardTitle>
+        <p className="text-sm text-muted-foreground">{t('subscription.upgrade.pitch')}</p>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <RadioGroup
+          value={start}
+          onValueChange={(value) => setStart(value as UpgradeStart)}
+          className="flex flex-col gap-2"
+          aria-label={t('subscription.upgrade.when')}
+        >
+          {options.map((option) => (
+            <label
+              key={option.value}
+              className={cn(
+                'flex cursor-pointer items-start gap-3 rounded-2xl border bg-background p-4 transition-colors',
+                start === option.value ? 'border-primary' : 'border-border',
+              )}
+            >
+              <RadioGroupItem value={option.value} className="mt-0.5" />
+              <span className="flex flex-col gap-0.5">
+                <span className="font-medium">{option.title}</span>
+                <span className="text-sm text-muted-foreground">{option.hint}</span>
+              </span>
+            </label>
+          ))}
+        </RadioGroup>
+
+        <p className="text-sm">
+          {activateNow
+            ? t('subscription.upgrade.totalNow', { amount: usd(totalToday) })
+            : t('subscription.upgrade.totalLater', {
+                amount: usd(totalLater),
+                date: formatDate(subscription.trialEndsAt),
+              })}
+        </p>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          {bolivares && (
+            <Button variant="secondary" onClick={() => onPayInBolivares(activateNow)}>
+              <Landmark className="size-4" />
+              {t('subscription.pay.bolivares')}
+            </Button>
+          )}
+          {card && (
+            <Button onClick={() => checkout.mutate({ activateNow })} disabled={checkout.isPending}>
+              <CreditCard className="size-4" />
+              {t('subscription.upgrade.payCard')}
+            </Button>
+          )}
+          {!card && !bolivares && (
+            <p className="text-sm text-muted-foreground">{t('subscription.pay.none')}</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -272,7 +384,8 @@ export function SubscriptionPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [waitingStripe, setWaitingStripe] = useState(false);
-  const [payingInBolivares, setPayingInBolivares] = useState(false);
+  // `null` = cerrado; si no, con qué modo se abre el pago en Bs.
+  const [bolivaresMode, setBolivaresMode] = useState<{ activateNow: boolean } | null>(null);
   const invalidate = useInvalidateSubscription();
   const { data: subscription, isLoading, isError } = useMySubscription({
     pollWhilePending: waitingStripe,
@@ -311,18 +424,31 @@ export function SubscriptionPage() {
             {subscription.nextCharge && (
               <NextChargeCard charge={subscription.nextCharge} auto={hasLiveCard(subscription)} />
             )}
-            {subscription.status !== 'sin_iniciar' && (
-              <PayCard
+            {subscription.status === 'prueba' &&
+            !hasLiveCard(subscription) &&
+            !hasPendingPayment ? (
+              <UpgradeCard
                 subscription={subscription}
-                hasPendingPayment={hasPendingPayment}
-                onPayInBolivares={() => setPayingInBolivares(true)}
+                onPayInBolivares={(activateNow) => setBolivaresMode({ activateNow })}
               />
+            ) : (
+              subscription.status !== 'sin_iniciar' && (
+                <PayCard
+                  subscription={subscription}
+                  hasPendingPayment={hasPendingPayment}
+                  onPayInBolivares={() => setBolivaresMode({ activateNow: false })}
+                />
+              )
             )}
             <HistoryCard payments={payments} />
           </div>
         )}
       </PageLayout>
-      <BolivaresPaymentDrawer open={payingInBolivares} onOpenChange={setPayingInBolivares} />
+      <BolivaresPaymentDrawer
+        open={bolivaresMode !== null}
+        onOpenChange={(open) => !open && setBolivaresMode(null)}
+        activateNow={bolivaresMode?.activateNow ?? false}
+      />
     </>
   );
 }

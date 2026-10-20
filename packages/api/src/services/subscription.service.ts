@@ -15,6 +15,7 @@ import {
   type SubscriptionState,
   type SubscriptionSummary,
 } from '@luma/shared';
+import { OrganizationMember } from '../models/OrganizationMember.js';
 import { Project } from '../models/Project.js';
 import { Subscription, type ISubscription } from '../models/Subscription.js';
 import { SubscriptionPayment, type ISubscriptionPayment } from '../models/SubscriptionPayment.js';
@@ -181,16 +182,37 @@ export function previousPaidPeriod(
   return null;
 }
 
+/**
+ * Una Empresa con obras y sin suscripción: la tenía de antes del sistema de
+ * suscripción y no pasó por `migrate-subscriptions`. Recibe lo mismo que le
+ * habría dado la migración —el mes gratis desde hoy— en vez de un "tu prueba
+ * arranca con tu primera obra" a quien ya tiene obras.
+ */
+async function healMissingTrial(organizationId: OrgId, now: Date): Promise<boolean> {
+  const owner = await OrganizationMember.findOne({
+    organization: organizationId,
+    role: 'owner',
+  }).select('user');
+  if (!owner) return false;
+  await startTrialFor(organizationId, owner.user, now);
+  return true;
+}
+
 /** Todo lo que la pantalla de Suscripción necesita, de una vez. */
 export async function summaryFor(
   organizationId: OrgId,
   now: Date = new Date(),
 ): Promise<SubscriptionSummary> {
-  const [facts, projects] = await Promise.all([
-    loadFacts(organizationId),
-    billableProjects(organizationId),
-  ]);
-  const state = subscriptionState(facts, now);
+  const projects = await billableProjects(organizationId);
+  let facts = await loadFacts(organizationId);
+  let state = subscriptionState(facts, now);
+
+  if (state.status === 'sin_iniciar' && activeProjectsAt(projects, now) > 0) {
+    if (await healMissingTrial(organizationId, now)) {
+      facts = await loadFacts(organizationId);
+      state = subscriptionState(facts, now);
+    }
+  }
 
   let nextCharge = null;
   if (state.status !== 'sin_iniciar') {

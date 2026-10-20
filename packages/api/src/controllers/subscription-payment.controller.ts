@@ -31,12 +31,19 @@ async function myOrganization(req: Request): Promise<string> {
   return organizationId;
 }
 
-/** `GET /api/subscription/quote?activateNow=true` — cuánto pagar hoy en bolívares y dónde. */
+/**
+ * `GET /api/subscription/quote?activateNow=true&includeNextProject=true` —
+ * cuánto pagar hoy en bolívares y dónde.
+ */
 export async function getBolivaresQuote(req: Request, res: Response, next: NextFunction) {
   try {
     const organizationId = await myOrganization(req);
     const activateNow = req.query.activateNow === 'true';
-    return res.json({ success: true, data: await bolivaresQuote(organizationId, activateNow) });
+    const includeNextProject = req.query.includeNextProject === 'true';
+    return res.json({
+      success: true,
+      data: await bolivaresQuote(organizationId, activateNow, new Date(), includeNextProject),
+    });
   } catch (error) {
     next(error);
   }

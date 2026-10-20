@@ -128,6 +128,7 @@ export function AdminHomePage() {
       open={payingInBolivares}
       onOpenChange={setPayingInBolivares}
       activateNow
+      includeNextProject
     />
     </>
   );

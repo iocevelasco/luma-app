@@ -126,13 +126,16 @@ async function ensureCustomer(organizationId: OrgId, userId: string): Promise<st
  *
  * - Normal: base + las extras activas hoy. Si todavía le queda prueba (o un
  *   período ya pago en Bs), Stripe espera hasta entonces para cobrar.
- * - `activateNow` (sólo en prueba, para crear la cuarta): cobra ya, base + la
- *   extra que va a crear; la prueba termina cuando Stripe confirma el pago.
+ * - `activateNow` (sólo en prueba): pasa a Pro ya; cobra hoy base + las
+ *   extras que haya, y la prueba termina cuando Stripe confirma el pago. Con
+ *   `includeNextProject` (para crear la cuarta) esa obra entra en el cobro.
  */
 export async function createCheckoutSession(params: {
   organizationId: OrgId;
   userId: string;
   activateNow: boolean;
+  /** Con `activateNow`: la cuarta obra, que se va a crear, entra ya en el primer cobro. */
+  includeNextProject?: boolean;
   now?: Date;
 }): Promise<{ url: string }> {
   ensureEnabled();
@@ -157,7 +160,8 @@ export async function createCheckoutSession(params: {
     throw badRequest('Activar el plan antes de tiempo sólo tiene sentido durante el mes gratis.');
   }
 
-  const active = activeProjectsAt(projects, now) + (params.activateNow ? 1 : 0);
+  const active =
+    activeProjectsAt(projects, now) + (params.activateNow && params.includeNextProject ? 1 : 0);
   const extras = Math.max(0, active - PLAN.includedProjects);
   const prices = await resolvePrices();
   const customer = await ensureCustomer(params.organizationId, params.userId);

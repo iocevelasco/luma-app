@@ -47,6 +47,9 @@ export function useCreateProject() {
     mutationFn: (payload: CreateProjectInput) => projectsApi.create(payload),
     onSuccess: ({ project }) => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.projects] });
+      // Una obra nueva cambia la suscripción: la primera arranca el mes
+      // gratis, y cada una cuenta para el límite y para el próximo cobro.
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.subscription] });
       toast.success(t('project.new.created'));
       navigate(projectDetailPath(project.id));
     },

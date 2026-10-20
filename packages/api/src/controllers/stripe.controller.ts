@@ -17,7 +17,10 @@ async function myOrganization(req: Request): Promise<string> {
   return organizationId;
 }
 
-/** `POST /api/subscription/stripe/checkout` `{ activateNow? }` → `{ url }` de Stripe Checkout. */
+/**
+ * `POST /api/subscription/stripe/checkout` `{ activateNow?, includeNextProject? }`
+ * → `{ url }` de Stripe Checkout.
+ */
 export async function startStripeCheckout(req: Request, res: Response, next: NextFunction) {
   try {
     const organizationId = await myOrganization(req);
@@ -25,6 +28,7 @@ export async function startStripeCheckout(req: Request, res: Response, next: Nex
       organizationId,
       userId: req.user!.sub,
       activateNow: req.body?.activateNow === true,
+      includeNextProject: req.body?.includeNextProject === true,
     });
     return res.json({ success: true, data: { url } });
   } catch (error) {

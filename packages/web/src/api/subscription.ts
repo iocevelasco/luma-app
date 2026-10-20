@@ -29,10 +29,13 @@ export const subscriptionApi = {
 
   rate: () => unwrap<{ rate: BcvRate }>(apiClient.get('/api/subscription/rate')),
 
-  quote: (activateNow: boolean) =>
-    unwrap<BolivaresQuote>(
-      apiClient.get(`/api/subscription/quote${activateNow ? '?activateNow=true' : ''}`),
-    ),
+  quote: (activateNow: boolean, includeNextProject = false) => {
+    const params = new URLSearchParams();
+    if (activateNow) params.set('activateNow', 'true');
+    if (activateNow && includeNextProject) params.set('includeNextProject', 'true');
+    const query = params.toString();
+    return unwrap<BolivaresQuote>(apiClient.get(`/api/subscription/quote${query ? `?${query}` : ''}`));
+  },
 
   payments: () =>
     unwrap<{ payments: SubscriptionPaymentSummary[] }>(apiClient.get('/api/subscription/payments')),
@@ -48,13 +51,14 @@ export const subscriptionApi = {
     formData.append('paidOn', payload.paidOn);
     formData.append('amountBs', String(payload.amountBs));
     formData.append('activateNow', String(payload.activateNow));
+    formData.append('includeNextProject', String(payload.includeNextProject));
     return unwrap<{ payment: SubscriptionPaymentSummary }>(
       apiClient.post('/api/subscription/payments', formData),
     );
   },
 
-  stripeCheckout: (activateNow: boolean) =>
-    unwrap<{ url: string }>(apiClient.post('/api/subscription/stripe/checkout', { activateNow })),
+  stripeCheckout: (options: { activateNow: boolean; includeNextProject?: boolean }) =>
+    unwrap<{ url: string }>(apiClient.post('/api/subscription/stripe/checkout', options)),
 
   stripePortal: () => unwrap<{ url: string }>(apiClient.post('/api/subscription/stripe/portal')),
 };

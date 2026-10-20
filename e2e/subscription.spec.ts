@@ -6,9 +6,10 @@ import { requiresApi } from './helpers/api';
  * La suscripción, desde la pantalla. Lo que fija este spec es lo que una
  * persona ve el primer día, que es lo que más se rompe sin que nadie note:
  *
- * - quien se registra arranca su mes gratis, sin tarjeta;
- * - en la prueba, la cuarta obra no entra al alta: abre el pase al plan, con
- *   el monto (base + la cuarta) y la advertencia de que se pierden los días.
+ * - quien se registra arranca su plan Gratis (30 días), sin tarjeta, y
+ *   puede pasar a Pro desde el primer día sin esperar a la cuarta obra;
+ * - con el plan Gratis la cuarta obra no entra al alta: abre el pase a Pro,
+ *   con el monto (plan + la cuarta) y la advertencia de que se pierden los días.
  *
  * No paga: el cobro con tarjeta vive en Stripe y el de bolívares necesita
  * cuentas configuradas y un admin. Eso lo cubren los tests de la API.
@@ -34,7 +35,7 @@ async function createProject(page: Page, name: string) {
 requiresApi();
 
 test.describe('suscripción', () => {
-  test('el registro arranca el mes gratis y la cuarta obra pide activar el plan', async ({
+  test('el registro arranca el plan Gratis, se puede pasar a Pro y la cuarta obra lo pide', async ({
     page,
   }) => {
     const email = `e2e-sub-${RUN_ID}@luma.test`;
@@ -46,8 +47,11 @@ test.describe('suscripción', () => {
     await page.getByRole('button').filter({ has: page.locator('[data-slot="avatar"]') }).click();
     await page.getByTestId('user-menu-subscription').click();
     await expect(page).toHaveURL(/\/admin\/settings\/subscription$/);
-    await expect(page.getByText('Mes gratis')).toBeVisible();
-    await expect(page.getByText(/Te quedan 30 días de prueba gratis/)).toBeVisible();
+    await expect(page.getByText('Gratis', { exact: true })).toBeVisible();
+    await expect(page.getByText(/Plan Gratis: te quedan 30 días/)).toBeVisible();
+    // Pasar a Pro no espera a la cuarta obra: está desde el primer día.
+    await expect(page.getByText('Pasar a Pro', { exact: true })).toBeVisible();
+    await expect(page.getByText('Hoy pagás US$ 39,00 por el primer mes.')).toBeVisible();
 
     for (const n of [1, 2, 3]) await createProject(page, `Obra ${n} suscripción ${RUN_ID}`);
 
@@ -55,7 +59,7 @@ test.describe('suscripción', () => {
     await page.goto(appUrl('/admin'));
     await page.getByRole('button', { name: /nueva obra/i }).click();
     const dialog = page.getByRole('dialog');
-    await expect(dialog.getByText('Activá el plan para crear tu cuarta obra')).toBeVisible();
+    await expect(dialog.getByText('Pasá a Pro para crear tu cuarta obra')).toBeVisible();
     await expect(dialog.getByText('Hoy pagás 47 USD por el primer mes.')).toBeVisible();
     await expect(dialog.getByText(/se pierden/)).toBeVisible();
     await expect(page).toHaveURL(/\/admin$/);

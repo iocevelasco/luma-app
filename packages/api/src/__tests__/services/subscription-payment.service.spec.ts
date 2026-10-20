@@ -64,6 +64,7 @@ const input = {
   paidOn: '2026-10-20',
   amountBs: 34393.2,
   activateNow: false,
+  includeNextProject: false,
 };
 
 beforeEach(() => {
@@ -85,11 +86,22 @@ describe('bolivaresQuote', () => {
     expect(q.accounts.transferencia).toBeUndefined();
   });
 
-  it('activar ya, desde la prueba con 3 obras: arranca hoy con la cuarta incluida', async () => {
+  it('pasar a Pro ya desde la prueba: arranca hoy y cobra sólo las obras que hay', async () => {
     const q = await svc.bolivaresQuote('org-1', true, NOW);
     expect(q.quote.periodStart).toBe(NOW.toISOString());
-    expect(q.quote.totalUsd).toBe(47);
+    expect(q.quote.totalUsd).toBe(39);
     expect(q.activatesNow).toBe(true);
+  });
+
+  it('pasar a Pro para crear la cuarta: la cuarta entra ya en el cobro', async () => {
+    const q = await svc.bolivaresQuote('org-1', true, NOW, true);
+    expect(q.quote.totalUsd).toBe(47);
+  });
+
+  it('includeNextProject sin activateNow no cambia nada', async () => {
+    const q = await svc.bolivaresQuote('org-1', false, NOW, true);
+    expect(q.quote.totalUsd).toBe(39);
+    expect(q.quote.periodStart).toBe('2026-11-09T00:00:00.000Z');
   });
 
   it('sin tasa vigente no cotiza: el pago en Bs se pausa', async () => {

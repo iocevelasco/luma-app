@@ -41,12 +41,16 @@ export function useSubscriptionPayments() {
 }
 
 /** La cotización en Bs. Sólo cuando se abre el pago: la tasa no se pide de más. */
-export function useBolivaresQuote(activateNow: boolean, enabled: boolean) {
+export function useBolivaresQuote(
+  activateNow: boolean,
+  includeNextProject: boolean,
+  enabled: boolean,
+) {
   const { isAuthenticated } = useAuth();
 
   return useQuery({
-    queryKey: [QueryKeys.bolivaresQuote, activateNow],
-    queryFn: () => subscriptionApi.quote(activateNow),
+    queryKey: [QueryKeys.bolivaresQuote, activateNow, includeNextProject],
+    queryFn: () => subscriptionApi.quote(activateNow, includeNextProject),
     enabled: isAuthenticated && enabled,
     // Una cotización vieja es una tasa vieja: siempre fresca al abrir.
     staleTime: 0,
@@ -81,7 +85,8 @@ export function useStripeCheckout() {
   const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: (activateNow: boolean) => subscriptionApi.stripeCheckout(activateNow),
+    mutationFn: (options: { activateNow: boolean; includeNextProject?: boolean }) =>
+      subscriptionApi.stripeCheckout(options),
     onSuccess: ({ url }) => window.location.assign(url),
     onError: (error) => toast.error(errorMessage(error, t)),
   });
