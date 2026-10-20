@@ -415,9 +415,11 @@ export function StaffList() {
               badges={
                 <>
                   {member.staffRole && (
-                    <Badge variant="outline">{t(`project.role.${member.staffRole}`)}</Badge>
+                    <Badge>{t(`project.role.${member.staffRole}`)}</Badge>
                   )}
-                  {member.pending && <Badge variant="secondary">{t('team.pending')}</Badge>}
+                  {member.pending && <Badge variant="warning" icon>
+                      {t('team.pending')}
+                    </Badge>}
                 </>
               }
               details={[

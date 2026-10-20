@@ -106,6 +106,29 @@
   --status-neutral: #8b949e;
   --status-info: #7dd3fc;
 
+  /* Tags (Badge): píldora tintada + círculo de color con el glifo en blanco.
+     `bg` es el relleno, `fg` el texto —más oscuro/claro que el círculo para
+     llegar a AA con 12px— y `dot` el círculo, que lleva el tono vivo. Sobre
+     el lienzo oscuro el relleno es el tono al ~16% y el texto, su versión clara. */
+  --tag-neutral-bg: #2a2a2a;
+  --tag-neutral-fg: #d4d4d8;
+  --tag-neutral-dot: #8e8e93;
+  --tag-info-bg: rgb(10 122 255 / 0.18);
+  --tag-info-fg: #7db4ff;
+  --tag-info-dot: #0a7aff;
+  --tag-success-bg: rgb(52 184 95 / 0.16);
+  --tag-success-fg: #6fdc93;
+  --tag-success-dot: #34b85f;
+  --tag-warning-bg: rgb(255 159 74 / 0.16);
+  --tag-warning-fg: #ffb877;
+  --tag-warning-dot: #ff9f4a;
+  --tag-danger-bg: rgb(235 90 78 / 0.16);
+  --tag-danger-fg: #ff9a92;
+  --tag-danger-dot: #eb5a4e;
+  --tag-solid-bg: #0a7aff;
+  --tag-solid-fg: #ffffff;
+  --tag-solid-dot: #ffffff;
+
   --surface-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
   --overlay-shadow: 0 20px 60px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(148 163 184 / 0.1) inset;
 }
@@ -191,6 +214,30 @@
   --status-danger: #dc2626;
   --status-neutral: #71717a;
   --status-info: #0369a1;
+
+  /* Tags sobre la superficie clara del panel — la paleta de referencia: gris,
+     azul, naranja, verde y rojo en píldoras tintadas con un círculo vivo. El
+     texto va un paso más oscuro que el círculo (≥4.5:1 sobre su relleno): el
+     naranja y el verde "de catálogo" a 12px no pasan AA. */
+  --tag-neutral-bg: #f2f2f2;
+  --tag-neutral-fg: #3c3c43;
+  --tag-neutral-dot: #8e8e93;
+  --tag-info-bg: #e8f1ff;
+  --tag-info-fg: #0b63ce;
+  --tag-info-dot: #0a7aff;
+  --tag-success-bg: #eaf6ee;
+  --tag-success-fg: #1e7f3e;
+  --tag-success-dot: #34b85f;
+  --tag-warning-bg: #fff3ea;
+  --tag-warning-fg: #a8520a;
+  --tag-warning-dot: #ff9f4a;
+  --tag-danger-bg: #fdedec;
+  --tag-danger-fg: #bf3128;
+  --tag-danger-dot: #eb5a4e;
+  /* El azul macizo de la referencia (#0a7aff) con blanco da 4.0:1; este llega a 5.0. */
+  --tag-solid-bg: #0a6ce0;
+  --tag-solid-fg: #ffffff;
+  --tag-solid-dot: #ffffff;
 
   --surface-shadow: 0 1px 2px rgb(24 24 27 / 0.06), 0 8px 24px -12px rgb(24 24 27 / 0.12);
   --overlay-shadow: 0 20px 60px rgb(24 24 27 / 0.18), 0 0 0 1px rgb(24 24 27 / 0.06);
@@ -288,6 +335,24 @@
   --color-status-danger: var(--status-danger);
   --color-status-neutral: var(--status-neutral);
   --color-status-info: var(--status-info);
+  --color-tag-neutral-bg: var(--tag-neutral-bg);
+  --color-tag-neutral-fg: var(--tag-neutral-fg);
+  --color-tag-neutral-dot: var(--tag-neutral-dot);
+  --color-tag-info-bg: var(--tag-info-bg);
+  --color-tag-info-fg: var(--tag-info-fg);
+  --color-tag-info-dot: var(--tag-info-dot);
+  --color-tag-success-bg: var(--tag-success-bg);
+  --color-tag-success-fg: var(--tag-success-fg);
+  --color-tag-success-dot: var(--tag-success-dot);
+  --color-tag-warning-bg: var(--tag-warning-bg);
+  --color-tag-warning-fg: var(--tag-warning-fg);
+  --color-tag-warning-dot: var(--tag-warning-dot);
+  --color-tag-danger-bg: var(--tag-danger-bg);
+  --color-tag-danger-fg: var(--tag-danger-fg);
+  --color-tag-danger-dot: var(--tag-danger-dot);
+  --color-tag-solid-bg: var(--tag-solid-bg);
+  --color-tag-solid-fg: var(--tag-solid-fg);
+  --color-tag-solid-dot: var(--tag-solid-dot);
 
   /*
     El filete solo (VoltAgent literal) quedaba chato en una card que además

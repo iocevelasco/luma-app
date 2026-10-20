@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { fromDayKey } from '@/components/common/date-range-filter';
 import { MaterialDrawer } from '@/components/materials/material-drawer';
+import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
@@ -158,18 +159,7 @@ function MaterialRow({
       </div>
 
       <div className="flex items-center gap-2">
-        {/*
-          Rojo sólo lo que todavía no se pidió: eso es lo que puede frenar una
-          actividad. Lo ya solicitado está en camino, y pintarlo igual que lo
-          que nadie encargó borra la diferencia entre "hay que hacer algo" y
-          "hay que esperar".
-        */}
-        <Badge
-          variant={material.status === 'pendiente' ? 'destructive' : 'secondary'}
-          className={cn(material.status === 'solicitado' && 'bg-warning text-warning-foreground')}
-        >
-          {t(`material.status.${material.status}`)}
-        </Badge>
+        <MaterialStatusBadge status={material.status} />
 
         {canEdit && next && (
           <Button
@@ -327,7 +317,7 @@ function ToBuyGroup({
               })}
             </span>
             {urgent && (
-              <Badge variant={days! < 0 ? 'destructive' : 'default'} className={cn(days! >= 0 && 'bg-warning text-warning-foreground')}>
+              <Badge variant={days! < 0 ? 'danger' : 'warning'} icon>
                 {days! < 0
                   ? t('material.list.startedAlready')
                   : days === 0

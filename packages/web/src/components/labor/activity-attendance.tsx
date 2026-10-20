@@ -134,7 +134,9 @@ export function ActivityAttendance({
             <span className="text-muted-foreground"> / {expectedCount}</span>
           </span>
           {missing.length > 0 && (
-            <Badge variant="destructive">{t('labor.deficit', { count: missing.length })}</Badge>
+            <Badge variant="danger" icon>
+              {t('labor.deficit', { count: missing.length })}
+            </Badge>
           )}
         </div>
       </header>
@@ -297,7 +299,7 @@ function CrewRow({
                 {member.name}
               </span>
               {member.isLead && (
-                <Badge variant="secondary" className="shrink-0">
+                <Badge variant="info" className="shrink-0">
                   {t('crew.list.lead')}
                 </Badge>
               )}

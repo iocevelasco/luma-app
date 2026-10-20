@@ -475,7 +475,7 @@ function ProvidersCard({ projectId }: { projectId: string }) {
                     <SpecialtyIcon className="size-4 shrink-0 text-muted-foreground" />
                     <p className="truncate font-medium">{provider.name}</p>
                   </div>
-                  <Badge variant="secondary">
+                  <Badge>
                     {provider.specialty === 'otra'
                       ? provider.customSpecialty
                       : t(`provider.specialty.${provider.specialty}`)}
@@ -700,7 +700,7 @@ export function ProjectDetailPage() {
                   <span className="font-medium">{member.name}</span>
                   <span className="truncate text-xs text-muted-foreground">{member.email}</span>
                 </div>
-                <Badge variant="secondary" className="shrink-0">
+                <Badge className="shrink-0">
                   {t(`project.role.${member.role}`)}
                 </Badge>
               </li>

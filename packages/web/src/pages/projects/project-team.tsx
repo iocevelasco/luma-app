@@ -256,7 +256,7 @@ function MemberRow({ projectId, member }: { projectId: string; member: ProjectMe
 
       <div className="flex shrink-0 items-center gap-2">
         {isManager ? (
-          <Badge variant="secondary">{t('project.role.gerente')}</Badge>
+          <Badge variant="solid">{t('project.role.gerente')}</Badge>
         ) : (
           <>
             <Select

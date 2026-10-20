@@ -8,11 +8,11 @@ import {
   type ProviderEngagementStatus,
   type ProviderRequirementType,
 } from '@luma/shared';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, Check, Clock, Pencil, Plus, Trash2, X, type LucideIcon } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { FormDrawer } from '@/components/common/form-drawer';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormShell } from '@/components/common/form-shell';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -51,11 +51,15 @@ const STANDARD_REQUIREMENTS: ProviderRequirementType[] = [
   'actividad_previa',
 ];
 
-function statusVariant(status: ProviderEngagementStatus) {
-  if (status === 'aprobada') return 'default' as const;
-  if (status === 'rechazada') return 'destructive' as const;
-  return 'secondary' as const;
-}
+const ENGAGEMENT_TAG: Record<
+  ProviderEngagementStatus,
+  { variant: BadgeVariant; icon: LucideIcon }
+> = {
+  solicitada: { variant: 'warning', icon: Clock },
+  cotizada: { variant: 'info', icon: ArrowRight },
+  aprobada: { variant: 'success', icon: Check },
+  rechazada: { variant: 'danger', icon: X },
+};
 
 /**
  * Alta y edición de una contratación. Los requisitos se eligen por tipo, y al
@@ -248,7 +252,10 @@ function EngagementCard({
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Badge variant={statusVariant(engagement.status)}>
+        <Badge
+          variant={ENGAGEMENT_TAG[engagement.status].variant}
+          icon={ENGAGEMENT_TAG[engagement.status].icon}
+        >
           {t(`engagement.status.${engagement.status}`)}
         </Badge>
         {canWrite && (

@@ -391,7 +391,7 @@ export function ProjectProvidersPage() {
               {/* Sólo se marca la excepción: los de la libreta son el default
                   y etiquetarlos a todos sería ruido. */}
               {provider.scope === 'project' && (
-                <Badge variant="secondary">{t('provider.scope.projectBadge')}</Badge>
+                <Badge variant="info">{t('provider.scope.projectBadge')}</Badge>
               )}
             </div>
             {provider.companyName && (

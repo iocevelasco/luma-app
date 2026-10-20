@@ -496,7 +496,7 @@ export function ProjectExpensesPage() {
                           {expense.activityName && ` · ${expense.activityName}`}
                         </p>
                         {expense.currency !== currency && (
-                          <Badge variant="secondary" className="w-fit">
+                          <Badge className="w-fit">
                             {expense.amount} {expense.currency}
                           </Badge>
                         )}
