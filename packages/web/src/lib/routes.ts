@@ -18,6 +18,10 @@ export const ROUTES = {
   PROVIDERS: '/admin/proveedores',
   CREW: '/admin/empleados',
   ACCOUNT_SETTINGS: '/admin/settings/account',
+  /** La API arma las vueltas desde Stripe con este mismo path: ver `stripe.service.ts`. */
+  SUBSCRIPTION: '/admin/settings/subscription',
+  /** Sólo admin de plataforma: la cola de pagos en Bs y la tasa BCV. */
+  PLATFORM_BILLING: '/admin/plataforma/pagos',
   PROJECT_NEW: '/admin/proyectos/nuevo',
   PROJECT_DETAIL: '/admin/proyectos/:projectId',
   PROJECT_ACTIVITIES: '/admin/proyectos/:projectId/actividades',

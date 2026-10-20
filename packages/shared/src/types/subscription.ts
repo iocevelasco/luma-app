@@ -185,3 +185,23 @@ export interface SubscriptionOverview extends SubscriptionSummary {
   card: { status: StripeSubscriptionStatus | null; manageable: boolean };
 }
 
+
+/** Una lectura de la tasa, como la ve el admin. */
+export interface ExchangeRateRecord {
+  id: string;
+  source: 'bcv' | 'manual';
+  usd: number;
+  eur: number | null;
+  valueDate: string;
+  fetchedAt: string;
+  lastSeenAt: string;
+  /** Saltó demasiado contra la anterior: se guardó pero no se usa. */
+  flagged: boolean;
+  flagReason: string | null;
+}
+
+/** `GET /api/admin/exchange-rates`. */
+export interface ExchangeRatesResponse {
+  current: BcvRate | null;
+  rates: ExchangeRateRecord[];
+}

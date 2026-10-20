@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import type { Project } from '@luma/shared';
 import { HardHat, MapPin, Plus } from 'lucide-react';
@@ -10,6 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useProjects } from '@/hooks/projects/use-project-queries';
 import { ROUTES, projectActivitiesPath } from '@/lib/routes';
+import { ActivatePlanDialog } from '@/components/subscription/activate-plan-dialog';
+import { BolivaresPaymentDrawer } from '@/components/subscription/bolivares-payment-drawer';
+import { useMySubscription } from '@/hooks/subscription/use-subscription-queries';
+import { nextProjectState } from '@/lib/subscription';
 
 /**
  * Una obra, como tarjeta. Toda la tarjeta es el enlace: un nombre clickeable
@@ -61,20 +66,37 @@ function ProjectCard({ project }: { project: Project }) {
 export function AdminHomePage() {
   const { t } = useTranslation();
   const { data, isLoading } = useProjects();
+  const { data: subscription } = useMySubscription();
+  const [activating, setActivating] = useState(false);
+  const [payingInBolivares, setPayingInBolivares] = useState(false);
 
   const projects = data?.projects ?? [];
+  // "Nueva obra" hace lo que corresponde según la suscripción: en la prueba
+  // con 3 activas abre el pase al plan (la cuarta no se puede crear gratis)
+  // y vencida lleva a pagar. El resto entra al alta como siempre.
+  const next = nextProjectState(subscription);
+  const newProjectLabel = (
+    <>
+      <Plus className="size-4" />
+      {t('project.list.new')}
+    </>
+  );
 
   return (
+    <>
     <PageLayout
       width="full"
       isLoading={isLoading}
       action={
-        <Button asChild>
-          <Link to={ROUTES.PROJECT_NEW}>
-            <Plus className="size-4" />
-            {t('project.list.new')}
-          </Link>
-        </Button>
+        next === 'trialLimit' ? (
+          <Button onClick={() => setActivating(true)}>{newProjectLabel}</Button>
+        ) : (
+          <Button asChild>
+            <Link to={next === 'expired' ? ROUTES.SUBSCRIPTION : ROUTES.PROJECT_NEW}>
+              {newProjectLabel}
+            </Link>
+          </Button>
+        )
       }
       empty={
         projects.length === 0
@@ -94,6 +116,20 @@ export function AdminHomePage() {
         ))}
       </ul>
     </PageLayout>
+    {subscription && (
+      <ActivatePlanDialog
+        open={activating}
+        onOpenChange={setActivating}
+        subscription={subscription}
+        onPayInBolivares={() => setPayingInBolivares(true)}
+      />
+    )}
+    <BolivaresPaymentDrawer
+      open={payingInBolivares}
+      onOpenChange={setPayingInBolivares}
+      activateNow
+    />
+    </>
   );
 }
 
