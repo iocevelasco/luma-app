@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createMaterialSchema, updateMaterialSchema } from './material.js';
+import { createMaterialSchema, editMaterialSchema, updateMaterialSchema } from './material.js';
 
 const validMaterial = {
   name: 'Cemento',
@@ -58,5 +58,25 @@ describe('createMaterialSchema', () => {
 describe('updateMaterialSchema', () => {
   it('acepta un update parcial de sólo status: las transiciones son libres', () => {
     expect(updateMaterialSchema.safeParse({ status: 'en_obra' }).success).toBe(true);
+  });
+});
+
+describe('updateMaterialSchema — vaciar campos', () => {
+  it('acepta null en el costo y el proveedor para poder sacarlos', () => {
+    const result = updateMaterialSchema.safeParse({ estimatedCost: null, supplier: null });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('editMaterialSchema', () => {
+  it('no acepta el estado: se cambia por su propio flujo', () => {
+    const result = editMaterialSchema.safeParse({ ...validMaterial, status: 'comprado' });
+    expect(result.success).toBe(true);
+    if (result.success) expect('status' in result.data).toBe(false);
+  });
+
+  it('exige nombre, cantidad y unidad', () => {
+    expect(editMaterialSchema.safeParse({}).success).toBe(false);
+    expect(editMaterialSchema.safeParse({ ...validMaterial, name: '  ' }).success).toBe(false);
   });
 });

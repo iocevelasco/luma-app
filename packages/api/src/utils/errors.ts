@@ -58,3 +58,13 @@ export const conflict = (message: string, details?: unknown) =>
 
 export const serviceUnavailable = (message: string) =>
   new AppError('SERVICE_UNAVAILABLE', message);
+
+/**
+ * El material ya salió de Pendiente. `code` propio y no un `CONFLICT` genérico
+ * para que la pantalla refresque la fila sin comparar el texto.
+ */
+export const materialLocked = () =>
+  new AppError(
+    'MATERIAL_LOCKED',
+    'Este material ya cambió de estado y no se puede editar ni eliminar.',
+  );

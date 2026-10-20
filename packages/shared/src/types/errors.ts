@@ -25,6 +25,12 @@ export type ApiErrorCode =
   | 'NOT_FOUND'
   /** Choca con algo que ya está: un email repetido, una cuota con cobros. */
   | 'CONFLICT'
+  /**
+   * El material ya salió de Pendiente y no se corrige: ni se edita ni se
+   * elimina. Aparte de `CONFLICT` para que la UI pueda reaccionar (refrescar la
+   * fila) sin comparar el texto del mensaje.
+   */
+  | 'MATERIAL_LOCKED'
   /** El archivo es más grande que el límite. */
   | 'PAYLOAD_TOO_LARGE'
   /** Demasiadas requests. */
@@ -61,6 +67,7 @@ export const STATUS_BY_ERROR_CODE: Record<ApiErrorCode, number> = {
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  MATERIAL_LOCKED: 409,
   PAYLOAD_TOO_LARGE: 413,
   RATE_LIMITED: 429,
   SERVICE_UNAVAILABLE: 503,

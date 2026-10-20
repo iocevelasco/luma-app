@@ -1,6 +1,14 @@
 import type { MaterialItem, MaterialStatus } from '@luma/shared';
 import { describe, expect, it } from 'vitest';
-import { materialTab, organizeMaterials, type ActivityRef } from './materials';
+import {
+  buildPurchaseRows,
+  buildPurchaseText,
+  countSuppliers,
+  materialTab,
+  organizeMaterials,
+  supplierKey,
+  type ActivityRef,
+} from './materials';
 
 function material(
   id: string,
@@ -17,6 +25,7 @@ function material(
     unit: 'un',
     status,
     statusChangedAt: changedAt,
+    editable: false,
     createdBy: 'u1',
     createdAt: changedAt,
     updatedAt: changedAt,
@@ -90,5 +99,82 @@ describe('organizeMaterials', () => {
     ];
     const { toBuy, bought } = organizeMaterials(all, activities);
     expect([...ids(toBuy), ...ids(bought)].sort()).toEqual(['c', 'o', 'p', 's']);
+  });
+});
+
+
+function withSupplier(
+  id: string,
+  supplier: string | undefined,
+  status: MaterialStatus = 'pendiente',
+  name = id,
+): MaterialItem {
+  return { ...material(id, status), name, supplier };
+}
+
+describe('supplierKey', () => {
+  it('une mayúsculas, tildes y espacios de un mismo proveedor', () => {
+    const key = supplierKey('Corralón Sur');
+    expect(supplierKey(' corralon   sur ')).toBe(key);
+    expect(supplierKey('CORRALÓN SUR')).toBe(key);
+  });
+
+  it('un proveedor vacío no tiene clave', () => {
+    expect(supplierKey(undefined)).toBe('');
+    expect(supplierKey('   ')).toBe('');
+  });
+});
+
+describe('buildPurchaseRows', () => {
+  it('ordena por proveedor y deja "sin proveedor" al final', () => {
+    const rows = buildPurchaseRows([
+      withSupplier('a', undefined),
+      withSupplier('b', 'Ferretería Díaz'),
+      withSupplier('c', 'Corralón Sur'),
+    ]);
+    expect(rows.map((r) => r.id)).toEqual(['c', 'b', 'a']);
+    expect(rows[2].supplier).toBeNull();
+  });
+
+  it('agrupa las grafías de un mismo proveedor y muestra la más repetida', () => {
+    const rows = buildPurchaseRows([
+      withSupplier('a', 'corralon sur', 'pendiente', 'A'),
+      withSupplier('b', 'Corralón Sur', 'pendiente', 'B'),
+      withSupplier('c', ' Corralón Sur ', 'pendiente', 'C'),
+      withSupplier('d', 'Ferretería Díaz'),
+    ]);
+    expect(rows.slice(0, 3).map((r) => r.supplier)).toEqual([
+      'Corralón Sur',
+      'Corralón Sur',
+      'Corralón Sur',
+    ]);
+    expect(countSuppliers(rows)).toBe(2);
+  });
+
+  it('dentro de un proveedor, lo ya pedido va después y se marca', () => {
+    const rows = buildPurchaseRows([
+      withSupplier('a', 'Corralón Sur', 'solicitado', 'Arena'),
+      withSupplier('b', 'Corralón Sur', 'pendiente', 'Cemento'),
+    ]);
+    expect(rows.map((r) => [r.id, r.requested])).toEqual([
+      ['b', false],
+      ['a', true],
+    ]);
+  });
+});
+
+describe('buildPurchaseText', () => {
+  it('lleva proveedor y marca lo ya pedido, igual que el PDF', () => {
+    const rows = buildPurchaseRows([
+      withSupplier('a', 'Corralón Sur', 'pendiente', 'Cemento'),
+      withSupplier('b', 'Corralón Sur', 'solicitado', 'Arena'),
+      withSupplier('c', undefined, 'pendiente', 'Pintura'),
+    ]);
+    const text = buildPurchaseText(rows, { unit: () => 'Unidad', requested: 'ya pedido' });
+    expect(text.split('\n')).toEqual([
+      '- Cemento: 1 Unidad · Corralón Sur',
+      '- Arena: 1 Unidad · Corralón Sur (ya pedido)',
+      '- Pintura: 1 Unidad',
+    ]);
   });
 });

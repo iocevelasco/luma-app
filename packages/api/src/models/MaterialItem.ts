@@ -3,8 +3,13 @@ import type { MaterialStatus, MaterialUnit } from '@luma/shared';
 
 /**
  * Ítem de materiales de una obra (RF-02), opcionalmente asociado a una
- * `Activity` de la misma obra. Borrado DURO. Las transiciones de `status` son
- * libres en el backend — la confirmación es sólo fricción de UI.
+ * `Activity` de la misma obra. Borrado DURO.
+ *
+ * Las transiciones de `status` son libres en el backend. Lo que NO es libre es
+ * corregir el material —editarlo o eliminarlo—: sólo se puede mientras nunca
+ * salió de Pendiente (`isMaterialEditable` en `@luma/shared`). Nada lo
+ * referencia (ningún gasto, compromiso ni hito guarda un `materialId`), así
+ * que el borrado duro de un Pendiente no deja nada colgando.
  */
 export interface IMaterialItem extends Document {
   project: mongoose.Types.ObjectId;
