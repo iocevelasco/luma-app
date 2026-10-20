@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -103,12 +104,45 @@ export function useStripeCheckout() {
 
 export function useStripePortal() {
   const { t } = useTranslation();
+  // Se abre en el click, antes del await: si no, el navegador lo trata como popup y lo bloquea.
+  const popupRef = useRef<Window | null>(null);
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: () => subscriptionApi.stripePortal(),
-    onSuccess: ({ url }) => window.location.assign(url),
-    onError: (error) => toast.error(errorMessage(error, t)),
+    onSuccess: ({ url }) => {
+      const popup = popupRef.current;
+      popupRef.current = null;
+      if (popup && !popup.closed) {
+        popup.location.assign(url);
+        return;
+      }
+      toast.error(t('subscription.pay.manageCardBlocked'));
+    },
+    onError: (error) => {
+      popupRef.current?.close();
+      popupRef.current = null;
+      toast.error(errorMessage(error, t));
+    },
   });
+
+  const open = () => {
+    if (mutation.isPending) return;
+    const popup = window.open('', '_blank');
+    if (!popup) {
+      toast.error(t('subscription.pay.manageCardBlocked'));
+      return;
+    }
+    // Stripe no necesita volver a esta ventana. Algunos navegadores no lo permiten.
+    try {
+      popup.opener = null;
+    } catch {
+      // La ventana sigue sirviendo igual.
+    }
+    popupRef.current = popup;
+    mutation.mutate();
+  };
+
+  return { ...mutation, open };
 }
 
 /** Para la vuelta desde Stripe: refrescar todo lo que el pago pudo cambiar. */

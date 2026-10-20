@@ -172,7 +172,7 @@ function PayCard({
             Settings2,
             t('subscription.pay.manageCard'),
             t('subscription.pay.manageCardHint'),
-            <Button variant="secondary" onClick={() => portal.mutate()} disabled={portal.isPending}>
+            <Button variant="secondary" onClick={() => portal.open()} disabled={portal.isPending}>
               <ExternalLink className="size-4" />
               {t('subscription.pay.manageCard')}
             </Button>,

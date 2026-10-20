@@ -204,7 +204,7 @@ Requiere 2.4 funcionando (`stripe listen` corriendo).
 3. Al terminar se cierra el modal (o volvés de Stripe), la pantalla dice
    "Stripe confirmó el pago" y en unos segundos
    (cuando llega el webhook) queda en **Pro**, con la factura en el historial.
-4. **Administrar tarjeta** abre el portal de Stripe: cambiar tarjeta, ver
+4. **Administrar tarjeta** abre el portal de Stripe en otra ventana: cambiar tarjeta, ver
    facturas, cancelar.
 
 - *Cuando termine el plan Gratis* con tarjeta: Stripe guarda la tarjeta y **no

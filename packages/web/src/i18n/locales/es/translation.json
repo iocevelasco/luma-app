@@ -1238,6 +1238,7 @@
       "cardHint": "El pago lo procesa Stripe de forma segura. Si estás en el mes gratis, no se cobra nada hasta que termine.",
       "manageCard": "Administrar tarjeta",
       "manageCardHint": "Cambiar la tarjeta, ver facturas o dar de baja, en Stripe.",
+      "manageCardBlocked": "El navegador bloqueó la ventana de Stripe. Permití las ventanas emergentes y volvé a intentar.",
       "bolivares": "Pagar en bolívares",
       "bolivaresHint": "Pago Móvil o transferencia a la tasa BCV del día. Lo revisamos y te avisamos.",
       "none": "Todavía no hay medios de pago habilitados.",
