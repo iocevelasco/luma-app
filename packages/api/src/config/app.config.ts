@@ -164,6 +164,20 @@ export const BS_PAYMENT_CONFIG = {
  */
 const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
 const secretKey = process.env.STRIPE_SECRET_KEY;
+/**
+ * El pago con tarjeta se ofrece sólo con la clave de producción (`sk_live_`).
+ * Con la del sandbox (`sk_test_`) queda apagado, salvo `STRIPE_TEST_MODE=true`
+ * para probar el flujo en local: así un entorno con la clave de prueba nunca
+ * le muestra a un cliente real un pago que no cobra.
+ */
+const stripeTestMode = process.env.STRIPE_TEST_MODE === 'true';
+const cardPaymentsEnabled = Boolean(secretKey && (secretKey.startsWith('sk_live_') || stripeTestMode));
+
+if (secretKey && !cardPaymentsEnabled) {
+  console.warn(
+    'ℹ️  [Stripe] Clave de prueba sin STRIPE_TEST_MODE=true: el pago con tarjeta no se ofrece hasta tener la clave de producción.',
+  );
+}
 /** `pk_test_` con `sk_test_`, `pk_live_` con `sk_live_`: mezclarlas da un modal que no carga. */
 const sameStripeMode = (pk?: string, sk?: string) =>
   Boolean(pk && sk && pk.startsWith('pk_live_') === sk.startsWith('sk_live_'));
@@ -193,7 +207,7 @@ export const STRIPE_CONFIG = {
    * Stripe Tax si se activa. Luma es software para empresas, no consumidores.
    */
   PRODUCT_TAX_CODE: process.env.STRIPE_PRODUCT_TAX_CODE ?? 'txcd_10103001',
-  ENABLED: Boolean(process.env.STRIPE_SECRET_KEY),
+  ENABLED: cardPaymentsEnabled,
 } as const;
 
 /**

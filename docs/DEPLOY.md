@@ -62,7 +62,8 @@ nombre de la base no admite guiones en el formulario de Coolify.
 | `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails | aviso; los mails quedan deshabilitados |
 | `MEDIA_SERVICE_URL`, `MEDIA_SERVICE_API_KEY` | storage de archivos (evidencia RF-04 y documentación de obra) vía el microservicio `media-service` (ej. `https://media.matflow.site`); la key se emite con `bucket key create luma` | aviso; subir archivos da 503, el resto de la app sigue |
 | `STORAGE_SIGNED_URL_TTL` | opcional: vida de las URLs firmadas de lectura | `3600` segundos (máximo que admite el servicio) |
-| `STRIPE_SECRET_KEY` | pago de la suscripción con tarjeta (`sk_live_…` en producción) | no se ofrece pago con tarjeta |
+| `STRIPE_SECRET_KEY` | pago de la suscripción con tarjeta. **Sólo se ofrece con `sk_live_…`**: con una `sk_test_…` queda apagado | no se ofrece pago con tarjeta |
+| `STRIPE_TEST_MODE` | `true` ofrece la tarjeta con una clave `sk_test_…` (sólo para probar en local, nunca en producción) | con `sk_test_` no se ofrece tarjeta |
 | `STRIPE_PUBLISHABLE_KEY` | pago con tarjeta en un modal dentro de Luma (`pk_live_…` en producción, mismo modo que la secret) | el pago con tarjeta va a la página de Stripe |
 | `STRIPE_WEBHOOK_SECRET` | firma del webhook `/api/billing/stripe/webhook` | el webhook responde 503 y los pagos con tarjeta no se reflejan |
 | `PAGO_MOVIL_BANK`, `PAGO_MOVIL_PHONE`, `PAGO_MOVIL_ID` | dónde se recibe el Pago Móvil de la suscripción | ese método no se ofrece |

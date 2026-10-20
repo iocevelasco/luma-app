@@ -8,6 +8,11 @@ aprobación manual de un admin).
   Si algo de acá contradice ese archivo, manda el archivo.
 - Despliegue y variables de producción: `docs/DEPLOY.md`.
 
+> **Hoy la tarjeta está apagada.** Se ofrece sólo con la clave de producción
+> de Stripe (`sk_live_`); hasta entonces se cobra sólo en bolívares. Al
+> prenderla, volver a mencionar la tarjeta en la landing (`pricing.perks` y la
+> primera pregunta de `faq`, en `es` y `pt`).
+
 ---
 
 ## 1. Los planes
@@ -70,6 +75,9 @@ TRANSFER_ID=J-50000000-1
 
 # Pago con tarjeta: las claves del sandbox de Stripe (Developers → API keys).
 STRIPE_SECRET_KEY=sk_test_...
+# Con una clave de prueba la tarjeta está apagada (sólo se ofrece con sk_live_).
+# Esto la prende para probar en local. Nunca en producción.
+STRIPE_TEST_MODE=true
 # Con la publishable el pago se abre en un modal; sin ella, va a la página de Stripe.
 STRIPE_PUBLISHABLE_KEY=pk_test_...
 # Lo imprime `stripe listen` (ver 2.4). Sin él, el pago con tarjeta se hace
@@ -252,7 +260,7 @@ Con `seed:subscription-demo`, `demo-por-vencer` recibe el de 3 días y
 |---|---|---|
 | No está la opción de pagar en bolívares | faltan `PAGO_MOVIL_*` y/o `TRANSFER_*` | 2.1 y reiniciar la API |
 | "No tenemos una tasa BCV actualizada" | no hay ninguna tasa guardada y el BCV no respondió | 2.2 |
-| No está la opción de tarjeta | falta `STRIPE_SECRET_KEY` | 2.1 |
+| No está la opción de tarjeta | falta `STRIPE_SECRET_KEY`, o es `sk_test_` sin `STRIPE_TEST_MODE=true` (la API lo avisa al arrancar) | 2.1 |
 | Pagar con tarjeta va a la página de Stripe y no abre el modal | falta `STRIPE_PUBLISHABLE_KEY`, o es de otro modo que la secret (`pk_live_` con `sk_test_`; la API lo avisa al arrancar) | 2.1 y reiniciar la API |
 | El modal queda en "No pudimos cargar el formulario" | el navegador no llega a `js.stripe.com` (bloqueador de anuncios, red) | probar sin el bloqueador |
 | "Faltan los precios en Stripe" | no se corrió `stripe:setup` en ese sandbox | 2.4 |

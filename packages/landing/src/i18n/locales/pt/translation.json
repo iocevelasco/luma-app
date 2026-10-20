@@ -153,7 +153,7 @@
       "30 dias grátis, sem cartão, com até 3 obras",
       "Plano Pro: 3 obras incluídas",
       "$8 por mês por obra extra",
-      "Pague com cartão ou em bolívares pela taxa do BCV"
+      "Pague em bolívares pela taxa do BCV"
     ]
   },
   "faq": {
@@ -162,7 +162,7 @@
     "items": [
       {
         "q": "Como eu pago?",
-        "a": "Com cartão, em dólares, ou em bolívares por Pago Móvil ou transferência, pela taxa do BCV do dia. O pagamento em bolívares é analisado manualmente e avisamos você por e-mail."
+        "a": "Em bolívares, por Pago Móvil ou transferência, pela taxa do BCV do dia. O pagamento é analisado manualmente e avisamos você por e-mail. Em breve você também poderá pagar com cartão, em dólares."
       },
       {
         "q": "O que acontece se eu não pagar quando terminarem os 30 dias?",
