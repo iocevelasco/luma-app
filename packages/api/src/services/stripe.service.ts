@@ -17,6 +17,7 @@ import { appUrl } from '../utils/app-url.js';
 import { badRequest, conflict, notFound, serviceUnavailable } from '../utils/errors.js';
 import { stripeRequest } from './stripe.client.js';
 import { billableProjects, loadFacts } from './subscription.service.js';
+import { notifyCardPaymentFailed } from './subscription-notify.service.js';
 
 /**
  * Suscripción con tarjeta, en dólares, vía Stripe.
@@ -480,9 +481,20 @@ export async function handleStripeEvent(event: StripeEventPayload): Promise<bool
       case 'invoice.paid':
         await recordPaidInvoice(object as unknown as StripeInvoice);
         break;
+      case 'invoice.payment_failed': {
+        // El estado nuevo (past_due) llega por `customer.subscription.updated`.
+        // Acá sólo el mail, y sólo en el primer intento: Stripe reintenta y
+        // cada reintento fallido trae otro evento.
+        const invoice = object as unknown as StripeInvoice & { attempt_count?: number };
+        if ((invoice.attempt_count ?? 1) === 1) {
+          const metadata =
+            invoice.parent?.subscription_details?.metadata ?? invoice.subscription_details?.metadata;
+          const organizationId = await organizationFor(invoice.customer, metadata);
+          if (organizationId) await notifyCardPaymentFailed(organizationId);
+        }
+        break;
+      }
       default:
-        // `invoice.payment_failed` y el resto: el estado nuevo (past_due)
-        // llega igual por `customer.subscription.updated`.
         break;
     }
     return true;

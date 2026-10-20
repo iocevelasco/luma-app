@@ -4,6 +4,7 @@ import {
   activeProjectsAt,
   addMonths,
   canCreateProject,
+  dueReminder,
   isPlausibleRate,
   nextPeriodStart,
   quoteCharge,
@@ -362,5 +363,84 @@ describe('bolívares', () => {
     expect(isPlausibleRate(37, null)).toBe(true);
     expect(isPlausibleRate(40, 36)).toBe(true);
     expect(isPlausibleRate(45, 36)).toBe(false);
+  });
+});
+
+describe('dueReminder', () => {
+  const start = '2026-10-01T00:00:00Z'; // la prueba termina el 31/10
+
+  it('a 7 días del fin avisa una vez', () => {
+    const facts = trialFacts(start);
+    const now = d('2026-10-24T12:00:00Z'); // quedan 7 días
+    expect(dueReminder(facts, now, [])).toMatchObject({ kind: 'trial_ending', key: 'trial-7', daysLeft: 7 });
+    expect(dueReminder(facts, now, ['trial-7'])).toBeNull();
+  });
+
+  it('con más de 7 días no avisa', () => {
+    expect(dueReminder(trialFacts(start), d('2026-10-20T00:00:00Z'), [])).toBeNull();
+  });
+
+  it('si la tarea no corrió unos días, manda el que toca hoy, no los atrasados', () => {
+    // Quedan 2 días: corresponde el de 3, aunque el de 7 nunca salió.
+    expect(dueReminder(trialFacts(start), d('2026-10-29T00:00:00Z'), [])?.key).toBe('trial-3');
+  });
+
+  it('el último día avisa el de 1', () => {
+    expect(dueReminder(trialFacts(start), d('2026-10-30T12:00:00Z'), ['trial-7', 'trial-3'])?.key).toBe(
+      'trial-1',
+    );
+  });
+
+  it('no molesta a quien ya dejó pago lo que sigue', () => {
+    const paidAhead = trialFacts(start, {
+      periods: [
+        {
+          start: d('2026-10-31T00:00:00Z'),
+          end: d('2026-11-30T00:00:00Z'),
+          status: 'aprobado',
+          submittedAt: d('2026-10-20T00:00:00Z'),
+        },
+      ],
+    });
+    expect(dueReminder(paidAhead, d('2026-10-29T00:00:00Z'), [])).toBeNull();
+
+    const withCard = trialFacts(start, {
+      stripe: {
+        status: 'trialing',
+        currentPeriodStart: d('2026-10-20T00:00:00Z'),
+        currentPeriodEnd: d('2026-10-31T00:00:00Z'),
+      },
+    });
+    expect(dueReminder(withCard, d('2026-10-29T00:00:00Z'), [])).toBeNull();
+  });
+
+  it('vencida: avisa una vez, con la fecha en la clave', () => {
+    const facts = trialFacts(start);
+    const now = d('2026-11-02T00:00:00Z');
+    expect(dueReminder(facts, now, ['trial-1'])).toMatchObject({
+      kind: 'expired',
+      key: 'expired-2026-10-31',
+    });
+    expect(dueReminder(facts, now, ['expired-2026-10-31'])).toBeNull();
+  });
+
+  it('si vuelve a vencer después de pagar, avisa de nuevo', () => {
+    const facts = trialFacts(start, {
+      periods: [
+        {
+          start: d('2026-10-31T00:00:00Z'),
+          end: d('2026-11-30T00:00:00Z'),
+          status: 'aprobado',
+          submittedAt: d('2026-10-30T00:00:00Z'),
+        },
+      ],
+    });
+    expect(dueReminder(facts, d('2026-12-02T00:00:00Z'), ['expired-2026-10-31'])?.key).toBe(
+      'expired-2026-11-30',
+    );
+  });
+
+  it('activa o sin iniciar: nada', () => {
+    expect(dueReminder({ trialStartedAt: null, trialEndsAt: null, periods: [] }, d('2026-10-01T00:00:00Z'), [])).toBeNull();
   });
 });

@@ -26,6 +26,12 @@ export interface ISubscription extends Document {
   stripeStatus: StripeSubscriptionStatus | null;
   stripeCurrentPeriodStart: Date | null;
   stripeCurrentPeriodEnd: Date | null;
+  /**
+   * Recordatorios por mail ya mandados (`trial-7`, `expired-2026-10-31`…).
+   * Es un hecho —salió o no salió— y es lo que evita mandar dos veces el
+   * mismo aviso si la tarea corre más de una vez por día.
+   */
+  remindersSent: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +53,7 @@ const subscriptionSchema = new Schema<ISubscription>(
     stripeStatus: { type: String, default: null },
     stripeCurrentPeriodStart: { type: Date, default: null },
     stripeCurrentPeriodEnd: { type: Date, default: null },
+    remindersSent: { type: [String], default: [] },
   },
   { timestamps: true },
 );

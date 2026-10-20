@@ -50,6 +50,17 @@ async function getResendClient(): Promise<ResendClient | null> {
 const FROM_EMAIL = EMAIL_CONFIG.FROM;
 const APP_NAME = EMAIL_CONFIG.APP_NAME;
 
+/** La pantalla de Suscripción del panel: a donde llevan los mails de cobro. */
+const subscriptionUrl = () => appUrl('/admin/settings/subscription');
+
+/** "19 de noviembre de 2026", en la hora de Caracas. */
+function longDate(date: Date): string {
+  return new Intl.DateTimeFormat('es', {
+    dateStyle: 'long',
+    timeZone: 'America/Caracas',
+  }).format(date);
+}
+
 const layout = (o: Omit<EmailLayoutOptions, 'appName'>) =>
   renderEmailLayout({ ...o, appName: APP_NAME });
 
@@ -202,6 +213,175 @@ export class EmailService {
         text: `Confirmá tu nuevo correo - ${APP_NAME}\n\n${url}\n\nEl enlace vence en 24 horas.`,
       },
       'mail de cambio de correo',
+    );
+  }
+
+  // ── Suscripción ─────────────────────────────────────────────────────────
+
+  /** Pago en Bs aprobado: ya es Pro, hasta cuándo. */
+  static async sendSubscriptionPaymentApproved(
+    to: string,
+    name: string,
+    paidUntil: Date,
+  ): Promise<boolean> {
+    const url = subscriptionUrl();
+    const until = longDate(paidUntil);
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `Aprobamos tu pago: ya tenés ${APP_NAME} Pro`,
+        html: layout({
+          heading: 'Aprobamos tu pago',
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Revisamos tu pago en bolívares y está todo bien. Tu plan
+               <strong>Pro</strong> está activo hasta el <strong>${until}</strong>.</p>`,
+          cta: { label: 'Ver mi suscripción', url },
+        }),
+        text: `Aprobamos tu pago - ${APP_NAME}\n\nHola ${name},\n\nTu plan Pro está activo hasta el ${until}.\n\n${url}`,
+      },
+      'mail de pago aprobado',
+    );
+  }
+
+  /** Pago en Bs rechazado, con el motivo que escribió quien lo revisó. */
+  static async sendSubscriptionPaymentRejected(
+    to: string,
+    name: string,
+    reason: string,
+  ): Promise<boolean> {
+    const url = subscriptionUrl();
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `No pudimos aprobar tu pago - ${APP_NAME}`,
+        html: layout({
+          heading: 'No pudimos aprobar tu pago',
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Revisamos tu pago en bolívares y no lo pudimos aprobar:</p>
+            <p style="padding: 12px 16px; background: #ffffff; border-radius: 8px;">${escapeHtml(reason)}</p>
+            <p>Podés mandarlo de nuevo desde tu suscripción, con la misma referencia
+               si fue un error de carga.</p>`,
+          cta: { label: 'Ir a mi suscripción', url },
+        }),
+        text: `No pudimos aprobar tu pago - ${APP_NAME}\n\nHola ${name},\n\nMotivo: ${reason}\n\nPodés mandarlo de nuevo acá:\n${url}`,
+      },
+      'mail de pago rechazado',
+    );
+  }
+
+  /** Al admin de la plataforma: entró un pago en Bs para revisar. */
+  static async sendSubscriptionPaymentToReview(
+    to: string,
+    details: { organization: string; owner: string; amountBs: string; totalUsd: string; mismatch: boolean },
+  ): Promise<boolean> {
+    const url = appUrl('/admin/plataforma/pagos');
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `Pago en bolívares para revisar: ${details.organization}`,
+        html: layout({
+          heading: 'Hay un pago para revisar',
+          bodyHtml: `
+            <p><strong>${escapeHtml(details.organization)}</strong> (${escapeHtml(details.owner)})
+               mandó un pago de <strong>${escapeHtml(details.amountBs)}</strong>
+               (${escapeHtml(details.totalUsd)}).</p>
+            ${
+              details.mismatch
+                ? '<p><strong>Ojo:</strong> lo que declaró pagar no coincide con lo cotizado. Revisalo en el banco.</p>'
+                : ''
+            }
+            <p>Mientras está en revisión, la cuenta sigue con acceso completo 72 horas.</p>`,
+          cta: { label: 'Revisar pagos', url },
+        }),
+        text: `Pago para revisar - ${APP_NAME}\n\n${details.organization} (${details.owner}): ${details.amountBs} (${details.totalUsd}).${details.mismatch ? ' No coincide con lo cotizado.' : ''}\n\n${url}`,
+      },
+      'aviso de pago a revisar',
+    );
+  }
+
+  /** Se termina el plan Gratis. */
+  static async sendTrialEnding(
+    to: string,
+    name: string,
+    daysLeft: number,
+    trialEndsAt: Date,
+  ): Promise<boolean> {
+    const url = subscriptionUrl();
+    const when = daysLeft === 1 ? 'mañana' : `en ${daysLeft} días`;
+    const date = longDate(trialEndsAt);
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `Tu plan Gratis de ${APP_NAME} termina ${when}`,
+        html: layout({
+          heading: `Tu plan Gratis termina ${when}`,
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>El ${date} termina tu plan Gratis. Para seguir editando tus obras, pasá a
+               <strong>Pro</strong>: $39 por mes con 3 obras incluidas.</p>
+            <p>Podés pagar con tarjeta o en bolívares. Si pagás ahora, arranca cuando
+               termine el plan Gratis: no perdés ningún día.</p>
+            <p>Si no pasás a Pro no se borra nada: tus obras quedan en sólo lectura
+               hasta que pagues.</p>`,
+          cta: { label: 'Pasar a Pro', url },
+        }),
+        text: `Tu plan Gratis termina ${when} - ${APP_NAME}\n\nHola ${name},\n\nEl ${date} termina tu plan Gratis. Pasá a Pro para seguir editando:\n${url}`,
+      },
+      'recordatorio de fin de prueba',
+    );
+  }
+
+  /** Venció: sus obras quedan en sólo lectura. */
+  static async sendSubscriptionExpired(to: string, name: string): Promise<boolean> {
+    const url = subscriptionUrl();
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `Tus obras en ${APP_NAME} quedaron en sólo lectura`,
+        html: layout({
+          heading: 'Tu suscripción venció',
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Tus obras quedaron en <strong>sólo lectura</strong>: podés verlas, pero no
+               cambiarlas. No se borró nada.</p>
+            <p>Pagá el plan Pro y volvés a editar en el momento (con tarjeta) o apenas
+               aprobemos tu pago (en bolívares).</p>`,
+          cta: { label: 'Renovar', url },
+        }),
+        text: `Tu suscripción venció - ${APP_NAME}\n\nHola ${name},\n\nTus obras quedaron en sólo lectura. Renová acá:\n${url}`,
+      },
+      'aviso de suscripción vencida',
+    );
+  }
+
+  /** Stripe no pudo cobrar la renovación. */
+  static async sendCardPaymentFailed(to: string, name: string): Promise<boolean> {
+    const url = subscriptionUrl();
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `No pudimos cobrar tu tarjeta - ${APP_NAME}`,
+        html: layout({
+          heading: 'No pudimos cobrar tu tarjeta',
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Intentamos cobrar la renovación de tu plan Pro y la tarjeta la rechazó.
+               Vamos a reintentar en los próximos días.</p>
+            <p>Para no perder el acceso, revisá o cambiá la tarjeta desde tu
+               suscripción ("Administrar tarjeta").</p>`,
+          cta: { label: 'Revisar mi tarjeta', url },
+        }),
+        text: `No pudimos cobrar tu tarjeta - ${APP_NAME}\n\nHola ${name},\n\nRevisá o cambiá tu tarjeta acá:\n${url}`,
+      },
+      'aviso de cobro fallido',
     );
   }
 }

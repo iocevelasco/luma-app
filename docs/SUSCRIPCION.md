@@ -84,8 +84,11 @@ verdad. Sin ellos se puede mandar sin comprobante (sólo para probar en local).
 
 ### 2.2 Tasa BCV
 
-Sin tasa no hay pago en Bs ("No tenemos una tasa BCV actualizada"). Para
-cargarla, una de dos:
+La API scrapea la home del BCV al arrancar y cada hora, y guarda la tasa con
+su fecha valor. El pago lee siempre esa fila: si la página o el scrap fallan,
+sigue la última guardada. El error "No tenemos una tasa BCV actualizada" sólo
+aparece si nunca se guardó ninguna y el BCV tampoco respondió ahora. Para
+cargarla a mano:
 
 ```bash
 pnpm --filter @luma/api rates:refresh     # lee el BCV real
@@ -204,6 +207,27 @@ Requiere 2.4 funcionando (`stripe listen` corriendo).
 - Para ver una renovación sin esperar un mes, usá los *test clocks* de Stripe
   (Billing → Test clocks) sobre el cliente.
 
+## 4b. Mails
+
+| Mail | A quién | Cuándo |
+|---|---|---|
+| Hay un pago para revisar | admins de plataforma | al mandar un pago en Bs (avisa si el monto no coincide) |
+| Aprobamos tu pago / No pudimos aprobarlo (con motivo) | dueño | al revisar el pago |
+| No pudimos cobrar tu tarjeta | dueño | primer intento fallido de Stripe (no en cada reintento) |
+| Tu plan Gratis termina en 7 / 3 / 1 días | dueño | tarea diaria, si no dejó pago lo que sigue |
+| Tu suscripción venció | dueño | tarea diaria, una vez por vencimiento |
+
+En local: sin `RESEND_API_KEY` no sale ningún mail (la app sigue andando y lo
+loguea). Con la clave pero sin dominio verificado, Resend sólo entrega a la
+casilla dueña de la cuenta de Resend. Para disparar los recordatorios a mano:
+
+```bash
+pnpm --filter @luma/api subscription:reminders
+```
+
+Con `seed:subscription-demo`, `demo-por-vencer` recibe el de 3 días y
+`demo-vencida` el de vencida (si el mail sale, no se repite en la siguiente corrida).
+
 ## 5. Escenarios para recorrer
 
 - [ ] Registrarse → *Gratis, 30 días*. Crear una obra y que la pantalla lo refleje al instante.
@@ -221,7 +245,7 @@ Requiere 2.4 funcionando (`stripe listen` corriendo).
 | Síntoma | Causa | Qué hacer |
 |---|---|---|
 | No está la opción de pagar en bolívares | faltan `PAGO_MOVIL_*` y/o `TRANSFER_*` | 2.1 y reiniciar la API |
-| "No tenemos una tasa BCV actualizada" | no hay tasa, o la última tiene más de 48 h | 2.2 |
+| "No tenemos una tasa BCV actualizada" | no hay ninguna tasa guardada y el BCV no respondió | 2.2 |
 | No está la opción de tarjeta | falta `STRIPE_SECRET_KEY` | 2.1 |
 | "Faltan los precios en Stripe" | no se corrió `stripe:setup` en ese sandbox | 2.4 |
 | Checkout dice "the product tax code is missing" | la cuenta tiene Managed Payments y el producto no tiene código de impuesto | volver a correr `stripe:setup` (lo completa) |
@@ -237,6 +261,7 @@ Requiere 2.4 funcionando (`stripe listen` corriendo).
 | Reglas (estado, límite, cobro, prorrateo) | `packages/shared/src/billing/index.ts` (+ `index.spec.ts`) |
 | Modelos | `packages/api/src/models/Subscription.ts`, `SubscriptionPayment.ts`, `ExchangeRate.ts`, `StripeEvent.ts` |
 | Pagos en Bs y revisión | `packages/api/src/services/subscription-payment.service.ts` |
+| Mails y recordatorios | `packages/api/src/services/subscription-notify.service.ts`, `email.service.ts` |
 | Stripe (Checkout, portal, webhook) | `packages/api/src/services/stripe.service.ts`, `stripe.client.ts` |
 | Tasa BCV (y su certificado) | `packages/api/src/services/bcv.service.ts`, `src/certs/sectigo-dv-r36.ts` |
 | Sólo lectura al vencer | `packages/api/src/middleware/project.middleware.ts`, `subscription.middleware.ts` |
@@ -258,4 +283,5 @@ Requiere 2.4 funcionando (`stripe listen` corriendo).
 | `GET` / `POST /api/admin/exchange-rates`, `POST …/refresh` | tasas: listar, cargar a mano, leer el BCV ya |
 
 **Scripts** (`pnpm --filter @luma/api <script>`): `seed:subscription-demo`,
-`rates:refresh`, `stripe:setup`, `migrate:subscriptions`.
+`rates:refresh`, `stripe:setup`, `migrate:subscriptions`,
+`subscription:reminders`.

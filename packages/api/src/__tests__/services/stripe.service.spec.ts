@@ -11,6 +11,7 @@ vi.mock('../../config/app.config.js', () => ({
   SERVER_CONFIG: { APP_URL: 'https://luma.test/app' },
 }));
 vi.mock('../../services/stripe.client.js', () => ({ stripeRequest: vi.fn() }));
+vi.mock('../../services/subscription-notify.service.js', () => ({ notifyCardPaymentFailed: vi.fn() }));
 vi.mock('../../services/subscription.service.js', () => ({
   loadFacts: vi.fn(),
   billableProjects: vi.fn(),
@@ -36,6 +37,7 @@ const { loadFacts, billableProjects } = await import('../../services/subscriptio
 const { Subscription } = await import('../../models/Subscription.js');
 const { SubscriptionPayment } = await import('../../models/SubscriptionPayment.js');
 const { StripeEvent } = await import('../../models/StripeEvent.js');
+const { notifyCardPaymentFailed } = await import('../../services/subscription-notify.service.js');
 const svc = await import('../../services/stripe.service.js');
 
 const d = (iso: string) => new Date(iso);
@@ -308,6 +310,34 @@ describe('handleStripeEvent', () => {
       { organization: 'org-1' },
       expect.objectContaining({ $set: expect.objectContaining({ stripeStatus: 'active' }) }),
     );
+  });
+});
+
+describe('invoice.payment_failed', () => {
+  const failed = (attempt_count: number) => ({
+    id: `evt_fail_${attempt_count}`,
+    type: 'invoice.payment_failed',
+    data: {
+      object: {
+        id: 'in_9',
+        customer: 'cus_1',
+        attempt_count,
+        parent: { subscription_details: { metadata: { organizationId: 'org-1' } } },
+      },
+    },
+  });
+
+  beforeEach(() => vi.mocked(StripeEvent.create).mockResolvedValue({} as never));
+
+  it('avisa al dueño en el primer intento fallido', async () => {
+    await svc.handleStripeEvent(failed(1));
+    expect(notifyCardPaymentFailed).toHaveBeenCalledWith('org-1');
+  });
+
+  it('no repite el aviso en cada reintento de Stripe', async () => {
+    vi.mocked(notifyCardPaymentFailed).mockClear();
+    await svc.handleStripeEvent(failed(2));
+    expect(notifyCardPaymentFailed).not.toHaveBeenCalled();
   });
 });
 

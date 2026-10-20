@@ -369,3 +369,63 @@ export function isPlausibleRate(next: number, previous: number | null, maxChange
   if (previous === null || previous <= 0) return true;
   return Math.abs(next - previous) / previous <= maxChange;
 }
+
+// ─────────────────────────────── Recordatorios ───────────────────────────────
+
+/** Días antes del fin del plan Gratis en que se avisa por mail. */
+export const TRIAL_REMINDER_DAYS = [7, 3, 1] as const;
+
+export type SubscriptionReminder =
+  | { kind: 'trial_ending'; key: string; daysLeft: number; trialEndsAt: Date }
+  | { kind: 'expired'; key: string; expiredAt: Date };
+
+/**
+ * ¿Qué mail de recordatorio le toca hoy a esta suscripción? `null` si ninguno.
+ *
+ * `sentKeys` son los que ya se mandaron (se guardan en la suscripción): cada
+ * aviso sale una sola vez aunque la tarea corra varias veces por día.
+ *
+ * - **Fin del plan Gratis**, a 7, 3 y 1 día. Si la tarea no corrió unos días,
+ *   sale sólo el que corresponde hoy, no los atrasados de golpe. No se avisa a
+ *   quien ya dejó pago lo que sigue (período pago o tarjeta cargada): ya
+ *   resolvió, el mail sería ruido.
+ * - **Vencida**: una vez por vencimiento. La clave lleva la fecha en que
+ *   venció, así si renueva y vuelve a vencer meses después, se avisa de nuevo.
+ */
+export function dueReminder(
+  facts: SubscriptionFacts,
+  now: Date,
+  sentKeys: readonly string[],
+): SubscriptionReminder | null {
+  const state = subscriptionState(facts, now);
+  const trialEnd = effectiveTrialEnd(facts);
+  const paid = paidUntil(facts);
+
+  if (state.status === 'prueba' && trialEnd && state.trialDaysLeft !== null) {
+    const alreadyPaidAhead =
+      (paid !== null && paid > trialEnd) ||
+      facts.stripe?.status === 'trialing' ||
+      facts.stripe?.status === 'active';
+    if (alreadyPaidAhead) return null;
+
+    // El escalón más chico que todavía alcanza a los días que quedan.
+    const bucket = [...TRIAL_REMINDER_DAYS]
+      .sort((a, b) => a - b)
+      .find((days) => state.trialDaysLeft! <= days);
+    if (bucket === undefined) return null;
+
+    const key = `trial-${bucket}`;
+    if (sentKeys.includes(key)) return null;
+    return { kind: 'trial_ending', key, daysLeft: state.trialDaysLeft, trialEndsAt: trialEnd };
+  }
+
+  if (state.status === 'vencida') {
+    const expiredAt = maxDate([trialEnd, paid]);
+    if (!expiredAt) return null;
+    const key = `expired-${expiredAt.toISOString().slice(0, 10)}`;
+    if (sentKeys.includes(key)) return null;
+    return { kind: 'expired', key, expiredAt };
+  }
+
+  return null;
+}

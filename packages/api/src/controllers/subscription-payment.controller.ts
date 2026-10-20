@@ -9,6 +9,10 @@ import { SubscriptionPayment } from '../models/SubscriptionPayment.js';
 import { findMyOrganizationId } from '../services/organization.service.js';
 import { uploadSubscriptionReceipt } from '../services/storage.service.js';
 import {
+  notifyPaymentReviewed,
+  notifyPaymentToReview,
+} from '../services/subscription-notify.service.js';
+import {
   bolivaresQuote,
   reviewSubscriptionPayment as review,
   submitBolivaresPayment,
@@ -99,6 +103,9 @@ export async function createBolivaresPayment(req: Request, res: Response, next: 
       uploadReceipt,
     });
 
+    // Al admin, por mail: hay un pago para revisar. No espera ni falla el alta.
+    void notifyPaymentToReview(payment);
+
     return res.status(201).json({ success: true, data: { payment: await toPaymentSummary(payment) } });
   } catch (error) {
     next(error);
@@ -162,6 +169,9 @@ export async function reviewSubscriptionPayment(req: Request, res: Response, nex
       adminId: req.user.sub,
       decision: parsed.data,
     });
+    // Al dueño, por mail: aprobado o rechazado con el motivo.
+    void notifyPaymentReviewed(payment);
+
     const [dto] = await toAdminPayments([payment]);
     return res.json({ success: true, data: { payment: dto } });
   } catch (error) {

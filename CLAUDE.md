@@ -127,7 +127,35 @@ Los cobros **no se editan**, sólo se crean o se borran: un cobro es un hecho
 con fecha, y corregirle el monto in situ deja el saldo cuadrando con una
 historia que nadie vivió.
 
-## Frontend — llamadas a la API
+## Suscripción
+
+Lo que paga el dueño de una Empresa por usar Luma. **No confundir con los
+cobros de una obra** (`Payment`, sección anterior): esto es plata que entra a
+Luma y no se cruza nunca con la de las obras. Guía completa, datos de prueba y
+cómo probar en local: `docs/SUSCRIPCION.md`.
+
+- **Planes**: *Gratis* (30 días, hasta 3 obras activas) y *Pro* ($39/mes con 3
+  obras, $8/mes cada extra). Los números viven en `PLAN`
+  (`packages/shared/src/billing/index.ts`); la landing los repite en
+  `pricing.*` y se cambian juntos.
+- **Las reglas viven en `@luma/shared/billing`, puras y con tests**: estado,
+  límite de obras, cuánto se cobra, prorrateo, recordatorios. La API lee hechos
+  de la base y le pregunta a shared; la UI muestra lo que la API ya resolvió.
+  Si estás escribiendo un `if` sobre días de prueba o cantidad de obras fuera
+  de shared, va en shared.
+- **Mismo criterio que la plata de obra**: nada derivado se guarda (el estado
+  se calcula de los hechos), y cada pago congela su desglose y su tasa BCV.
+- **Vencida = sólo lectura**, y se resuelve en un solo lugar:
+  `requireProjectAccess` recorta las capacidades a las `.read` según la Empresa
+  **dueña de la obra**. No agregues chequeos de suscripción en los controllers:
+  si una ruta escribe, ya declara una capacidad que no es `.read`.
+- **Pagos**: tarjeta por Stripe Checkout (el webhook es la fuente de verdad) o
+  bolívares a la tasa BCV, con aprobación manual de un admin de plataforma.
+  La tasa la lee una tarea programada, nunca un request de usuario.
+- **Avisos por mail** (`subscription-notify.service.ts`): nunca hacen fallar la
+  acción que los dispara.
+
+
 
 **Ningún componente importa `apiClient`.** Dos capas, siempre:
 

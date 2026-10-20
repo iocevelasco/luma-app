@@ -10,14 +10,15 @@
 const MAX_WIDTH_PX = 600;
 
 /**
- * Naranja de marca, versión RELLENO. Es `--primary` del sistema (ver DESIGN.md),
- * no `--brand`: acá el color va de fondo con texto blanco encima, y el naranja
- * saturado #fa520f en esa combinación da 3.34:1 — no pasa AA. Este da 5.03:1.
+ * El verde de la marca (`--primary`, ver DESIGN.md). Con texto `#101010`
+ * encima da ~10:1 y pasa AA en cualquier tamaño; con blanco no pasaría, por
+ * eso el texto del botón de la plataforma es oscuro (ver `ctaTextColor`).
  *
  * En un mail no hay tema oscuro que lo corrija después: el cliente lo pinta y
  * listo.
  */
-const PLATFORM_COLOR = '#cc3a05';
+const PLATFORM_COLOR = '#00d992';
+const PLATFORM_TEXT_COLOR = '#101010';
 
 export interface EmailBrand {
   /** Nombre de la organización. Si falta, se usa el de la plataforma. */
@@ -99,7 +100,7 @@ export function renderEmailLayout(opts: EmailLayoutOptions): string {
   const ctaBlock =
     cta && ctaUrl
       ? `<div style="text-align: center; margin: 30px 0;">
-           <a href="${ctaUrl}" style="background-color: ${color}; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+           <a href="${ctaUrl}" style="background-color: ${color}; color: ${color === PLATFORM_COLOR ? PLATFORM_TEXT_COLOR : '#ffffff'}; padding: 14px 28px; text-decoration: none; border-radius: 999px; display: inline-block; font-weight: bold;">
              ${escapeHtml(cta.label)}
            </a>
          </div>`

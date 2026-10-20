@@ -136,8 +136,9 @@ En Coolify → `app` → **Scheduled Tasks**:
 
 Sale con código 1 si no pudo leer o si la tasa saltó más de un 20% (queda
 marcada y **no se usa**): mirá el historial de la tarea. Una corrida fallida no
-rompe nada; la última tasa buena sigue vigente 48 horas, y después el pago en
-Bs se pausa hasta que vuelva a leerse o un admin cargue una a mano.
+rompe nada; el pago sigue con la última tasa guardada. Pasadas 48 horas sin
+una lectura buena, esa tasa se marca vieja, pero se sigue usando. La API
+también la lee sola al conectar a Mongo y después cada hora.
 
 **El certificado del BCV está mal armado**: manda un intermedio equivocado y
 sin ayuda no verifica. La API trae el intermedio correcto
@@ -160,6 +161,23 @@ archivo a actualizar.
    `STRIPE_WEBHOOK_SECRET`.
 3. En Stripe → Settings → Billing → Customer portal, activar cambiar tarjeta,
    ver facturas y cancelar suscripción (cancelar al final del período).
+
+## Tarea programada: recordatorios de la suscripción
+
+Mails de "tu plan Gratis termina en 7/3/1 días" y "tu suscripción venció". En
+Coolify → `app` → **Scheduled Tasks**:
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/send-subscription-reminders.js` |
+| Container | `app` |
+| Frequency | `0 13 * * *` — todos los días a las 9 de Caracas |
+
+Correrla más de una vez no duplica mails: cada aviso se marca en la
+suscripción cuando sale. Necesita Resend con un dominio verificado (ver la nota
+de `EMAIL_FROM` más arriba): sin él no sale nada y no se marca nada. Los otros
+mails de la suscripción (pago aprobado/rechazado, pago a revisar para los
+admins, cobro con tarjeta fallido) salen en el momento, sin tarea.
 
 ## Verificar
 
