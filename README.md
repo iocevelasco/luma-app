@@ -52,5 +52,7 @@ pnpm test:e2e:ci  # E2E chromium
 - `CLAUDE.md` — convenciones del repo (patrón de llamadas a la API, estilos, i18n,
   cross-browsing).
 - `docs/DEPLOY.md` — topología, recursos de Coolify, variables de entorno.
+- `docs/SUSCRIPCION.md` — planes Gratis y Pro, cómo probar en local el pago con
+  tarjeta (Stripe) y en bolívares (aprobación manual), cuentas y datos de prueba.
 - `docs/BASE-PROMPT.md` — el prompt con el que se generó esta base a partir de otro
   proyecto, y el inventario de qué se copió y qué se descartó.
