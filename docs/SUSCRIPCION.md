@@ -138,7 +138,8 @@ Los webhooks de Stripe no llegan a `localhost` solos: los reenvía el
 
 ```bash
 stripe login                    # una vez; o agregá --api-key sk_test_… a cada comando
-stripe listen --forward-to localhost:8081/api/billing/stripe/webhook
+stripe listen --forward-to localhost:8081/api/billing/stripe/webhook \
+  --events checkout.session.completed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.paid,invoice.payment_failed
 ```
 
 Copiá el `whsec_…` que imprime a `STRIPE_WEBHOOK_SECRET` y reiniciá la API.
