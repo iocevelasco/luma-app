@@ -10,7 +10,7 @@ import {
   type PaymentScheduleStatus,
 } from '@luma/shared';
 import { format } from 'date-fns';
-import { Plus, Trash2, Wallet } from 'lucide-react';
+import { Check, Clock, Plus, Trash2, Wallet, X, type LucideIcon } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import type { FieldErrors, FieldValues, Path, UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +19,7 @@ import { Can } from '@/components/permissions/can';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -49,11 +49,11 @@ import { cn } from '@/lib/utils';
  * `destructive` es peligro, no marca — ver DESIGN.md. Una cuota vencida es lo
  * único acá que pide una acción urgente.
  */
-const STATUS_VARIANT: Record<PaymentScheduleStatus, 'secondary' | 'default' | 'destructive'> = {
-  pendiente: 'secondary',
-  parcial: 'default',
-  cobrado: 'default',
-  vencido: 'destructive',
+const STATUS_TAG: Record<PaymentScheduleStatus, { variant: BadgeVariant; icon: LucideIcon }> = {
+  pendiente: { variant: 'neutral', icon: Clock },
+  parcial: { variant: 'warning', icon: Clock },
+  cobrado: { variant: 'success', icon: Check },
+  vencido: { variant: 'danger', icon: X },
 };
 
 /**
@@ -454,7 +454,7 @@ export function ProjectPaymentsPage() {
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-medium">{item.concept}</p>
-                    <Badge variant={STATUS_VARIANT[item.status]}>
+                    <Badge variant={STATUS_TAG[item.status].variant} icon={STATUS_TAG[item.status].icon}>
                       {t(`finance.status.${item.status}`)}
                     </Badge>
                   </div>

@@ -526,7 +526,7 @@ export function TaskBoard({
                 <h3 id={`board-column-${column}`} className="text-sm font-medium">
                   {t(`activity.status.${column}`)}
                 </h3>
-                <Badge variant="secondary" className="tabular-nums">
+                <Badge className="tabular-nums">
                   {layout.columns[column].length}
                 </Badge>
               </div>

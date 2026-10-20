@@ -446,7 +446,7 @@ function AttendeesField({ control }: { control: Control<CreateMilestoneInput> })
               <ul className="flex flex-wrap gap-1.5" aria-label={t('milestone.fields.attendees')}>
                 {attendees.map((name) => (
                   <li key={name}>
-                    <Badge variant="secondary" className="gap-1 pr-1">
+                    <Badge className="gap-1 pr-1">
                       {name}
                       <button
                         type="button"

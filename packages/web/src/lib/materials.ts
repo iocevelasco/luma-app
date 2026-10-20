@@ -82,3 +82,94 @@ export function organizeMaterials(
     bought: [...onTheWay, ...onSite],
   };
 }
+
+/** Una línea de la lista de compras que sale en el PDF y en el texto de copiar. */
+export interface PurchaseRow {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: MaterialItem['unit'];
+  /** `null` = sin proveedor. Ya viene con la grafía que se muestra. */
+  supplier: string | null;
+  /** Ya se le encargó al proveedor: va en la lista, pero marcado. */
+  requested: boolean;
+}
+
+/**
+ * Con qué se compara un proveedor para saber si dos son el mismo. Es texto
+ * libre: "Corralón Sur", " corralon  sur" y "CORRALÓN SUR" son el mismo
+ * negocio, y si se agrupan como tres, quien compra le pide al mismo
+ * proveedor tres veces.
+ */
+export function supplierKey(supplier: string | null | undefined): string {
+  return (supplier ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * La lista de compras, lista para salir a comprar: ordenada por proveedor
+ * —se recorre proveedor por proveedor— con "sin proveedor" al final. Dentro
+ * de cada uno, lo que nadie pidió todavía antes que lo ya solicitado, y
+ * después por nombre.
+ *
+ * Es UNA sola construcción para el PDF, copiar y compartir: si cada salida
+ * armara su lista, las tres terminarían diciendo cosas distintas.
+ */
+export function buildPurchaseRows(toBuy: MaterialItem[], locale = 'es'): PurchaseRow[] {
+  // De las grafías de un mismo proveedor se muestra la más repetida.
+  const spellings = new Map<string, Map<string, number>>();
+  for (const material of toBuy) {
+    const key = supplierKey(material.supplier);
+    if (!key) continue;
+    const label = (material.supplier ?? '').trim().replace(/\s+/g, ' ');
+    const counts = spellings.get(key) ?? new Map<string, number>();
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+    spellings.set(key, counts);
+  }
+  const labelFor = (key: string): string | null => {
+    const counts = spellings.get(key);
+    if (!counts) return null;
+    // Empate: gana la primera que se cargó (el `Map` conserva ese orden).
+    return [...counts.entries()].reduce((best, entry) => (entry[1] > best[1] ? entry : best))[0];
+  };
+
+  return toBuy
+    .map((material) => ({
+      id: material.id,
+      name: material.name,
+      quantity: material.quantity,
+      unit: material.unit,
+      supplier: labelFor(supplierKey(material.supplier)),
+      requested: material.status === 'solicitado',
+    }))
+    .sort((a, b) => {
+      if (!a.supplier !== !b.supplier) return a.supplier ? -1 : 1;
+      const bySupplier = supplierKey(a.supplier).localeCompare(supplierKey(b.supplier), locale);
+      if (bySupplier !== 0) return bySupplier;
+      if (a.requested !== b.requested) return Number(a.requested) - Number(b.requested);
+      return a.name.localeCompare(b.name, locale);
+    });
+}
+
+/** Cuántos proveedores distintos hay en la lista (sin contar "sin proveedor"). */
+export function countSuppliers(rows: PurchaseRow[]): number {
+  return new Set(rows.filter((row) => row.supplier).map((row) => supplierKey(row.supplier))).size;
+}
+
+/** El texto de copiar y compartir: una línea por material, la misma lista que el PDF. */
+export function buildPurchaseText(
+  rows: PurchaseRow[],
+  labels: { unit: (unit: PurchaseRow['unit']) => string; requested: string },
+): string {
+  return rows
+    .map((row) => {
+      const supplier = row.supplier ? ` · ${row.supplier}` : '';
+      const requested = row.requested ? ` (${labels.requested})` : '';
+      return `- ${row.name}: ${row.quantity} ${labels.unit(row.unit)}${supplier}${requested}`;
+    })
+    .join('\n');
+}

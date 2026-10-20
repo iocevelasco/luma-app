@@ -1,12 +1,40 @@
-import type { Request, Response } from 'express';
-import { createMaterialSchema, updateMaterialSchema, type MaterialItem as MaterialDTO } from '@luma/shared';
+import type { NextFunction, Request, Response } from 'express';
+import {
+  createMaterialSchema,
+  isMaterialEditable,
+  updateMaterialSchema,
+  type MaterialItem as MaterialDTO,
+} from '@luma/shared';
 import { Activity } from '../models/Activity.js';
 import { MaterialItem, type IMaterialItem } from '../models/MaterialItem.js';
 import type { IProject } from '../models/Project.js';
+import { badRequest, materialLocked, notFound, unauthenticated } from '../utils/errors.js';
 
-function errMsg(error: unknown): string {
-  return error instanceof Error ? error.message : 'Error inesperado';
+type Handler = (req: Request, res: Response) => Promise<unknown>;
+
+/**
+ * Express 4 no atrapa el `throw` de un handler async: sin esto el request
+ * queda colgado. Todo error va por `next(error)` al `errorHandler`, que le da
+ * la forma `{ success, error, code }`.
+ */
+function wrap(handler: Handler) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await handler(req, res);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
+
+/**
+ * Lo que un material tiene que cumplir para corregirse (editar o eliminar).
+ * La regla vive en `isMaterialEditable`; este filtro es la misma regla en
+ * forma de consulta, para que la escritura sea atómica: `statusChangedAt: null`
+ * también matchea "ausente". Con un `findOne` y después el `update` suelto, un
+ * cambio de estado que llega en el medio se pisaría.
+ */
+const EDITABLE_FILTER = { status: 'pendiente', statusChangedAt: null } as const;
 
 /**
  * `viewerCanSeeDetail` en `false` saca `estimatedCost` — el cliente invitado
@@ -26,6 +54,7 @@ function toMaterialDTO(material: IMaterialItem, viewerCanSeeDetail: boolean): Ma
     status: material.status,
     statusChangedBy: material.statusChangedBy ? String(material.statusChangedBy) : undefined,
     statusChangedAt: material.statusChangedAt ? material.statusChangedAt.toISOString() : undefined,
+    editable: isMaterialEditable(material),
     estimatedCost: viewerCanSeeDetail ? material.estimatedCost : undefined,
     supplier: material.supplier,
     createdBy: String(material.createdBy),
@@ -48,136 +77,139 @@ async function activityBelongsToProject(
 }
 
 /** Requiere `requireProjectAccess` antes. */
-export async function listMaterials(req: Request, res: Response) {
-  try {
-    const project = req.project as IProject;
-    const viewerCanSeeDetail = Boolean(req.can?.('material.write'));
-    const materials = await MaterialItem.find({ project: project._id }).sort({ createdAt: -1 });
+export const listMaterials = wrap(async (req, res) => {
+  const project = req.project as IProject;
+  const viewerCanSeeDetail = Boolean(req.can?.('material.write'));
+  const materials = await MaterialItem.find({ project: project._id }).sort({ createdAt: -1 });
 
-    return res.json({
-      success: true,
-      data: { materials: materials.map((material) => toMaterialDTO(material, viewerCanSeeDetail)) },
-    });
-  } catch (error) {
-    console.error('❌ [MATERIAL] listMaterials:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
+  return res.json({
+    success: true,
+    data: { materials: materials.map((material) => toMaterialDTO(material, viewerCanSeeDetail)) },
+  });
+});
 
 /** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
-export async function createMaterial(req: Request, res: Response) {
-  if (!req.user) {
-    return res.status(401).json({ success: false, error: 'Authentication required' });
+export const createMaterial = wrap(async (req, res) => {
+  if (!req.user) throw unauthenticated();
+
+  const parsed = createMaterialSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
+
+  const project = req.project as IProject;
+  const { activityId, ...rest } = parsed.data;
+
+  if (!(await activityBelongsToProject(activityId, project._id))) {
+    throw badRequest('La tarea no pertenece a esta obra');
   }
 
-  try {
-    const parsed = createMaterialSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
+  const material = await MaterialItem.create({
+    ...rest,
+    activity: activityId || null,
+    project: project._id,
+    createdBy: req.user.sub,
+    ...(rest.status && rest.status !== 'pendiente'
+      ? { statusChangedBy: req.user.sub, statusChangedAt: new Date() }
+      : {}),
+  });
+
+  // Exige una capacidad de escritura — quien la llama siempre puede ver el
+  // detalle completo de lo que acaba de crear.
+  return res.status(201).json({ success: true, data: { material: toMaterialDTO(material, true) } });
+});
+
+/**
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes.
+ *
+ * Cambiar sólo el `status` se permite siempre: es el camino de la compra. Tocar
+ * cualquier otro campo exige que el material siga sin moverse de Pendiente
+ * (`isMaterialEditable`); si no, `MATERIAL_LOCKED`.
+ */
+export const updateMaterial = wrap(async (req, res) => {
+  if (!req.user) throw unauthenticated();
+
+  const parsed = updateMaterialSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
+
+  const project = req.project as IProject;
+  const existing = await MaterialItem.findOne({
+    _id: req.params.materialId,
+    project: project._id,
+  });
+  if (!existing) throw notFound('No encontramos ese material.');
+
+  const { activityId, status, ...content } = parsed.data;
+
+  if (activityId !== undefined && !(await activityBelongsToProject(activityId, project._id))) {
+    throw badRequest('La tarea no pertenece a esta obra');
+  }
+
+  const $set: Record<string, unknown> = {};
+  const $unset: Record<string, ''> = {};
+
+  for (const [field, value] of Object.entries(content)) {
+    if (value === undefined) continue;
+    // `null` —o un texto vacío— saca el campo en vez de dejarlo en blanco.
+    if (value === null || value === '') $unset[field] = '';
+    else $set[field] = value;
+  }
+  if (activityId !== undefined) $set.activity = activityId || null;
+
+  const changesContent = Object.keys($set).length > 0 || Object.keys($unset).length > 0;
+
+  if (changesContent && !isMaterialEditable(existing)) throw materialLocked();
+
+  // `statusChangedBy`/`statusChangedAt` los setea el server, comparando el
+  // valor previo contra el nuevo — el cliente nunca los manda.
+  if (status !== undefined) {
+    $set.status = status;
+    if (status !== existing.status) {
+      $set.statusChangedBy = req.user.sub;
+      $set.statusChangedAt = new Date();
     }
+  }
 
-    const project = req.project as IProject;
-    const { activityId, ...rest } = parsed.data;
-
-    if (!(await activityBelongsToProject(activityId, project._id))) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'La tarea no pertenece a esta obra' });
-    }
-
-    const material = await MaterialItem.create({
-      ...rest,
-      activity: activityId || null,
+  const material = await MaterialItem.findOneAndUpdate(
+    {
+      _id: existing._id,
       project: project._id,
-      createdBy: req.user.sub,
-      ...(rest.status && rest.status !== 'pendiente'
-        ? { statusChangedBy: req.user.sub, statusChangedAt: new Date() }
-        : {}),
-    });
+      ...(changesContent ? EDITABLE_FILTER : {}),
+    },
+    {
+      ...(Object.keys($set).length > 0 ? { $set } : {}),
+      ...(Object.keys($unset).length > 0 ? { $unset } : {}),
+    },
+    { new: true },
+  );
 
-    // Exige una capacidad de escritura — quien la llama siempre puede ver el
-    // detalle completo de lo que acaba de crear.
-    return res.status(201).json({ success: true, data: { material: toMaterialDTO(material, true) } });
-  } catch (error) {
-    console.error('❌ [MATERIAL] createMaterial:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
+  // No matcheó: o se movió de estado entre la lectura y la escritura, o lo
+  // borraron. Se vuelve a mirar para decir cuál de las dos.
+  if (!material) throw await whyNotFound(existing._id, project._id);
 
-/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
-export async function updateMaterial(req: Request, res: Response) {
-  if (!req.user) {
-    return res.status(401).json({ success: false, error: 'Authentication required' });
-  }
+  // Exige una capacidad de escritura — quien la llama siempre puede ver el
+  // detalle completo de lo que acaba de actualizar.
+  return res.json({ success: true, data: { material: toMaterialDTO(material, true) } });
+});
 
-  try {
-    const parsed = updateMaterialSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
-    }
+/**
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes.
+ * Borrado DURO, y sólo de un material sin mover de Pendiente: ningún gasto,
+ * compromiso ni hito lo referencia, así que no deja nada colgando.
+ */
+export const deleteMaterial = wrap(async (req, res) => {
+  const project = req.project as IProject;
+  const material = await MaterialItem.findOneAndDelete({
+    _id: req.params.materialId,
+    project: project._id,
+    ...EDITABLE_FILTER,
+  });
 
-    const project = req.project as IProject;
-    const existing = await MaterialItem.findOne({
-      _id: req.params.materialId,
-      project: project._id,
-    });
+  if (!material) throw await whyNotFound(req.params.materialId, project._id);
 
-    if (!existing) {
-      return res.status(404).json({ success: false, error: 'Material no encontrado' });
-    }
+  return res.json({ success: true, data: { materialId: String(material._id) } });
+});
 
-    const { activityId, ...rest } = parsed.data;
-
-    if (activityId !== undefined && !(await activityBelongsToProject(activityId, project._id))) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'La tarea no pertenece a esta obra' });
-    }
-
-    const update: Record<string, unknown> = { ...rest };
-    if (activityId !== undefined) update.activity = activityId || null;
-
-    // `statusChangedBy`/`statusChangedAt` los setea el server, comparando el
-    // valor previo contra el nuevo — el cliente nunca los manda.
-    if (rest.status && rest.status !== existing.status) {
-      update.statusChangedBy = req.user.sub;
-      update.statusChangedAt = new Date();
-    }
-
-    const material = await MaterialItem.findByIdAndUpdate(existing._id, update, { new: true });
-
-    // Exige una capacidad de escritura — quien la llama siempre puede ver el
-    // detalle completo de lo que acaba de actualizar.
-    return res.json({
-      success: true,
-      data: { material: toMaterialDTO(material as IMaterialItem, true) },
-    });
-  } catch (error) {
-    console.error('❌ [MATERIAL] updateMaterial:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
-}
-
-/** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Borrado DURO. */
-export async function deleteMaterial(req: Request, res: Response) {
-  try {
-    const project = req.project as IProject;
-    const material = await MaterialItem.findOneAndDelete({
-      _id: req.params.materialId,
-      project: project._id,
-    });
-
-    if (!material) {
-      return res.status(404).json({ success: false, error: 'Material no encontrado' });
-    }
-
-    return res.json({ success: true, data: { materialId: String(material._id) } });
-  } catch (error) {
-    console.error('❌ [MATERIAL] deleteMaterial:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
-  }
+/** Una escritura condicional no matcheó: ¿bloqueado o inexistente? */
+async function whyNotFound(materialId: unknown, projectId: unknown) {
+  const stillThere = await MaterialItem.exists({ _id: materialId, project: projectId });
+  return stillThere ? materialLocked() : notFound('No encontramos ese material.');
 }

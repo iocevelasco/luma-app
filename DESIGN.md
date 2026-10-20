@@ -98,6 +98,38 @@ Información, no decoración: independientes del verde de marca.
 
 El rojo significa **peligro**, nunca marca.
 
+### Tags (Badge)
+
+Los tags de estado tienen su propia paleta, la misma en toda la app: píldora
+tintada —un relleno muy suave del tono— con un **círculo de color vivo y el
+glifo en blanco** adelante. Son cinco tonos más el azul macizo, y salen de los
+tokens `tag-*` (`bg-tag-success-bg text-tag-success-fg`), no de `status-*`: los
+`status-*` siguen para íconos, barras y gráficos.
+
+Sobre la superficie clara del panel:
+
+| Tono (`variant`) | Relleno | Texto | Círculo | Significa |
+|---|---|---|---|---|
+| `neutral` | `#f2f2f2` | `#3c3c43` | `#8e8e93` | Sin estado: categoría, rol, conteo, "sin empezar" |
+| `info` | `#e8f1ff` | `#0b63ce` | `#0a7aff` | En camino, en curso, informativo |
+| `success` | `#eaf6ee` | `#1e7f3e` | `#34b85f` | Hecho, aprobado, cobrado, en obra |
+| `warning` | `#fff3ea` | `#a8520a` | `#ff9f4a` | Espera algo o vence pronto |
+| `danger` | `#fdedec` | `#bf3128` | `#eb5a4e` | Falta o venció: pide acción |
+| `solid` | `#0a6ce0` | `#ffffff` | `#ffffff` | Seleccionado o agregado — el único tag macizo |
+
+**El texto es un paso más oscuro que el círculo, a propósito.** El naranja y el
+verde "de catálogo" (`#ff9f4a`, `#34b85f`) sobre su relleno dan 1.9:1 y 2.3:1:
+a 12px no pasan AA. Con el texto de la tabla todos llegan a ≥ 4.5:1 y el círculo
+conserva el tono vivo de la referencia. El `solid` es el azul `#0a7aff` de la
+referencia oscurecido a `#0a6ce0` (blanco sobre `#0a7aff` da 4.0:1).
+
+Sobre el lienzo oscuro (`:root`) el relleno es el tono al ~16% y el texto su
+versión clara; el círculo no cambia.
+
+El color **no es lo único** que dice el estado: el texto lo nombra siempre y el
+círculo (`aria-hidden`) lleva un glifo —`Check` hecho, `Clock` espera, `X`
+falló, `ArrowRight` en camino, `Plus` falta—. Un daltónico lee el texto.
+
 ## Tipografía
 
 **Inter** para todo lo narrativo y de interfaz. **JetBrains Mono** (con
@@ -268,8 +300,13 @@ archivo tiene mensajes de error y ningún `aria-invalid`. La etiqueta toma
 Un grupo de opciones (el público de un hito, el rol de un miembro) no es un
 campo de texto: su mensaje queda debajo, sin borde rojo.
 
-**Badge** — `rounded-full`, `text-xs`, peso 500. Para estados usá los tokens
-`status-*` con fondo al 15% de opacidad.
+**Badge** — `rounded-full`, `text-xs`, peso 500, `px-3 py-1`. Se elige por
+**tono** (`variant="success"`), no por color: ver *Tags*. Para sumarle el círculo
+con glifo, `icon` (`true` usa el glifo del tono; o un ícono de Lucide propio).
+Un conteo o una categoría es `neutral` sin ícono. Si el mismo estado aparece en
+dos pantallas, el mapa estado → tono vive en un componente
+(`MaterialStatusBadge`, `ActivityStatusBadge`) y no se repite. `outline` queda
+para una etiqueta que no es un estado.
 
 **Banda de cierre (sólo landing)** — línea horizontal de 4px con degradé
 `primary-pressed → primary → primary-soft`, ancho completo, arriba del footer.
@@ -280,7 +317,8 @@ En el panel **no va**: una app de trabajo no se firma en cada pantalla.
 - No hacer un botón a escuadra ni una píldora plana: el botón es píldora con
   relieve.
 - No agregar acentos fuera del verde: los colores de estado son información,
-  no paleta.
+  no paleta. Los tags (`tag-*`) son esa información; no se usan como decoración.
+- No pintar un tag con `bg-warning` ni con un hex: `variant` y los tokens `tag-*`.
 - No poner texto blanco sobre el verde: el texto es `primary-foreground`
   (`#101010`).
 - No editar `components/ui/` salvo un cambio del sistema que tenga que vivir ahí.

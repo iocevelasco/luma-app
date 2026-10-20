@@ -391,7 +391,35 @@
       "share": "Compartilhar",
       "copied": "Lista copiada para a área de transferência",
       "confirmStatusTitle": "Confirmar mudança de status",
-      "confirmStatusBody": "Você vai mudar o status para \"{{status}}\"."
+      "confirmStatusBody": "Você vai mudar o status para \"{{status}}\".",
+      "editTitle": "Editar material",
+      "editSubmit": "Salvar alterações",
+      "editLabel": "Editar",
+      "edit": "Editar {{name}}",
+      "moreActions": "Mais ações de {{name}}",
+      "delete": "Excluir",
+      "deleteTitle": "Excluir este material?",
+      "deleteBody": "Você vai excluir \"{{name}}\" ({{quantity}} {{unit}}). Não é possível desfazer.",
+      "lockedHint": "Você pode editar ou excluir um material enquanto ele estiver Pendente. Depois de solicitado, ele fica como registro.",
+      "lockedNote": "Não pode mais ser editado nem excluído: saiu de Pendente.",
+      "confirmStatusLockWarning": "Depois disso, você não poderá mais editá-lo nem excluí-lo.",
+      "lockedClose": "Fechar",
+      "downloadPdf": "Baixar PDF",
+      "generatingPdf": "Gerando…",
+      "pdfDownloaded": "PDF baixado",
+      "requestedTag": "já solicitado",
+      "noSupplier": "Sem fornecedor"
+    },
+    "pdf": {
+      "title": "Lista de compras",
+      "materials_one": "{{count}} material",
+      "materials_other": "{{count}} materiais",
+      "suppliers_one": "{{count}} fornecedor",
+      "suppliers_other": "{{count}} fornecedores",
+      "columnMaterial": "Material",
+      "columnQuantity": "Quantidade",
+      "columnSupplier": "Fornecedor",
+      "page": "Página {{page}} de {{total}}"
     },
     "fields": {
       "name": "Nome",
@@ -429,7 +457,8 @@
       "create": "Não conseguimos adicionar o material.",
       "update": "Não conseguimos atualizar o material.",
       "delete": "Não conseguimos excluir o material.",
-      "copy": "Não conseguimos copiar a lista."
+      "copy": "Não conseguimos copiar a lista.",
+      "pdf": "Não conseguimos gerar o PDF. Tente de novo."
     }
   },
   "provider": {
@@ -1085,6 +1114,7 @@
     "forbidden": "Seu papel não permite esta ação.",
     "notFound": "Não encontramos o que você procurava. Pode ter sido excluído.",
     "conflict": "Isso conflita com algo que já existe.",
+    "materialLocked": "Este material já mudou de status e não pode mais ser editado nem excluído.",
     "payloadTooLarge": "O arquivo é muito grande.",
     "rateLimited": "Muitas tentativas. Aguarde um momento e tente de novo.",
     "serviceUnavailable": "Esse serviço não está disponível no momento.",

@@ -71,9 +71,9 @@ const TYPE_ICON: Record<MilestoneType, LucideIcon> = {
  * verde es "esto se toca", y "atención" no lo es. `info` no lleva badge —
  * es el valor por defecto, y marcarlo en cada card es ruido.
  */
-const SEVERITY_BADGE: Partial<Record<MilestoneSeverity, string>> = {
-  atencion: 'border-transparent bg-status-warning/15 text-status-warning',
-  critico: 'border-transparent bg-status-danger/15 text-status-danger',
+const SEVERITY_BADGE: Partial<Record<MilestoneSeverity, 'warning' | 'danger'>> = {
+  atencion: 'warning',
+  critico: 'danger',
 };
 
 /** Cuántos asistentes se nombran antes del "+N". */
@@ -111,7 +111,7 @@ export function MilestoneCard({
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
   const TypeIcon = TYPE_ICON[milestone.type];
-  const severityClass = SEVERITY_BADGE[milestone.severity];
+  const severityVariant = SEVERITY_BADGE[milestone.severity];
   const critical = milestone.severity === 'critico';
   const [expanded, setExpanded] = useState(false);
   const hasBody = Boolean(milestone.description);
@@ -136,7 +136,7 @@ export function MilestoneCard({
           aria-hidden
           className={cn(
             'flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground',
-            critical && 'bg-status-danger/15 text-status-danger',
+            critical && 'bg-tag-danger-bg text-tag-danger-fg',
           )}
         >
           <TypeIcon className="size-4" />
@@ -149,8 +149,8 @@ export function MilestoneCard({
             <time dateTime={milestone.occurredOn}>
               {format(fromDayKey(milestone.occurredOn), 'd MMM', { locale: dateLocale })}
             </time>
-            {severityClass && (
-              <Badge className={severityClass}>
+            {severityVariant && (
+              <Badge variant={severityVariant} icon>
                 {t(`milestone.severity.${milestone.severity}`)}
               </Badge>
             )}
@@ -160,8 +160,7 @@ export function MilestoneCard({
               de adentro.
             */}
             {milestone.audience === 'interno' && (
-              <Badge variant="outline" className="gap-1">
-                <EyeOff className="size-3" />
+              <Badge icon={EyeOff}>
                 {t('milestone.audience.interno')}
               </Badge>
             )}
