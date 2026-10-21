@@ -17,9 +17,11 @@ import { Security } from './sections/Security';
  * no en el panel.
  *
  * Todo el contenido sale de i18n. No hay testimonios a propósito: no hay datos
- * reales para sostenerlos y esta página no inventa. El precio ($39/mes, 3 obras,
- * primer mes gratis) vive en `pricing.*` y en ningún otro lugar: si cambia, se
- * cambia ahí.
+ * reales para sostenerlos y esta página no inventa. El precio (plan Gratis de
+ * 30 días; Pro a $39/mes con 3 obras y $8 por obra extra) vive en `pricing.*` y
+ * en ningún otro lugar de la landing. La fuente de verdad de esos números es
+ * `PLAN` en `@luma/shared/billing` (lo que la app cobra de verdad): si cambia
+ * allá, se cambia acá en el mismo PR.
  */
 export default function App() {
   return (

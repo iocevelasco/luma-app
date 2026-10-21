@@ -18,7 +18,12 @@
     "seed:e2e": "tsx src/scripts/seed-e2e-users.ts",
     "migrate:memberships": "tsx src/scripts/migrate-project-memberships.ts",
     "migrate:directory": "tsx src/scripts/migrate-directory-assignments.ts",
-    "migrate:crew": "tsx src/scripts/migrate-crew.ts"
+    "migrate:crew": "tsx src/scripts/migrate-crew.ts",
+    "migrate:subscriptions": "tsx src/scripts/migrate-subscriptions.ts",
+    "rates:refresh": "tsx src/scripts/refresh-bcv-rate.ts",
+    "stripe:setup": "tsx src/scripts/stripe-setup.ts",
+    "seed:subscription-demo": "tsx src/scripts/seed-subscription-demo.ts",
+    "subscription:reminders": "tsx src/scripts/send-subscription-reminders.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

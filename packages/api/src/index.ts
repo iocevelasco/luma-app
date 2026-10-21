@@ -15,6 +15,7 @@ import {
   validateConfig,
 } from './config/app.config.js';
 import { connectDatabase, isDatabaseConnected } from './config/database.js';
+import { startBcvRateRefresh } from './services/bcv.service.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { normalizeErrors } from './middleware/normalizeErrors.js';
 import { CACHE_REVALIDATE, setSpaCacheHeaders } from './middleware/spaCache.js';
@@ -22,6 +23,9 @@ import { authRouter } from './routes/auth.js';
 import { organizationRouter } from './routes/organization.js';
 import { notificationRouter } from './routes/notification.js';
 import { projectRouter } from './routes/project.js';
+import { subscriptionRouter } from './routes/subscription.js';
+import { adminRouter } from './routes/admin.js';
+import { stripeWebhook } from './controllers/stripe.controller.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -106,12 +110,26 @@ app.use(
       ? {
           directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
+            // Stripe: Stripe.js y el checkout embebido de la suscripción.
+            scriptSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://js.stripe.com'],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-            imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com'],
-            frameSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
-            connectSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
+            imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://*.stripe.com'],
+            frameSrc: [
+              "'self'",
+              'https://www.google.com',
+              'https://www.gstatic.com',
+              'https://js.stripe.com',
+              'https://hooks.stripe.com',
+              'https://checkout.stripe.com',
+            ],
+            connectSrc: [
+              "'self'",
+              'https://www.google.com',
+              'https://www.gstatic.com',
+              'https://api.stripe.com',
+              'https://checkout.stripe.com',
+            ],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             formAction: ["'self'"],
@@ -144,6 +162,10 @@ app.use(
   }),
 );
 
+// El webhook de Stripe ANTES de `express.json()`: la firma es sobre el cuerpo
+// crudo, y una vez parseado ya no hay forma de reconstruirlo byte por byte.
+app.post('/api/billing/stripe/webhook', express.raw({ type: 'application/json', limit: '1mb' }), stripeWebhook);
+
 // El default (100kb) alcanza para casi todo, pero el import de presupuesto
 // manda hasta 2000 filas de planilla como JSON — eso solo ya pasa los 100kb.
 app.use(express.json({ limit: '2mb' }));
@@ -166,6 +188,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/organizations', organizationRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/subscription', subscriptionRouter);
+app.use('/api/admin', adminRouter);
 
 if (isProduction) {
   // Proxy /home/* → la landing, un servicio aparte en la red interna de Docker.
@@ -281,6 +305,8 @@ async function startServer() {
   if (!connected) {
     console.warn('⚠️  El servidor arrancó sin conexión a MongoDB.');
   }
+  // Con o sin base todavía: cuando Mongo conecte, lee el BCV y guarda la tasa.
+  startBcvRateRefresh();
 }
 
 process.on('SIGTERM', () => {

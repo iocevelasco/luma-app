@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
+import { requireWritableSubscription } from '../middleware/subscription.middleware.js';
 import {
   createOrganizationCrewMember,
   createOrganizationProvider,
@@ -21,6 +22,11 @@ import {
 } from '../controllers/index.js';
 
 export const organizationRouter = Router();
+
+// Suscripción vencida = sólo lectura también acá. Va antes de todas las rutas:
+// deja pasar los GET y frena el resto. Necesita `req.user`, así que lleva su
+// propio `isAuthenticated` (es idempotente con el de cada ruta).
+organizationRouter.use(isAuthenticated, requireWritableSubscription);
 
 organizationRouter.get('/me', isAuthenticated, getMyOrganization);
 organizationRouter.patch('/me', isAuthenticated, renameMyOrganization);

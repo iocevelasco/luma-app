@@ -115,6 +115,102 @@ export const STORAGE_CONFIG = {
 } as const;
 
 /**
+ * Tasa oficial del BCV para cobrar la suscripción en bolívares (ver
+ * `services/bcv.service.ts`). Se lee de la home del BCV —no tiene API— con el
+ * certificado verificado.
+ */
+export const BCV_CONFIG = {
+  URL: process.env.BCV_URL ?? 'https://www.bcv.org.ve/',
+  /** Cortar antes de que el request del usuario quede colgado. */
+  TIMEOUT_MS: 20_000,
+  /**
+   * Pasado esto sin una lectura buena (ni una tasa cargada a mano), la tasa
+   * queda marcada como vieja. El pago en Bs sigue usando la última guardada.
+   */
+  MAX_AGE_HOURS: 48,
+} as const;
+
+/**
+ * Dónde se reciben los pagos de la suscripción en bolívares. Cada método se
+ * ofrece sólo si tiene todos sus datos; sin ninguno, el pago en Bs no se
+ * ofrece y la app sigue andando.
+ */
+const env = process.env;
+export const BS_PAYMENT_CONFIG = {
+  PAGO_MOVIL:
+    env.PAGO_MOVIL_BANK && env.PAGO_MOVIL_PHONE && env.PAGO_MOVIL_ID
+      ? { bank: env.PAGO_MOVIL_BANK, phone: env.PAGO_MOVIL_PHONE, id: env.PAGO_MOVIL_ID }
+      : undefined,
+  TRANSFERENCIA:
+    env.TRANSFER_BANK && env.TRANSFER_ACCOUNT && env.TRANSFER_HOLDER && env.TRANSFER_ID
+      ? {
+          bank: env.TRANSFER_BANK,
+          account: env.TRANSFER_ACCOUNT,
+          holder: env.TRANSFER_HOLDER,
+          id: env.TRANSFER_ID,
+        }
+      : undefined,
+} as const;
+
+/**
+ * Pago de la suscripción con tarjeta, en dólares (ver `services/stripe.service.ts`).
+ * Sin `STRIPE_SECRET_KEY` el pago con tarjeta no se ofrece y la app sigue
+ * andando, igual que el resto de las integraciones.
+ *
+ * Con `STRIPE_PUBLISHABLE_KEY` el formulario de Stripe Checkout se monta en
+ * un modal de Luma (Embedded Checkout); sin ella, se va a la página de Stripe.
+ * En los dos casos la tarjeta la carga la persona dentro de un iframe o una
+ * página de Stripe: nunca pasa por nuestro servidor.
+ */
+const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+const secretKey = process.env.STRIPE_SECRET_KEY;
+/**
+ * El pago con tarjeta se ofrece sólo con la clave de producción (`sk_live_`).
+ * Con la del sandbox (`sk_test_`) queda apagado, salvo `STRIPE_TEST_MODE=true`
+ * para probar el flujo en local: así un entorno con la clave de prueba nunca
+ * le muestra a un cliente real un pago que no cobra.
+ */
+const stripeTestMode = process.env.STRIPE_TEST_MODE === 'true';
+const cardPaymentsEnabled = Boolean(secretKey && (secretKey.startsWith('sk_live_') || stripeTestMode));
+
+if (secretKey && !cardPaymentsEnabled) {
+  console.warn(
+    'ℹ️  [Stripe] Clave de prueba sin STRIPE_TEST_MODE=true: el pago con tarjeta no se ofrece hasta tener la clave de producción.',
+  );
+}
+/** `pk_test_` con `sk_test_`, `pk_live_` con `sk_live_`: mezclarlas da un modal que no carga. */
+const sameStripeMode = (pk?: string, sk?: string) =>
+  Boolean(pk && sk && pk.startsWith('pk_live_') === sk.startsWith('sk_live_'));
+
+if (publishableKey && secretKey && !sameStripeMode(publishableKey, secretKey)) {
+  console.warn(
+    '⚠️  [Stripe] STRIPE_PUBLISHABLE_KEY y STRIPE_SECRET_KEY son de modos distintos (test/live): el pago con tarjeta usa la página de Stripe.',
+  );
+}
+
+export const STRIPE_CONFIG = {
+  SECRET_KEY: secretKey,
+  /** Pública por diseño: va al navegador para montar el checkout embebido. */
+  PUBLISHABLE_KEY: sameStripeMode(publishableKey, secretKey) ? publishableKey : undefined,
+  WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  /**
+   * Los precios se buscan por `lookup_key`, no por id: así sandbox y
+   * producción usan el mismo código y nadie copia ids a mano. Los crea
+   * `scripts/stripe-setup.ts`.
+   */
+  BASE_PRICE_LOOKUP_KEY: process.env.STRIPE_BASE_PRICE_LOOKUP_KEY ?? 'luma_base_monthly',
+  EXTRA_PRICE_LOOKUP_KEY: process.env.STRIPE_EXTRA_PRICE_LOOKUP_KEY ?? 'luma_extra_project_monthly',
+  /**
+   * Código de impuesto del producto: "Software as a service (SaaS) - business
+   * use". Stripe lo exige cuando la cuenta tiene Managed Payments (Stripe como
+   * vendedor registrado, activado por defecto en cuentas nuevas) y lo usa
+   * Stripe Tax si se activa. Luma es software para empresas, no consumidores.
+   */
+  PRODUCT_TAX_CODE: process.env.STRIPE_PRODUCT_TAX_CODE ?? 'txcd_10103001',
+  ENABLED: cardPaymentsEnabled,
+} as const;
+
+/**
  * Consultor IA de obra: chat de sólo lectura sobre UNA obra puntual (ver
  * `services/project-advisor.service.ts`). Sin API key el feature queda
  * deshabilitado — no justifica que el resto de la app no arranque.

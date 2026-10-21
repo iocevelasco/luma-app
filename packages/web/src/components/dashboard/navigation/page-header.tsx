@@ -45,6 +45,8 @@ function usePageTitle(): { title: string | null; crumbs: Crumb[] } {
     if (destination) title = t(`layout.${destination.labelKey}`);
     else if (pathname === ROUTES.PROJECT_NEW) title = t('project.new.title');
     else if (pathname === ROUTES.ACCOUNT_SETTINGS) title = t('auth.account.title');
+    else if (pathname === ROUTES.SUBSCRIPTION) title = t('subscription.title');
+    else if (pathname === ROUTES.PLATFORM_BILLING) title = t('platform.title');
 
     // Nueva obra cuelga de Obras; el resto es de primer nivel.
     const crumbs: Crumb[] =

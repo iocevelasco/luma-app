@@ -7,15 +7,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
  * "Español (Argentina)" se come el ancho de la barra y termina truncado.
  */
 const LANGUAGES = [
-  { value: 'es-AR', short: 'ES', label: 'Español (Argentina)' },
+  { value: 'es-AR', short: 'ES-AR', label: 'Español (Argentina)' },
+  { value: 'es-ES', short: 'ES-ES', label: 'Español (España)' },
   { value: 'pt-BR', short: 'PT', label: 'Português (Brasil)' },
 ] as const;
 
 export function LanguageSelector() {
   const { t, i18n } = useTranslation();
 
-  const current = i18n.language.startsWith('pt') ? 'pt-BR' : 'es-AR';
-  const short = LANGUAGES.find((l) => l.value === current)?.short ?? 'ES';
+  const current = i18n.language.startsWith('pt')
+    ? 'pt-BR'
+    : i18n.language === 'es-ES'
+      ? 'es-ES'
+      : 'es-AR';
+  const short = LANGUAGES.find((l) => l.value === current)?.short ?? 'ES-AR';
 
   return (
     <Select value={current} onValueChange={(lang) => i18n.changeLanguage(lang)}>

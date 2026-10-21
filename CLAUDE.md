@@ -127,7 +127,37 @@ Los cobros **no se editan**, sólo se crean o se borran: un cobro es un hecho
 con fecha, y corregirle el monto in situ deja el saldo cuadrando con una
 historia que nadie vivió.
 
-## Frontend — llamadas a la API
+## Suscripción
+
+Lo que paga el dueño de una Empresa por usar Luma. **No confundir con los
+cobros de una obra** (`Payment`, sección anterior): esto es plata que entra a
+Luma y no se cruza nunca con la de las obras. Guía completa, datos de prueba y
+cómo probar en local: `docs/SUSCRIPCION.md`.
+
+- **Planes**: *Gratis* (30 días, hasta 3 obras activas) y *Pro* ($39/mes con 3
+  obras, $8/mes cada extra). Los números viven en `PLAN`
+  (`packages/shared/src/billing/index.ts`); la landing los repite en
+  `pricing.*` y se cambian juntos.
+- **Las reglas viven en `@luma/shared/billing`, puras y con tests**: estado,
+  límite de obras, cuánto se cobra, prorrateo, recordatorios. La API lee hechos
+  de la base y le pregunta a shared; la UI muestra lo que la API ya resolvió.
+  Si estás escribiendo un `if` sobre días de prueba o cantidad de obras fuera
+  de shared, va en shared.
+- **Mismo criterio que la plata de obra**: nada derivado se guarda (el estado
+  se calcula de los hechos), y cada pago congela su desglose y su tasa BCV.
+- **Vencida = sólo lectura**, y se resuelve en un solo lugar:
+  `requireProjectAccess` recorta las capacidades a las `.read` según la Empresa
+  **dueña de la obra**. No agregues chequeos de suscripción en los controllers:
+  si una ruta escribe, ya declara una capacidad que no es `.read`.
+- **Pagos**: tarjeta por Stripe Checkout embebido en un modal
+  (`card-checkout-dialog.tsx`; Stripe.js se carga a mano desde
+  `lib/stripe-js.ts`, sin paquetes npm; el webhook es la fuente de verdad) o
+  bolívares a la tasa BCV, con aprobación manual de un admin de plataforma.
+  La tasa la lee una tarea programada, nunca un request de usuario.
+- **Avisos por mail** (`subscription-notify.service.ts`): nunca hacen fallar la
+  acción que los dispara.
+
+
 
 **Ningún componente importa `apiClient`.** Dos capas, siempre:
 
@@ -242,10 +272,12 @@ const { t } = useTranslation();
 <p>{t('layout.emptyHomeTitle')}</p>
 ```
 
-- `packages/web`: `src/i18n/locales/{es,pt}/translation.json` (`es-AR` default).
+- `packages/web`: `src/i18n/locales/{es,es-ES,pt}/translation.json` (`es-AR` default;
+  `es` es el español de Argentina, `es-ES` el de España: tuteo y vocabulario
+  peninsular — "jefe de obra", "contable", "añadir", "justificante").
 - `packages/landing`: `src/i18n/locales/{es,pt}/translation.json` (`es` default).
-- **Toda clave nueva se agrega a los DOS archivos al mismo tiempo.** Hay un test de
-  paridad que lo verifica en CI.
+- **Toda clave nueva se agrega a TODOS los archivos de su paquete al mismo tiempo**
+  (en `web`, los tres). Hay un test de paridad que lo verifica en CI.
 - Para arrays (listas, pasos): `t('key', { returnObjects: true }) as string[]`.
 
 ## Cross-browsing — obligatorio

@@ -83,3 +83,4 @@ export * from './crew.js';
 export * from './document.js';
 export * from './milestone.js';
 export * from './payment.js';
+export * from './subscription.js';

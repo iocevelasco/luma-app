@@ -14,3 +14,19 @@ export function formatMoney(amount: number, currency: string, locale: string): s
     return `${currency} ${amount.toFixed(2)}`;
   }
 }
+
+/**
+ * Bolívares como se escriben en Venezuela: "Bs. 41.448,21".
+ *
+ * No va por `style: 'currency'` con `VES`: según el locale sale "VES 41.448,21"
+ * o "Bs.S", y ninguno es como lo lee quien va a transferir. Los separadores sí
+ * siguen el idioma de la interfaz.
+ */
+export function formatBolivares(amount: number, locale: string): string {
+  const number = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `Bs. ${number}`;
+}
+

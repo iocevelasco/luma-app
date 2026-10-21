@@ -146,18 +146,28 @@
   },
   "pricing": {
     "label": "Precio",
-    "title": "Un precio, sin vueltas.",
+    "title": "Empezá gratis, seguí con Pro.",
     "amount": "$39",
     "period": "por mes",
     "perks": [
-      "Incluye 3 obras",
-      "El primer mes es gratis"
+      "30 días gratis, sin tarjeta, con hasta 3 obras",
+      "Plan Pro: 3 obras incluidas",
+      "$8 por mes por cada obra extra",
+      "Pagás en bolívares a la tasa BCV"
     ]
   },
   "faq": {
     "label": "Preguntas frecuentes",
     "title": "Antes de empezar.",
     "items": [
+      {
+        "q": "¿Cómo pago?",
+        "a": "En bolívares, por Pago Móvil o transferencia, a la tasa BCV del día. El pago lo revisamos a mano y te avisamos por mail. Muy pronto también vas a poder pagar con tarjeta, en dólares."
+      },
+      {
+        "q": "¿Qué pasa si no pago cuando terminan los 30 días?",
+        "a": "No se borra nada: tus obras quedan en sólo lectura hasta que pases a Pro. Podés pasarte cuando quieras, también antes de que termine el mes gratis."
+      },
       {
         "q": "¿Mi cliente puede ver cuánto gasto?",
         "a": "No. Ve el cronograma de pagos y lo que pagó, pero nunca tus gastos: con los dos totales sacaría tu margen, y eso queda de tu lado."

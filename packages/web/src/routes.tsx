@@ -1,7 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { DashboardLayout } from './components/dashboard-layout';
-import { AuthenticatedLayout, PublicOnlyLayout } from './components/route-layouts';
+import { AdminLayout, AuthenticatedLayout, PublicOnlyLayout } from './components/route-layouts';
 import { RouteLoading } from './components/routes/route-loading';
 import { ROUTES } from './lib/routes';
 
@@ -98,6 +98,12 @@ const ProjectBudgetPage = lazy(() =>
 const ProjectAdvisorPage = lazy(() =>
   import('./pages/projects/project-advisor').then((m) => ({ default: m.ProjectAdvisorPage })),
 );
+const SubscriptionPage = lazy(() =>
+  import('./pages/subscription').then((m) => ({ default: m.SubscriptionPage })),
+);
+const PlatformBillingPage = lazy(() =>
+  import('./pages/platform/platform-billing').then((m) => ({ default: m.PlatformBillingPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -149,6 +155,17 @@ export function AppRoutes() {
             element={<LazyRoute><ProvidersDirectoryPage /></LazyRoute>}
           />
           <Route path={ROUTES.CREW} element={<LazyRoute><EmployeesPage /></LazyRoute>} />
+          <Route
+            path={ROUTES.SUBSCRIPTION}
+            element={<LazyRoute><SubscriptionPage /></LazyRoute>}
+          />
+          {/* Sólo admin de plataforma: la cola de pagos en Bs y la tasa BCV. */}
+          <Route element={<AdminLayout />}>
+            <Route
+              path={ROUTES.PLATFORM_BILLING}
+              element={<LazyRoute><PlatformBillingPage /></LazyRoute>}
+            />
+          </Route>
           <Route path={ROUTES.PROJECT_NEW} element={<LazyRoute><ProjectNewPage /></LazyRoute>} />
           <Route
             path={ROUTES.PROJECT_DETAIL}

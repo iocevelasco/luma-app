@@ -47,7 +47,9 @@
   "userMenu": {
     "account": "Minha conta",
     "settings": "Configurações",
-    "logout": "Sair"
+    "logout": "Sair",
+    "subscription": "Assinatura",
+    "platformBilling": "Pagamentos da plataforma"
   },
   "project": {
     "list": {
@@ -67,7 +69,9 @@
       "sections": {
         "when": "Prazos",
         "money": "Dinheiro"
-      }
+      },
+      "extraNotice": "Esta obra passa das 3 incluídas: soma $8 por mês (neste mês, só pelos dias restantes).",
+      "seeSubscription": "Ver assinatura"
     },
     "fields": {
       "name": "Nome",
@@ -1114,6 +1118,8 @@
     "payloadTooLarge": "O arquivo é muito grande.",
     "rateLimited": "Muitas tentativas. Aguarde um momento e tente de novo.",
     "serviceUnavailable": "Esse serviço não está disponível no momento.",
+    "subscriptionRequired": "Sua assinatura venceu: suas obras estão somente para leitura. Renove o plano para voltar a editar.",
+    "paidPlanRequired": "No mês grátis você pode ter até 3 obras ativas. Ative o plano para criar a quarta.",
     "internal": "Algo falhou do nosso lado. Tente de novo em instantes.",
     "network": "Não conseguimos conectar. Verifique sua conexão.",
     "title": "Não foi possível salvar"
@@ -1218,5 +1224,201 @@
     "linkPlaceholder": "https://…",
     "applyLink": "Aplicar",
     "removeLink": "Remover link"
+  },
+  "subscription": {
+    "title": "Assinatura",
+    "statusTitle": "Seu plano",
+    "status": {
+      "sin_iniciar": "Não iniciada",
+      "prueba": "Grátis",
+      "activa": "Pro",
+      "en_revision": "Pagamento em análise",
+      "pago_fallido": "Cobrança falhou",
+      "vencida": "Vencida"
+    },
+    "statusDetail": {
+      "sin_iniciar": "Seu plano Grátis de 30 dias começa quando você criar sua primeira obra.",
+      "prueba_one": "Plano Grátis: resta {{count}} dia, até {{date}}. Até 3 obras.",
+      "prueba_other": "Plano Grátis: restam {{count}} dias, até {{date}}. Até 3 obras.",
+      "activa": "Plano Pro, em dia até {{date}}.",
+      "en_revision": "Seu pagamento está em análise. Enquanto isso, você continua com acesso completo até {{date}}.",
+      "pago_fallido": "Não conseguimos cobrar a renovação. O Stripe tenta de novo; você continua com acesso até {{date}}.",
+      "vencida": "Suas obras estão somente para leitura. Pague para voltar a editar: nada foi perdido."
+    },
+    "projects": "{{active}} obras ativas · {{included}} incluídas no plano",
+    "extraProjects_one": "{{count}} obra extra a $8 por mês",
+    "extraProjects_other": "{{count}} obras extras a $8 por mês",
+    "nextCharge": {
+      "title": "Próxima cobrança",
+      "from": "A partir de {{date}}",
+      "lines": {
+        "base": "Plano Pro, 3 obras incluídas",
+        "extra_one": "{{count}} obra extra",
+        "extra_other": "{{count}} obras extras",
+        "prorrateo_one": "Obra extra do mês anterior ({{count}} dia)",
+        "prorrateo_other": "Obra extra do mês anterior ({{count}} dias)"
+      },
+      "total": "Total",
+      "auto": "É cobrado automaticamente no seu cartão.",
+      "manual": "Pague com cartão ou em bolívares antes dessa data."
+    },
+    "pay": {
+      "title": "Pagar",
+      "card": "Pagar com cartão (USD)",
+      "cardHint": "O pagamento é processado com segurança pela Stripe. Se você está no mês grátis, nada é cobrado até ele terminar.",
+      "manageCard": "Gerenciar cartão",
+      "manageCardHint": "Trocar o cartão, ver faturas ou cancelar, no Stripe.",
+      "manageCardBlocked": "O navegador bloqueou a janela do Stripe. Permita as janelas pop-up e tente de novo.",
+      "bolivares": "Pagar em bolívares",
+      "bolivaresHint": "Pago Móvil ou transferência pela taxa do BCV do dia. Analisamos e avisamos você.",
+      "none": "Ainda não há meios de pagamento habilitados.",
+      "inReview": "Você já tem um pagamento em análise: aguarde a revisão."
+    },
+    "history": {
+      "title": "Histórico de pagamentos",
+      "empty": "Ainda não há pagamentos.",
+      "period": "{{from}} – {{to}}",
+      "rejected": "Motivo da recusa: {{reason}}",
+      "receipt": "Ver comprovante"
+    },
+    "method": {
+      "stripe": "Cartão",
+      "pago_movil": "Pago Móvil",
+      "transferencia": "Transferência"
+    },
+    "paymentStatus": {
+      "pendiente": "Em análise",
+      "aprobado": "Aprovado",
+      "rechazado": "Recusado"
+    },
+    "stripeReturn": {
+      "ok": "Pronto! O Stripe confirmou o pagamento; em alguns segundos aparece aqui.",
+      "cancel": "O pagamento com cartão não foi concluído."
+    },
+    "notice": {
+      "trialEnding_one": "Resta {{count}} dia do plano Grátis.",
+      "trialEnding_other": "Restam {{count}} dias do plano Grátis.",
+      "inReview": "Seu pagamento está em análise. Enquanto isso, você continua com acesso completo.",
+      "paymentFailed": "Não conseguimos cobrar seu cartão. Atualize-o para não perder o acesso.",
+      "expired": "Sua assinatura venceu: suas obras estão somente para leitura.",
+      "readOnlyProject": "Esta obra está somente para leitura: a assinatura de quem a gerencia venceu.",
+      "action": "Ver assinatura"
+    },
+    "bolivares": {
+      "title": "Pagar em bolívares",
+      "titleActivate": "Ativar o plano em bolívares",
+      "description": "Pague o valor exato e informe os dados do pagamento. Analisamos manualmente e avisamos você.",
+      "amount": "Valor a pagar",
+      "usd": "{{amount}} USD",
+      "rate": "taxa BCV {{rate}} Bs/USD, data valor {{date}}",
+      "accounts": "Onde pagar",
+      "pagoMovil": "Pago Móvil",
+      "transferencia": "Transferência",
+      "accountFields": {
+        "bank": "Banco",
+        "phone": "Telefone",
+        "id": "Cédula / RIF",
+        "account": "Conta",
+        "holder": "Titular"
+      },
+      "copy": "Copiar",
+      "fields": {
+        "method": "Como você pagou?",
+        "bank": "Banco de onde você pagou",
+        "reference": "Número de referência",
+        "payerId": "Cédula ou RIF de quem pagou",
+        "paidOn": "Data do pagamento",
+        "amountBs": "Valor que você pagou (Bs)",
+        "receipt": "Comprovante (foto ou PDF)"
+      },
+      "submit": "Enviar pagamento",
+      "sent": "Recebemos seu pagamento. Vamos analisar e avisar você.",
+      "quoteError": "Não conseguimos calcular o valor em bolívares."
+    },
+    "activate": {
+      "title": "Mude para o Pro para criar sua quarta obra",
+      "body": "O plano Grátis vai até 3 obras ativas. No Pro não há limite: $39 por mês com 3 obras incluídas, mais $8 por mês por obra extra. O Pro começa hoje e os dias grátis restantes são perdidos.",
+      "total": "Hoje você paga {{amount}} USD pelo primeiro mês.",
+      "card": "Pagar com cartão",
+      "bolivares": "Pagar em bolívares",
+      "cancel": "Agora não"
+    },
+    "pendingPayment": "Você enviou um pagamento em bolívares: estamos analisando.",
+    "upgrade": {
+      "title": "Mudar para o Pro",
+      "pitch": "Obras sem limite: $39 por mês com 3 incluídas e $8 por mês por obra extra.",
+      "when": "A partir de quando?",
+      "now": "A partir de hoje",
+      "nowHint_one": "Você passa para o Pro já, sem o limite de 3 obras. O dia grátis restante é perdido.",
+      "nowHint_other": "Você passa para o Pro já, sem o limite de 3 obras. Os {{count}} dias grátis restantes são perdidos.",
+      "trialEnd": "Quando terminar o plano Grátis",
+      "trialEndHint": "Começa em {{date}} e você não perde nenhum dia. Até lá, continua com até 3 obras.",
+      "totalNow": "Hoje você paga {{amount}} pelo primeiro mês.",
+      "totalLater": "Você paga {{amount}} pelo primeiro mês, que começa em {{date}}.",
+      "payCard": "Pagar com cartão"
+    },
+    "cardCheckout": {
+      "title": "Pagar com cartão",
+      "description": "O pagamento é processado pela Stripe: a Luma nunca vê os dados do seu cartão.",
+      "loading": "Carregando o pagamento seguro…",
+      "error": "Não conseguimos carregar o formulário de pagamento. Verifique sua conexão e tente de novo.",
+      "retry": "Tentar de novo"
+    }
+  },
+  "platform": {
+    "title": "Pagamentos da plataforma",
+    "tabs": {
+      "pendiente": "Pendentes",
+      "aprobado": "Aprovados",
+      "rechazado": "Recusados",
+      "rates": "Taxa BCV"
+    },
+    "payments": {
+      "empty": "Não há pagamentos neste status.",
+      "owner": "{{name}} · {{email}}",
+      "quoted": "Cotado",
+      "declared": "Declarado",
+      "rate": "Taxa",
+      "method": "Método",
+      "bank": "Banco",
+      "reference": "Referência",
+      "payerId": "Cédula / RIF",
+      "paidOn": "Data do pagamento",
+      "submitted": "Enviado",
+      "period": "Período",
+      "mismatch": "O valor declarado não confere com o cotado (mais de 1% de diferença). Confira no banco.",
+      "activateNow": "Ativa já: encerra o teste",
+      "receipt": "Ver comprovante",
+      "noReceipt": "Sem comprovante",
+      "approve": "Aprovar",
+      "reject": "Recusar",
+      "rejectTitle": "Recusar o pagamento",
+      "rejectReason": "Motivo (o usuário vê)",
+      "rejectSubmit": "Recusar pagamento",
+      "approved": "Pagamento aprovado",
+      "rejected": "Pagamento recusado",
+      "reason": "Motivo: {{reason}}"
+    },
+    "rates": {
+      "current": "Taxa vigente",
+      "none": "Ainda não há nenhuma taxa.",
+      "stale": "Antiga: mais de 48 horas sem ler o BCV",
+      "source": {
+        "bcv": "BCV",
+        "manual": "Inserida manualmente"
+      },
+      "refresh": "Ler o BCV agora",
+      "refreshed": "Taxa atualizada",
+      "flaggedToast": "A taxa lida saltou mais de 20%: ficou marcada e não é usada.",
+      "manualTitle": "Inserir uma taxa manualmente",
+      "manualHint": "Para quando o BCV não responde.",
+      "usd": "Bs por USD",
+      "valueDate": "Data valor",
+      "save": "Salvar taxa",
+      "saved": "Taxa salva",
+      "savedImplausible": "Taxa salva, mas salta mais de 20% em relação à anterior. Confira.",
+      "history": "Últimas leituras",
+      "flagged": "Marcada"
+    }
   }
 }

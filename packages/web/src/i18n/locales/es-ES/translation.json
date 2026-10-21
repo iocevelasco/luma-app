@@ -1,0 +1,1424 @@
+{
+  "dateRange": {
+    "thisMonth": "Este mes",
+    "lastMonth": "Mes pasado",
+    "last30": "Últimos 30 días",
+    "thisYear": "Este año"
+  },
+  "common": {
+    "appName": "Luma",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "continue": "Continuar",
+    "back": "Volver",
+    "loading": "Cargando…",
+    "loadErrorTitle": "No hemos podido cargar esto.",
+    "loadErrorDescription": "Prueba de nuevo en unos segundos.",
+    "retry": "Reintentar",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "name": "Nombre",
+    "language": "Idioma",
+    "errorTitle": "Algo ha salido mal",
+    "notFoundTitle": "Página no encontrada",
+    "notFoundBody": "La dirección que has abierto no existe o ha cambiado.",
+    "goHome": "Ir al inicio",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
+  },
+  "layout": {
+    "projects": "Obras",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "crew": "Empleados",
+    "providers": "Proveedores",
+    "hints": {
+      "projects": "Todas tus obras. Entra en una para ver cómo va.",
+      "providers": "El directorio de proveedores de la Empresa, compartido entre obras.",
+      "crew": "Los empleados de la Empresa: personal de obra y administrativo."
+    }
+  },
+  "appUpdate": {
+    "title": "Hay una versión nueva",
+    "body": "Actualiza para tener las últimas mejoras.",
+    "bodyWithVersion": "Ya está disponible la versión {{version}}. Actualiza para tener las últimas mejoras.",
+    "action": "Actualizar"
+  },
+  "userMenu": {
+    "account": "Mi cuenta",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión",
+    "subscription": "Suscripción",
+    "platformBilling": "Pagos de la plataforma"
+  },
+  "project": {
+    "list": {
+      "new": "Nueva obra",
+      "emptyTitle": "Todavía no tienes obras",
+      "emptyBody": "Crea tu primera obra para empezar a gestionarla.",
+      "columns": {
+        "name": "Obra",
+        "location": "Ubicación",
+        "dates": "Fechas"
+      }
+    },
+    "new": {
+      "title": "Nueva obra",
+      "submit": "Crear obra",
+      "created": "Obra creada",
+      "sections": {
+        "when": "Plazos",
+        "money": "Dinero"
+      },
+      "extraNotice": "Esta obra supera las 3 incluidas: suma 8 $ al mes (este mes, solo por los días que quedan).",
+      "seeSubscription": "Ver suscripción"
+    },
+    "fields": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "location": "Ubicación",
+      "size": "Metraje o dimensión (opcional)",
+      "startDate": "Inicio estimado",
+      "endDate": "Entrega estimada",
+      "currency": "Moneda",
+      "currencyPlaceholder": "Elige una moneda"
+    },
+    "nav": {
+      "detail": "Detalle",
+      "gantt": "Cronograma",
+      "materials": "Compras",
+      "labor": "Tareas",
+      "providers": "Proveedores",
+      "budget": "Presupuesto",
+      "advisor": "Consultor IA",
+      "documents": "Documentación",
+      "milestones": "Hitos",
+      "team": "Equipo",
+      "payments": "Pagos",
+      "expenses": "Gastos",
+      "aria": "Secciones de la obra"
+    },
+    "navHint": {
+      "back": "Vuelve al listado de todas tus obras.",
+      "detail": "La obra de un vistazo: avance, dinero, compras y pendientes.",
+      "gantt": "Planifica las tareas con sus fechas y responsables.",
+      "labor": "Asigna tareas a tu gente, sigue cómo van y registra la asistencia.",
+      "materials": "Pide materiales y herramientas y sigue cada compra hasta la obra.",
+      "milestones": "Registra hitos y eventualidades, y elige cuáles ve el cliente.",
+      "documents": "Planos, renders, permisos y condiciones del sitio, en un solo lugar.",
+      "providers": "Los proveedores de esta obra y lo que tiene a cargo cada uno.",
+      "payments": "Los cobros acordados con el cliente y lo que ya pagó.",
+      "expenses": "Lo que salió de la obra, con fecha, moneda y justificante.",
+      "budget": "Carga o importa el presupuesto y compáralo con lo comprometido.",
+      "advisor": "Consulta a la IA sobre la obra, con su presupuesto y su avance.",
+      "team": "Da acceso a la obra a supervisores, contables y al cliente."
+    },
+    "detail": {
+      "gantt": "Cronograma de tareas",
+      "providersVisibleToClient": "El cliente ve los proveedores",
+      "providersVisibleToClientHint": "Si lo activas, el cliente ve el directorio de esta obra y quién está asignado a cada tarea.",
+      "settingsSaved": "Ajuste guardado",
+      "team": "Equipo de la obra",
+      "memberInvited": "Acceso otorgado"
+    },
+    "dashboard": {
+      "progress": "Avance general",
+      "progressCount": "{{completed}} de {{total}} tareas",
+      "purchases": "Compras",
+      "noPurchases": "Todavía no se ha comprado ningún material.",
+      "noDocuments": {
+        "render": "Todavía no has subido renders.",
+        "plano": "Todavía no has subido planos."
+      },
+      "providers": "Proveedores",
+      "noProviders": "Todavía no has añadido proveedores.",
+      "budget": "Presupuesto",
+      "noBudget": "Todavía no has cargado el presupuesto.",
+      "viewAll": "Ver todo",
+      "noCrew": "Todavía no has añadido personal de obra.",
+      "missingToday_one": "Falta {{count}} persona hoy",
+      "missingToday_other": "Faltan {{count}} personas hoy",
+      "tasks": "Tareas de la semana",
+      "tasksCount": "{{done}} de {{total}} tareas",
+      "tasksOverdue_one": "{{count}} atrasada",
+      "tasksOverdue_other": "{{count}} atrasadas",
+      "tasksAllDone": "Semana al día.",
+      "noTasks": "No hay tareas para esta semana."
+    },
+    "errors": {
+      "create": "No hemos podido crear la obra.",
+      "update": "No hemos podido guardar el ajuste.",
+      "invite": "No hemos podido invitar a esa persona.",
+      "memberRole": "No hemos podido cambiar el rol.",
+      "memberRemove": "No hemos podido quitar el acceso."
+    },
+    "role": {
+      "gerente": "Jefe de obra",
+      "supervisor": "Supervisor de obra",
+      "contador": "Contable",
+      "cliente": "Cliente"
+    },
+    "roleHint": {
+      "supervisor": "Reporta avance, asistencia y materiales desde la obra. No ve el dinero.",
+      "contador": "Solo cobros y gastos. No ve tareas, personal ni proveedores.",
+      "cliente": "Sigue el avance de su obra y su cronograma de pagos. Solo lectura."
+    },
+    "team": {
+      "title": "Equipo y accesos",
+      "manage": "Gestionar",
+      "invite": "Dar acceso",
+      "inviteTitle": "Dar acceso a la obra",
+      "inviteHint": "Si la persona todavía no tiene cuenta en Luma, se la creamos y le llega un correo para activarla y elegir su contraseña.",
+      "inviteEmail": "Email",
+      "inviteSubmit": "Dar acceso",
+      "role": "Rol",
+      "roleChanged": "Rol actualizado",
+      "remove": "Quitar de la obra",
+      "removeTitle": "¿Quitar el acceso?",
+      "removeDescription": "{{name}} deja de ver esta obra. Lo que haya subido se mantiene.",
+      "removeConfirm": "Quitar",
+      "removed": "Acceso quitado",
+      "capabilityCount": "{{count}} permisos",
+      "activationHint": "Quien todavía no tiene cuenta recibe un correo para activarla y elegir su contraseña. Hasta que lo haga, figura igual en la lista."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar",
+      "subtitle": "Accede con tu correo y contraseña.",
+      "submit": "Entrar",
+      "forgot": "¿Has olvidado tu contraseña?",
+      "noAccount": "¿No tienes cuenta?",
+      "register": "Crea una",
+      "pendingHint": "¿Te han invitado y todavía no has elegido tu contraseña?",
+      "pendingAction": "Pide un enlace de activación nuevo"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "subtitle": "Completa tus datos para empezar.",
+      "submit": "Crear cuenta",
+      "hasAccount": "¿Ya tienes cuenta?",
+      "login": "Entra",
+      "confirmPassword": "Repetir contraseña",
+      "mismatch": "Las contraseñas no coinciden."
+    },
+    "forgotPassword": {
+      "title": "Recuperar contraseña",
+      "subtitle": "Te hemos enviado un enlace para elegir una nueva.",
+      "submit": "Enviar enlace",
+      "sent": "Si existe una cuenta con ese correo, te hemos enviado las instrucciones.",
+      "backToLogin": "Volver a entrar"
+    },
+    "resetPassword": {
+      "title": "Nueva contraseña",
+      "subtitle": "Elige una contraseña nueva para tu cuenta.",
+      "newPassword": "Nueva contraseña",
+      "confirmPassword": "Repetir contraseña",
+      "submit": "Guardar contraseña",
+      "done": "Contraseña actualizada. Ya puedes entrar.",
+      "mismatch": "Las contraseñas no coinciden.",
+      "missingToken": "El enlace no es válido o ha caducado."
+    },
+    "activate": {
+      "title": "Activa tu cuenta",
+      "subtitle": "Elige tu contraseña para terminar.",
+      "submit": "Activar cuenta"
+    },
+    "checkEmail": {
+      "title": "Revisa tu correo",
+      "subtitle": "Te hemos enviado un enlace para confirmar tu cuenta.",
+      "resend": "Reenviar correo",
+      "resent": "Te hemos reenviado el correo.",
+      "askEmail": "¿No te ha llegado? Escribe tu correo y te enviamos uno nuevo."
+    },
+    "verifyEmail": {
+      "verifying": "Confirmando tu cuenta…",
+      "success": "¡Cuenta confirmada!",
+      "error": "No hemos podido confirmar tu cuenta. El enlace puede haber caducado.",
+      "goToLogin": "Ir a entrar"
+    },
+    "confirmEmailChange": {
+      "verifying": "Confirmando tu nuevo correo…",
+      "success": "Correo actualizado.",
+      "error": "No hemos podido confirmar el cambio. El enlace puede haber caducado."
+    },
+    "account": {
+      "title": "Mi cuenta",
+      "changePassword": "Cambiar contraseña",
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "passwordChanged": "Contraseña actualizada.",
+      "changeEmail": "Cambiar correo",
+      "newEmail": "Nuevo correo",
+      "emailChangeSent": "Te hemos enviado un correo a la nueva dirección."
+    },
+    "errors": {
+      "login": "No hemos podido entrar. Revisa tu correo y contraseña.",
+      "register": "No hemos podido crear la cuenta.",
+      "generic": "Algo ha salido mal. Prueba de nuevo."
+    },
+    "hero": {
+      "title": "Construyendo el mañana",
+      "subtitle": "Cada paso cuenta. Cada obra importa.",
+      "imageAlt": "Equipo trabajando sobre la estructura de una obra en construcción"
+    },
+    "or": "o",
+    "cta": {
+      "manageQuestion": "¿Gestionas una obra?",
+      "manageAction": "Crea una cuenta gratis",
+      "invitedQuestion": "¿Te invitaron a una obra?",
+      "invitedAction": "Revisa tu correo de invitación"
+    }
+  },
+  "routeError": {
+    "title": "Algo se rompió",
+    "description": "La pantalla no ha podido cargar. Puedes reintentar o volver al inicio.",
+    "unknown": "Error desconocido",
+    "retry": "Reintentar",
+    "goHome": "Ir al inicio",
+    "signOut": "Cerrar sesión y empezar de cero"
+  },
+  "activity": {
+    "list": {
+      "new": "Nueva tarea",
+      "navLink": "Planificación semanal",
+      "newTitle": "Nueva tarea",
+      "newSubmit": "Crear tarea",
+      "created": "Tarea creada",
+      "updated": "Tarea actualizada",
+      "deleted": "Tarea eliminada",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "currentWeek": "Semana actual",
+      "overdue": "Atrasada",
+      "missingMaterials": "Le faltan materiales"
+    },
+    "new": {
+      "title": "Nueva tarea"
+    },
+    "fields": {
+      "name": "Nombre",
+      "startDate": "Inicio",
+      "endDate": "Fin",
+      "responsible": "Responsable",
+      "status": "Estado",
+      "specialty": "Especialidad",
+      "specialtyPlaceholder": "Elige una especialidad",
+      "specialtyRequired": "Elige una especialidad.",
+      "responsiblePlaceholder": "Elige un empleado",
+      "responsibleMe": "{{name}} (tú)",
+      "responsibleRequired": "Elige quién es el responsable.",
+      "responsibleEmpty": "Todavía no hay empleados dados de alta. Añádelos en Empleados.",
+      "notes": "Notas (opcional)"
+    },
+    "status": {
+      "pendiente": "Pendiente",
+      "en_curso": "En curso",
+      "en_revision": "En revisión",
+      "completada": "Completada",
+      "cancelada": "Cancelada"
+    },
+    "review": {
+      "title": "Validación del supervisor",
+      "approve": "Aprobar y cerrar",
+      "return": "Devolver",
+      "confirmReturn": "Devolver con este motivo",
+      "reasonLabel": "¿Por qué la devuelves?",
+      "reasonPlaceholder": "Ej: falta terminar el borde del zócalo",
+      "returnedTitle": "El supervisor ha devuelto esta tarea",
+      "waiting": "Reportada como terminada. Espera la validación del supervisor.",
+      "rejected": "Tarea devuelta"
+    },
+    "emptyState": {
+      "title": "No hay tareas planificadas para esta semana."
+    },
+    "errors": {
+      "create": "No hemos podido crear la tarea.",
+      "update": "No hemos podido actualizar la tarea.",
+      "delete": "No hemos podido eliminar la tarea.",
+      "uploadEvidence": "No hemos podido subir la foto.",
+      "removeEvidence": "No hemos podido borrar la foto.",
+      "reject": "No hemos podido devolver la tarea."
+    },
+    "gantt": {
+      "goToToday": "Ir a hoy",
+      "emptyState": "No hay tareas planificadas en este rango de fechas."
+    },
+    "detail": {
+      "title": "Detalle de la tarea",
+      "back": "Atrás",
+      "edit": "Editar",
+      "editTitle": "Editar tarea",
+      "materials": "Materiales asociados",
+      "noMaterials": "No hay materiales asociados a esta tarea.",
+      "noSpecialty": "Sin especialidad",
+      "providers": "Proveedores asignados",
+      "noProviders": "Todavía no has asignado proveedores a esta tarea.",
+      "assignProvider": "Asignar",
+      "assignProviderPlaceholder": "Elige un proveedor",
+      "unassignProvider": "Quitar proveedor",
+      "notes": "Notas",
+      "evidence": "Evidencia fotográfica",
+      "addEvidence": "Añadir foto",
+      "noEvidence": "Todavía no se han subido fotos de avance.",
+      "removeEvidence": "Quitar foto"
+    }
+  },
+  "material": {
+    "list": {
+      "navLink": "Compras",
+      "title": "Compras",
+      "toBuy": "Por comprar",
+      "toBuyEmpty": "No hay nada por comprar.",
+      "bought": "Comprados",
+      "boughtEmpty": "Todavía no se ha comprado nada.",
+      "onTheWay": "Comprados, falta que lleguen",
+      "onSite": "Ya en obra",
+      "startsOn": "Empieza el {{date}}",
+      "startsToday": "Empieza hoy",
+      "startsInDays_one": "Empieza en {{count}} día",
+      "startsInDays_other": "Empieza en {{count}} días",
+      "startedAlready": "Ya empezó",
+      "changeStatus": "Cambiar estado",
+      "newTitle": "Añadir material",
+      "newSubmit": "Añadir",
+      "created": "Material añadido",
+      "updated": "Material actualizado",
+      "deleted": "Material eliminado",
+      "empty": "Todavía no has añadido materiales.",
+      "withoutActivity": "Sin tarea asociada",
+      "copyList": "Copiar lista",
+      "share": "Compartir",
+      "copied": "Lista copiada al portapapeles",
+      "confirmStatusTitle": "Confirmar cambio de estado",
+      "confirmStatusBody": "Vas a cambiar el estado a \"{{status}}\".",
+      "editTitle": "Editar material",
+      "editSubmit": "Guardar cambios",
+      "editLabel": "Editar",
+      "edit": "Editar {{name}}",
+      "moreActions": "Más acciones de {{name}}",
+      "delete": "Eliminar",
+      "deleteTitle": "¿Eliminar este material?",
+      "deleteBody": "Vas a eliminar \"{{name}}\" ({{quantity}} {{unit}}). No se puede deshacer.",
+      "lockedHint": "Puedes editar o eliminar un material mientras esté Pendiente. Después de solicitarlo queda como registro.",
+      "lockedNote": "Ya no se puede editar ni eliminar: salió de Pendiente.",
+      "confirmStatusLockWarning": "Después ya no podrás editarlo ni eliminarlo.",
+      "lockedClose": "Cerrar",
+      "downloadPdf": "Descargar PDF",
+      "generatingPdf": "Generando…",
+      "pdfDownloaded": "PDF descargado",
+      "requestedTag": "ya pedido",
+      "noSupplier": "Sin proveedor"
+    },
+    "pdf": {
+      "title": "Lista de compras",
+      "materials_one": "{{count}} material",
+      "materials_other": "{{count}} materiales",
+      "suppliers_one": "{{count}} proveedor",
+      "suppliers_other": "{{count}} proveedores",
+      "columnMaterial": "Material",
+      "columnQuantity": "Cantidad",
+      "columnSupplier": "Proveedor",
+      "page": "Página {{page}} de {{total}}"
+    },
+    "fields": {
+      "name": "Nombre",
+      "quantity": "Cantidad",
+      "unit": "Unidad",
+      "unitPlaceholder": "Elige una unidad",
+      "activity": "Tarea (opcional)",
+      "activityPlaceholder": "Sin tarea asociada",
+      "estimatedCost": "Costo estimado (opcional)",
+      "supplier": "Proveedor (opcional)"
+    },
+    "action": {
+      "solicitado": "Marcar solicitado",
+      "comprado": "Marcar comprado",
+      "en_obra": "Llegó a obra"
+    },
+    "status": {
+      "pendiente": "Pendiente",
+      "solicitado": "Solicitado",
+      "comprado": "Comprado",
+      "en_obra": "En obra"
+    },
+    "unit": {
+      "un": "Unidad",
+      "m": "Metro",
+      "m2": "Metro cuadrado",
+      "m3": "Metro cúbico",
+      "kg": "Kilogramo",
+      "l": "Litro",
+      "bolsa": "Bolsa",
+      "rollo": "Rollo",
+      "global": "Global"
+    },
+    "errors": {
+      "create": "No hemos podido añadir el material.",
+      "update": "No hemos podido actualizar el material.",
+      "delete": "No hemos podido eliminar el material.",
+      "copy": "No hemos podido copiar la lista.",
+      "pdf": "No hemos podido generar el PDF. Prueba de nuevo."
+    }
+  },
+  "provider": {
+    "list": {
+      "navLink": "Proveedores",
+      "title": "Proveedores",
+      "new": "Nuevo proveedor",
+      "newTitle": "Nuevo proveedor",
+      "newSubmit": "Crear proveedor",
+      "editTitle": "Editar proveedor",
+      "deactivate": "Dar de baja",
+      "created": "Proveedor añadido",
+      "updated": "Proveedor actualizado",
+      "deactivated": "Proveedor dado de baja",
+      "assigned": "Proveedor asignado",
+      "unassigned": "Proveedor desasignado",
+      "empty": "Todavía no has añadido proveedores.",
+      "emptyOwnerHint": "Añade tu primer contacto para poder asignarlo a una tarea.",
+      "confirmDeactivateTitle": "Dar de baja al proveedor",
+      "confirmDeactivateBody": "\"{{name}}\" ya no va a aparecer para asignar a nuevas tareas. Las tareas donde ya está asignado no cambian.",
+      "activitiesTitle": "Tareas de {{name}}",
+      "noActivities": "Todavía no has asignado este proveedor a ninguna tarea de esta obra.",
+      "assignActivity": "Asignar",
+      "assignActivityPlaceholder": "Elige una tarea",
+      "unassignActivity": "Quitar tarea"
+    },
+    "fields": {
+      "name": "Nombre",
+      "companyName": "Empresa (opcional)",
+      "specialty": "Especialidad",
+      "customSpecialty": "Especifica la especialidad",
+      "phone": "Teléfono",
+      "email": "Email (opcional)",
+      "notes": "Notas (opcional)",
+      "assignActivities": "Asignar a tareas (opcional)",
+      "customSpecialtyAcabados": "Qué acabado hace (opcional)",
+      "specialtyPlaceholder": "Elige una especialidad",
+      "scope": "Disponible en",
+      "scopeHint": "Los de \"Todas mis obras\" quedan en tu agenda y aparecen en cualquier obra. Usa \"Solo esta obra\" para el proveedor que trae el cliente."
+    },
+    "specialty": {
+      "electricidad": "Electricidad",
+      "plomeria": "Plomería",
+      "gas": "Gas",
+      "carpinteria": "Carpintería",
+      "cristaleria": "Cristalería",
+      "albanileria": "Albañilería",
+      "herreria": "Herrería",
+      "redes": "Redes (CCTV, internet, domótica)",
+      "mecanicas": "Mecánicas (aires, ascensores, escaleras)",
+      "estructura": "Estructura (columnas, vigas, losas)",
+      "acabados": "Acabados",
+      "pintura": "Pintura",
+      "climatizacion": "Climatización",
+      "techos": "Techos e impermeabilización",
+      "pisos_revestimientos": "Pisos y revestimientos",
+      "jardineria": "Jardinería",
+      "demolicion": "Demolición",
+      "otra": "Otra"
+    },
+    "scope": {
+      "organization": "Todas mis obras",
+      "project": "Solo esta obra",
+      "projectBadge": "Solo esta obra"
+    },
+    "errors": {
+      "create": "No hemos podido añadir el proveedor.",
+      "update": "No hemos podido actualizar el proveedor.",
+      "deactivate": "No hemos podido dar de baja al proveedor.",
+      "assign": "No hemos podido asignar el proveedor.",
+      "unassign": "No hemos podido quitar el proveedor."
+    }
+  },
+  "engagement": {
+    "title": "Contratación — {{name}}",
+    "new": "Nueva contratación",
+    "createSubmit": "Crear contratación",
+    "edit": "Editar contratación",
+    "delete": "Eliminar contratación",
+    "empty": "Todavía no has registrado una contratación con este proveedor en esta obra.",
+    "created": "Contratación registrada",
+    "updated": "Contratación actualizada",
+    "deleted": "Contratación eliminada",
+    "requirementsReady": "Todo listo para arrancar",
+    "requirementsPending": "Falta {{count}} requisito para arrancar",
+    "requirementsPending_other": "Faltan {{count}} requisitos para arrancar",
+    "fields": {
+      "status": "Estado",
+      "quotedAmount": "Cotizado",
+      "advanceAmount": "Adelanto",
+      "amountsHint": "Se registran como comprometido contra el presupuesto. Luma no lleva pagos ni facturación.",
+      "estimatedStartDate": "Inicio estimado",
+      "requirements": "¿Qué tiene que estar listo para que arranque?",
+      "notes": "Notas (opcional)"
+    },
+    "status": {
+      "solicitada": "Cotización solicitada",
+      "cotizada": "Cotizada",
+      "aprobada": "Aprobada",
+      "rechazada": "Rechazada"
+    },
+    "requirement": {
+      "materiales_en_obra": "Materiales en obra",
+      "personal_libre": "Personal libre",
+      "area_desocupada": "Área de trabajo desocupada",
+      "actividad_previa": "Tarea previa terminada",
+      "otro": "Otro"
+    },
+    "errors": {
+      "create": "No hemos podido registrar la contratación.",
+      "update": "No hemos podido actualizar la contratación.",
+      "delete": "No hemos podido eliminar la contratación.",
+      "requirement": "No hemos podido actualizar el requisito."
+    }
+  },
+  "crew": {
+    "list": {
+      "title": "Personal fijo",
+      "empty": "Todavía no has añadido personal fijo de obra.",
+      "lead": "Encargado",
+      "deactivate": "Dar de baja",
+      "created": "Personal añadido",
+      "updated": "Personal actualizado",
+      "deactivated": "Personal dado de baja",
+      "new": "Nuevo empleado",
+      "newTitle": "Nuevo empleado",
+      "newSubmit": "Crear empleado",
+      "editTitle": "Editar empleado"
+    },
+    "fields": {
+      "name": "Nombre",
+      "kind": "Tipo",
+      "specialty": "Especialidad (opcional)",
+      "specialtyPlaceholder": "Sin especialidad",
+      "isLead": "Es el encargado de su especialidad",
+      "phone": "Teléfono (opcional)",
+      "dailyRate": "Jornal diario",
+      "dailyRateHint": "Se usa para calcular la nómina contra la asistencia. Opcional."
+    },
+    "kind": {
+      "persona": "Persona",
+      "equipo": "Equipo"
+    },
+    "errors": {
+      "create": "No hemos podido añadir el personal.",
+      "update": "No hemos podido actualizar el personal.",
+      "deactivate": "No hemos podido dar de baja al personal.",
+      "createGoal": "No hemos podido añadir la meta.",
+      "updateGoal": "No hemos podido actualizar la meta.",
+      "deleteGoal": "No hemos podido eliminar la meta."
+    },
+    "add": {
+      "button": "Añadir personal",
+      "title": "Añadir personal",
+      "description": "Queda en los empleados de la Empresa y asignado a esta obra.",
+      "submit": "Crear y añadir a la obra",
+      "suggestionsTitle": "Ya están en la Empresa",
+      "addExisting": "Añadir a esta obra",
+      "reactivate": "Reactivar y añadir",
+      "askToReactivate": "Pídele al jefe de obra que lo reactive.",
+      "differentPerson": "Es otra persona",
+      "reactivateInCompany": "Reactivar"
+    }
+  },
+  "labor": {
+    "tabs": {
+      "day": "Jornada",
+      "board": "Tablero"
+    },
+    "prevDay": "Día anterior",
+    "nextDay": "Día siguiente",
+    "today": "Hoy",
+    "whoIsHereTitle": "Quién está trabajando hoy",
+    "whoIsHereEmpty": "Nadie registrado como presente todavía.",
+    "whoIsHereCount": "{{count}} personas presentes hoy",
+    "byActivityTitle": "Personal por tarea",
+    "emptyState": "No hay tareas programadas para este día.",
+    "fields": {
+      "expected": "Esperado",
+      "present": "Presentes",
+      "presentPlaceholder": "Nombres separados por coma"
+    },
+    "presentCount": "{{count}} presentes",
+    "deficit": "Faltan {{count}}",
+    "list": {
+      "saved": "Registro guardado"
+    },
+    "errors": {
+      "save": "No hemos podido guardar el registro.",
+      "assignCrew": "No hemos podido asignar a esa persona.",
+      "unassignCrew": "No hemos podido quitar a esa persona."
+    },
+    "summary": {
+      "present": "Presentes",
+      "missing": "Faltan",
+      "activities": "Tareas hoy"
+    },
+    "crew": {
+      "empty": "Todavía no has asignado personal a esta tarea.",
+      "assign": "Asignar personal",
+      "pickPerson": "Elige a quién asignar",
+      "assigned": "Personal asignado",
+      "unassigned": "Personal quitado",
+      "unassign": "Quitar de la cuadrilla",
+      "call": "Llamar",
+      "cover": "Cubrir",
+      "pickCover": "¿Quién lo cubre?",
+      "covering": "Cubriendo hoy",
+      "removeCover": "Quitar reemplazo"
+    },
+    "legacyNotice": "Parte cargado antes del roster: nombres escritos a mano."
+  },
+  "budget": {
+    "list": {
+      "created": "Presupuesto cargado"
+    },
+    "empty": {
+      "title": "Todavía no has cargado el presupuesto",
+      "body": "Carga los capítulos y partidas de tu presupuesto para empezar a compararlo con la ejecución."
+    },
+    "summary": {
+      "total": "Total",
+      "contingency": "Contingencia",
+      "available": "Disponible",
+      "committed": "Comprometido",
+      "committedHint": "Cotizaciones de proveedores ya aprobadas.",
+      "sourceImport": "Importado desde {{fileName}}",
+      "sourceManual": "Cargado a mano"
+    },
+    "fields": {
+      "chapter": "Capítulo",
+      "name": "Partida",
+      "unit": "Unidad",
+      "quantity": "Cantidad (opcional)",
+      "unitCost": "Costo unitario (opcional)",
+      "total": "Total",
+      "contingencyAmount": "Contingencia"
+    },
+    "form": {
+      "tab": "Cargar a mano",
+      "title": "Cargar presupuesto",
+      "addItem": "Añadir partida",
+      "removeItem": "Quitar",
+      "computedTotal": "Total calculado",
+      "submit": "Guardar presupuesto"
+    },
+    "import": {
+      "tab": "Importar hoja de cálculo",
+      "title": "Importar presupuesto desde una hoja de cálculo",
+      "selectFile": "Archivo (.xlsx o .csv)",
+      "errorTitle": "No hemos podido leer el archivo",
+      "errors": {
+        "unsupported_type": "Formato no admitido. Sube un archivo .xlsx o .csv.",
+        "empty": "El archivo no tiene filas.",
+        "corrupt": "El archivo está dañado o no es una hoja de cálculo válida.",
+        "too_many_rows": "El archivo tiene demasiadas filas (más de 2000). Comprueba que sea el archivo correcto."
+      },
+      "missingColumnsTitle": "Faltan columnas por asignar",
+      "missingColumnsBody": "Asigna una columna de la hoja de cálculo a cada campo obligatorio antes de continuar.",
+      "incompleteTitle": "Filas incompletas",
+      "incompleteBody": "{{count}} fila(s) sin un campo obligatorio: no se van a importar.",
+      "duplicateTitle": "Partidas repetidas",
+      "duplicateBody": "{{count}} partida(s) con el mismo capítulo, nombre y unidad — se importan igual.",
+      "noValidRows": "No hay filas válidas para importar con este mapeo de columnas.",
+      "moreRows": "Y {{count}} fila(s) más — se importan todas, solo se acorta la vista previa.",
+      "confirm": "Confirmar e importar",
+      "noColumn": "— Sin asignar —",
+      "columns": {
+        "chapter": "Capítulo",
+        "name": "Partida",
+        "unit": "Unidad",
+        "quantity": "Cantidad (opcional)",
+        "unitCost": "Costo unitario (opcional)",
+        "total": "Total"
+      }
+    },
+    "errors": {
+      "create": "No hemos podido guardar el presupuesto."
+    }
+  },
+  "advisor": {
+    "title": "Consultor IA",
+    "empty": "Escribe una pregunta sobre esta obra para empezar.",
+    "placeholder": "Pregúntale al Consultor IA sobre esta obra…",
+    "thinking": "Pensando…",
+    "notConfigured": "El Consultor IA todavía no está configurado en este entorno.",
+    "errors": {
+      "send": "No hemos podido obtener respuesta del Consultor IA."
+    }
+  },
+  "team": {
+    "groupStaff": "Administración",
+    "groupCrew": "Obra",
+    "addStaff": "Añadir personal administrativo",
+    "addCrew": "Añadir personal de obra",
+    "empty": "Todavía no has añadido a nadie a tu Empresa.",
+    "inviteTitle": "Añadir a alguien a la Empresa",
+    "inviteEmail": "Email",
+    "inviteSubmit": "Añadir",
+    "invited": "Invitación enviada",
+    "errors": {
+      "invite": "No hemos podido invitar a esa persona."
+    },
+    "updated": "Datos actualizados",
+    "removed": "Persona sacada del equipo",
+    "invitationResent": "Invitación reenviada",
+    "editTitle": "Editar integrante",
+    "name": "Nombre",
+    "emailReadOnly": "El email es su identidad en Luma y no se cambia desde aquí.",
+    "phone": "Teléfono (opcional)",
+    "staffRole": "Rol en la Empresa",
+    "staffRolePlaceholder": "Elige un rol",
+    "staffRoleHint": "Es su función en la Empresa. Para que entre en una obra, usa «Dar acceso a obras» en su fila.",
+    "staffRoleRequired": "Elige un rol.",
+    "grantAccess": "Dar acceso a obras",
+    "grantTitle": "Dar acceso a {{name}}",
+    "grantRole": "Rol en la obra",
+    "grantProjects": "Obras",
+    "grantNoProjects": "No tienes obras donde puedas dar acceso.",
+    "grantNoneSelected": "Elige al menos una obra.",
+    "grantSubmit": "Dar acceso",
+    "grantFailed": "No hemos podido darle acceso a: {{projects}}.",
+    "grantDone_one": "Le has dado acceso a {{count}} obra.",
+    "grantDone_other": "Le has dado acceso a {{count}} obras.",
+    "pending": "Sin activar",
+    "resend": "Reenviar invitación",
+    "removeFromCompany": "Sacar del equipo",
+    "removeCompanyTitle": "¿Sacar del equipo?",
+    "removeCompanyBody": "{{name}} deja de pertenecer a tu Empresa y pierde el acceso a sus obras. Lo que haya subido se mantiene.",
+    "activationLink": {
+      "title": "El correo no se ha enviado",
+      "body": "La cuenta de {{name}} está creada, pero no hemos podido enviarle el correo de activación. Copia el enlace y envíaselo por el medio que prefieras. Caduca en 72 horas.",
+      "label": "Enlace de activación",
+      "warning": "Quien tenga este enlace puede elegir la contraseña de esa cuenta. Compártelo solo con {{name}}.",
+      "copy": "Copiar enlace",
+      "copied": "Copiado",
+      "done": "Listo"
+    }
+  },
+  "document": {
+    "list": {
+      "title": "Documentación de la obra",
+      "noSpace": "Sin espacio asignado"
+    },
+    "category": {
+      "condiciones_sitio": "Condiciones del sitio",
+      "horario_trabajo": "Horario de trabajo",
+      "permiso_edificio": "Permiso del edificio",
+      "permiso_municipal": "Permiso municipal",
+      "plano": "Planos",
+      "render": "Renders",
+      "otra": "Otros"
+    },
+    "fields": {
+      "file": "Archivo",
+      "filePlaceholder": "Elegir archivo",
+      "fileHint": "PDF o imagen (.jpg, .png, .webp). Hasta 20MB.",
+      "category": "Categoría",
+      "categoryPlaceholder": "Elige una categoría",
+      "title": "Título",
+      "space": "Espacio",
+      "spacePlaceholder": "Cocina, baño principal, living…",
+      "notes": "Notas"
+    },
+    "new": {
+      "title": "Subir documento",
+      "submit": "Subir"
+    },
+    "delete": {
+      "action": "Eliminar documento",
+      "title": "¿Eliminar este documento?",
+      "description": "Se elimina «{{title}}» y su archivo. No se puede deshacer.",
+      "confirm": "Eliminar"
+    },
+    "empty": {
+      "title": "Todavía no hay documentación",
+      "description": "Sube los permisos, las condiciones del sitio, los planos y los renders de la obra.",
+      "descriptionReadOnly": "Cuando el jefe de obra suba permisos, planos o renders, los verás aquí."
+    },
+    "open": "Abrir documento",
+    "uploadedBy": "Subido por {{name}} el {{date}}",
+    "created": "Documento subido",
+    "updated": "Documento actualizado",
+    "deleted": "Documento eliminado",
+    "errors": {
+      "create": "No hemos podido subir el documento.",
+      "update": "No hemos podido actualizar el documento.",
+      "delete": "No hemos podido eliminar el documento.",
+      "fileRequired": "Elige un archivo.",
+      "fileType": "Formato no admitido. Sube un PDF o una imagen .jpg, .png o .webp.",
+      "fileSize": "El archivo es demasiado grande (máximo 20MB)."
+    },
+    "filters": {
+      "category": "Tipo",
+      "allCategories": "Todos los tipos",
+      "uploader": "Subido por",
+      "allUploaders": "Todas las personas",
+      "groupBy": "Agrupar por",
+      "groupNone": "Sin agrupar",
+      "groupCategory": "Tipo",
+      "groupUploader": "Quién lo subió",
+      "noResults": "Ningún documento coincide con estos filtros.",
+      "clear": "Limpiar filtros"
+    },
+    "pdf": "PDF",
+    "uploadedOn": "Subido el {{date}}",
+    "previewUnavailable": "Vista previa no disponible"
+  },
+  "milestone": {
+    "list": {
+      "title": "Hitos y eventualidades"
+    },
+    "type": {
+      "etapa_concluida": "Etapa concluida",
+      "compra_significativa": "Compra significativa",
+      "permisologia": "Problema de permisología",
+      "vicio_oculto": "Vicio oculto",
+      "retraso": "Retraso",
+      "cambio_proyecto": "Cambio en el proyecto",
+      "reunion": "Reunión",
+      "otro": "Otro"
+    },
+    "audience": {
+      "cliente": "Visible para el cliente",
+      "interno": "Interno"
+    },
+    "audienceHint": {
+      "cliente": "El cliente recibe el aviso y lo ve en la obra.",
+      "interno": "Solo lo ven el jefe de obra y el supervisor."
+    },
+    "severity": {
+      "info": "Informativo",
+      "atencion": "Atención",
+      "critico": "Crítico"
+    },
+    "fields": {
+      "type": "Tipo",
+      "typePlaceholder": "Elige un tipo",
+      "title": "Título",
+      "occurredOn": "Cuándo pasó",
+      "audience": "Quién se entera",
+      "severity": "Gravedad",
+      "activity": "Tarea relacionada",
+      "activityPlaceholder": "Ninguna",
+      "description": "Descripción",
+      "attendees": "Asistentes",
+      "minutes": "Minuta",
+      "minutesPlaceholder": "Temas que se trataron, qué se decidió y qué quedó pendiente.",
+      "descriptionPlaceholder": "Qué pasó y qué hay que saber."
+    },
+    "new": {
+      "title": "Reportar hito",
+      "submit": "Reportar"
+    },
+    "delete": {
+      "action": "Eliminar hito",
+      "title": "¿Eliminar este hito?",
+      "description": "Se elimina «{{title}}». No se puede deshacer.",
+      "confirm": "Eliminar"
+    },
+    "empty": {
+      "title": "Todavía no hay hitos",
+      "description": "Reporta las etapas terminadas, los retrasos y lo que haya que avisar.",
+      "descriptionReadOnly": "Cuando pase algo importante en la obra, lo verás aquí."
+    },
+    "created": "Hito reportado",
+    "updated": "Hito actualizado",
+    "deleted": "Hito eliminado",
+    "errors": {
+      "create": "No hemos podido reportar el hito.",
+      "update": "No hemos podido actualizar el hito.",
+      "delete": "No hemos podido eliminar el hito."
+    },
+    "attendees": {
+      "remove": "Quitar a {{name}}",
+      "placeholder": "Escribe un nombre y pulsa Intro",
+      "full": "Has llegado al máximo de asistentes",
+      "more_one": "{{names}} y {{count}} más",
+      "more_other": "{{names}} y {{count}} más"
+    },
+    "edit": {
+      "title": "Editar hito",
+      "submit": "Guardar cambios",
+      "action": "Editar hito"
+    },
+    "showMore": "Ver más",
+    "showLess": "Ver menos",
+    "reportedByName": "Reportado por {{name}}",
+    "linkedTask": "Tarea: {{name}}",
+    "showMinutes": "Ver minuta",
+    "showDetail": "Ver detalle",
+    "actions": "Acciones de «{{title}}»",
+    "attachments": {
+      "title": "Adjuntos",
+      "count": "{{count}} de {{max}}",
+      "add": "Añadir fotos o PDF",
+      "hint": "Fotos o PDF de hasta 20MB. Desde el móvil puedes hacer la foto en el momento.",
+      "pending": "se sube al guardar",
+      "uploading": "Subiendo…",
+      "retry": "Reintentar {{name}}",
+      "remove": "Quitar {{name}}",
+      "removeTitle": "¿Quitar este adjunto?",
+      "removeDescription": "Se borra «{{name}}». No se puede deshacer.",
+      "removeConfirm": "Quitar",
+      "removed": "Adjunto quitado",
+      "failedAfterCreate": "El hito se ha guardado, pero estos archivos no se han subido. Vuelve a añadirlos:",
+      "more_one": "+{{count}}",
+      "more_other": "+{{count}}",
+      "open": "Abrir {{name}}",
+      "errors": {
+        "type": "Ese formato no se puede adjuntar: sube una foto o un PDF.",
+        "tooLarge": "Pesa más de 20MB.",
+        "tooMany": "Un hito admite hasta {{max}} adjuntos.",
+        "upload": "No hemos podido subir el archivo."
+      }
+    }
+  },
+  "notification": {
+    "title": "Notificaciones",
+    "aria": "Notificaciones",
+    "ariaWithUnread": "Notificaciones, {{count}} sin leer",
+    "empty": "No tienes notificaciones.",
+    "markAllRead": "Marcar todo leído",
+    "type": {
+      "actividad_iniciada": "Arrancó «{{name}}»",
+      "actividad_en_revision": "«{{name}}» se reportó terminada y espera tu revisión",
+      "actividad_completada": "Se dio por terminada «{{name}}»",
+      "hito": "Nuevo hito en obra: «{{name}}»",
+      "eventualidad": "Eventualidad reportada: «{{name}}»"
+    }
+  },
+  "permissions": {
+    "notAllowed": "Tu rol no permite esta acción."
+  },
+  "finance": {
+    "summary": {
+      "title": "Cobros",
+      "scheduled": "Acordado",
+      "paid": "Cobrado",
+      "pending": "Pendiente",
+      "nextDue": "Próximo: {{concept}} · {{date}} · {{amount}}"
+    },
+    "schedule": {
+      "title": "Cronograma acordado",
+      "new": "Añadir cuota",
+      "newTitle": "Añadir cuota al cronograma",
+      "newSubmit": "Añadir",
+      "empty": "Todavía no hay cuotas acordadas.",
+      "dueOn": "Vence el {{date}}",
+      "paidSoFar": "cobrado {{amount}}",
+      "delete": "Eliminar cuota"
+    },
+    "payments": {
+      "title": "Cobros recibidos",
+      "new": "Registrar cobro",
+      "newTitle": "Registrar un cobro",
+      "newSubmit": "Registrar",
+      "empty": "Todavía no has registrado cobros.",
+      "onAccount": "A cuenta",
+      "delete": "Eliminar cobro"
+    },
+    "expenses": {
+      "title": "Gastos",
+      "new": "Registrar gasto",
+      "newTitle": "Registrar un gasto",
+      "newSubmit": "Registrar",
+      "emptyTitle": "Todavía no hay gastos",
+      "emptyDescription": "Registra materiales, herramientas, nóminas e insumos para ver el resultado de la obra.",
+      "delete": "Eliminar gasto",
+      "openReceipt": "Abrir justificante"
+    },
+    "payroll": {
+      "title": "Nómina",
+      "from": "Desde",
+      "to": "Hasta",
+      "empty": "No hay asistencia registrada en este periodo.",
+      "days": "{{count}} días",
+      "total": "Total",
+      "missingRate": "{{count}} personas sin jornal asignado. Su costo no está en el total."
+    },
+    "result": {
+      "title": "Resultado de la obra",
+      "paid": "Cobrado",
+      "spent": "Gastado",
+      "committed": "Comprometido",
+      "margin": "Margen"
+    },
+    "category": {
+      "material": "Materiales",
+      "herramienta": "Herramientas",
+      "nomina": "Nómina",
+      "insumo": "Insumos",
+      "otro": "Otros"
+    },
+    "method": {
+      "transferencia": "Transferencia",
+      "efectivo": "Efectivo",
+      "cheque": "Cheque",
+      "otro": "Otro"
+    },
+    "status": {
+      "pendiente": "Pendiente",
+      "parcial": "Parcial",
+      "cobrado": "Cobrado",
+      "vencido": "Vencido"
+    },
+    "fields": {
+      "amount": "Monto",
+      "currency": "Moneda",
+      "exchangeRate": "Tipo de cambio {{from}} a {{to}}",
+      "exchangeRateHint": "Se guarda con el movimiento. No se recalcula después.",
+      "concept": "Concepto",
+      "conceptPlaceholder": "Anticipo, avance 1, saldo final…",
+      "dueOn": "Vencimiento",
+      "paidOn": "Fecha del cobro",
+      "method": "Forma de pago",
+      "scheduleItem": "Imputar a",
+      "scheduleItemPlaceholder": "A cuenta, sin cuota",
+      "reference": "Referencia",
+      "category": "Categoría",
+      "description": "Descripción",
+      "spentOn": "Fecha del gasto",
+      "provider": "Proveedor",
+      "activity": "Tarea",
+      "none": "Ninguno",
+      "receipt": "Justificante",
+      "receiptPlaceholder": "Elegir archivo (opcional)"
+    },
+    "empty": {
+      "title": "Todavía no hay pagos",
+      "description": "Carga el calendario de pagos acordado con el cliente para empezar a seguir los cobros."
+    },
+    "scheduleCreated": "Cuota añadida",
+    "scheduleDeleted": "Cuota eliminada",
+    "paymentCreated": "Cobro registrado",
+    "paymentDeleted": "Cobro eliminado",
+    "expenseCreated": "Gasto registrado",
+    "expenseDeleted": "Gasto eliminado",
+    "errors": {
+      "scheduleCreate": "No hemos podido añadir la cuota.",
+      "scheduleDelete": "No hemos podido eliminar la cuota.",
+      "paymentCreate": "No hemos podido registrar el cobro.",
+      "paymentDelete": "No hemos podido eliminar el cobro.",
+      "expenseCreate": "No hemos podido registrar el gasto.",
+      "expenseDelete": "No hemos podido eliminar el gasto.",
+      "receiptType": "Justificante no admitido. Sube un PDF o una imagen.",
+      "receiptSize": "El justificante es demasiado grande (máximo 20MB)."
+    }
+  },
+  "errors": {
+    "validation": "Revisa los datos: hay campos con errores.",
+    "unauthenticated": "Tu sesión se ha cerrado. Vuelve a entrar.",
+    "forbidden": "Tu rol no permite esta acción.",
+    "notFound": "No hemos encontrado lo que buscabas. Puede que alguien lo haya borrado.",
+    "conflict": "Eso choca con algo que ya existe.",
+    "materialLocked": "Este material ya ha cambiado de estado y no se puede editar ni eliminar.",
+    "payloadTooLarge": "El archivo es demasiado grande.",
+    "rateLimited": "Demasiados intentos. Espera un momento y prueba de nuevo.",
+    "serviceUnavailable": "Ese servicio no está disponible en este momento.",
+    "subscriptionRequired": "Tu suscripción ha caducado: tus obras están en solo lectura. Renueva el plan para volver a editar.",
+    "paidPlanRequired": "En el mes gratis puedes tener hasta 3 obras activas. Activa el plan para crear la cuarta.",
+    "internal": "Algo ha fallado por nuestra parte. Prueba de nuevo en un momento.",
+    "network": "No hemos podido conectarnos. Revisa tu conexión.",
+    "title": "No se pudo guardar"
+  },
+  "directory": {
+    "providersEmpty": "Todavía no hay proveedores en tu Empresa.",
+    "crewEmpty": "Todavía no hay empleados en tu Empresa.",
+    "emptyHint": "Da de alta el primero con el botón de arriba. Después lo añades a las obras donde trabaja.",
+    "name": "Nombre",
+    "specialty": "Especialidad",
+    "phone": "Teléfono",
+    "kind": "Tipo",
+    "lead": "Encargado",
+    "kindPersona": "Persona",
+    "kindEquipo": "Equipo",
+    "projects": "Obras",
+    "projectsCount_one": "{{count}} obra",
+    "projectsCount_other": "{{count}} obras",
+    "projectsTitle": "Obras de {{name}}",
+    "projectsHint": "Elige en qué obras está. Cada obra solo dispone de quienes tiene asignados.",
+    "projectsSave": "Guardar",
+    "projectsSaved": "Obras actualizadas",
+    "noProjects": "Todavía no tienes obras.",
+    "noValue": "—",
+    "confirmDeactivateTitle": "Dar de baja al proveedor",
+    "confirmDeactivateBody": "\"{{name}}\" deja de aparecer para asignar en todas tus obras. Donde ya trabajó, queda registrado.",
+    "confirmDeactivateCrewTitle": "Dar de baja al empleado",
+    "confirmDeactivateCrewBody": "\"{{name}}\" deja de aparecer para asignar en todas tus obras. Su asistencia y sus metas pasadas se conservan.",
+    "addFromCompany": "Añadir de la Empresa",
+    "addToProject": "Añadir",
+    "addedToProject": "Añadido a la obra",
+    "removedFromProject": "Sacado de la obra",
+    "removeFromProject": "Sacar de la obra",
+    "pickProviderTitle": "Proveedores de la Empresa",
+    "pickCrewTitle": "Empleados de la Empresa",
+    "pickEmptyProviders": "No hay más proveedores en la Empresa para añadir a esta obra.",
+    "pickEmptyCrew": "No hay más empleados en la Empresa para añadir a esta obra."
+  },
+  "company": {
+    "saved": "Datos de la Empresa guardados",
+    "profileTitle": "Datos de la Empresa",
+    "profileHint": "Cómo se llama tu Empresa y cómo contactarla.",
+    "name": "Nombre",
+    "contactEmail": "Email de contacto (opcional)",
+    "contactPhone": "Teléfono de contacto (opcional)"
+  },
+  "task": {
+    "board": {
+      "hint": {
+        "pendiente": "Nadie la arrancó todavía.",
+        "en_curso": "Alguien está en esto.",
+        "en_revision": "Reportada terminada, espera aprobación.",
+        "completada": "Aprobadas."
+      },
+      "newTask": "Nueva tarea",
+      "namePlaceholder": "Ej: limpiar el obrador",
+      "assignee": "¿Quién la hace?",
+      "assigneePlaceholder": "Elige persona o equipo",
+      "until": "Hasta",
+      "quickAddSubmit": "Crear",
+      "moveTo": "Mover a {{column}}",
+      "approve": "Aprobar",
+      "cancel": "Cancelar tarea",
+      "restore": "Restaurar",
+      "delete": "Eliminar",
+      "cardActions": "Acciones de la tarea",
+      "filterLabel": "Filtrar por persona",
+      "filterAll": "Todos",
+      "emptyColumn": "Nada por aquí.",
+      "showCancelled": "Ver canceladas ({{count}})",
+      "hideCancelled": "Ocultar canceladas",
+      "overdue": "Atrasada",
+      "returned": "Devuelta: {{reason}}",
+      "needRoster": "Añade personal a la obra para asignarle tareas desde aquí.",
+      "rejectTitle": "Devolver la tarea",
+      "deleteTitle": "¿Eliminar la tarea?",
+      "deleteBody": "«{{name}}» se borra también del cronograma. No se puede deshacer.",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "currentWeek": "Semana actual"
+    }
+  },
+  "formPanel": {
+    "close": "Cerrar",
+    "discard": {
+      "title": "¿Descartar los cambios?",
+      "description": "Lo que has escrito no se ha guardado y se perderá.",
+      "keepEditing": "Seguir editando",
+      "confirm": "Descartar"
+    }
+  },
+  "markdownEditor": {
+    "toolbar": "Formato del texto",
+    "heading": "Título",
+    "subheading": "Subtítulo",
+    "bold": "Negrita",
+    "italic": "Itálica",
+    "bulletList": "Lista con viñetas",
+    "orderedList": "Lista numerada",
+    "link": "Enlace",
+    "linkUrl": "Dirección del enlace",
+    "linkPlaceholder": "https://…",
+    "applyLink": "Aplicar",
+    "removeLink": "Quitar enlace"
+  },
+  "subscription": {
+    "title": "Suscripción",
+    "statusTitle": "Tu plan",
+    "status": {
+      "sin_iniciar": "Sin iniciar",
+      "prueba": "Gratis",
+      "activa": "Pro",
+      "en_revision": "Pago en revisión",
+      "pago_fallido": "Cobro fallido",
+      "vencida": "Caducada"
+    },
+    "statusDetail": {
+      "sin_iniciar": "Tu plan Gratis de 30 días empieza cuando crees tu primera obra.",
+      "prueba_one": "Plan Gratis: te queda {{count}} día, hasta el {{date}}. Hasta 3 obras.",
+      "prueba_other": "Plan Gratis: te quedan {{count}} días, hasta el {{date}}. Hasta 3 obras.",
+      "activa": "Plan Pro, al día hasta el {{date}}.",
+      "en_revision": "Tu pago está en revisión. Mientras tanto sigues con acceso completo hasta el {{date}}.",
+      "pago_fallido": "No hemos podido cobrar la renovación. Stripe lo vuelve a intentar; sigues con acceso hasta el {{date}}.",
+      "vencida": "Tus obras están en solo lectura. Paga para volver a editar: no se ha perdido nada."
+    },
+    "projects": "{{active}} obras activas · {{included}} incluidas en el plan",
+    "extraProjects_one": "{{count}} obra extra a $8 por mes",
+    "extraProjects_other": "{{count}} obras extra a $8 por mes",
+    "nextCharge": {
+      "title": "Próximo cobro",
+      "from": "Desde el {{date}}",
+      "lines": {
+        "base": "Plan Pro, 3 obras incluidas",
+        "extra_one": "{{count}} obra extra",
+        "extra_other": "{{count}} obras extra",
+        "prorrateo_one": "Obra extra del mes anterior ({{count}} día)",
+        "prorrateo_other": "Obra extra del mes anterior ({{count}} días)"
+      },
+      "total": "Total",
+      "auto": "Se cobra solo con tu tarjeta.",
+      "manual": "Págalo con tarjeta o en bolívares antes de esa fecha."
+    },
+    "pay": {
+      "title": "Pagar",
+      "card": "Pagar con tarjeta (USD)",
+      "cardHint": "El pago lo procesa Stripe de forma segura. Si estás en el mes gratis, no se cobra nada hasta que termine.",
+      "manageCard": "Administrar tarjeta",
+      "manageCardHint": "Cambiar la tarjeta, ver facturas o dar de baja, en Stripe.",
+      "manageCardBlocked": "El navegador ha bloqueado la ventana de Stripe. Permite las ventanas emergentes y vuelve a intentarlo.",
+      "bolivares": "Pagar en bolívares",
+      "bolivaresHint": "Pago Móvil o transferencia a la tasa BCV del día. Lo revisamos y te avisamos.",
+      "none": "Todavía no hay medios de pago habilitados.",
+      "inReview": "Ya tienes un pago en revisión: espera a que lo revisemos."
+    },
+    "history": {
+      "title": "Historial de pagos",
+      "empty": "Todavía no hay pagos.",
+      "period": "{{from}} – {{to}}",
+      "rejected": "Motivo del rechazo: {{reason}}",
+      "receipt": "Ver comprobante"
+    },
+    "method": {
+      "stripe": "Tarjeta",
+      "pago_movil": "Pago Móvil",
+      "transferencia": "Transferencia"
+    },
+    "paymentStatus": {
+      "pendiente": "En revisión",
+      "aprobado": "Aprobado",
+      "rechazado": "Rechazado"
+    },
+    "stripeReturn": {
+      "ok": "¡Listo! Stripe ha confirmado el pago; en unos segundos se refleja aquí.",
+      "cancel": "No se ha completado el pago con tarjeta."
+    },
+    "notice": {
+      "trialEnding_one": "Te queda {{count}} día del plan Gratis.",
+      "trialEnding_other": "Te quedan {{count}} días del plan Gratis.",
+      "inReview": "Tu pago está en revisión. Mientras tanto sigues con acceso completo.",
+      "paymentFailed": "No hemos podido cobrar tu tarjeta. Actualízala para no perder el acceso.",
+      "expired": "Tu suscripción ha caducado: tus obras están en solo lectura.",
+      "readOnlyProject": "Esta obra está en solo lectura: ha caducado la suscripción de quien la gestiona.",
+      "action": "Ver suscripción"
+    },
+    "bolivares": {
+      "title": "Pagar en bolívares",
+      "titleActivate": "Activar el plan en bolívares",
+      "description": "Paga el importe exacto y añade los datos del pago. Lo revisamos a mano y te avisamos.",
+      "amount": "Importe a pagar",
+      "usd": "{{amount}} USD",
+      "rate": "tasa BCV {{rate}} Bs/USD, fecha valor {{date}}",
+      "accounts": "Dónde pagar",
+      "pagoMovil": "Pago Móvil",
+      "transferencia": "Transferencia",
+      "accountFields": {
+        "bank": "Banco",
+        "phone": "Teléfono",
+        "id": "Cédula / RIF",
+        "account": "Cuenta",
+        "holder": "Titular"
+      },
+      "copy": "Copiar",
+      "fields": {
+        "method": "¿Cómo has pagado?",
+        "bank": "Banco desde el que has pagado",
+        "reference": "Número de referencia",
+        "payerId": "Cédula o RIF de quien ha pagado",
+        "paidOn": "Fecha del pago",
+        "amountBs": "Importe pagado (Bs)",
+        "receipt": "Comprobante (foto o PDF)"
+      },
+      "submit": "Enviar pago",
+      "sent": "Hemos recibido tu pago. Lo revisamos y te avisamos.",
+      "quoteError": "No hemos podido calcular el importe en bolívares."
+    },
+    "activate": {
+      "title": "Pasa a Pro para crear tu cuarta obra",
+      "body": "El plan Gratis llega hasta 3 obras activas. Con Pro no hay límite: 39 $ al mes con 3 obras incluidas, más 8 $ al mes por cada obra extra. Pro empieza hoy y los días gratis que te quedan se pierden.",
+      "total": "Hoy pagás {{amount}} USD por el primer mes.",
+      "card": "Pagar con tarjeta",
+      "bolivares": "Pagar en bolívares",
+      "cancel": "Ahora no"
+    },
+    "pendingPayment": "Has enviado un pago en bolívares: lo estamos revisando.",
+    "upgrade": {
+      "title": "Pasar a Pro",
+      "pitch": "Obras sin límite: 39 $ al mes con 3 incluidas y 8 $ al mes por cada obra extra.",
+      "when": "¿Desde cuándo?",
+      "now": "Desde hoy",
+      "nowHint_one": "Pasas a Pro ya, sin el límite de 3 obras. El día gratis que te queda se pierde.",
+      "nowHint_other": "Pasas a Pro ya, sin el límite de 3 obras. Los {{count}} días gratis que te quedan se pierden.",
+      "trialEnd": "Cuando termine el plan Gratis",
+      "trialEndHint": "Empieza el {{date}} y no pierdes ningún día. Hasta entonces sigues con un máximo de 3 obras.",
+      "totalNow": "Hoy pagas {{amount}} por el primer mes.",
+      "totalLater": "Pagas {{amount}} por el primer mes, que empieza el {{date}}.",
+      "payCard": "Pagar con tarjeta"
+    },
+    "cardCheckout": {
+      "title": "Pagar con tarjeta",
+      "description": "El pago lo procesa Stripe: Luma nunca ve los datos de tu tarjeta.",
+      "loading": "Cargando el pago seguro…",
+      "error": "No hemos podido cargar el formulario de pago. Revisa tu conexión e inténtalo de nuevo.",
+      "retry": "Reintentar"
+    }
+  },
+  "platform": {
+    "title": "Pagos de la plataforma",
+    "tabs": {
+      "pendiente": "Pendientes",
+      "aprobado": "Aprobados",
+      "rechazado": "Rechazados",
+      "rates": "Tasa BCV"
+    },
+    "payments": {
+      "empty": "No hay pagos en este estado.",
+      "owner": "{{name}} · {{email}}",
+      "quoted": "Cotizado",
+      "declared": "Declarado",
+      "rate": "Tasa",
+      "method": "Método",
+      "bank": "Banco",
+      "reference": "Referencia",
+      "payerId": "Cédula / RIF",
+      "paidOn": "Fecha del pago",
+      "submitted": "Enviado",
+      "period": "Período",
+      "mismatch": "Lo declarado no coincide con lo presupuestado (más de un 1% de diferencia). Revísalo en el banco.",
+      "activateNow": "Activa ya: corta la prueba",
+      "receipt": "Ver comprobante",
+      "noReceipt": "Sin comprobante",
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "rejectTitle": "Rechazar el pago",
+      "rejectReason": "Motivo (lo ve el usuario)",
+      "rejectSubmit": "Rechazar pago",
+      "approved": "Pago aprobado",
+      "rejected": "Pago rechazado",
+      "reason": "Motivo: {{reason}}"
+    },
+    "rates": {
+      "current": "Tasa vigente",
+      "none": "Todavía no hay ninguna tasa.",
+      "stale": "Vieja: más de 48 horas sin leer el BCV",
+      "source": {
+        "bcv": "BCV",
+        "manual": "Introducida a mano"
+      },
+      "refresh": "Leer el BCV ahora",
+      "refreshed": "Tasa actualizada",
+      "flaggedToast": "La tasa leída saltó más de un 20%: quedó marcada y no se usa.",
+      "manualTitle": "Introducir una tasa a mano",
+      "manualHint": "Para cuando el BCV no responde.",
+      "usd": "Bs por USD",
+      "valueDate": "Fecha valor",
+      "save": "Guardar tasa",
+      "saved": "Tasa guardada",
+      "savedImplausible": "Tasa guardada, pero salta más de un 20% contra la anterior. Revísala.",
+      "history": "Últimas lecturas",
+      "flagged": "Marcada"
+    }
+  }
+}

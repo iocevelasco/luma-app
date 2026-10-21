@@ -18,6 +18,7 @@ import { generateTokens } from '../services/auth.service.js';
 import { EmailService } from '../services/email.service.js';
 import { JWTService } from '../services/jwt.service.js';
 import { createPersonalOrganization } from '../services/organization.service.js';
+import { startTrialFor } from '../services/subscription.service.js';
 import { verifyRecaptchaFromRequest } from '../services/recaptcha.service.js';
 
 const BCRYPT_ROUNDS = 10;
@@ -140,7 +141,10 @@ export async function register(req: Request, res: Response) {
 
     // Toda cuenta nueva tiene su empresa personal desde el arranque: así nunca
     // hace falta un paso aparte de "creá tu empresa" antes de la primera obra.
-    await createPersonalOrganization(String(user._id), name);
+    const organization = await createPersonalOrganization(String(user._id), name);
+    // Quien se registra solo arranca su mes gratis ya. Los invitados no pasan
+    // por acá: su prueba arranca con su primera obra (ver createProject).
+    await startTrialFor(String(organization._id), String(user._id));
 
     if (REQUIRE_EMAIL_VERIFICATION) {
       await EmailService.sendEmailVerificationEmail(email, verificationToken, name);

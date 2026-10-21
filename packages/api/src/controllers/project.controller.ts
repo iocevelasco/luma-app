@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import {
   capabilitiesInProject,
   createProjectSchema,
@@ -14,6 +14,9 @@ import { User } from '../models/User.js';
 import { Project, type IProject } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
+import { decideProjectCreation, statesFor } from '../services/subscription.service.js';
+import { syncStripeExtras } from '../services/stripe.service.js';
+import { AppError, isAppError } from '../utils/errors.js';
 import { EmailService } from '../services/email.service.js';
 import {
   isLinkedToAnotherInviter,
@@ -72,7 +75,14 @@ export async function updateProject(req: Request, res: Response) {
   }
 }
 
-export async function createProject(req: Request, res: Response) {
+/** Lo que se le dice a quien choca con un límite de la suscripción al crear una obra. */
+const CREATE_PROJECT_BLOCKED: Record<'SUBSCRIPTION_REQUIRED' | 'PAID_PLAN_REQUIRED', string> = {
+  SUBSCRIPTION_REQUIRED: 'Tu suscripción venció. Renová el plan para crear obras.',
+  PAID_PLAN_REQUIRED:
+    'En el mes gratis podés tener hasta 3 obras activas. Activá el plan para crear la cuarta.',
+};
+
+export async function createProject(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
   }
@@ -90,14 +100,32 @@ export async function createProject(req: Request, res: Response) {
       return res.status(404).json({ success: false, error: 'No tenés una empresa todavía' });
     }
 
+    // Límite de la suscripción: 3 activas en la prueba, vencida no crea nada.
+    // Si es su primera obra y nunca empezó la prueba (un invitado), se la
+    // arranca acá adentro.
+    const decision = await decideProjectCreation(organizationId, req.user.sub);
+    if (!decision.allowed) {
+      throw new AppError(decision.code, CREATE_PROJECT_BLOCKED[decision.code]);
+    }
+
     const project = await Project.create({
       ...parsed.data,
       organization: organizationId,
       createdBy: req.user.sub,
     });
 
+    // Con tarjeta, la extra se le suma en Stripe (que prorratea el resto del
+    // mes). Si Stripe falla la obra ya existe: se loguea y no se voltea la
+    // creación — la cantidad se corrige en la próxima sincronización.
+    if (decision.isExtra) {
+      syncStripeExtras(organizationId).catch((error) =>
+        console.error('❌ [STRIPE] syncStripeExtras:', error),
+      );
+    }
+
     return res.status(201).json({ success: true, data: { project: toProjectDTO(project) } });
   } catch (error) {
+    if (isAppError(error)) return next(error);
     console.error('❌ [PROJECT] createProject:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }
@@ -125,6 +153,10 @@ export async function listProjects(req: Request, res: Response) {
       .sort({ updatedAt: -1 })
       .limit(100);
 
+    // Cada obra puede ser de una Empresa distinta (las que me invitaron son
+    // de otros): el estado de todas en dos consultas.
+    const subscriptions = await statesFor(projects.map((p) => p.organization));
+
     return res.json({
       success: true,
       data: {
@@ -135,10 +167,12 @@ export async function listProjects(req: Request, res: Response) {
             String(project.createdBy) === userId
               ? 'gerente'
               : (roleByProject.get(String(project._id)) as ProjectRole);
+          const readOnly = subscriptions.get(String(project.organization))?.canWrite === false;
           return {
             ...toProjectDTO(project),
             role,
-            capabilities: capabilitiesInProject(role, project),
+            capabilities: capabilitiesInProject(role, project, { readOnly }),
+            readOnly,
           };
         }),
       },
@@ -164,7 +198,10 @@ export async function getProject(req: Request, res: Response) {
           // Resueltas server-side contra la grilla, con los flags de la obra
           // ya aplicados: la UI pregunta por capacidad y no vuelve a derivar
           // nada. Es lo que permite sumar un rol sin tocar el frontend.
-          capabilities: capabilitiesInProject(role, project),
+          capabilities: capabilitiesInProject(role, project, {
+            readOnly: req.projectReadOnly === true,
+          }),
+          readOnly: req.projectReadOnly === true,
         },
         members: await listProjectMembers(project),
       },

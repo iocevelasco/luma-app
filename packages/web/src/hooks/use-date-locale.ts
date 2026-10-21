@@ -4,6 +4,7 @@ import type { Locale } from 'date-fns';
 
 const LOCALE_MAP: Record<string, Locale> = {
   'es-AR': es,
+  'es-ES': es,
   'es': es,
   'pt-BR': ptBR,
   'pt': ptBR,

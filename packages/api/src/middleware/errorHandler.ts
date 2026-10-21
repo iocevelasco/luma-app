@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import mongoose from 'mongoose';
-import { errorCodeForStatus, type ApiErrorBody, type ApiErrorCode } from '@luma/shared';
+import { STATUS_BY_ERROR_CODE, errorCodeForStatus, type ApiErrorBody } from '@luma/shared';
 import { isProduction } from '../config/app.config.js';
 import { isAppError } from '../utils/errors.js';
 
@@ -39,18 +39,8 @@ export function errorHandler(
   return res.status(STATUS_FOR[body.code]).json(body);
 }
 
-const STATUS_FOR: Record<ApiErrorCode, number> = {
-  VALIDATION: 400,
-  UNAUTHENTICATED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  CONFLICT: 409,
-  MATERIAL_LOCKED: 409,
-  PAYLOAD_TOO_LARGE: 413,
-  RATE_LIMITED: 429,
-  SERVICE_UNAVAILABLE: 503,
-  INTERNAL: 500,
-};
+/** Una sola tabla código → status: la de `@luma/shared`. Una copia acá se desincroniza. */
+const STATUS_FOR = STATUS_BY_ERROR_CODE;
 
 function toErrorBody(error: unknown): ApiErrorBody {
   if (isAppError(error)) {

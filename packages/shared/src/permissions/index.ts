@@ -256,12 +256,32 @@ export function canInProject(
   return true;
 }
 
+/**
+ * ¿Es una capacidad de sólo mirar? Son las que quedan cuando la suscripción de
+ * la Empresa dueña de la obra venció: se ve todo, no se cambia nada.
+ *
+ * Va por convención de nombre (`recurso.read`) y no por una lista aparte a
+ * propósito: una capacidad nueva de lectura entra sola, y una de escritura
+ * nunca se cuela en el modo sólo lectura por olvidarse de sacarla de la lista.
+ */
+export function isReadCapability(capability: Capability): boolean {
+  return capability.endsWith('.read');
+}
+
+export interface CapabilityOptions {
+  /** La suscripción de la Empresa dueña de la obra venció: sólo lectura. */
+  readOnly?: boolean;
+}
+
 /** Todo lo que un rol puede hacer en una obra concreta, flags ya aplicados. */
 export function capabilitiesInProject(
   role: ProjectRole,
   project?: ProjectCapabilityContext,
+  options: CapabilityOptions = {},
 ): Capability[] {
-  return PROJECT_CAPABILITIES[role].filter((capability) =>
-    canInProject(role, capability, project),
+  return PROJECT_CAPABILITIES[role].filter(
+    (capability) =>
+      canInProject(role, capability, project) &&
+      (!options.readOnly || isReadCapability(capability)),
   );
 }

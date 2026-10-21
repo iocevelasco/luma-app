@@ -62,6 +62,13 @@ nombre de la base no admite guiones en el formulario de Coolify.
 | `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails | aviso; los mails quedan deshabilitados |
 | `MEDIA_SERVICE_URL`, `MEDIA_SERVICE_API_KEY` | storage de archivos (evidencia RF-04 y documentación de obra) vía el microservicio `media-service` (ej. `https://media.matflow.site`); la key se emite con `bucket key create luma` | aviso; subir archivos da 503, el resto de la app sigue |
 | `STORAGE_SIGNED_URL_TTL` | opcional: vida de las URLs firmadas de lectura | `3600` segundos (máximo que admite el servicio) |
+| `STRIPE_SECRET_KEY` | pago de la suscripción con tarjeta. **Sólo se ofrece con `sk_live_…`**: con una `sk_test_…` queda apagado | no se ofrece pago con tarjeta |
+| `STRIPE_TEST_MODE` | `true` ofrece la tarjeta con una clave `sk_test_…` (sólo para probar en local, nunca en producción) | con `sk_test_` no se ofrece tarjeta |
+| `STRIPE_PUBLISHABLE_KEY` | pago con tarjeta en un modal dentro de Luma (`pk_live_…` en producción, mismo modo que la secret) | el pago con tarjeta va a la página de Stripe |
+| `STRIPE_WEBHOOK_SECRET` | firma del webhook `/api/billing/stripe/webhook` | el webhook responde 503 y los pagos con tarjeta no se reflejan |
+| `PAGO_MOVIL_BANK`, `PAGO_MOVIL_PHONE`, `PAGO_MOVIL_ID` | dónde se recibe el Pago Móvil de la suscripción | ese método no se ofrece |
+| `TRANSFER_BANK`, `TRANSFER_ACCOUNT`, `TRANSFER_HOLDER`, `TRANSFER_ID` | cuenta para transferencias en Bs | ese método no se ofrece; sin ninguno de los dos, no hay pago en Bs |
+| `BCV_URL` | opcional: de dónde se lee la tasa | `https://www.bcv.org.ve/` |
 
 > **reCAPTCHA hoy: el front no manda el token.** `executeRecaptcha`
 > (`packages/web/src/lib/recaptcha.ts`) existe pero ninguna pantalla lo llama,
@@ -99,6 +106,80 @@ docker exec --env-file /tmp/admin.env -w /app/packages/api <container> \
 Donde `/tmp/admin.env` trae `ADMIN_EMAIL`, `ADMIN_PASSWORD` y opcionalmente
 `ADMIN_NAME`. El script es idempotente: si el usuario ya existe, le resetea la
 contraseña y lo deja como admin activo.
+
+## Lanzamiento de la suscripción (una sola vez)
+
+Al desplegar por primera vez la versión con suscripción, las Empresas que ya
+tienen obras arrancan su mes gratis **ese día**. Mismo patrón que el seed:
+compilado, dentro del contenedor.
+
+```bash
+docker exec -w /app/packages/api <container> node dist/scripts/migrate-subscriptions.js --dry-run
+docker exec -w /app/packages/api <container> node dist/scripts/migrate-subscriptions.js
+```
+
+Es idempotente: una prueba que ya existe no se reinicia. Si se olvida, no se
+rompe nada —esas Empresas quedan `sin_iniciar` y su prueba arranca con la
+próxima obra que creen—, pero el lanzamiento queda menos prolijo.
+
+## Tarea programada: tasa BCV
+
+El pago de la suscripción en bolívares usa la tasa oficial del BCV, que se lee
+de su home (no tiene API). Nunca se lee en el request de un usuario: una tarea
+programada la guarda y el formulario usa la última.
+
+En Coolify → `app` → **Scheduled Tasks**:
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/refresh-bcv-rate.js` |
+| Container | `app` (el directorio de trabajo ya es `/app/packages/api`) |
+| Frequency | `0 12-23 * * *` — cada hora de 8 a 19 de Caracas (el cron de Coolify es UTC) |
+
+Sale con código 1 si no pudo leer o si la tasa saltó más de un 20% (queda
+marcada y **no se usa**): mirá el historial de la tarea. Una corrida fallida no
+rompe nada; el pago sigue con la última tasa guardada. Pasadas 48 horas sin
+una lectura buena, esa tasa se marca vieja, pero se sigue usando. La API
+también la lee sola al conectar a Mongo y después cada hora.
+
+**El certificado del BCV está mal armado**: manda un intermedio equivocado y
+sin ayuda no verifica. La API trae el intermedio correcto
+(`src/certs/sectigo-dv-r36.ts`, vence en 2036) y verifica la cadena completa;
+no se desactiva la verificación. Si un día el BCV cambia de certificado y la
+tarea empieza a fallar con `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, ahí está el
+archivo a actualizar.
+
+`BCV_URL` (opcional) cambia de dónde se lee; por defecto `https://www.bcv.org.ve/`.
+
+## Stripe (una vez por entorno)
+
+1. Con la clave del entorno: `STRIPE_SECRET_KEY=sk_… pnpm --filter @luma/api stripe:setup`.
+   Crea el producto y los dos precios ($39 y $8 por mes) por `lookup_key`; es
+   idempotente. En el contenedor: `node dist/scripts/stripe-setup.js`.
+2. En Stripe → Developers → Webhooks, un endpoint a
+   `https://<DOMINIO>/api/billing/stripe/webhook` con los eventos
+   `checkout.session.completed`, `customer.subscription.created|updated|deleted`,
+   `invoice.paid` e `invoice.payment_failed`. Su *Signing secret* va en
+   `STRIPE_WEBHOOK_SECRET`.
+3. En Stripe → Settings → Billing → Customer portal, activar cambiar tarjeta,
+   ver facturas y cancelar suscripción (cancelar al final del período).
+
+## Tarea programada: recordatorios de la suscripción
+
+Mails de "tu plan Gratis termina en 7/3/1 días" y "tu suscripción venció". En
+Coolify → `app` → **Scheduled Tasks**:
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/send-subscription-reminders.js` |
+| Container | `app` |
+| Frequency | `0 13 * * *` — todos los días a las 9 de Caracas |
+
+Correrla más de una vez no duplica mails: cada aviso se marca en la
+suscripción cuando sale. Necesita Resend con un dominio verificado (ver la nota
+de `EMAIL_FROM` más arriba): sin él no sale nada y no se marca nada. Los otros
+mails de la suscripción (pago aprobado/rechazado, pago a revisar para los
+admins, cobro con tarjeta fallido) salen en el momento, sin tarea.
 
 ## Verificar
 

@@ -2,7 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createProjectSchema, type CreateProjectInput } from '@luma/shared';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { isApiError } from '@/lib/api-client';
+import { Button } from '@/components/ui/button';
+import { useMySubscription } from '@/hooks/subscription/use-subscription-queries';
+import { nextProjectState } from '@/lib/subscription';
 import { FormShell } from '@/components/common/form-shell';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +45,13 @@ export function ProjectNewPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const createProject = useCreateProject();
+  const { data: subscription } = useMySubscription();
+  const isExtra = nextProjectState(subscription) === 'extra';
+  // Si el alta choca con la suscripción (se llegó por URL a la cuarta obra en
+  // la prueba, o venció), la salida es la pantalla de Suscripción.
+  const blockedBySubscription =
+    isApiError(createProject.error) &&
+    ['PAID_PLAN_REQUIRED', 'SUBSCRIPTION_REQUIRED'].includes(createProject.error.code ?? '');
 
   const {
     register,
@@ -76,6 +87,13 @@ export function ProjectNewPage() {
         onCancel={() => navigate(ROUTES.ADMIN)}
         isSubmitting={createProject.isPending}
         error={createProject.error}
+        errorActions={
+          blockedBySubscription ? (
+            <Button asChild size="sm" variant="outline">
+              <Link to={ROUTES.SUBSCRIPTION}>{t('project.new.seeSubscription')}</Link>
+            </Button>
+          ) : undefined
+        }
       >
         {/*
               Tres bloques en una sola pantalla, no tres pasos.
@@ -88,6 +106,11 @@ export function ProjectNewPage() {
             */}
         {/* El formulario es una columna angosta y centrada; el pie no. */}
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
+          {isExtra && (
+            <p className="rounded-2xl border border-info/40 bg-info/10 px-4 py-3 text-sm">
+              {t('project.new.extraNotice')}
+            </p>
+          )}
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">{t('project.fields.name')}</Label>
             <Input aria-invalid={Boolean(errors.name)} id="name" {...register('name')} />

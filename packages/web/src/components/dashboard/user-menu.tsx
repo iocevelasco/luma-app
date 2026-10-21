@@ -1,4 +1,4 @@
-import { LogOut, Settings, User } from 'lucide-react';
+import { CreditCard, Landmark, LogOut, Settings, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLogout } from '@/hooks/auth/use-auth-queries';
+import { isAdmin } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -53,6 +54,22 @@ export function UserMenu() {
             {t('userMenu.settings')}
           </Link>
         </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link to={ROUTES.SUBSCRIPTION} data-testid="user-menu-subscription">
+            <CreditCard className="size-4" />
+            {t('userMenu.subscription')}
+          </Link>
+        </DropdownMenuItem>
+
+        {isAdmin(user?.role) && (
+          <DropdownMenuItem asChild>
+            <Link to={ROUTES.PLATFORM_BILLING}>
+              <Landmark className="size-4" />
+              {t('userMenu.platformBilling')}
+            </Link>
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuSeparator />
 

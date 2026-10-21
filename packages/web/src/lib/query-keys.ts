@@ -33,4 +33,9 @@ export enum QueryKeys {
   expenses = 'expenses',
   financeSummary = 'finance-summary',
   payroll = 'payroll',
+  subscription = 'subscription',
+  subscriptionPayments = 'subscription-payments',
+  bolivaresQuote = 'bolivares-quote',
+  adminSubscriptionPayments = 'admin-subscription-payments',
+  exchangeRates = 'exchange-rates',
 }
