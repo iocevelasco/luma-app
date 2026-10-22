@@ -1,6 +1,6 @@
 # Compras: proveedor vinculado, selección múltiple y facturas
 
-**Estado:** Fases 1 y 2 implementadas · preguntas bloqueantes cerradas (1 y 3, 2026-10-22) · **Fecha:** 2026-10-22 · **Pantalla:** `/app/admin/proyectos/:projectId/materiales` (Compras)
+**Estado:** Fases 1, 2 y 3 implementadas · preguntas bloqueantes cerradas (1 y 3, 2026-10-22) · **Fecha:** 2026-10-22 · **Pantalla:** `/app/admin/proyectos/:projectId/materiales` (Compras)
 
 ## Resumen
 
@@ -285,8 +285,13 @@ resumen. En cambio, dos celdas nuevas en la grilla:
 | `material.invoice.read` | ✓ | ✓ | — | — |
 
 - Rutas propias bajo materiales: `POST /materials/invoices` (crea el `Expense`
-  con `category: 'material'` forzada y `materials` obligatorio, ≥ 1),
-  `GET /materials/:id/invoices`, `DELETE /materials/invoices/:expenseId`.
+  con `category: 'material'` forzada, `materials` obligatorio —≥ 1— y el
+  archivo obligatorio) y `DELETE /materials/invoices/:expenseId`. *Como quedó:*
+  no hay `GET` aparte; la lista de materiales trae `invoices` (archivo, URL
+  firmada y si se puede borrar) a quien tiene `material.invoice.read` o
+  `expense.read`. El monto no viaja a Compras: se ve en Finanzas.
+- Un Pendiente da 409 `CONFLICT` con `details.ids`; un Solicitado también,
+  salvo que el pedido traiga `markBought` (el formulario lo ofrece tildado).
 - Con `material.invoice.*` sólo se alcanzan gastos de categoría `material` con
   `materials` no vacío. Un gasto de nómina o de herramienta nunca sale por ahí.
 - El supervisor ve monto y archivo de las facturas de materiales, nunca el
