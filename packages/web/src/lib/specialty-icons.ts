@@ -12,6 +12,7 @@ import {
   Paintbrush,
   Pickaxe,
   Sparkles,
+  Store,
   Trees,
   Umbrella,
   Wind,
@@ -46,6 +47,7 @@ export const SPECIALTY_ICONS: Record<ProviderSpecialty, LucideIcon> = {
   pisos_revestimientos: Grid3x3,
   jardineria: Trees,
   demolicion: Pickaxe,
+  materiales: Store,
   otra: Wind,
 };
 

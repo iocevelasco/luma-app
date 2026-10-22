@@ -2,10 +2,12 @@ import type { MaterialItem, MaterialStatus } from '@luma/shared';
 import { describe, expect, it } from 'vitest';
 import {
   buildPurchaseRows,
+  bulkActionsFor,
   buildPurchaseText,
   countSuppliers,
   materialTab,
   organizeMaterials,
+  selectionState,
   supplierKey,
   type ActivityRef,
 } from './materials';
@@ -176,5 +178,46 @@ describe('buildPurchaseText', () => {
       '- Arena: 1 Unidad · Corralón Sur (ya pedido)',
       '- Pintura: 1 Unidad',
     ]);
+  });
+});
+
+describe('selectionState', () => {
+  it('ninguno, algunos o todos', () => {
+    const ids = ['a', 'b', 'c'];
+    expect(selectionState(ids, new Set())).toBe('none');
+    expect(selectionState(ids, new Set(['b']))).toBe('some');
+    expect(selectionState(ids, new Set(['a', 'b', 'c', 'otro']))).toBe('all');
+  });
+
+  it('ignora lo seleccionado que no está en la lista', () => {
+    expect(selectionState(['a'], new Set(['x']))).toBe('none');
+  });
+});
+
+describe('bulkActionsFor', () => {
+  const editable = (id: string) => ({ ...material(id, 'pendiente'), editable: true });
+
+  it('ofrece el paso siguiente si todos están en el mismo estado', () => {
+    expect(bulkActionsFor([editable('a'), editable('b')]).next).toBe('solicitado');
+    expect(bulkActionsFor([material('a', 'comprado'), material('b', 'comprado')]).next).toBe('en_obra');
+  });
+
+  it('sin paso siguiente con estados mezclados o ya en obra', () => {
+    expect(bulkActionsFor([editable('a'), material('b', 'solicitado')]).next).toBeNull();
+    expect(bulkActionsFor([material('a', 'en_obra')]).next).toBeNull();
+  });
+
+  it('eliminar sólo si todos siguen editables', () => {
+    expect(bulkActionsFor([editable('a'), editable('b')]).canDelete).toBe(true);
+    expect(bulkActionsFor([editable('a'), material('b', 'pendiente')]).canDelete).toBe(false);
+  });
+
+  it('avisa si el cambio de estado bloquea a alguno', () => {
+    expect(bulkActionsFor([editable('a'), material('b', 'pendiente')]).locksSome).toBe(true);
+    expect(bulkActionsFor([material('a', 'solicitado')]).locksSome).toBe(false);
+  });
+
+  it('una selección vacía no ofrece nada', () => {
+    expect(bulkActionsFor([])).toEqual({ next: null, canDelete: false, locksSome: false });
   });
 });

@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import type { CreateMaterialInput, UpdateMaterialInput } from '@luma/shared';
+import type {
+  BulkDeleteMaterialsInput,
+  BulkUpdateMaterialsInput,
+  CreateMaterialInput,
+  UpdateMaterialInput,
+} from '@luma/shared';
 import { materialsApi } from '@/api/materials';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
@@ -100,6 +105,45 @@ export function useDeleteMaterial(projectId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
       toast.success(t('material.list.deleted'));
+    },
+    onError: (error) => {
+      refreshWhenLocked(error, queryClient, projectId);
+      toast.error(errorMessage(error, t));
+    },
+  });
+}
+
+/**
+ * Acciones de la barra de selección. Sin formulario detrás: la falla va por
+ * toast, igual que el cambio de estado de una fila. El `onSuccess` del que
+ * llama limpia la selección.
+ */
+export function useBulkUpdateMaterials(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: BulkUpdateMaterialsInput) => materialsApi.bulkUpdate(projectId, payload),
+    onSuccess: ({ materialIds }) => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      toast.success(t('material.bulk.updated', { count: materialIds.length }));
+    },
+    onError: (error) => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      toast.error(errorMessage(error, t));
+    },
+  });
+}
+
+export function useBulkDeleteMaterials(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: BulkDeleteMaterialsInput) => materialsApi.bulkRemove(projectId, payload),
+    onSuccess: ({ materialIds }) => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      toast.success(t('material.bulk.deleted', { count: materialIds.length }));
     },
     onError: (error) => {
       refreshWhenLocked(error, queryClient, projectId);

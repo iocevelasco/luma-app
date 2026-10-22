@@ -400,7 +400,6 @@
       "delete": "Excluir",
       "deleteTitle": "Excluir este material?",
       "deleteBody": "Você vai excluir \"{{name}}\" ({{quantity}} {{unit}}). Não é possível desfazer.",
-      "lockedHint": "Você pode editar ou excluir um material enquanto ele estiver Pendente. Depois de solicitado, ele fica como registro.",
       "lockedNote": "Não pode mais ser editado nem excluído: saiu de Pendente.",
       "confirmStatusLockWarning": "Depois disso, você não poderá mais editá-lo nem excluí-lo.",
       "lockedClose": "Fechar",
@@ -409,6 +408,26 @@
       "pdfDownloaded": "PDF baixado",
       "requestedTag": "já solicitado",
       "noSupplier": "Sem fornecedor"
+    },
+    "bulk": {
+      "toolbar": "Ações para os materiais selecionados",
+      "select": "Selecionar {{name}}",
+      "selectGroup": "Selecionar todos de {{name}}",
+      "selectAll": "Selecionar todos",
+      "selected_one": "{{count}} selecionado",
+      "selected_other": "{{count}} selecionados",
+      "moreActions": "Mais ações para a seleção",
+      "clear": "Cancelar seleção",
+      "confirmStatusBody_one": "Você vai mudar {{count}} material para \"{{status}}\".",
+      "confirmStatusBody_other": "Você vai mudar {{count}} materiais para \"{{status}}\".",
+      "confirmStatusLockWarning": "Os que estavam Pendentes não vão mais poder ser editados nem excluídos.",
+      "deleteTitle_one": "Excluir {{count}} material?",
+      "deleteTitle_other": "Excluir {{count}} materiais?",
+      "deleteBody": "Não é possível desfazer.",
+      "updated_one": "{{count}} material atualizado",
+      "updated_other": "{{count}} materiais atualizados",
+      "deleted_one": "{{count}} material excluído",
+      "deleted_other": "{{count}} materiais excluídos"
     },
     "pdf": {
       "title": "Lista de compras",
@@ -517,6 +536,7 @@
       "pisos_revestimientos": "Pisos e revestimentos",
       "jardineria": "Jardinagem",
       "demolicion": "Demolição",
+      "materiales": "Venda de materiais",
       "otra": "Outra"
     },
     "scope": {

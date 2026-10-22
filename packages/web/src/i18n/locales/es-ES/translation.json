@@ -400,7 +400,6 @@
       "delete": "Eliminar",
       "deleteTitle": "¿Eliminar este material?",
       "deleteBody": "Vas a eliminar \"{{name}}\" ({{quantity}} {{unit}}). No se puede deshacer.",
-      "lockedHint": "Puedes editar o eliminar un material mientras esté Pendiente. Después de solicitarlo queda como registro.",
       "lockedNote": "Ya no se puede editar ni eliminar: salió de Pendiente.",
       "confirmStatusLockWarning": "Después ya no podrás editarlo ni eliminarlo.",
       "lockedClose": "Cerrar",
@@ -409,6 +408,26 @@
       "pdfDownloaded": "PDF descargado",
       "requestedTag": "ya pedido",
       "noSupplier": "Sin proveedor"
+    },
+    "bulk": {
+      "toolbar": "Acciones para los materiales seleccionados",
+      "select": "Seleccionar {{name}}",
+      "selectGroup": "Seleccionar todos los de {{name}}",
+      "selectAll": "Seleccionar todos",
+      "selected_one": "{{count}} seleccionado",
+      "selected_other": "{{count}} seleccionados",
+      "moreActions": "Más acciones para la selección",
+      "clear": "Cancelar selección",
+      "confirmStatusBody_one": "Vas a cambiar {{count}} material a \"{{status}}\".",
+      "confirmStatusBody_other": "Vas a cambiar {{count}} materiales a \"{{status}}\".",
+      "confirmStatusLockWarning": "Los que estaban Pendiente ya no se van a poder editar ni eliminar.",
+      "deleteTitle_one": "¿Eliminar {{count}} material?",
+      "deleteTitle_other": "¿Eliminar {{count}} materiales?",
+      "deleteBody": "No se puede deshacer.",
+      "updated_one": "{{count}} material actualizado",
+      "updated_other": "{{count}} materiales actualizados",
+      "deleted_one": "{{count}} material eliminado",
+      "deleted_other": "{{count}} materiales eliminados"
     },
     "pdf": {
       "title": "Lista de compras",
@@ -517,6 +536,7 @@
       "pisos_revestimientos": "Pisos y revestimientos",
       "jardineria": "Jardinería",
       "demolicion": "Demolición",
+      "materiales": "Venta de materiales",
       "otra": "Otra"
     },
     "scope": {

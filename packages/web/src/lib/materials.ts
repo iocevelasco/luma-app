@@ -9,6 +9,51 @@ export function materialTab(status: MaterialStatus): MaterialTab {
   return TO_BUY.has(status) ? 'toBuy' : 'bought';
 }
 
+/**
+ * El paso siguiente de cada material. El camino es lineal —se pide, se
+ * compra, llega— y casi todos los cambios de estado son "el que sigue": un
+ * botón con el nombre de lo que va a pasar, en vez de un selector con los
+ * cuatro estados donde hay que saber cuál elegir. Los demás cambios (volver
+ * atrás, corregir) quedan en el menú.
+ */
+export const NEXT_MATERIAL_STATUS: Partial<Record<MaterialStatus, MaterialStatus>> = {
+  pendiente: 'solicitado',
+  solicitado: 'comprado',
+  comprado: 'en_obra',
+};
+
+/** Estado de una casilla que agrupa a otras: la maestra o la de un grupo. */
+export type SelectionState = 'none' | 'some' | 'all';
+
+export function selectionState(ids: readonly string[], selected: ReadonlySet<string>): SelectionState {
+  const count = ids.filter((id) => selected.has(id)).length;
+  if (count === 0) return 'none';
+  return count === ids.length ? 'all' : 'some';
+}
+
+/**
+ * Qué se le puede ofrecer a una selección. Sólo lo que vale para TODOS: un
+ * "Eliminar" que después falla para la mitad obliga a adivinar cuál era.
+ *
+ * - `next`: el paso siguiente, si todos están en el mismo estado y hay uno.
+ * - `canDelete`: todos siguen editables (la API ya lo resolvió en `editable`).
+ * - `locksSome`: alguno sigue editable y un cambio de estado lo bloquearía.
+ */
+export function bulkActionsFor(selected: readonly MaterialItem[]): {
+  next: MaterialStatus | null;
+  canDelete: boolean;
+  locksSome: boolean;
+} {
+  if (selected.length === 0) return { next: null, canDelete: false, locksSome: false };
+  const first = selected[0]!.status;
+  const sameStatus = selected.every((material) => material.status === first);
+  return {
+    next: sameStatus ? (NEXT_MATERIAL_STATUS[first] ?? null) : null,
+    canDelete: selected.every((material) => material.editable),
+    locksSome: selected.some((material) => material.editable),
+  };
+}
+
 export interface ActivityRef {
   name: string;
   /** `YYYY-MM-DD`. */

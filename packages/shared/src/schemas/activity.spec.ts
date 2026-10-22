@@ -78,9 +78,10 @@ describe('createActivitySchema', () => {
 });
 
 describe('activitySpecialtySchema', () => {
-  it('tiene exactamente los mismos rubros que el de proveedores', () => {
+  it('tiene los mismos oficios que el de proveedores, que suma sólo `materiales`', () => {
+    // `materiales` es quien vende, no un oficio: no existe fuera de proveedores.
     expect([...activitySpecialtySchema.options].sort()).toEqual(
-      [...providerSpecialtySchema.options].sort(),
+      providerSpecialtySchema.options.filter((specialty) => specialty !== 'materiales').sort(),
     );
   });
 

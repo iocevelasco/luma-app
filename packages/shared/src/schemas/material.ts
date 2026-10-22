@@ -53,6 +53,32 @@ export const editMaterialSchema = updateMaterialSchema.omit({ status: true }).ex
   unit: materialUnitSchema,
 });
 
+/** Tope de una acción en lote: una obra grande no llega, y acota lo que viaja. */
+export const MATERIAL_BULK_MAX = 200;
+
+const materialIdsSchema = z
+  .array(z.string().regex(/^[a-f0-9]{24}$/i, 'Identificador inválido'))
+  .min(1, 'Elegí al menos un material')
+  .max(MATERIAL_BULK_MAX, `Son demasiados: hasta ${MATERIAL_BULK_MAX} por vez`)
+  // Un id repetido no cambia lo que se hace, pero rompe la cuenta de "¿son
+  // todos de esta obra?" del controller.
+  .transform((ids) => [...new Set(ids)]);
+
+/**
+ * Cambio de estado en lote. Sólo el estado: es lo único que se puede tocar
+ * siempre. Corregir el contenido sigue siendo de a uno, desde el drawer.
+ */
+export const bulkUpdateMaterialsSchema = z.object({
+  ids: materialIdsSchema,
+  status: materialStatusSchema,
+});
+
+export const bulkDeleteMaterialsSchema = z.object({
+  ids: materialIdsSchema,
+});
+
 export type CreateMaterialInput = z.infer<typeof createMaterialSchema>;
 export type UpdateMaterialInput = z.infer<typeof updateMaterialSchema>;
 export type EditMaterialInput = z.infer<typeof editMaterialSchema>;
+export type BulkUpdateMaterialsInput = z.infer<typeof bulkUpdateMaterialsSchema>;
+export type BulkDeleteMaterialsInput = z.infer<typeof bulkDeleteMaterialsSchema>;

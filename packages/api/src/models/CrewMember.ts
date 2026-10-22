@@ -1,5 +1,5 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import { roundMoney, type CrewMemberKind, type ProviderScope, type ProviderSpecialty } from '@luma/shared';
+import { roundMoney, type CrewMemberKind, type ProviderScope, type TradeSpecialty } from '@luma/shared';
 
 /**
  * Personal fijo de obra: el que está toda la ejecución haciendo actividades
@@ -18,7 +18,7 @@ export interface ICrewMember extends Document {
   project?: mongoose.Types.ObjectId | null;
   name: string;
   kind: CrewMemberKind;
-  specialty?: ProviderSpecialty;
+  specialty?: TradeSpecialty;
   isLead: boolean;
   phone?: string;
   /**

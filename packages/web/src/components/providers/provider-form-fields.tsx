@@ -35,6 +35,7 @@ export const PROVIDER_SPECIALTIES: ProviderSpecialty[] = [
   'pisos_revestimientos',
   'jardineria',
   'demolicion',
+  'materiales',
   'otra',
 ];
 

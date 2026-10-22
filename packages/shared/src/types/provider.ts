@@ -17,7 +17,10 @@ import type { ActivityStatus } from './activity.js';
  * `acabados` es deliberadamente amplio: según qué se esté haciendo cambia por
  * completo, así que admite `customSpecialty` igual que `otra`.
  */
-export type ProviderSpecialty =
+/**
+ * Los oficios de obra. Los comparten actividades, personal y proveedores.
+ */
+export type TradeSpecialty =
   | 'electricidad'
   | 'plomeria'
   | 'gas'
@@ -36,6 +39,12 @@ export type ProviderSpecialty =
   | 'jardineria'
   | 'demolicion'
   | 'otra';
+
+/**
+ * Un proveedor puede, además, no ser un oficio: `materiales` es quien los
+ * vende (maderera, corralón). No existe para actividades ni personal.
+ */
+export type ProviderSpecialty = TradeSpecialty | 'materiales';
 
 /**
  * De dónde sale el proveedor.

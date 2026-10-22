@@ -19,12 +19,21 @@ vi.mock('../../models/MaterialItem.js', () => ({
     findOneAndDelete: vi.fn(),
     exists: vi.fn(),
     find: vi.fn(),
+    updateMany: vi.fn(),
+    deleteMany: vi.fn(),
   },
 }));
 
 const { Activity } = await import('../../models/Activity.js');
 const { MaterialItem } = await import('../../models/MaterialItem.js');
-const { createMaterial, deleteMaterial, listMaterials, updateMaterial } = await import(
+const {
+  bulkDeleteMaterials,
+  bulkUpdateMaterials,
+  createMaterial,
+  deleteMaterial,
+  listMaterials,
+  updateMaterial,
+} = await import(
   '../../controllers/material.controller.js'
 );
 const { isAppError } = await import('../../utils/errors.js');
@@ -401,5 +410,92 @@ describe('deleteMaterial — bloqueo por estado', () => {
     await deleteMaterial(projectReq(), mockRes(), next);
 
     expect(thrownBy(next).code).toBe('NOT_FOUND');
+  });
+});
+
+describe('acciones en lote', () => {
+  const A = 'a'.repeat(24);
+  const B = 'b'.repeat(24);
+
+  function bulkReq(body: Record<string, unknown>): Request {
+    return { user: { sub: 'user-1' }, project: { _id: 'project-1' }, body } as unknown as Request;
+  }
+
+  function material(id: string, status: string, statusChangedAt?: Date) {
+    return { _id: id, status, statusChangedAt };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('cambia el estado de todos y no reescribe a los que ya estaban ahí', async () => {
+    vi.mocked(MaterialItem.find).mockResolvedValue([
+      material(A, 'pendiente'),
+      material(B, 'solicitado', new Date()),
+    ] as never);
+    const res = mockRes();
+    const next = mockNext();
+
+    await bulkUpdateMaterials(bulkReq({ ids: [A, B, A], status: 'solicitado' }), res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(MaterialItem.updateMany).toHaveBeenCalledWith(
+      { _id: { $in: [A, B] }, project: 'project-1', status: { $ne: 'solicitado' } },
+      expect.objectContaining({ $set: expect.objectContaining({ status: 'solicitado' }) }),
+    );
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: { materialIds: [A, B] } });
+  });
+
+  it('404 y no toca nada si alguno no es de esta obra', async () => {
+    vi.mocked(MaterialItem.find).mockResolvedValue([material(A, 'pendiente')] as never);
+    const next = mockNext();
+
+    await bulkUpdateMaterials(bulkReq({ ids: [A, B], status: 'comprado' }), mockRes(), next);
+
+    expect(thrownBy(next)).toMatchObject({ code: 'NOT_FOUND', status: 404 });
+    expect(MaterialItem.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('400 con una lista vacía o un id mal formado', async () => {
+    for (const ids of [[], ['no-es-un-id']]) {
+      const next = mockNext();
+      await bulkUpdateMaterials(bulkReq({ ids, status: 'comprado' }), mockRes(), next);
+      expect(thrownBy(next)).toMatchObject({ code: 'VALIDATION', status: 400 });
+    }
+    expect(MaterialItem.find).not.toHaveBeenCalled();
+  });
+
+  it('borra todos si todos siguen en Pendiente', async () => {
+    vi.mocked(MaterialItem.find).mockResolvedValue([
+      material(A, 'pendiente'),
+      material(B, 'pendiente'),
+    ] as never);
+    const res = mockRes();
+    const next = mockNext();
+
+    await bulkDeleteMaterials(bulkReq({ ids: [A, B] }), res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(MaterialItem.deleteMany).toHaveBeenCalledWith({
+      _id: { $in: [A, B] },
+      project: 'project-1',
+      status: 'pendiente',
+      statusChangedAt: null,
+    });
+  });
+
+  it('409 con los bloqueados y no borra ninguno si uno salió de Pendiente', async () => {
+    vi.mocked(MaterialItem.find).mockResolvedValue([
+      material(A, 'pendiente'),
+      material(B, 'solicitado', new Date()),
+    ] as never);
+    const next = mockNext();
+
+    await bulkDeleteMaterials(bulkReq({ ids: [A, B] }), mockRes(), next);
+
+    expect(thrownBy(next)).toMatchObject({ code: 'MATERIAL_LOCKED', status: 409 });
+    expect((next.mock.calls[0]?.[0] as { details: unknown }).details).toEqual({ ids: [B] });
+    expect(MaterialItem.deleteMany).not.toHaveBeenCalled();
   });
 });

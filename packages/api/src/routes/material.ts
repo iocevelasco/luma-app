@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
 import {
+  bulkDeleteMaterials,
+  bulkUpdateMaterials,
   createMaterial,
   deleteMaterial,
   listMaterials,
@@ -21,6 +23,10 @@ materialRouter.use(isAuthenticated, requireProjectAccess);
 
 materialRouter.get('/', requireCapability('material.read'), listMaterials);
 materialRouter.post('/', requireCapability('material.write'), createMaterial);
+// Antes de `/:materialId`: si no, "bulk" se lee como un id. El borrado en
+// lote es un POST porque un DELETE con body se pierde en algunos proxies.
+materialRouter.patch('/bulk', requireCapability('material.write'), bulkUpdateMaterials);
+materialRouter.post('/bulk/delete', requireCapability('material.write'), bulkDeleteMaterials);
 materialRouter.patch('/:materialId', requireCapability('material.write'), updateMaterial);
 materialRouter.delete('/:materialId', requireCapability('material.write'), deleteMaterial);
 

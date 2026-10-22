@@ -33,3 +33,8 @@ export interface MaterialListResponse {
 export interface MaterialResponse {
   material: MaterialItem;
 }
+
+/** Lo que devuelven las acciones en lote: qué materiales se tocaron. */
+export interface MaterialBulkResponse {
+  materialIds: string[];
+}

@@ -1,5 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import {
+  bulkDeleteMaterialsSchema,
+  bulkUpdateMaterialsSchema,
   createMaterialSchema,
   isMaterialEditable,
   updateMaterialSchema,
@@ -8,7 +10,13 @@ import {
 import { Activity } from '../models/Activity.js';
 import { MaterialItem, type IMaterialItem } from '../models/MaterialItem.js';
 import type { IProject } from '../models/Project.js';
-import { badRequest, materialLocked, notFound, unauthenticated } from '../utils/errors.js';
+import {
+  badRequest,
+  materialLocked,
+  materialsLocked,
+  notFound,
+  unauthenticated,
+} from '../utils/errors.js';
 
 type Handler = (req: Request, res: Response) => Promise<unknown>;
 
@@ -206,6 +214,74 @@ export const deleteMaterial = wrap(async (req, res) => {
   if (!material) throw await whyNotFound(req.params.materialId, project._id);
 
   return res.json({ success: true, data: { materialId: String(material._id) } });
+});
+
+/**
+ * Los materiales de una acción en lote, todos de esta obra o ninguno. Un id de
+ * otra obra no se ignora en silencio: quiere decir que la pantalla está
+ * desactualizada o que alguien arma el request a mano, y en los dos casos
+ * aplicar "lo que sí se pudo" es peor que no aplicar nada.
+ */
+async function findAllInProject(ids: string[], projectId: unknown) {
+  const materials = await MaterialItem.find({ _id: { $in: ids }, project: projectId });
+  if (materials.length !== ids.length) {
+    throw notFound('Alguno de esos materiales ya no está en esta obra. Actualizá la lista.');
+  }
+  return materials;
+}
+
+/**
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes.
+ *
+ * Sólo el estado, que es lo único que se puede cambiar siempre: no hay regla
+ * que un material pueda violar, así que no hay aplicación parcial posible. Los
+ * que ya estaban en ese estado no se tocan — `statusChangedAt` es cuándo
+ * cambió, y reescribirlo mentiría.
+ */
+export const bulkUpdateMaterials = wrap(async (req, res) => {
+  if (!req.user) throw unauthenticated();
+
+  const parsed = bulkUpdateMaterialsSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
+
+  const project = req.project as IProject;
+  const { ids, status } = parsed.data;
+  await findAllInProject(ids, project._id);
+
+  await MaterialItem.updateMany(
+    { _id: { $in: ids }, project: project._id, status: { $ne: status } },
+    { $set: { status, statusChangedBy: req.user.sub, statusChangedAt: new Date() } },
+  );
+
+  return res.json({ success: true, data: { materialIds: ids } });
+});
+
+/**
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes.
+ *
+ * Todo o nada: si uno solo salió de Pendiente, no se borra ninguno y
+ * `details.ids` dice cuáles. Borrar "los que se podía" deja a la persona
+ * adivinando qué quedó.
+ *
+ * El borrado va con el mismo `EDITABLE_FILTER` que el de a uno. Si un material
+ * cambia de estado justo entre el chequeo y el `deleteMany`, ése se salva y el
+ * resto se borra: es la única ventana de aplicación parcial, y deja del lado
+ * seguro al que alguien acababa de mover.
+ */
+export const bulkDeleteMaterials = wrap(async (req, res) => {
+  const parsed = bulkDeleteMaterialsSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
+
+  const project = req.project as IProject;
+  const { ids } = parsed.data;
+  const materials = await findAllInProject(ids, project._id);
+
+  const locked = materials.filter((material) => !isMaterialEditable(material));
+  if (locked.length > 0) throw materialsLocked(locked.map((material) => String(material._id)));
+
+  await MaterialItem.deleteMany({ _id: { $in: ids }, project: project._id, ...EDITABLE_FILTER });
+
+  return res.json({ success: true, data: { materialIds: ids } });
 });
 
 /** Una escritura condicional no matcheó: ¿bloqueado o inexistente? */

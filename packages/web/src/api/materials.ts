@@ -1,5 +1,8 @@
 import type {
   ApiResponse,
+  BulkDeleteMaterialsInput,
+  BulkUpdateMaterialsInput,
+  MaterialBulkResponse,
   CreateMaterialInput,
   MaterialListResponse,
   MaterialResponse,
@@ -32,5 +35,15 @@ export const materialsApi = {
   remove: (projectId: string, materialId: string) =>
     unwrap<{ materialId: string }>(
       apiClient.delete(`/api/projects/${projectId}/materials/${materialId}`),
+    ),
+
+  bulkUpdate: (projectId: string, payload: BulkUpdateMaterialsInput) =>
+    unwrap<MaterialBulkResponse>(
+      apiClient.patch(`/api/projects/${projectId}/materials/bulk`, payload),
+    ),
+
+  bulkRemove: (projectId: string, payload: BulkDeleteMaterialsInput) =>
+    unwrap<MaterialBulkResponse>(
+      apiClient.post(`/api/projects/${projectId}/materials/bulk/delete`, payload),
     ),
 };
