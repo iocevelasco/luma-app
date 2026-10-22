@@ -97,5 +97,12 @@ test.describe('facturas de materiales', () => {
     // Es un gasto: aparece una sola vez en Gastos.
     await page.getByRole('link', { name: /^gastos$/i }).click();
     await expect(page.getByText(DESCRIPTION)).toHaveCount(1);
+
+    // Desde Finanzas se ve qué paga, y cada material lleva a Compras.
+    const row = page.getByRole('listitem').filter({ hasText: DESCRIPTION });
+    await row.getByRole('button', { name: /^2 materiales$/i }).click();
+    await page.getByRole('link', { name: SAND }).click();
+    await expect(page).toHaveURL(/\/materiales\?material=[a-f0-9]+$/);
+    await expect(page.getByRole('tabpanel', { name: /comprados/i }).getByText(SAND)).toBeVisible();
   });
 });

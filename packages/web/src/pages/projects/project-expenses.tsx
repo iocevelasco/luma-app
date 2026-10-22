@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Can } from '@/components/permissions/can';
 import { EmptyState } from '@/components/common/empty-state';
+import { ExpenseMaterials } from '@/components/finance/expense-materials';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -494,6 +495,12 @@ export function ProjectExpensesPage() {
                           {format(fromDayKey(expense.spentOn), 'PP', { locale: dateLocale })}
                           {expense.providerName && ` · ${expense.providerName}`}
                           {expense.activityName && ` · ${expense.activityName}`}
+                          {expense.materials && (
+                            <>
+                              {' · '}
+                              <ExpenseMaterials projectId={projectId!} materials={expense.materials} />
+                            </>
+                          )}
                         </p>
                         {expense.currency !== currency && (
                           <Badge className="w-fit">

@@ -75,6 +75,7 @@ import {
   providerMatchFor,
   selectionState,
   supplierName,
+  type PurchaseListKind,
   type PurchaseRow,
 } from '@/lib/materials';
 import { cn } from '@/lib/utils';
@@ -102,6 +103,57 @@ function copyText(text: string) {
     document.body.removeChild(textarea);
   }
   return Promise.resolve();
+}
+
+/**
+ * Lo que cambia entre exportar la lista de compras y la de lo ya comprado.
+ * La construcción es una sola (`buildPurchaseRows`); acá sólo los textos.
+ */
+const EXPORT_COPY: Record<PurchaseListKind, { title: string; tag: string; filePrefix: string }> = {
+  toBuy: { title: 'material.pdf.title', tag: 'material.list.requestedTag', filePrefix: 'compras' },
+  bought: { title: 'material.pdf.titleBought', tag: 'material.list.onSiteTag', filePrefix: 'comprados' },
+};
+
+/** Descargar PDF, Copiar y Compartir: los mismos tres en las dos pestañas. */
+function ExportActions({
+  generatingPdf,
+  canShare,
+  onDownloadPdf,
+  onCopy,
+  onShare,
+}: {
+  generatingPdf: boolean;
+  canShare: boolean;
+  onDownloadPdf: () => void;
+  onCopy: () => void;
+  onShare: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className="max-sm:min-h-11"
+        onClick={onDownloadPdf}
+        disabled={generatingPdf}
+        aria-busy={generatingPdf}
+      >
+        {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+        {generatingPdf ? t('material.list.generatingPdf') : t('material.list.downloadPdf')}
+      </Button>
+      <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={onCopy}>
+        <Copy className="size-4" />
+        {t('material.list.copyList')}
+      </Button>
+      {canShare && (
+        <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={onShare}>
+          <Share2 className="size-4" />
+          {t('material.list.share')}
+        </Button>
+      )}
+    </>
+  );
 }
 
 /**
@@ -645,7 +697,6 @@ type PendingBulk =
  */
 function SelectionBar({
   selected,
-  exportable,
   canShare,
   generatingPdf,
   onAction,
@@ -656,8 +707,6 @@ function SelectionBar({
   onClear,
 }: {
   selected: MaterialItem[];
-  /** Copiar, compartir y PDF arman la lista de compras: sólo en "Por comprar". */
-  exportable: boolean;
   canShare: boolean;
   generatingPdf: boolean;
   onAction: (action: PendingBulk) => void;
@@ -748,24 +797,20 @@ function SelectionBar({
             </>
           )}
 
-          {exportable && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="max-sm:min-h-11" disabled={generatingPdf} onSelect={onDownloadPdf}>
-                <FileDown className="size-4" />
-                {t('material.list.downloadPdf')}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="max-sm:min-h-11" onSelect={onCopy}>
-                <Copy className="size-4" />
-                {t('material.list.copyList')}
-              </DropdownMenuItem>
-              {canShare && (
-                <DropdownMenuItem className="max-sm:min-h-11" onSelect={onShare}>
-                  <Share2 className="size-4" />
-                  {t('material.list.share')}
-                </DropdownMenuItem>
-              )}
-            </>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="max-sm:min-h-11" disabled={generatingPdf} onSelect={onDownloadPdf}>
+            <FileDown className="size-4" />
+            {t('material.list.downloadPdf')}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="max-sm:min-h-11" onSelect={onCopy}>
+            <Copy className="size-4" />
+            {t('material.list.copyList')}
+          </DropdownMenuItem>
+          {canShare && (
+            <DropdownMenuItem className="max-sm:min-h-11" onSelect={onShare}>
+              <Share2 className="size-4" />
+              {t('material.list.share')}
+            </DropdownMenuItem>
           )}
 
           {/* Asignar es corregir: sólo si todos siguen editables, como eliminar. */}
@@ -866,14 +911,23 @@ export function ProjectMaterialsPage() {
 
   // La misma lista para copiar, compartir y el PDF: agrupada por proveedor.
   const purchaseRows = useMemo(() => buildPurchaseRows(toBuy, i18n.language), [toBuy, i18n.language]);
+  const boughtRows = useMemo(
+    () => buildPurchaseRows(bought, i18n.language, 'bought'),
+    [bought, i18n.language],
+  );
 
   // Lo seleccionado se lee contra la lista actual: un material que otra
   // persona borró o pasó de pestaña deja de contar solo, sin limpiar nada.
   const selectedToBuy = useMemo(() => toBuy.filter((m) => selected.has(m.id)), [toBuy, selected]);
   const selectedBought = useMemo(() => bought.filter((m) => selected.has(m.id)), [bought, selected]);
+  // La selección es de una pestaña a la vez: exporta con los textos de esa.
+  const selectedKind: PurchaseListKind = selectedToBuy.length > 0 ? 'toBuy' : 'bought';
   const selectedRows = useMemo(
-    () => buildPurchaseRows(selectedToBuy, i18n.language),
-    [selectedToBuy, i18n.language],
+    () =>
+      selectedKind === 'toBuy'
+        ? buildPurchaseRows(selectedToBuy, i18n.language)
+        : buildPurchaseRows(selectedBought, i18n.language, 'bought'),
+    [selectedKind, selectedToBuy, selectedBought, i18n.language],
   );
   const hasSelection = selectedToBuy.length + selectedBought.length > 0;
 
@@ -905,22 +959,22 @@ export function ProjectMaterialsPage() {
   // El PDF y su librería pesan: se bajan apenas hay algo que descargar, no al
   // tocar el botón. En Safari, descargar o compartir tiene que ocurrir dentro
   // del gesto, y esperar un chunk grande lo deja afuera.
-  const hasToBuy = toBuy.length > 0;
+  const hasExportable = toBuy.length > 0 || bought.length > 0;
   useEffect(() => {
-    if (!hasToBuy) return;
+    if (!hasExportable) return;
     void import('@/lib/materials-pdf');
     void import('jspdf');
     void import('jspdf-autotable');
-  }, [hasToBuy]);
+  }, [hasExportable]);
 
-  function buildCopyText(rows: PurchaseRow[]): string {
+  function buildCopyText(rows: PurchaseRow[], kind: PurchaseListKind): string {
     return buildPurchaseText(rows, {
       unit: (unit) => t(`material.unit.${unit}`),
-      requested: t('material.list.requestedTag'),
+      tag: t(EXPORT_COPY[kind].tag),
     });
   }
 
-  async function handleDownloadPdf(rows: PurchaseRow[]) {
+  async function handleDownloadPdf(rows: PurchaseRow[], kind: PurchaseListKind) {
     if (generatingPdf) return;
     setGeneratingPdf(true);
     try {
@@ -932,7 +986,7 @@ export function ProjectMaterialsPage() {
         dateLabel: format(now, 'P', { locale: dateLocale }),
         rows,
         labels: {
-          title: t('material.pdf.title'),
+          title: t(EXPORT_COPY[kind].title),
           summary: `${t('material.pdf.materials', { count: rows.length })} · ${t('material.pdf.suppliers', { count: countSuppliers(rows) })}`,
           columns: {
             material: t('material.pdf.columnMaterial'),
@@ -940,12 +994,12 @@ export function ProjectMaterialsPage() {
             supplier: t('material.pdf.columnSupplier'),
           },
           noSupplier: t('material.list.noSupplier'),
-          requested: t('material.list.requestedTag'),
+          tag: t(EXPORT_COPY[kind].tag),
           page: (page, total) => t('material.pdf.page', { page, total }),
           unit: (unit) => t(`material.unit.${unit}`),
         },
       });
-      const fileName = purchaseFileName(projectData?.project.name ?? '', now);
+      const fileName = purchaseFileName(projectData?.project.name ?? '', now, EXPORT_COPY[kind].filePrefix);
       const file = new File([blob], fileName, { type: 'application/pdf' });
 
       // En el celular lo útil es mandarlo —por WhatsApp al proveedor, o
@@ -984,19 +1038,19 @@ export function ProjectMaterialsPage() {
     }
   }
 
-  async function handleCopy(rows: PurchaseRow[]) {
+  async function handleCopy(rows: PurchaseRow[], kind: PurchaseListKind) {
     try {
-      await copyText(buildCopyText(rows));
+      await copyText(buildCopyText(rows, kind));
       toast.success(t('material.list.copied'));
     } catch {
       toast.error(t('material.errors.copy'));
     }
   }
 
-  async function handleShare(rows: PurchaseRow[]) {
+  async function handleShare(rows: PurchaseRow[], kind: PurchaseListKind) {
     if (typeof navigator.share === 'function') {
       try {
-        await navigator.share({ text: buildCopyText(rows) });
+        await navigator.share({ text: buildCopyText(rows, kind) });
       } catch {
         // El usuario canceló el share sheet — no es un error a mostrar.
       }
@@ -1011,18 +1065,17 @@ export function ProjectMaterialsPage() {
   const highlighted = materialsData.materials.find((m) => m.id === highlightedId);
   const selectedMaterials = selectedToBuy.length > 0 ? selectedToBuy : selectedBought;
 
-  function selectionBar(exportable: boolean) {
+  function selectionBar() {
     return (
       <SelectionBar
         selected={selectedMaterials}
-        exportable={exportable}
         canShare={canShare}
         generatingPdf={generatingPdf}
         onAction={setPendingBulk}
         onInvoice={canInvoice ? () => setInvoicing(selectedMaterials) : undefined}
-        onDownloadPdf={() => void handleDownloadPdf(selectedRows)}
-        onCopy={() => void handleCopy(selectedRows)}
-        onShare={() => void handleShare(selectedRows)}
+        onDownloadPdf={() => void handleDownloadPdf(selectedRows, selectedKind)}
+        onCopy={() => void handleCopy(selectedRows, selectedKind)}
+        onShare={() => void handleShare(selectedRows, selectedKind)}
         onClear={clearSelection}
       />
     );
@@ -1083,33 +1136,19 @@ export function ProjectMaterialsPage() {
           {toBuy.length > 0 && hasSelection && (
             <div className="flex flex-wrap items-center gap-2">
               {selectAll(toBuy)}
-              {selectionBar(true)}
+              {selectionBar()}
             </div>
           )}
           {toBuy.length > 0 && !hasSelection && (
             <div className="flex flex-wrap items-center justify-end gap-2">
               <div className="mr-auto">{selectAll(toBuy)}</div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="max-sm:min-h-11"
-                onClick={() => void handleDownloadPdf(purchaseRows)}
-                disabled={generatingPdf}
-                aria-busy={generatingPdf}
-              >
-                {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
-                {generatingPdf ? t('material.list.generatingPdf') : t('material.list.downloadPdf')}
-              </Button>
-              <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={() => void handleCopy(purchaseRows)}>
-                <Copy className="size-4" />
-                {t('material.list.copyList')}
-              </Button>
-              {canShare && (
-                <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={() => void handleShare(purchaseRows)}>
-                  <Share2 className="size-4" />
-                  {t('material.list.share')}
-                </Button>
-              )}
+              <ExportActions
+                generatingPdf={generatingPdf}
+                canShare={canShare}
+                onDownloadPdf={() => void handleDownloadPdf(purchaseRows, 'toBuy')}
+                onCopy={() => void handleCopy(purchaseRows, 'toBuy')}
+                onShare={() => void handleShare(purchaseRows, 'toBuy')}
+              />
             </div>
           )}
 
@@ -1146,10 +1185,22 @@ export function ProjectMaterialsPage() {
             <p className="text-sm text-muted-foreground">{t('material.list.boughtEmpty')}</p>
           ) : (
             <>
-              {selection && (
+              {/* La misma barra que "Por comprar": la lista de lo comprado también se manda. */}
+              {hasSelection ? (
                 <div className="flex flex-wrap items-center gap-2">
                   {selectAll(bought)}
-                  {hasSelection && selectionBar(false)}
+                  {selectionBar()}
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <div className="mr-auto">{selectAll(bought)}</div>
+                  <ExportActions
+                    generatingPdf={generatingPdf}
+                    canShare={canShare}
+                    onDownloadPdf={() => void handleDownloadPdf(boughtRows, 'bought')}
+                    onCopy={() => void handleCopy(boughtRows, 'bought')}
+                    onShare={() => void handleShare(boughtRows, 'bought')}
+                  />
                 </div>
               )}
               <BoughtGroup

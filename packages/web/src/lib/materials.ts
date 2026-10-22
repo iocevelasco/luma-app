@@ -138,9 +138,21 @@ export interface PurchaseRow {
   unit: MaterialItem['unit'];
   /** `null` = sin proveedor. Ya viene con la grafía que se muestra. */
   supplier: string | null;
-  /** Ya se le encargó al proveedor: va en la lista, pero marcado. */
-  requested: boolean;
+  /**
+   * Va en la lista, pero marcado: en "Por comprar", lo que ya se le encargó
+   * al proveedor; en "Comprados", lo que ya llegó a la obra. Lo marcado va
+   * último dentro de cada proveedor: arriba queda lo que todavía pide algo.
+   */
+  tagged: boolean;
 }
+
+/** Las dos listas que se exportan: la de compras y la de lo ya comprado. */
+export type PurchaseListKind = MaterialTab;
+
+const TAGGED_STATUS: Record<PurchaseListKind, MaterialStatus> = {
+  toBuy: 'solicitado',
+  bought: 'en_obra',
+};
 
 /**
  * A quién se le compra, para mostrar: el proveedor vinculado si hay uno, si no
@@ -175,7 +187,11 @@ export function providerMatchFor<P extends { id: string; name: string }>(
  * Es UNA sola construcción para el PDF, copiar y compartir: si cada salida
  * armara su lista, las tres terminarían diciendo cosas distintas.
  */
-export function buildPurchaseRows(toBuy: MaterialItem[], locale = 'es'): PurchaseRow[] {
+export function buildPurchaseRows(
+  toBuy: MaterialItem[],
+  locale = 'es',
+  kind: PurchaseListKind = 'toBuy',
+): PurchaseRow[] {
   // De las grafías de un mismo proveedor se muestra la más repetida. La del
   // directorio gana siempre: es la que alguien cargó con cuidado, y así un
   // material vinculado y uno viejo escrito a mano caen en el mismo grupo.
@@ -204,13 +220,13 @@ export function buildPurchaseRows(toBuy: MaterialItem[], locale = 'es'): Purchas
       quantity: material.quantity,
       unit: material.unit,
       supplier: labelFor(supplierKey(supplierName(material))),
-      requested: material.status === 'solicitado',
+      tagged: material.status === TAGGED_STATUS[kind],
     }))
     .sort((a, b) => {
       if (!a.supplier !== !b.supplier) return a.supplier ? -1 : 1;
       const bySupplier = supplierKey(a.supplier).localeCompare(supplierKey(b.supplier), locale);
       if (bySupplier !== 0) return bySupplier;
-      if (a.requested !== b.requested) return Number(a.requested) - Number(b.requested);
+      if (a.tagged !== b.tagged) return Number(a.tagged) - Number(b.tagged);
       return a.name.localeCompare(b.name, locale);
     });
 }
@@ -223,13 +239,13 @@ export function countSuppliers(rows: PurchaseRow[]): number {
 /** El texto de copiar y compartir: una línea por material, la misma lista que el PDF. */
 export function buildPurchaseText(
   rows: PurchaseRow[],
-  labels: { unit: (unit: PurchaseRow['unit']) => string; requested: string },
+  labels: { unit: (unit: PurchaseRow['unit']) => string; tag: string },
 ): string {
   return rows
     .map((row) => {
       const supplier = row.supplier ? ` · ${row.supplier}` : '';
-      const requested = row.requested ? ` (${labels.requested})` : '';
-      return `- ${row.name}: ${row.quantity} ${labels.unit(row.unit)}${supplier}${requested}`;
+      const tag = row.tagged ? ` (${labels.tag})` : '';
+      return `- ${row.name}: ${row.quantity} ${labels.unit(row.unit)}${supplier}${tag}`;
     })
     .join('\n');
 }
