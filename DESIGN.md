@@ -211,7 +211,7 @@ Nada de `shadow-glow`: un resplandor de marca no es profundidad.
 | `shadow-raised` | Filete claro arriba y la misma sombra, sin bisel | Botón secundario — superficie neutra elevada |
 | `shadow-cta-pressed` | Sombra interna: la luz se va adentro | `:active` de los dos anteriores |
 
-El outline no lleva sombra: lo levanta el borde de 2px. Las sombras de afuera
+El outline no lleva sombra: lo levanta el borde de 1px. Las sombras de afuera
 son negras siempre — el relieve es luz y sombra, no un halo verde.
 
 `cn()` registra estas sombras en `tailwind-merge` (`lib/utils.ts`): sin eso
@@ -229,7 +229,7 @@ relleno con bisel, relleno con anillo— traducida al lienzo oscuro:
 **Botón secundario** — píldora, `bg-secondary`, `shadow-raised`. Hover sube el
 brillo; `:active` igual que el primario.
 
-**Botón outline** — píldora sin relleno, borde de 2px en `foreground` al 45%
+**Botón outline** — píldora sin relleno, borde de 1px en `foreground` al 45%
 (70% en hover), texto `foreground`. No va en verde: son los "Cancelar" y
 "Volver" del panel, y el verde es para la acción principal.
 
@@ -240,7 +240,7 @@ pisaría el relieve.
 
 En la landing los CTA son links, no `Button`: usan `CTA_PRIMARY` y
 `CTA_OUTLINE` de `src/lib/cta.ts`, que son las mismas clases. La altura va con
-`h-*`, no con `py-*`: el outline tiene 2px de borde y el primario 1px.
+`h-*`, no con `py-*`: aunque hoy el outline y el primario llevan el mismo borde de 1px, la altura no tiene que depender de él.
 
 **Card** — `bg-card`, `rounded-3xl`, borde 1px, `shadow-surface`. Padding 16px en
 móvil, 24px desde `sm`. Adentro, dos piezas apoyadas un escalón abajo
