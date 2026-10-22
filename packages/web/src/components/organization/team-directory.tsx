@@ -70,10 +70,7 @@ export function TeamDirectory() {
         </Button>
       }
     >
-        <TabsContent
-          value="crew"
-          className="rounded-lg border border-border bg-card p-4 shadow-surface"
-        >
+        <TabsContent value="crew">
           <CrewList
             onEdit={(member) => {
               setEditingCrew(member);
@@ -81,10 +78,7 @@ export function TeamDirectory() {
             }}
           />
         </TabsContent>
-        <TabsContent
-          value="staff"
-          className="rounded-lg border border-border bg-card p-4 shadow-surface"
-        >
+        <TabsContent value="staff">
           <StaffList />
         </TabsContent>
 

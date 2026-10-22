@@ -3,6 +3,7 @@ import type { OrganizationCrewMember } from '@luma/shared';
 import { MapPin, Pencil, UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ProjectAssignmentDialog } from '@/components/directory/project-assignment-dialog';
+import { RowCardList } from '@/components/common/row-card-list';
 import { PersonRow } from '@/components/organization/person-row';
 import {
   AlertDialog,
@@ -61,7 +62,7 @@ export function CrewList({ onEdit }: { onEdit: (member: OrganizationCrewMember) 
       {crew.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('directory.crewEmpty')}</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <RowCardList>
           {crew.map((member) => (
             <PersonRow
               key={member.id}
@@ -112,7 +113,7 @@ export function CrewList({ onEdit }: { onEdit: (member: OrganizationCrewMember) 
               }
             />
           ))}
-        </ul>
+        </RowCardList>
       )}
 
       {assigning && (

@@ -31,6 +31,7 @@ import {
   type ActivationLink,
 } from '@/components/organization/activation-link-dialog';
 import { GrantAccessDialog } from '@/components/organization/grant-access-dialog';
+import { RowCardList } from '@/components/common/row-card-list';
 import { PersonRow } from '@/components/organization/person-row';
 import {
   Dialog,
@@ -407,7 +408,7 @@ export function StaffList() {
       {members.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('team.empty')}</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <RowCardList>
           {members.map((member) => (
             <PersonRow
               key={member.id}
@@ -483,7 +484,7 @@ export function StaffList() {
               }
             />
           ))}
-        </ul>
+        </RowCardList>
       )}
 
       {editing && <EditMemberDialog member={editing} onClose={() => setEditing(null)} />}

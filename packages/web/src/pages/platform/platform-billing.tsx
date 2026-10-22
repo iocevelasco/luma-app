@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { SubscriptionPaymentStatus } from '@luma/shared';
 import { EmptyState } from '@/components/common/empty-state';
 import { LoadingIndicator } from '@/components/common/loading-indicator';
+import { RowCardList } from '@/components/common/row-card-list';
 import { PageLayout } from '@/components/layout/page-layout';
 import { ExchangeRatesPanel } from '@/components/platform/exchange-rates-panel';
 import { PaymentReviewCard } from '@/components/platform/payment-review-card';
@@ -21,13 +22,13 @@ function PaymentList({ status }: { status: SubscriptionPaymentStatus }) {
     return <EmptyState icon={Inbox} title={t('platform.payments.empty')} />;
   }
   return (
-    <ul className="flex flex-col gap-4">
+    <RowCardList>
       {payments.map((payment) => (
         <li key={payment.id}>
           <PaymentReviewCard payment={payment} />
         </li>
       ))}
-    </ul>
+    </RowCardList>
   );
 }
 
