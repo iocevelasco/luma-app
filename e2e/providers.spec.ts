@@ -70,7 +70,9 @@ test.describe('directorio de proveedores', () => {
     await expect(page.getByText(PROVIDER_NAME).first()).toBeVisible();
 
     // --- CRUD: editar ---
-    await page.getByRole('button', { name: /^editar proveedor$/i }).first().click();
+    // Editar va en el "…" de la fila, no como un lápiz suelto (IA-11).
+    await page.getByRole('button', { name: `Más acciones de ${PROVIDER_NAME}` }).first().click();
+    await page.getByRole('menuitem', { name: /^editar$/i }).click();
     const editDialog = page.getByRole('dialog');
     await expect(editDialog).toBeVisible();
     await editDialog.locator('#edit-provider-phone').fill(PROVIDER_PHONE_UPDATED);
@@ -149,7 +151,8 @@ test.describe('directorio de proveedores', () => {
     // Adentro de una obra no está el riel: se entra por URL.
     await page.goto('/admin/proveedores');
     await expect(page).toHaveURL(/\/admin\/proveedores$/);
-    await page.getByRole('button', { name: /dar de baja/i }).first().click();
+    await page.getByRole('button', { name: `Más acciones de ${PROVIDER_NAME}` }).first().click();
+    await page.getByRole('menuitem', { name: /dar de baja/i }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: /dar de baja/i }).click();
     await expect(page.getByText(/todavía no hay proveedores en tu empresa/i)).toBeVisible({
       timeout: 10_000,
@@ -235,10 +238,8 @@ test.describe('directorio de proveedores', () => {
     await page.getByRole('link', { name: /^proveedores$/i }).click();
     await expect(page).toHaveURL(/\/proveedores$/);
 
-    await page
-      .getByRole('button', { name: new RegExp(`^Tareas de ${providerName}$`, 'i') })
-      .first()
-      .click();
+    await page.getByRole('button', { name: `Más acciones de ${providerName}` }).first().click();
+    await page.getByRole('menuitem', { name: /^tareas$/i }).click();
     const activitiesDialog = page.getByRole('dialog');
     await expect(activitiesDialog.getByText(activityA, { exact: true })).toBeVisible();
 

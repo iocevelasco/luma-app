@@ -24,14 +24,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { FormShell } from '@/components/common/form-shell';
 import {
   ActivationLinkDialog,
   type ActivationLink,
 } from '@/components/organization/activation-link-dialog';
 import { GrantAccessDialog } from '@/components/organization/grant-access-dialog';
-import { RowCardList } from '@/components/common/row-card-list';
+import { RowCardAction, RowCardList, RowCardMenu, RowCardMenuItem } from '@/components/common/row-card-list';
 import { PersonRow } from '@/components/organization/person-row';
 import {
   Dialog,
@@ -402,6 +403,16 @@ export function StaffList() {
   const [removing, setRemoving] = useState<OrganizationMemberSummary | null>(null);
   const [activationLink, setActivationLink] = useState<ActivationLink | null>(null);
 
+  function resendInvitation(member: OrganizationMemberSummary) {
+    resend.mutate(member.id, {
+      onSuccess: (data) => {
+        if (data.activationUrl) {
+          setActivationLink({ name: member.name, url: data.activationUrl });
+        }
+      },
+    });
+  }
+
   return (
     <>
       <ActivationLinkDialog link={activationLink} onClose={() => setActivationLink(null)} />
@@ -431,55 +442,43 @@ export function StaffList() {
                   </a>
                 ) : null,
               ]}
+              // Visible: el paso siguiente con esa persona. Si no activó su
+              // cuenta, reenviarle la invitación; si ya la activó, darle acceso a
+              // obras. El resto en "…" (IA-11).
               actions={
                 <>
-                  {member.pending && (
-                    <Button
+                  {member.pending ? (
+                    <RowCardAction
                       type="button"
-                      variant="outline"
-                      size="icon-sm"
                       disabled={resend.isPending}
-                      onClick={() =>
-                        resend.mutate(member.id, {
-                          onSuccess: (data) => {
-                            if (data.activationUrl) {
-                              setActivationLink({ name: member.name, url: data.activationUrl });
-                            }
-                          },
-                        })
-                      }
-                      aria-label={t('team.resend')}
+                      onClick={() => resendInvitation(member)}
                     >
-                      <MailPlus className="size-4" />
-                    </Button>
+                      <MailPlus aria-hidden className="size-4" />
+                      {t('team.resend')}
+                    </RowCardAction>
+                  ) : (
+                    <RowCardAction type="button" onClick={() => setGranting(member)}>
+                      <KeyRound aria-hidden className="size-4" />
+                      {t('team.grantAccess')}
+                    </RowCardAction>
                   )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => setGranting(member)}
-                    aria-label={t('team.grantAccess')}
-                  >
-                    <KeyRound className="size-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => setEditing(member)}
-                    aria-label={t('team.editTitle')}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => setRemoving(member)}
-                    aria-label={t('team.removeFromCompany')}
-                  >
-                    <UserMinus className="size-4" />
-                  </Button>
+                  <RowCardMenu label={t('common.moreActions', { name: member.name })}>
+                    {member.pending && (
+                      <RowCardMenuItem onSelect={() => setGranting(member)}>
+                        <KeyRound className="size-4" />
+                        {t('team.grantAccess')}
+                      </RowCardMenuItem>
+                    )}
+                    <RowCardMenuItem onSelect={() => setEditing(member)}>
+                      <Pencil className="size-4" />
+                      {t('common.edit')}
+                    </RowCardMenuItem>
+                    <DropdownMenuSeparator />
+                    <RowCardMenuItem variant="destructive" onSelect={() => setRemoving(member)}>
+                      <UserMinus className="size-4" />
+                      {t('team.removeFromCompany')}
+                    </RowCardMenuItem>
+                  </RowCardMenu>
                 </>
               }
             />
@@ -501,6 +500,7 @@ export function StaffList() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
               onClick={() => {
                 if (removing) remove.mutate(removing.id);
                 setRemoving(null);

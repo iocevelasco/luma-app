@@ -24,7 +24,10 @@
     "notFoundBody": "La dirección que abriste no existe o cambió.",
     "goHome": "Ir al inicio",
     "showPassword": "Mostrar contraseña",
-    "hidePassword": "Ocultar contraseña"
+    "hidePassword": "Ocultar contraseña",
+    "moreActions": "Más acciones de {{name}}",
+    "edit": "Editar",
+    "delete": "Eliminar"
   },
   "layout": {
     "projects": "Obras",
@@ -527,7 +530,8 @@
     "materials": {
       "title": "Materiales de {{name}}",
       "empty": "Todavía no hay materiales de este proveedor en esta obra.",
-      "openPurchases": "Ir a Compras"
+      "openPurchases": "Ir a Compras",
+      "action": "Materiales"
     },
     "list": {
       "navLink": "Proveedores",
@@ -550,7 +554,9 @@
       "noActivities": "Todavía no asignaste este proveedor a ninguna tarea de esta obra.",
       "assignActivity": "Asignar",
       "assignActivityPlaceholder": "Elegí una tarea",
-      "unassignActivity": "Quitar tarea"
+      "unassignActivity": "Quitar tarea",
+      "engagementAction": "Contratación",
+      "activitiesAction": "Tareas"
     },
     "fields": {
       "name": "Nombre",
@@ -1077,7 +1083,9 @@
       "empty": "Todavía no hay cuotas acordadas.",
       "dueOn": "Vence el {{date}}",
       "paidSoFar": "cobrado {{amount}}",
-      "delete": "Eliminar cuota"
+      "delete": "Eliminar cuota",
+      "confirmDeleteTitle": "¿Eliminar esta cuota?",
+      "confirmDeleteBody": "«{{concept}}» sale del cronograma de cobros acordado con el cliente."
     },
     "payments": {
       "title": "Cobros recibidos",
@@ -1086,7 +1094,9 @@
       "newSubmit": "Registrar",
       "empty": "Todavía no registraste cobros.",
       "onAccount": "A cuenta",
-      "delete": "Eliminar cobro"
+      "delete": "Eliminar cobro",
+      "confirmDeleteTitle": "¿Eliminar este cobro?",
+      "confirmDeleteBody": "El saldo de la obra se recalcula sin este cobro de {{amount}}. Un cobro no se edita: si el monto estaba mal, eliminalo y registralo de nuevo."
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1099,7 +1109,10 @@
       "emptyTitle": "Todavía no hay gastos",
       "emptyDescription": "Registrá materiales, herramientas, nómina e insumos para ver el resultado de la obra.",
       "delete": "Eliminar gasto",
-      "openReceipt": "Abrir comprobante"
+      "openReceipt": "Abrir comprobante",
+      "receiptAction": "Comprobante",
+      "confirmDeleteTitle": "¿Eliminar este gasto?",
+      "confirmDeleteBody": "«{{description}}» deja de contar en lo gastado de la obra."
     },
     "payroll": {
       "title": "Nómina",
@@ -1227,7 +1240,10 @@
     "pickProviderTitle": "Proveedores de la Empresa",
     "pickCrewTitle": "Empleados de la Empresa",
     "pickEmptyProviders": "No hay más proveedores en la Empresa para sumar a esta obra.",
-    "pickEmptyCrew": "No hay más empleados en la Empresa para sumar a esta obra."
+    "pickEmptyCrew": "No hay más empleados en la Empresa para sumar a esta obra.",
+    "projectsAction": "Obras",
+    "confirmRemoveFromProjectTitle": "¿Sacar a este proveedor de la obra?",
+    "confirmRemoveFromProjectBody": "{{name}} deja de estar disponible en esta obra. Sigue en la libreta de la Empresa y podés volver a sumarlo cuando quieras."
   },
   "company": {
     "saved": "Datos de la Empresa guardados",

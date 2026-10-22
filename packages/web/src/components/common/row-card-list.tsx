@@ -1,7 +1,14 @@
 import { type ComponentProps, type ReactNode } from 'react';
 import { format, isSameYear } from 'date-fns';
 import type { Locale } from 'date-fns';
+import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 /**
@@ -172,6 +179,36 @@ export function RowCardAction({ className, ...props }: ComponentProps<typeof But
       {...props}
     />
   );
+}
+
+/**
+ * El "…" de la fila: todo lo que no es el paso siguiente (IA-11). Editar va
+ * acá y no como un lápiz suelto; lo destructivo, siempre acá y confirmado
+ * con `AlertDialog`. En celular el disparador mide 44px.
+ */
+export function RowCardMenu({
+  label,
+  children,
+}: {
+  /** Para el lector de pantalla: "Más acciones de {nombre}". */
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="ghost" size="icon-sm" className="max-sm:size-11" aria-label={label}>
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">{children}</DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** Un ítem del "…": 44px de alto en celular. */
+export function RowCardMenuItem({ className, ...props }: ComponentProps<typeof DropdownMenuItem>) {
+  return <DropdownMenuItem className={cn('max-sm:min-h-11', className)} {...props} />;
 }
 
 /**

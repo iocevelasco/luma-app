@@ -24,7 +24,10 @@
     "notFoundBody": "O endereço que você abriu não existe ou mudou.",
     "goHome": "Ir para o início",
     "showPassword": "Mostrar senha",
-    "hidePassword": "Ocultar senha"
+    "hidePassword": "Ocultar senha",
+    "moreActions": "Mais ações de {{name}}",
+    "edit": "Editar",
+    "delete": "Excluir"
   },
   "layout": {
     "projects": "Obras",
@@ -527,7 +530,8 @@
     "materials": {
       "title": "Materiais de {{name}}",
       "empty": "Ainda não há materiais deste fornecedor nesta obra.",
-      "openPurchases": "Ir para Compras"
+      "openPurchases": "Ir para Compras",
+      "action": "Materiais"
     },
     "list": {
       "navLink": "Fornecedores",
@@ -550,7 +554,9 @@
       "noActivities": "Você ainda não atribuiu este fornecedor a nenhuma tarefa desta obra.",
       "assignActivity": "Atribuir",
       "assignActivityPlaceholder": "Escolha uma tarefa",
-      "unassignActivity": "Remover tarefa"
+      "unassignActivity": "Remover tarefa",
+      "engagementAction": "Contratação",
+      "activitiesAction": "Tarefas"
     },
     "fields": {
       "name": "Nome",
@@ -1077,7 +1083,9 @@
       "empty": "Ainda não há parcelas acordadas.",
       "dueOn": "Vence em {{date}}",
       "paidSoFar": "recebido {{amount}}",
-      "delete": "Excluir parcela"
+      "delete": "Excluir parcela",
+      "confirmDeleteTitle": "Excluir esta parcela?",
+      "confirmDeleteBody": "«{{concept}}» sai do cronograma de recebimentos combinado com o cliente."
     },
     "payments": {
       "title": "Recebimentos",
@@ -1086,7 +1094,9 @@
       "newSubmit": "Registrar",
       "empty": "Você ainda não registrou recebimentos.",
       "onAccount": "Por conta",
-      "delete": "Excluir recebimento"
+      "delete": "Excluir recebimento",
+      "confirmDeleteTitle": "Excluir este recebimento?",
+      "confirmDeleteBody": "O saldo da obra é recalculado sem este recebimento de {{amount}}. Um recebimento não se edita: se o valor estava errado, exclua e registre de novo."
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1099,7 +1109,10 @@
       "emptyTitle": "Ainda não há despesas",
       "emptyDescription": "Registre materiais, ferramentas, folha e insumos para ver o resultado da obra.",
       "delete": "Excluir despesa",
-      "openReceipt": "Abrir comprovante"
+      "openReceipt": "Abrir comprovante",
+      "receiptAction": "Comprovante",
+      "confirmDeleteTitle": "Excluir esta despesa?",
+      "confirmDeleteBody": "«{{description}}» deixa de contar no total gasto da obra."
     },
     "payroll": {
       "title": "Folha de pagamento",
@@ -1227,7 +1240,10 @@
     "pickProviderTitle": "Fornecedores da Empresa",
     "pickCrewTitle": "Funcionários da Empresa",
     "pickEmptyProviders": "Não há mais fornecedores na Empresa para adicionar a esta obra.",
-    "pickEmptyCrew": "Não há mais funcionários na Empresa para adicionar a esta obra."
+    "pickEmptyCrew": "Não há mais funcionários na Empresa para adicionar a esta obra.",
+    "projectsAction": "Obras",
+    "confirmRemoveFromProjectTitle": "Remover este fornecedor da obra?",
+    "confirmRemoveFromProjectBody": "{{name}} deixa de estar disponível nesta obra. Continua no cadastro da empresa e você pode adicioná-lo de novo quando quiser."
   },
   "company": {
     "saved": "Dados da Empresa salvos",
