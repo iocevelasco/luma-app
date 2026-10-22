@@ -7,8 +7,10 @@ import {
   countSuppliers,
   materialTab,
   organizeMaterials,
+  providerMatchFor,
   selectionState,
   supplierKey,
+  supplierName,
   type ActivityRef,
 } from './materials';
 
@@ -28,6 +30,7 @@ function material(
     status,
     statusChangedAt: changedAt,
     editable: false,
+    providerId: null,
     createdBy: 'u1',
     createdAt: changedAt,
     updatedAt: changedAt,
@@ -158,7 +161,7 @@ describe('buildPurchaseRows', () => {
       withSupplier('a', 'Corralón Sur', 'solicitado', 'Arena'),
       withSupplier('b', 'Corralón Sur', 'pendiente', 'Cemento'),
     ]);
-    expect(rows.map((r) => [r.id, r.requested])).toEqual([
+    expect(rows.map((r) => [r.id, r.tagged])).toEqual([
       ['b', false],
       ['a', true],
     ]);
@@ -172,7 +175,7 @@ describe('buildPurchaseText', () => {
       withSupplier('b', 'Corralón Sur', 'solicitado', 'Arena'),
       withSupplier('c', undefined, 'pendiente', 'Pintura'),
     ]);
-    const text = buildPurchaseText(rows, { unit: () => 'Unidad', requested: 'ya pedido' });
+    const text = buildPurchaseText(rows, { unit: () => 'Unidad', tag: 'ya pedido' });
     expect(text.split('\n')).toEqual([
       '- Cemento: 1 Unidad · Corralón Sur',
       '- Arena: 1 Unidad · Corralón Sur (ya pedido)',
@@ -219,5 +222,62 @@ describe('bulkActionsFor', () => {
 
   it('una selección vacía no ofrece nada', () => {
     expect(bulkActionsFor([])).toEqual({ next: null, canDelete: false, locksSome: false });
+  });
+});
+
+describe('proveedor vinculado', () => {
+  const linked = (id: string, providerName: string) => ({
+    ...material(id, 'pendiente'),
+    providerId: 'prov-1',
+    providerName,
+  });
+  const written = (id: string, supplier: string) => ({ ...material(id, 'pendiente'), supplier });
+
+  it('supplierName prefiere el del directorio', () => {
+    expect(supplierName({ providerName: '800 Aluminio', supplier: 'viejo' })).toBe('800 Aluminio');
+    expect(supplierName({ supplier: '  JDR ' })).toBe('JDR');
+    expect(supplierName({ supplier: '   ' })).toBeNull();
+  });
+
+  it('agrupa el vinculado con el escrito a mano igual, con la grafía del directorio', () => {
+    const rows = buildPurchaseRows([
+      written('a', '800 aluminio'),
+      written('b', '800 aluminio'),
+      linked('c', '800 Aluminio'),
+    ]);
+    expect(rows.map((row) => row.supplier)).toEqual(['800 Aluminio', '800 Aluminio', '800 Aluminio']);
+    expect(countSuppliers(rows)).toBe(1);
+  });
+
+  it('sugiere vincular sólo con el mismo nombre y si no está vinculado', () => {
+    const providers = [
+      { id: 'p1', name: 'JDR Ferretería' },
+      { id: 'p2', name: '800 Aluminio' },
+    ];
+    expect(providerMatchFor(written('a', ' 800 ALUMINIO'), providers)?.id).toBe('p2');
+    expect(providerMatchFor(written('a', 'JDR'), providers)).toBeNull();
+    expect(providerMatchFor(linked('a', '800 Aluminio'), providers)).toBeNull();
+  });
+});
+
+describe('lista de lo comprado', () => {
+  it('marca lo que ya llegó y lo deja último dentro del proveedor', () => {
+    const rows = buildPurchaseRows(
+      [
+        { ...material('llego', 'en_obra'), supplier: 'Corralón' },
+        { ...material('falta', 'comprado'), supplier: 'Corralón' },
+      ],
+      'es',
+      'bought',
+    );
+    expect(rows.map((row) => [row.id, row.tagged])).toEqual([
+      ['falta', false],
+      ['llego', true],
+    ]);
+  });
+
+  it('en "Por comprar" lo marcado sigue siendo lo Solicitado', () => {
+    const [row] = buildPurchaseRows([material('a', 'solicitado')]);
+    expect(row?.tagged).toBe(true);
   });
 });

@@ -119,6 +119,43 @@ describe('createProvider — organization viene del proyecto, nunca del body', (
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
+  it('sin provider.manage, el alta queda en esta obra aunque pida toda la Empresa', async () => {
+    vi.mocked(Provider.create).mockResolvedValue({ ...baseProvider, scope: 'project' } as never);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      can: (capability: string) => capability !== 'provider.manage',
+      body: {
+        name: 'Corralón de la esquina',
+        specialty: 'materiales',
+        phone: '11-5555-5555',
+        scope: 'organization',
+      },
+    } as unknown as Request;
+    const res = mockRes();
+
+    await createProvider(req, res);
+
+    expect(Provider.create).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: 'project', project: 'project-1' }),
+    );
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('con provider.manage, respeta el alcance de toda la Empresa', async () => {
+    vi.mocked(Provider.create).mockResolvedValue(baseProvider as never);
+    const req = {
+      project: { _id: 'project-1', organization: 'org-1' },
+      can: () => true,
+      body: { name: 'Juan', specialty: 'electricidad', phone: '11-5555-5555', scope: 'organization' },
+    } as unknown as Request;
+
+    await createProvider(req, mockRes());
+
+    expect(Provider.create).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: 'organization', project: null }),
+    );
+  });
+
   it('400 si falta el teléfono', async () => {
     const req = {
       project: { organization: 'org-1' },
@@ -189,6 +226,8 @@ describe('createProvider — organization viene del proyecto, nunca del body', (
     vi.mocked(Provider.create).mockResolvedValue(baseProvider as never);
     const req = {
       project: { _id: 'project-1', organization: 'org-1' },
+      // Gerente: sólo él da de alta en la libreta de la Empresa.
+      can: () => true,
       body: { name: 'Juan', specialty: 'electricidad', phone: '11-1', scope: 'organization' },
     } as unknown as Request;
     const res = mockRes();

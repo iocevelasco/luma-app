@@ -28,7 +28,10 @@ async function addMaterial(page: Page, name: string, quantity: string, supplier:
   await page.locator('#material-quantity').fill(quantity);
   await page.locator('#material-unit').click();
   await page.getByRole('option', { name: /bolsa/i }).click();
-  await page.locator('#material-supplier').fill(supplier);
+  // Proveedor escrito a mano: la obra no tiene proveedores cargados.
+  await page.locator('#material-supplier').click();
+  await page.getByPlaceholder(/buscar proveedor/i).fill(supplier);
+  await page.getByRole('option', { name: `Usar «${supplier}» sin vincular` }).click();
   await page.getByRole('button', { name: /^agregar$/i }).click();
   await expect(page.getByText(name)).toBeVisible();
 }

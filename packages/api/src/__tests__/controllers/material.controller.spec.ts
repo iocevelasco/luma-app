@@ -24,7 +24,25 @@ vi.mock('../../models/MaterialItem.js', () => ({
   },
 }));
 
+// La lista suma las facturas de cada material: sin facturas en estos tests.
+vi.mock('../../models/Expense.js', () => ({
+  Expense: { find: vi.fn(() => ({ sort: vi.fn().mockResolvedValue([]) })) },
+}));
+vi.mock('../../services/storage.service.js', () => ({
+  signObjectUrl: vi.fn(),
+  deleteObject: vi.fn(),
+  uploadProjectDocument: vi.fn(),
+  StorageNotConfiguredError: class extends Error {},
+}));
+vi.mock('../../models/Provider.js', () => ({
+  Provider: { findOne: vi.fn() },
+}));
+vi.mock('../../services/directory.service.js', () => ({
+  visibleProviderFilter: vi.fn().mockResolvedValue({ organization: 'org-1' }),
+}));
+
 const { Activity } = await import('../../models/Activity.js');
+const { Provider } = await import('../../models/Provider.js');
 const { MaterialItem } = await import('../../models/MaterialItem.js');
 const {
   bulkDeleteMaterials,
@@ -37,6 +55,20 @@ const {
   '../../controllers/material.controller.js'
 );
 const { isAppError } = await import('../../utils/errors.js');
+
+/**
+ * Las lecturas y escrituras pueblan `provider`: los mocks devuelven lo mismo
+ * que antes, pero detrás del `.populate(...)` que encadena el controller.
+ */
+function populated<T>(value: T) {
+  return { populate: vi.fn().mockResolvedValue(value) };
+}
+function listQuery<T>(items: T) {
+  return { populate: vi.fn().mockReturnValue({ sort: vi.fn().mockResolvedValue(items) }) };
+}
+function withPopulate<T extends object>(doc: T) {
+  return { ...doc, populate: vi.fn().mockResolvedValue(doc) };
+}
 
 /** El `next` al que `wrap` le manda los errores lanzados. */
 function mockNext() {
@@ -92,7 +124,7 @@ describe('createMaterial — pertenencia de activity al project', () => {
 
   it('crea el material si la actividad sí pertenece a la obra', async () => {
     vi.mocked(Activity.findOne).mockResolvedValue({ _id: 'activity-1' } as never);
-    vi.mocked(MaterialItem.create).mockResolvedValue({
+    vi.mocked(MaterialItem.create).mockResolvedValue(withPopulate({
       _id: 'm1',
       project: 'project-1',
       activity: 'activity-1',
@@ -103,7 +135,7 @@ describe('createMaterial — pertenencia de activity al project', () => {
       createdBy: 'user-1',
       createdAt: new Date(),
       updatedAt: new Date(),
-    } as never);
+    }) as never);
     const req = mockReq({ activityId: 'activity-1' });
     const res = mockRes();
 
@@ -114,7 +146,7 @@ describe('createMaterial — pertenencia de activity al project', () => {
   });
 
   it('no valida nada contra Activity si no viene activityId', async () => {
-    vi.mocked(MaterialItem.create).mockResolvedValue({
+    vi.mocked(MaterialItem.create).mockResolvedValue(withPopulate({
       _id: 'm1',
       project: 'project-1',
       name: 'Cemento',
@@ -124,7 +156,7 @@ describe('createMaterial — pertenencia de activity al project', () => {
       createdBy: 'user-1',
       createdAt: new Date(),
       updatedAt: new Date(),
-    } as never);
+    }) as never);
     const req = mockReq();
     const res = mockRes();
 
@@ -161,9 +193,7 @@ describe('listMaterials — estimatedCost sólo para quien puede editar', () => 
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(MaterialItem.find).mockReturnValue({
-      sort: vi.fn().mockResolvedValue([material]),
-    } as never);
+    vi.mocked(MaterialItem.find).mockReturnValue(listQuery([material]) as never);
   });
 
   it('el dueño ve estimatedCost', async () => {
@@ -230,14 +260,12 @@ function stored(overrides: Record<string, unknown> = {}) {
 
 describe('toMaterialDTO — editable', () => {
   it('un pendiente sin mover viene editable; uno que ya se movió, no', async () => {
-    vi.mocked(MaterialItem.find).mockReturnValue({
-      sort: vi.fn().mockResolvedValue([
+    vi.mocked(MaterialItem.find).mockReturnValue(listQuery([
         stored(),
         stored({ _id: 'm2', status: 'solicitado', statusChangedAt: new Date() }),
         // Pendiente que volvió: se movió alguna vez, sigue bloqueado.
         stored({ _id: 'm3', statusChangedAt: new Date() }),
-      ]),
-    } as never);
+      ]) as never);
     const res = mockRes();
 
     await listMaterials(
@@ -258,7 +286,7 @@ describe('updateMaterial — bloqueo por estado', () => {
 
   it('edita el contenido de un pendiente con un filtro atómico', async () => {
     vi.mocked(MaterialItem.findOne).mockResolvedValue(stored() as never);
-    vi.mocked(MaterialItem.findOneAndUpdate).mockResolvedValue(stored({ quantity: 12 }) as never);
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(populated(stored({ quantity: 12 })) as never);
     const res = mockRes();
     const next = mockNext();
 
@@ -299,8 +327,8 @@ describe('updateMaterial — bloqueo por estado', () => {
     vi.mocked(MaterialItem.findOne).mockResolvedValue(
       stored({ status: 'solicitado', statusChangedAt: new Date() }) as never,
     );
-    vi.mocked(MaterialItem.findOneAndUpdate).mockResolvedValue(
-      stored({ status: 'comprado', statusChangedAt: new Date() }) as never,
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(
+      populated(stored({ status: 'comprado', statusChangedAt: new Date() })) as never,
     );
     const next = mockNext();
 
@@ -318,7 +346,7 @@ describe('updateMaterial — bloqueo por estado', () => {
 
   it('carrera: lo movieron entre la lectura y la escritura → 409, no pisa', async () => {
     vi.mocked(MaterialItem.findOne).mockResolvedValue(stored() as never);
-    vi.mocked(MaterialItem.findOneAndUpdate).mockResolvedValue(null as never);
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(populated(null) as never);
     vi.mocked(MaterialItem.exists).mockResolvedValue({ _id: 'm1' } as never);
     const next = mockNext();
 
@@ -329,7 +357,7 @@ describe('updateMaterial — bloqueo por estado', () => {
 
   it('carrera: lo borraron entre la lectura y la escritura → 404', async () => {
     vi.mocked(MaterialItem.findOne).mockResolvedValue(stored() as never);
-    vi.mocked(MaterialItem.findOneAndUpdate).mockResolvedValue(null as never);
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(populated(null) as never);
     vi.mocked(MaterialItem.exists).mockResolvedValue(null as never);
     const next = mockNext();
 
@@ -349,7 +377,7 @@ describe('updateMaterial — bloqueo por estado', () => {
 
   it('null o texto vacío sacan el costo y el proveedor con $unset', async () => {
     vi.mocked(MaterialItem.findOne).mockResolvedValue(stored() as never);
-    vi.mocked(MaterialItem.findOneAndUpdate).mockResolvedValue(stored() as never);
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(populated(stored()) as never);
 
     await updateMaterial(
       projectReq({ body: { estimatedCost: null, supplier: '' } }),
@@ -497,5 +525,158 @@ describe('acciones en lote', () => {
     expect(thrownBy(next)).toMatchObject({ code: 'MATERIAL_LOCKED', status: 409 });
     expect((next.mock.calls[0]?.[0] as { details: unknown }).details).toEqual({ ids: [B] });
     expect(MaterialItem.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('proveedor vinculado', () => {
+  const PROVIDER = 'c'.repeat(24);
+  const A = 'a'.repeat(24);
+  const B = 'b'.repeat(24);
+  const aluminio = { _id: PROVIDER, name: '800 Aluminio', active: true };
+
+  function updateReq(body: Record<string, unknown>): Request {
+    return {
+      user: { sub: 'user-1' },
+      project: { _id: 'project-1', organization: 'org-1' },
+      params: { materialId: 'm1' },
+      body,
+    } as unknown as Request;
+  }
+
+  const locked = (overrides: Record<string, unknown> = {}) =>
+    stored({ status: 'solicitado', statusChangedAt: new Date(), ...overrides });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('400 y no escribe si el proveedor no es de los que ve la obra', async () => {
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(stored() as never);
+    vi.mocked(Provider.findOne).mockResolvedValue(null);
+    const next = mockNext();
+
+    await updateMaterial(updateReq({ providerId: PROVIDER }), mockRes(), next);
+
+    expect(Provider.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: PROVIDER, active: true, organization: 'org-1' }),
+    );
+    expect(thrownBy(next)).toMatchObject({ code: 'VALIDATION', status: 400 });
+    expect(MaterialItem.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('elegir un proveedor borra el texto escrito a mano', async () => {
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(stored({ supplier: 'Otro' }) as never);
+    vi.mocked(Provider.findOne).mockResolvedValue(aluminio as never);
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(populated(stored()) as never);
+
+    await updateMaterial(updateReq({ providerId: PROVIDER }), mockRes(), mockNext());
+
+    const [, update] = vi.mocked(MaterialItem.findOneAndUpdate).mock.calls[0] as never[];
+    expect(update).toMatchObject({ $set: { provider: PROVIDER }, $unset: { supplier: '' } });
+  });
+
+  it('escribir un proveedor a mano desvincula el del directorio', async () => {
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(stored({ provider: PROVIDER }) as never);
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(populated(stored()) as never);
+
+    await updateMaterial(updateReq({ supplier: 'Corralón Sur' }), mockRes(), mockNext());
+
+    const [, update] = vi.mocked(MaterialItem.findOneAndUpdate).mock.calls[0] as never[];
+    expect(update).toMatchObject({ $set: { supplier: 'Corralón Sur', provider: null } });
+  });
+
+  it('vincular el mismo nombre que tenía escrito se permite aunque esté bloqueado', async () => {
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(locked({ supplier: ' 800 aluminio ' }) as never);
+    vi.mocked(Provider.findOne).mockResolvedValue(aluminio as never);
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(populated(locked()) as never);
+    const next = mockNext();
+
+    await updateMaterial(updateReq({ providerId: PROVIDER }), mockRes(), next);
+
+    expect(next).not.toHaveBeenCalled();
+    const [filter] = vi.mocked(MaterialItem.findOneAndUpdate).mock.calls[0] as never[];
+    // Sin el filtro de editable: no es una corrección.
+    expect(filter).toEqual({ _id: 'm1', project: 'project-1' });
+  });
+
+  it('cambiar a otro proveedor un material bloqueado da 409', async () => {
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(locked({ supplier: 'Corralón Sur' }) as never);
+    vi.mocked(Provider.findOne).mockResolvedValue(aluminio as never);
+    const next = mockNext();
+
+    await updateMaterial(updateReq({ providerId: PROVIDER }), mockRes(), next);
+
+    expect(thrownBy(next)).toMatchObject({ code: 'MATERIAL_LOCKED', status: 409 });
+    expect(MaterialItem.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('400 si llegan proveedor del directorio y texto a la vez', async () => {
+    const next = mockNext();
+    await updateMaterial(updateReq({ providerId: PROVIDER, supplier: 'X' }), mockRes(), next);
+    expect(thrownBy(next)).toMatchObject({ code: 'VALIDATION', status: 400 });
+  });
+
+  it('la lista devuelve nombre y estado del proveedor vinculado', async () => {
+    vi.mocked(MaterialItem.find).mockReturnValue(
+      listQuery([stored({ provider: { ...aluminio, active: false } })]) as never,
+    );
+    const res = mockRes();
+
+    await listMaterials(
+      { project: { _id: 'project-1' }, can: canFor('gerente') } as unknown as Request,
+      res,
+      mockNext(),
+    );
+
+    const [material] = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0].data.materials;
+    expect(material).toMatchObject({
+      providerId: PROVIDER,
+      providerName: '800 Aluminio',
+      providerActive: false,
+    });
+  });
+
+  describe('en lote', () => {
+    function bulkReq(body: Record<string, unknown>): Request {
+      return {
+        user: { sub: 'user-1' },
+        project: { _id: 'project-1', organization: 'org-1' },
+        body,
+      } as unknown as Request;
+    }
+
+    it('asigna el proveedor a todos y borra el texto', async () => {
+      vi.mocked(MaterialItem.find).mockResolvedValue([stored({ _id: A }), stored({ _id: B })] as never);
+      vi.mocked(Provider.findOne).mockResolvedValue(aluminio as never);
+
+      await bulkUpdateMaterials(bulkReq({ ids: [A, B], providerId: PROVIDER }), mockRes(), mockNext());
+
+      expect(MaterialItem.updateMany).toHaveBeenCalledTimes(1);
+      expect(MaterialItem.updateMany).toHaveBeenCalledWith(
+        { _id: { $in: [A, B] }, project: 'project-1' },
+        { $set: { provider: PROVIDER }, $unset: { supplier: '' } },
+      );
+    });
+
+    it('409 con los bloqueados y no asigna a ninguno', async () => {
+      vi.mocked(MaterialItem.find).mockResolvedValue([
+        stored({ _id: A }),
+        locked({ _id: B, supplier: 'Corralón Sur' }),
+      ] as never);
+      vi.mocked(Provider.findOne).mockResolvedValue(aluminio as never);
+      const next = mockNext();
+
+      await bulkUpdateMaterials(bulkReq({ ids: [A, B], providerId: PROVIDER }), mockRes(), next);
+
+      expect(thrownBy(next)).toMatchObject({ code: 'MATERIAL_LOCKED', status: 409 });
+      expect((next.mock.calls[0]?.[0] as { details: unknown }).details).toEqual({ ids: [B] });
+      expect(MaterialItem.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('400 si no hay nada que cambiar', async () => {
+      const next = mockNext();
+      await bulkUpdateMaterials(bulkReq({ ids: [A] }), mockRes(), next);
+      expect(thrownBy(next)).toMatchObject({ code: 'VALIDATION', status: 400 });
+    });
   });
 });

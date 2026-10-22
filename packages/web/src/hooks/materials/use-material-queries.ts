@@ -5,6 +5,7 @@ import type {
   BulkDeleteMaterialsInput,
   BulkUpdateMaterialsInput,
   CreateMaterialInput,
+  CreateMaterialInvoiceInput,
   UpdateMaterialInput,
 } from '@luma/shared';
 import { materialsApi } from '@/api/materials';
@@ -149,5 +150,45 @@ export function useBulkDeleteMaterials(projectId: string) {
       refreshWhenLocked(error, queryClient, projectId);
       toast.error(errorMessage(error, t));
     },
+  });
+}
+
+/**
+ * Una factura es un gasto: además de Compras se refresca Finanzas, o el total
+ * gastado quedaría viejo hasta recargar.
+ */
+function invalidateAfterInvoice(queryClient: ReturnType<typeof useQueryClient>, projectId: string) {
+  void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+  void queryClient.invalidateQueries({ queryKey: [QueryKeys.expenses, projectId] });
+  void queryClient.invalidateQueries({ queryKey: [QueryKeys.financeSummary, projectId] });
+}
+
+export function useCreateMaterialInvoice(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: ({ payload, receipt }: { payload: CreateMaterialInvoiceInput; receipt: File }) =>
+      materialsApi.createInvoice(projectId, payload, receipt),
+    onSuccess: () => {
+      invalidateAfterInvoice(queryClient, projectId);
+      toast.success(t('material.invoice.created'));
+    },
+    // Sin `onError`: se envía desde un formulario y la falla va al banner.
+  });
+}
+
+/** Sin formulario detrás: la falla va por toast. */
+export function useDeleteMaterialInvoice(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (invoiceId: string) => materialsApi.deleteInvoice(projectId, invoiceId),
+    onSuccess: () => {
+      invalidateAfterInvoice(queryClient, projectId);
+      toast.success(t('material.invoice.deleted'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

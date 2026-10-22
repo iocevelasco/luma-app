@@ -161,10 +161,10 @@ Controles en la escala chica, superficies en la grande.
 |---|---|---|
 | `rounded-xs` | 4px | Chips micro, indicadores |
 | `rounded-sm` | 6px | **Input**, Select, Textarea, ítems de menú |
-| `rounded-md` | 8px | Code blocks, filas internas |
+| `rounded-md` | 8px | Code blocks, filas internas de un control |
 | `rounded-lg` | 14px | Dialog, menú, dropdown, toast |
-| `rounded-xl` | 18px | Popover grande, alert dialog |
-| `rounded-2xl` | 22px | Panel destacado |
+| `rounded-xl` | 18px | Popover grande, alert dialog, bloque de la izquierda de una fila-tarjeta |
+| `rounded-2xl` | 22px | Panel destacado, **fila-tarjeta** de una lista |
 | `rounded-3xl` | **28px** | **Card** — el radio dominante |
 | `rounded-full` | píldora | **Botones** —todas las variantes— y estados: Badge, Avatar, Switch, Slider, Progress |
 
@@ -197,9 +197,10 @@ lleva una sombra suave de apoyo.
 
 | Rol | Valor | Uso |
 |---|---|---|
-| plano | borde 1px `border`, sin sombra | Filas, divisores, inputs |
-| `shadow-surface` | `0 1px 2px rgb(0 0 0 / .3), 0 8px 24px -12px rgb(0 0 0 / .5)` | Card en reposo |
+| plano | borde 1px `border`, sin sombra | Divisores, inputs |
+| `shadow-surface` | `0 1px 2px rgb(0 0 0 / .3), 0 8px 24px -12px rgb(0 0 0 / .5)` | Card y fila-tarjeta en reposo |
 | `shadow-overlay` | `0 20px 60px rgb(0 0 0 / .7)` + filete interno | Dialog, menú, popover |
+| `shadow-lift` | `0 1px 2px` + `0 16px 32px -12px` | Fila-tarjeta bajo el puntero o con el foco adentro |
 
 Nada de `shadow-glow`: un resplandor de marca no es profundidad.
 
@@ -211,7 +212,7 @@ Nada de `shadow-glow`: un resplandor de marca no es profundidad.
 | `shadow-raised` | Filete claro arriba y la misma sombra, sin bisel | Botón secundario — superficie neutra elevada |
 | `shadow-cta-pressed` | Sombra interna: la luz se va adentro | `:active` de los dos anteriores |
 
-El outline no lleva sombra: lo levanta el borde de 2px. Las sombras de afuera
+El outline no lleva sombra: lo levanta el borde de 1px. Las sombras de afuera
 son negras siempre — el relieve es luz y sombra, no un halo verde.
 
 `cn()` registra estas sombras en `tailwind-merge` (`lib/utils.ts`): sin eso
@@ -229,7 +230,7 @@ relleno con bisel, relleno con anillo— traducida al lienzo oscuro:
 **Botón secundario** — píldora, `bg-secondary`, `shadow-raised`. Hover sube el
 brillo; `:active` igual que el primario.
 
-**Botón outline** — píldora sin relleno, borde de 2px en `foreground` al 45%
+**Botón outline** — píldora sin relleno, borde de 1px en `foreground` al 45%
 (70% en hover), texto `foreground`. No va en verde: son los "Cancelar" y
 "Volver" del panel, y el verde es para la acción principal.
 
@@ -240,7 +241,7 @@ pisaría el relieve.
 
 En la landing los CTA son links, no `Button`: usan `CTA_PRIMARY` y
 `CTA_OUTLINE` de `src/lib/cta.ts`, que son las mismas clases. La altura va con
-`h-*`, no con `py-*`: el outline tiene 2px de borde y el primario 1px.
+`h-*`, no con `py-*`: aunque hoy el outline y el primario llevan el mismo borde de 1px, la altura no tiene que depender de él.
 
 **Card** — `bg-card`, `rounded-3xl`, borde 1px, `shadow-surface`. Padding 16px en
 móvil, 24px desde `sm`. Adentro, dos piezas apoyadas un escalón abajo
@@ -248,13 +249,58 @@ móvil, 24px desde `sm`. Adentro, dos piezas apoyadas un escalón abajo
 
 - `CardTile` — acción chica con el ícono arriba y el rótulo abajo (Silenciar,
   Llamar, Buscar). Se arma en fila con `grid grid-cols-4 gap-2`.
-- `CardList` — filas agrupadas con divisor entre una y otra. Las filas son
-  `Item`s (`size="sm"`): el grupo les saca radio y borde y redondea el conjunto.
-  Lo de la derecha (valor + chevrón) va en `ItemActions`.
+- `CardList` — **no se usa para listas del panel.** Las listas van en
+  filas-tarjeta (ver *Listas*); `CardList` queda sólo para un grupo corto de
+  ajustes dentro de una card.
 
 `variant="interactive"` es la card que se toca entera: sube 2px y pasa a
 `shadow-overlay`; con `prefers-reduced-motion` no se mueve. Va sobre un link o
 un botón: la card no impone el rol.
+
+**Listas y tablas** — cada fila es su propia tarjeta, separada de las demás.
+Es la única forma de lista del panel: tablas, listas de entidades, historiales.
+Vive en `components/common/row-card-list.tsx`; `ResponsiveTable` la usa por
+dentro.
+
+```
+COMPRAS DE OBRA ───────────────────────────────── 3      ← ListSection
+╭──────────────────────────────────────────────────╮
+│ [OCT]  Ladrillo hueco 18          [Estado] Acción → … │  ← RowCard
+│ [ 9 ]  1200 un · Corralón Sur                        │
+╰──────────────────────────────────────────────────╯
+                     12px
+╭──────────────────────────────────────────────────╮
+│ …                                                │
+```
+
+- **La fila** (`RowCard`, o `ROW_CARD` si no es un `<li>`): `bg-card`,
+  `rounded-2xl`, **sin borde**, `shadow-surface`, `p-4` (`sm:px-5`), y 12px de
+  aire entre filas (`RowCardList`, `gap-3`). La separación la dan el lienzo y
+  el aire, no una línea. Sobre el lienzo claro del panel es blanco sobre gris.
+- **Bajo el puntero** la fila sube a `shadow-lift` y su acción visible
+  (`RowCardAction`) pasa de texto liviano a relleno `foreground`. Con el foco
+  dentro de la fila pasa lo mismo: el teclado ve lo que ve el mouse.
+- **Bloque de la izquierda** (`RowCardLead`, opcional): una fecha
+  (`RowCardDate`: mes arriba, día grande; el año sólo si no es el corriente) o
+  un ícono, tintado con un tono de estado. `rounded-xl`, un escalón abajo de
+  la fila. Si la fecha va en el bloque, la línea 2 no la repite.
+- **Cuerpo** (`RowCardBody`): línea 1 = qué es, línea 2 = metadatos en
+  `text-xs` muted, separados por `" · "`. **Bloque derecho** (`RowCardEnd`):
+  estado, monto, acción, "…"; en celular baja a su propia línea antes que
+  salirse de la tarjeta.
+- **Grupos** (`ListSection` dentro de `ListSections`): rótulo chico en
+  mayúsculas y atenuado, un **divisor** de 1px que corre hasta el borde y el
+  metadato (conteo, total, fecha) a la derecha. 32px entre grupos. El grupo
+  nunca es otra caja: una caja alrededor de filas-tarjeta es una tarjeta más.
+- **Tabla** (`ResponsiveTable`): en escritorio cada fila es una tarjeta y las
+  columnas se alinean entre filas con `grid-cols-subgrid`; los encabezados van
+  sueltos arriba, con el estilo del rótulo de grupo. En celular, la misma
+  tarjeta con los datos apilados.
+- La lista va **directo sobre el lienzo**, nunca dentro de una `Card`: blanco
+  sobre blanco no separa nada.
+- En celular, todo control de la fila mide 44px (`max-sm:min-h-11`).
+- No aplica a listas dentro de un diálogo o un drawer (selectores, pickers):
+  ahí la lista es parte de un control y va compacta.
 
 **Breadcrumb** — el eslabón ancestro es tinta con subrayado a 40% (100% en
 hover); la página actual va en `muted-foreground`, sin subrayado. El separador es
@@ -323,6 +369,8 @@ En el panel **no va**: una app de trabajo no se firma en cada pantalla.
   (`#101010`).
 - No editar `components/ui/` salvo un cambio del sistema que tenga que vivir ahí.
 - No usar colores crudos (`bg-[#00d992]`): saltean el tema.
+- No armar una lista con `divide-y` ni con una caja alrededor de las filas:
+  cada fila es su `RowCard`, y los grupos se separan con `ListSection`.
 - No reintroducir un tema claro "sólo para la landing".
 - No cargar fuentes desde Google Fonts.
 

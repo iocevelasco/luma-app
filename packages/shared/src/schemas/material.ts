@@ -21,17 +21,33 @@ export const materialUnitSchema = z.enum([
 
 export const materialStatusSchema = z.enum(['pendiente', 'solicitado', 'comprado', 'en_obra']);
 
-export const createMaterialSchema = z.object({
-  activityId: z.string().trim().min(1).optional().nullable(),
-  name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Es demasiado largo'),
-  quantity: z.number({ invalid_type_error: 'La cantidad es obligatoria' }).positive('Tiene que ser mayor a 0'),
-  unit: materialUnitSchema,
-  status: materialStatusSchema.default('pendiente'),
-  estimatedCost: z.number().min(0, 'No puede ser negativo').optional(),
-  supplier: z.string().trim().max(120, 'Es demasiado largo').optional(),
-});
+const objectIdSchema = z.string().regex(/^[a-f0-9]{24}$/i, 'Identificador inválido');
 
-export const updateMaterialSchema = z.object({
+/**
+ * Proveedor del directorio o escrito a mano: uno o el otro. Si llegan los
+ * dos, no hay forma de saber cuál quiso la persona.
+ */
+const oneSupplierSource = (value: { providerId?: string | null; supplier?: string | null }) =>
+  !(value.providerId && value.supplier);
+const ONE_SUPPLIER_SOURCE = {
+  message: 'Elegí un proveedor de la lista o escribí uno, no los dos',
+  path: ['supplier'],
+};
+
+export const createMaterialSchema = z
+  .object({
+    activityId: z.string().trim().min(1).optional().nullable(),
+    name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Es demasiado largo'),
+    quantity: z.number({ invalid_type_error: 'La cantidad es obligatoria' }).positive('Tiene que ser mayor a 0'),
+    unit: materialUnitSchema,
+    status: materialStatusSchema.default('pendiente'),
+    estimatedCost: z.number().min(0, 'No puede ser negativo').optional(),
+    supplier: z.string().trim().max(120, 'Es demasiado largo').optional(),
+    providerId: objectIdSchema.optional().nullable(),
+  })
+  .refine(oneSupplierSource, ONE_SUPPLIER_SOURCE);
+
+const updateMaterialFields = z.object({
   activityId: z.string().trim().min(1).optional().nullable(),
   name: z.string().trim().min(1).max(120).optional(),
   quantity: z.number().positive('Tiene que ser mayor a 0').optional(),
@@ -41,23 +57,30 @@ export const updateMaterialSchema = z.object({
   // error no se podían sacar.
   estimatedCost: z.number().min(0).nullable().optional(),
   supplier: z.string().trim().max(120).nullable().optional(),
+  // `null` desvincula. Elegir uno borra el `supplier` escrito a mano.
+  providerId: objectIdSchema.nullable().optional(),
 });
+
+export const updateMaterialSchema = updateMaterialFields.refine(oneSupplierSource, ONE_SUPPLIER_SOURCE);
 
 /**
  * Lo que manda el formulario de edición. El estado no está: cambia por su
  * propio flujo (botón de paso siguiente), no corrigiendo el material.
  */
-export const editMaterialSchema = updateMaterialSchema.omit({ status: true }).extend({
-  name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Es demasiado largo'),
-  quantity: z.number({ invalid_type_error: 'La cantidad es obligatoria' }).positive('Tiene que ser mayor a 0'),
-  unit: materialUnitSchema,
-});
+export const editMaterialSchema = updateMaterialFields
+  .omit({ status: true })
+  .extend({
+    name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Es demasiado largo'),
+    quantity: z.number({ invalid_type_error: 'La cantidad es obligatoria' }).positive('Tiene que ser mayor a 0'),
+    unit: materialUnitSchema,
+  })
+  .refine(oneSupplierSource, ONE_SUPPLIER_SOURCE);
 
 /** Tope de una acción en lote: una obra grande no llega, y acota lo que viaja. */
 export const MATERIAL_BULK_MAX = 200;
 
 const materialIdsSchema = z
-  .array(z.string().regex(/^[a-f0-9]{24}$/i, 'Identificador inválido'))
+  .array(objectIdSchema)
   .min(1, 'Elegí al menos un material')
   .max(MATERIAL_BULK_MAX, `Son demasiados: hasta ${MATERIAL_BULK_MAX} por vez`)
   // Un id repetido no cambia lo que se hace, pero rompe la cuenta de "¿son
@@ -65,13 +88,18 @@ const materialIdsSchema = z
   .transform((ids) => [...new Set(ids)]);
 
 /**
- * Cambio de estado en lote. Sólo el estado: es lo único que se puede tocar
- * siempre. Corregir el contenido sigue siendo de a uno, desde el drawer.
+ * Acción en lote: cambiar el estado, asignar un proveedor del directorio, o
+ * las dos. El resto del contenido se corrige de a uno, desde el drawer.
  */
-export const bulkUpdateMaterialsSchema = z.object({
-  ids: materialIdsSchema,
-  status: materialStatusSchema,
-});
+export const bulkUpdateMaterialsSchema = z
+  .object({
+    ids: materialIdsSchema,
+    status: materialStatusSchema.optional(),
+    providerId: objectIdSchema.nullable().optional(),
+  })
+  .refine((value) => value.status !== undefined || value.providerId !== undefined, {
+    message: 'No hay nada que cambiar',
+  });
 
 export const bulkDeleteMaterialsSchema = z.object({
   ids: materialIdsSchema,

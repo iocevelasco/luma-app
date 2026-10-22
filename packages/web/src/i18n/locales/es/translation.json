@@ -365,6 +365,42 @@
     }
   },
   "material": {
+    "invoice": {
+      "action": "Cargar factura",
+      "title_one": "Factura de {{count}} material",
+      "title_other": "Factura de {{count}} materiales",
+      "submit": "Guardar factura",
+      "file": "Factura",
+      "filePlaceholder": "Elegir PDF o foto",
+      "fileRequired": "Adjuntá la factura: un PDF o una foto.",
+      "date": "Fecha de la factura",
+      "defaultDescription_one": "Factura de {{count}} material",
+      "defaultDescription_other": "Factura de {{count}} materiales",
+      "defaultDescriptionFrom": "Factura {{provider}}",
+      "markBought_one": "{{count}} está Solicitado: al guardar pasa a Comprado.",
+      "markBought_other": "{{count}} están Solicitados: al guardar pasan a Comprado.",
+      "created": "Factura cargada",
+      "deleted": "Factura eliminada",
+      "delete": "Eliminar factura",
+      "deleteTitle": "¿Eliminar esta factura?",
+      "deleteBody": "Se elimina «{{name}}» y su gasto en Finanzas. Los materiales siguen como comprados.",
+      "openMenu_one": "Factura de {{name}}",
+      "openMenu_other": "{{count}} facturas de {{name}}"
+    },
+    "provider": {
+      "placeholder": "Elegí o escribí un proveedor",
+      "placeholderPick": "Elegí un proveedor",
+      "search": "Buscar proveedor…",
+      "noResults": "No hay proveedores con ese nombre.",
+      "fromDirectory": "Proveedores de la obra",
+      "useTyped": "Usar «{{name}}» sin vincular",
+      "none": "Sin proveedor",
+      "inactive": "dado de baja",
+      "link": "Vincular",
+      "linkAria": "Vincular a {{name}} de Proveedores",
+      "create": "Agregar proveedor",
+      "createHint": "Queda disponible sólo en esta obra. Para sumarlo a todas, pedíselo al gerente."
+    },
     "list": {
       "navLink": "Compras",
       "title": "Compras",
@@ -407,6 +443,7 @@
       "generatingPdf": "Generando…",
       "pdfDownloaded": "PDF descargado",
       "requestedTag": "ya pedido",
+      "onSiteTag": "ya en obra",
       "noSupplier": "Sin proveedor"
     },
     "bulk": {
@@ -427,9 +464,15 @@
       "updated_one": "{{count}} material actualizado",
       "updated_other": "{{count}} materiales actualizados",
       "deleted_one": "{{count}} material eliminado",
-      "deleted_other": "{{count}} materiales eliminados"
+      "deleted_other": "{{count}} materiales eliminados",
+      "assignProvider": "Asignar proveedor",
+      "assignTitle_one": "Asignar proveedor a {{count}} material",
+      "assignTitle_other": "Asignar proveedor a {{count}} materiales",
+      "assignHint": "Reemplaza el proveedor que tengan, también el escrito a mano.",
+      "assignSubmit": "Asignar"
     },
     "pdf": {
+      "titleBought": "Materiales comprados",
       "title": "Lista de compras",
       "materials_one": "{{count}} material",
       "materials_other": "{{count}} materiales",
@@ -481,6 +524,11 @@
     }
   },
   "provider": {
+    "materials": {
+      "title": "Materiales de {{name}}",
+      "empty": "Todavía no hay materiales de este proveedor en esta obra.",
+      "openPurchases": "Ir a Compras"
+    },
     "list": {
       "navLink": "Proveedores",
       "title": "Proveedores",
@@ -1041,6 +1089,9 @@
       "delete": "Eliminar cobro"
     },
     "expenses": {
+      "materialsCount_one": "{{count}} material",
+      "materialsCount_other": "{{count}} materiales",
+      "materialsTitle": "Paga estos materiales",
       "title": "Gastos",
       "new": "Registrar gasto",
       "newTitle": "Registrar un gasto",

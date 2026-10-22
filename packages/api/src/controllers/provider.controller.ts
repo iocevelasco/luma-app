@@ -87,12 +87,16 @@ export async function createProvider(req: Request, res: Response) {
     }
 
     const project = req.project as IProject;
+    // Sin `provider.manage` el alta es siempre de esta obra: el supervisor
+    // carga al proveedor que encontró, pero no escribe en la libreta que
+    // comparten todas las obras de la Empresa.
+    const scope = req.can?.('provider.manage') ? parsed.data.scope : 'project';
     // `project` se setea sólo cuando el alcance es de esta obra — nunca viaja
     // en el body, igual que `organization`.
     const provider = await Provider.create({
-      ...toNewProvider(parsed.data),
+      ...toNewProvider({ ...parsed.data, scope }),
       organization: project.organization,
-      project: parsed.data.scope === 'project' ? project._id : null,
+      project: scope === 'project' ? project._id : null,
     });
 
     // Lo que se carga desde una obra para toda la Empresa queda disponible en

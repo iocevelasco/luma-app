@@ -70,11 +70,16 @@ export const materialLocked = () =>
   );
 
 /** La versión en lote: `details.ids` dice cuáles frenaron la acción entera. */
-export const materialsLocked = (ids: string[]) =>
-  new AppError(
-    'MATERIAL_LOCKED',
+export const materialsLocked = (ids: string[], action: 'delete' | 'update') => {
+  const what =
     ids.length === 1
-      ? 'Uno de los materiales ya cambió de estado y no se puede eliminar. No se borró ninguno.'
-      : `${ids.length} de los materiales ya cambiaron de estado y no se pueden eliminar. No se borró ninguno.`,
+      ? 'Uno de los materiales ya cambió de estado y no se puede'
+      : `${ids.length} de los materiales ya cambiaron de estado y no se pueden`;
+  return new AppError(
+    'MATERIAL_LOCKED',
+    action === 'delete'
+      ? `${what} eliminar. No se borró ninguno.`
+      : `${what} modificar. No se cambió ninguno.`,
     { ids },
   );
+};

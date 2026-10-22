@@ -20,11 +20,11 @@ const buttonVariants = cva(
           "border border-primary-pressed bg-primary text-primary-foreground shadow-cta hover:bg-primary-pressed active:shadow-cta-pressed",
         destructive:
           "bg-destructive text-white shadow-cta hover:bg-destructive/90 active:shadow-cta-pressed focus-visible:outline-destructive dark:bg-destructive/60",
-        // Sin relleno: el borde de 2px es lo que lo levanta del lienzo. Va en
+        // Sin relleno: el borde de 1px es lo que lo levanta del lienzo. Va en
         // `foreground` atenuado y no en verde — son los "Cancelar" y "Volver"
         // del panel, y el verde se reserva para la acción principal.
         outline:
-          "border-2 border-foreground/45 bg-transparent text-foreground hover:border-foreground/70 hover:bg-accent/60 active:bg-accent",
+          "border border-foreground/45 bg-transparent text-foreground hover:border-foreground/70 hover:bg-accent/60 active:bg-accent",
         secondary:
           "bg-secondary text-secondary-foreground shadow-raised hover:brightness-125 active:shadow-cta-pressed",
         ghost:
