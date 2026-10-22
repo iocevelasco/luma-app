@@ -12,8 +12,18 @@ import { ArrowRight, Check, Clock, Pencil, Plus, Trash2, X, type LucideIcon } fr
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { FormDrawer } from '@/components/common/form-drawer';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { FormShell } from '@/components/common/form-shell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -246,6 +256,7 @@ function EngagementCard({
   const { t, i18n } = useTranslation();
   const setRequirementMet = useSetRequirementMet(projectId, providerId);
   const deleteEngagement = useDeleteEngagement(projectId, providerId);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const pending = engagement.requirements.filter((requirement) => !requirement.met).length;
 
@@ -273,7 +284,7 @@ function EngagementCard({
               type="button"
               variant="outline"
               size="icon-sm"
-              onClick={() => deleteEngagement.mutate(engagement.id)}
+              onClick={() => setConfirmingDelete(true)}
               aria-label={t('engagement.delete')}
             >
               <Trash2 className="size-4" />
@@ -335,6 +346,24 @@ function EngagementCard({
           {engagement.notes}
         </p>
       )}
+
+      <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('engagement.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('engagement.deleteBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => deleteEngagement.mutate(engagement.id)}
+            >
+              {t('engagement.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

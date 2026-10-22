@@ -25,7 +25,17 @@ import {
 } from '@/components/common/date-range-filter';
 import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { FormDrawer } from '@/components/common/form-drawer';
 // El detalle de la actividad sigue siendo un Dialog a pantalla completa: es
 // una vista de lectura, no un formulario.
@@ -597,6 +607,7 @@ function ActivityEvidenceSection({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadEvidence = useUploadActivityEvidence(projectId, activity.id);
   const deleteEvidence = useDeleteActivityEvidence(projectId, activity.id);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -648,7 +659,7 @@ function ActivityEvidenceSection({
                   variant="destructive"
                   size="icon-sm"
                   className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                  onClick={() => deleteEvidence.mutate(photo.id)}
+                  onClick={() => setDeletingPhotoId(photo.id)}
                   aria-label={t('activity.detail.removeEvidence')}
                 >
                   <Trash2 className="size-3" />
@@ -658,6 +669,30 @@ function ActivityEvidenceSection({
           ))}
         </ul>
       )}
+
+      <AlertDialog
+        open={deletingPhotoId !== null}
+        onOpenChange={(open) => !open && setDeletingPhotoId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('activity.detail.removeEvidenceTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('activity.detail.removeEvidenceBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => {
+                if (deletingPhotoId) deleteEvidence.mutate(deletingPhotoId);
+                setDeletingPhotoId(null);
+              }}
+            >
+              {t('activity.detail.removeEvidence')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { requiresApi } from './helpers/api';
+import { attachDialog } from './helpers/dialog';
 
 /**
  * Flujo completo del directorio de proveedores (electricidad, carpintería,
@@ -343,6 +344,18 @@ test.describe('directorio de proveedores', () => {
 
     await expect(page.getByText(libraryProvider).first()).toBeVisible();
     await expect(page.getByText(clientProvider)).toHaveCount(0);
+
+    // Sacarlo de la obra pide confirmación; cancelar lo deja donde estaba.
+    await page.getByRole('button', { name: /sacar de la obra/i }).first().click();
+    const confirm = page.getByRole('alertdialog');
+    await expect(confirm).toContainText(libraryProvider);
+    await attachDialog(page, 'proveedor-sacar');
+    await confirm.getByRole('button', { name: /cancelar/i }).click();
+    await expect(page.getByText(libraryProvider).first()).toBeVisible();
+
+    await page.getByRole('button', { name: /sacar de la obra/i }).first().click();
+    await page.getByRole('alertdialog').getByRole('button', { name: /sacar de la obra/i }).click();
+    await expect(page.getByText(libraryProvider)).toHaveCount(0);
   });
 
   test('contratación: cotización, adelanto y requisitos para arrancar', async ({ page }) => {
@@ -410,5 +423,17 @@ test.describe('directorio de proveedores', () => {
 
     await expect(dialog.getByText(/todo listo para arrancar/i)).toBeVisible();
     await expect(dialog.getByText(/120\.000/)).toBeVisible();
+
+    // Borrarla pide confirmación: lo cotizado deja de contar como comprometido.
+    await dialog.getByRole('button', { name: /eliminar contratación/i }).click();
+    const confirm = page.getByRole('alertdialog');
+    await expect(confirm).toContainText(/no se puede deshacer/i);
+    await attachDialog(page, 'contratacion');
+    await confirm.getByRole('button', { name: /cancelar/i }).click();
+    await expect(dialog.getByText(/120\.000/)).toBeVisible();
+
+    await dialog.getByRole('button', { name: /eliminar contratación/i }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: /eliminar contratación/i }).click();
+    await expect(dialog.getByText(/todavía no registraste una contratación/i)).toBeVisible();
   });
 });
