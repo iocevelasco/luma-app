@@ -88,6 +88,10 @@ export type Capability =
   // Materiales y herramientas
   | 'material.read'
   | 'material.write'
+  // Facturas de materiales: un gasto acotado. Quien las tiene carga y ve las
+  // facturas de lo que compró, pero no Finanzas ni el total gastado.
+  | 'material.invoice.read'
+  | 'material.invoice.write'
   // Personal en obra: sumar gente, administrar el roster y la asistencia.
   // Lo que cada uno tiene que hacer son tareas: `activity.*`.
   | 'crew.read'
@@ -166,6 +170,8 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'activity.evidence.write',
     'material.read',
     'material.write',
+    'material.invoice.read',
+    'material.invoice.write',
     'milestone.read',
     'milestone.report',
     'milestone.publish',
@@ -189,6 +195,10 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'activity.evidence.write',
     'material.read',
     'material.write',
+    // Carga la factura de lo que compró. Sin `expense.*`: no ve Finanzas, ni
+    // cobros, así que tampoco puede calcular el margen.
+    'material.invoice.read',
+    'material.invoice.write',
     'milestone.read',
     'milestone.report',
     'document.read',

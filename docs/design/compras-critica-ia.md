@@ -201,6 +201,9 @@ empieza pronto). Casi todo se arregla sin tocar datos ni agregar entidades.
   una Card: `rounded-3xl`. Mejor todavía: usar `Card` + `CardList`
   (`components/ui/card.tsx`, existe y no lo usa nadie). Mismo comentario para
   `ResponsiveTable` (verificar con DESIGN.md si la tabla es excepción).
+  *Superado:* la lista ya no va dentro de un contenedor; cada fila es su
+  propia tarjeta y los grupos se separan con rótulo + divisor (IA-15 nueva,
+  `components/common/row-card-list.tsx`).
 - **Aire entre grupos.** `gap-5` (20px) entre grupos con la línea *debajo* del
   rótulo: el grupo se separa por aire arriba y por línea abajo. Con el rótulo
   nuevo (A1), `gap-6` entre grupos y sin línea bajo el rótulo, la divisoria

@@ -22,7 +22,8 @@ export interface PurchasePdfLabels {
   summary: string;
   columns: { material: string; quantity: string; supplier: string };
   noSupplier: string;
-  requested: string;
+  /** La marca de las filas `tagged`: "ya pedido" o "ya en obra". */
+  tag: string;
   /** "Página 2 de 3". */
   page: (page: number, total: number) => string;
   unit: (unit: PurchaseRow['unit']) => string;
@@ -47,14 +48,14 @@ export function sanitizeForPdf(text: string): string {
 }
 
 /** `compras-casa-rivera-2026-10-19.pdf`: sin espacios ni acentos, que viajan mal por chat. */
-export function purchaseFileName(projectName: string, date: Date): string {
+export function purchaseFileName(projectName: string, date: Date, prefix = 'compras'): string {
   const slug = projectName
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  return `compras-${slug || 'obra'}-${format(date, 'yyyy-MM-dd')}.pdf`;
+  return `${prefix}-${slug || 'obra'}-${format(date, 'yyyy-MM-dd')}.pdf`;
 }
 
 export async function buildPurchasePdf(input: {
@@ -95,7 +96,7 @@ export async function buildPurchasePdf(input: {
     margin: { left: margin, right: margin, bottom: 18 },
     head: [[labels.columns.material, labels.columns.quantity, labels.columns.supplier]],
     body: rows.map((row) => [
-      sanitizeForPdf(row.requested ? `${row.name} (${labels.requested})` : row.name),
+      sanitizeForPdf(row.tagged ? `${row.name} (${labels.tag})` : row.name),
       sanitizeForPdf(`${row.quantity} ${labels.unit(row.unit)}`),
       sanitizeForPdf(row.supplier ?? labels.noSupplier),
     ]),
@@ -118,7 +119,7 @@ export async function buildPurchasePdf(input: {
     didDrawCell: (data) => {
       if (data.section !== 'body' || data.column.index !== 0) return;
       // Lo ya pedido no se tilda: no hay nada que comprar.
-      if (rows[data.row.index].requested) return;
+      if (rows[data.row.index].tagged) return;
       const x = data.cell.x + 2.4;
       const y = data.cell.y + (data.cell.height - boxSize) / 2;
       doc.setDrawColor(60);

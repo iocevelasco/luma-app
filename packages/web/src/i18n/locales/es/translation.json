@@ -365,8 +365,31 @@
     }
   },
   "material": {
+    "invoice": {
+      "action": "Cargar factura",
+      "title_one": "Factura de {{count}} material",
+      "title_other": "Factura de {{count}} materiales",
+      "submit": "Guardar factura",
+      "file": "Factura",
+      "filePlaceholder": "Elegir PDF o foto",
+      "fileRequired": "Adjuntá la factura: un PDF o una foto.",
+      "date": "Fecha de la factura",
+      "defaultDescription_one": "Factura de {{count}} material",
+      "defaultDescription_other": "Factura de {{count}} materiales",
+      "defaultDescriptionFrom": "Factura {{provider}}",
+      "markBought_one": "{{count}} está Solicitado: al guardar pasa a Comprado.",
+      "markBought_other": "{{count}} están Solicitados: al guardar pasan a Comprado.",
+      "created": "Factura cargada",
+      "deleted": "Factura eliminada",
+      "delete": "Eliminar factura",
+      "deleteTitle": "¿Eliminar esta factura?",
+      "deleteBody": "Se elimina «{{name}}» y su gasto en Finanzas. Los materiales siguen como comprados.",
+      "openMenu_one": "Factura de {{name}}",
+      "openMenu_other": "{{count}} facturas de {{name}}"
+    },
     "provider": {
       "placeholder": "Elegí o escribí un proveedor",
+      "placeholderPick": "Elegí un proveedor",
       "search": "Buscar proveedor…",
       "noResults": "No hay proveedores con ese nombre.",
       "fromDirectory": "Proveedores de la obra",
@@ -420,6 +443,7 @@
       "generatingPdf": "Generando…",
       "pdfDownloaded": "PDF descargado",
       "requestedTag": "ya pedido",
+      "onSiteTag": "ya en obra",
       "noSupplier": "Sin proveedor"
     },
     "bulk": {
@@ -448,6 +472,7 @@
       "assignSubmit": "Asignar"
     },
     "pdf": {
+      "titleBought": "Materiales comprados",
       "title": "Lista de compras",
       "materials_one": "{{count}} material",
       "materials_other": "{{count}} materiales",
@@ -1064,6 +1089,9 @@
       "delete": "Eliminar cobro"
     },
     "expenses": {
+      "materialsCount_one": "{{count}} material",
+      "materialsCount_other": "{{count}} materiales",
+      "materialsTitle": "Paga estos materiales",
       "title": "Gastos",
       "new": "Registrar gasto",
       "newTitle": "Registrar un gasto",

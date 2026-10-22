@@ -20,6 +20,10 @@ export interface IExpenseReceipt {
  * `provider` y `activity` son opcionales y sirven para responder "cuánto
  * llevamos gastado con el electricista" y "cuánto costó la cocina" sin
  * inventar un modelo de imputación aparte.
+ *
+ * `materials` es la factura cargada desde Compras: los materiales que paga.
+ * Es el mismo gasto que ve Finanzas —una carga, dos lugares donde se ve—, no
+ * un modelo de factura aparte que contaría la misma plata dos veces.
  */
 export interface IExpense extends Document {
   project: mongoose.Types.ObjectId;
@@ -33,6 +37,7 @@ export interface IExpense extends Document {
   provider?: mongoose.Types.ObjectId | null;
   activity?: mongoose.Types.ObjectId | null;
   receipt?: IExpenseReceipt | null;
+  materials: mongoose.Types.ObjectId[];
   notes?: string;
   registeredBy: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -61,6 +66,7 @@ const expenseSchema = new Schema<IExpense>(
     provider: { type: Schema.Types.ObjectId, ref: 'Provider', default: null, index: true },
     activity: { type: Schema.Types.ObjectId, ref: 'Activity', default: null, index: true },
     receipt: { type: expenseReceiptSchema, default: null },
+    materials: { type: [{ type: Schema.Types.ObjectId, ref: 'MaterialItem' }], default: [], index: true },
     notes: { type: String, trim: true },
     registeredBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },

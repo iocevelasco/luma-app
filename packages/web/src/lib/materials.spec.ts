@@ -161,7 +161,7 @@ describe('buildPurchaseRows', () => {
       withSupplier('a', 'Corralón Sur', 'solicitado', 'Arena'),
       withSupplier('b', 'Corralón Sur', 'pendiente', 'Cemento'),
     ]);
-    expect(rows.map((r) => [r.id, r.requested])).toEqual([
+    expect(rows.map((r) => [r.id, r.tagged])).toEqual([
       ['b', false],
       ['a', true],
     ]);
@@ -175,7 +175,7 @@ describe('buildPurchaseText', () => {
       withSupplier('b', 'Corralón Sur', 'solicitado', 'Arena'),
       withSupplier('c', undefined, 'pendiente', 'Pintura'),
     ]);
-    const text = buildPurchaseText(rows, { unit: () => 'Unidad', requested: 'ya pedido' });
+    const text = buildPurchaseText(rows, { unit: () => 'Unidad', tag: 'ya pedido' });
     expect(text.split('\n')).toEqual([
       '- Cemento: 1 Unidad · Corralón Sur',
       '- Arena: 1 Unidad · Corralón Sur (ya pedido)',
@@ -257,5 +257,27 @@ describe('proveedor vinculado', () => {
     expect(providerMatchFor(written('a', ' 800 ALUMINIO'), providers)?.id).toBe('p2');
     expect(providerMatchFor(written('a', 'JDR'), providers)).toBeNull();
     expect(providerMatchFor(linked('a', '800 Aluminio'), providers)).toBeNull();
+  });
+});
+
+describe('lista de lo comprado', () => {
+  it('marca lo que ya llegó y lo deja último dentro del proveedor', () => {
+    const rows = buildPurchaseRows(
+      [
+        { ...material('llego', 'en_obra'), supplier: 'Corralón' },
+        { ...material('falta', 'comprado'), supplier: 'Corralón' },
+      ],
+      'es',
+      'bought',
+    );
+    expect(rows.map((row) => [row.id, row.tagged])).toEqual([
+      ['falta', false],
+      ['llego', true],
+    ]);
+  });
+
+  it('en "Por comprar" lo marcado sigue siendo lo Solicitado', () => {
+    const [row] = buildPurchaseRows([material('a', 'solicitado')]);
+    expect(row?.tagged).toBe(true);
   });
 });

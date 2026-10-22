@@ -72,7 +72,8 @@ explicable.**
   grupo "Sin X" va siempre al final.
 - Orden dentro del grupo: lo que pide acción antes que lo que espera.
 - Por qué: si el contenedor tiene la forma de un ítem, se lee como un ítem más.
-- Implementa: Hitos (mes), `BoughtGroup` en Compras.
+- Implementa: `ListSection` (`components/common/row-card-list.tsx`), en
+  Compras, Gastos, Cobros, Hitos, Documentos, Presupuesto y Personal.
 
 **IA-8. La fila no repite la dimensión del grupo.** Si se agrupa por estado, la
 fila no lleva el badge de estado; si se agrupa por tarea, la fila no dice la
@@ -155,20 +156,40 @@ color no está informando. Ver *Tags* en `DESIGN.md`.
 
 ## 6. Densidad y espaciado
 
-**IA-15. Una lista es una superficie con divisores, no una caja por fila.**
-- Contenedor: `Card` (`rounded-3xl`) o `CardList`; filas con `divide-y`, `py-3`.
-- Entre grupos, `gap-6`; del rótulo a la primera fila, `pb-2`. La línea
-  divisoria va entre filas, no bajo el rótulo.
-- Por qué: una caja por fila suma borde y aire por cada ítem y la lista se
-  vuelve el doble de alta sin decir nada más.
-- Implementa: `CardList` (`components/ui/card.tsx`, hoy sin uso).
+**IA-15. Una lista es una pila de filas-tarjeta; los grupos se separan con
+rótulo y divisor.**
+- Cada fila es su propia tarjeta (`RowCard`): `bg-card`, `rounded-2xl`, sin
+  borde, `shadow-surface`, `p-4`. Entre filas, 12px de aire (`RowCardList`).
+  La lista va directo sobre el lienzo, no dentro de una `Card`.
+- Los grupos de una misma lista (por tarea, por estado, por categoría, por
+  mes) son un `ListSection`: el rótulo de IA-7, un divisor de 1px que corre
+  hasta el borde y el metadato a la derecha. Entre grupos, 32px
+  (`ListSections`). El grupo **nunca** es otra caja.
+- Las tablas (`ResponsiveTable`) siguen la misma regla: una tarjeta por fila,
+  columnas alineadas entre filas, encabezados sueltos arriba.
+- Bajo el puntero (o con el foco dentro) la fila sube (`shadow-lift`) y su
+  acción visible (`RowCardAction`) se rellena: se ve qué fila se está por
+  tocar antes de tocarla.
+- Por qué: en una superficie con divisores las filas se funden y el ojo pierde
+  la línea al ir del nombre a la acción; con la fila como unidad visible se
+  escanea mejor, y el divisor queda reservado para lo que de verdad separa
+  —un grupo de otro—. *Revierte la versión anterior de esta regla* ("una
+  superficie con divisores, no una caja por fila"), por pedido explícito.
+- Fuera de alcance: listas dentro de un diálogo o un drawer (selectores) y
+  los resúmenes compactos del Resumen de la obra, que son parte de una card.
+- Implementa: `components/common/row-card-list.tsx` (`RowCardList`,
+  `RowCard`, `RowCardBody`, `RowCardEnd`, `RowCardLead`, `RowCardDate`,
+  `RowCardAction`, `ListSection`, `ListSections`) y `ResponsiveTable`.
+  `CardList` (`components/ui/card.tsx`) no se usa para listas.
 
 ## 7. Mobile
 
 **IA-16. Lo de escritorio se reacomoda, no se esconde detrás de un gesto.**
 - Objetivo táctil de 44px (`max-sm:min-h-11` / `max-sm:size-11`) en todo
   control de fila.
-- Tablas: `ResponsiveTable` (tarjeta en mobile). Nada de scroll horizontal.
+- Tablas: `ResponsiveTable` (la fila-tarjeta apila sus datos). Nada de scroll
+  horizontal. El bloque derecho de una fila baja a su propia línea antes que
+  salirse de la tarjeta (`RowCardEnd`).
 - Nada que dependa de hover o de tooltip.
 - Barras contextuales (selección) fijas abajo; el FAB sube sobre el safe area.
 - Por qué: en obra se usa el celular, con una mano y a veces con guantes.
@@ -177,7 +198,8 @@ color no está informando. Ver *Tags* en `DESIGN.md`.
 
 ## Estado actual por vista
 
-Revisado contra el código de la rama `claude/materials-provider-link`.
+Revisado contra el código de la rama `claude/materials-provider-link`;
+la fila de IA-15, contra `claude/row-cards`.
 "sí" cumple, "no" viola, "parcial" cumple a medias, "—" no aplica.
 
 | Regla | Compras | Proveedores | Gastos | Cobros | Documentos | Hitos | Equipo | Personal |
@@ -194,7 +216,7 @@ Revisado contra el código de la rama `claude/materials-provider-link`.
 | IA-11 una acción + "…", destructivo confirmado | parcial ⁹ | no ¹¹ | no ¹² | no ¹² | parcial ¹³ | sí | parcial ¹⁴ | — |
 | IA-12 un código, un significado | no ¹⁵ | sí | sí | sí | sí | sí | sí | — |
 | IA-13 selección múltiple | sí | — | — | — | — | — | — | — |
-| IA-15 superficie con divisores | parcial ¹⁶ | parcial ¹⁶ | no | no | — | — | no | — |
+| IA-15 filas-tarjeta, grupos con divisor | sí | sí | sí | sí | sí ¹⁶ | sí | sí | sí |
 
 1. Tres botones de exportar dentro del contenido; con selección se mudan al "…".
 2. Pestañas dentro de `children`, no en `toolbar`; la pestaña no está en la URL.
@@ -211,7 +233,7 @@ Revisado contra el código de la rama `claude/materials-provider-link`.
 13. Descargar y borrar visibles; el borrado sí confirma.
 14. `Select` de rol inline + tacho visible; el tacho sí confirma.
 15. "Solicitado" y "Empieza en N días": mismo tono `warning` y mismo glifo `Clock`.
-16. Una superficie con `divide-y`, pero `rounded-lg` en vez del radio de Card. En Proveedores, el contenedor de `ResponsiveTable`.
+16. Documentos es una grilla de miniaturas, no una lista: cada documento ya es su tarjeta; los grupos sí van con `ListSection`.
 
 No revisado en detalle: el Tablero (`TaskBoard`), el Gantt del Cronograma por
 dentro, Presupuesto y el Resumen de la obra (`project-detail.tsx`, sólo se

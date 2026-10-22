@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { TaskBoard } from '@/components/activities/task-board';
 import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
+import { ListSections } from '@/components/common/row-card-list';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivityAttendance } from '@/components/labor/activity-attendance';
@@ -150,7 +151,7 @@ export function ProjectLaborPage() {
         es con cuánta gente se cuenta hoy. Antes había que sumar a ojo fila
         por fila, y la lista de presentes repetía lo mismo que el formulario.
       */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-card p-4 shadow-surface sm:px-5">
         <div>
           <p className="text-2xs text-muted-foreground">{t('labor.summary.present')}</p>
           <p className="text-2xl font-semibold tabular-nums">
@@ -174,6 +175,8 @@ export function ProjectLaborPage() {
 
       <div className="flex flex-col gap-3">
         <h3 className="text-sm font-medium">{t('labor.byActivityTitle')}</h3>
+        {/* Cada actividad es un grupo: rótulo + divisor, y su cuadrilla en filas-tarjeta. */}
+        <ListSections>
         {activitiesToday.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('labor.emptyState')}</p>
         ) : (
@@ -189,6 +192,7 @@ export function ProjectLaborPage() {
             />
           ))
         )}
+        </ListSections>
       </div>
         </TabsContent>
 

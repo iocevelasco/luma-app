@@ -100,5 +100,20 @@ test.describe('selección múltiple de materiales', () => {
     await page.getByRole('tab', { name: /comprados/i }).click();
     await page.getByRole('tab', { name: /por comprar/i }).click();
     await expect(toolbar).toHaveCount(0);
+
+    // Se compran, y "Comprados" tiene su propia lista para mandar.
+    await toBuy.getByRole('checkbox', { name: 'Seleccionar todos', exact: true }).click();
+    await toolbar.getByRole('button', { name: /marcar comprado/i }).click();
+    await page.getByRole('button', { name: /continuar/i }).click();
+    await expect(toolbar).toHaveCount(0);
+
+    await page.getByRole('tab', { name: /comprados/i }).click();
+    const bought = page.getByRole('tabpanel', { name: /comprados/i });
+    await expect(bought.getByRole('button', { name: /copiar lista/i })).toBeVisible();
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      bought.getByRole('button', { name: /descargar pdf/i }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/^comprados-.+-\d{4}-\d{2}-\d{2}\.pdf$/);
   });
 });

@@ -132,7 +132,7 @@ export function ProvidersDirectoryPage() {
           <div>
             <span className="font-medium">{provider.name}</span>
             {provider.companyName && (
-              <p className="text-sm text-muted-foreground">{provider.companyName}</p>
+              <p className="text-xs text-muted-foreground">{provider.companyName}</p>
             )}
           </div>
         ),

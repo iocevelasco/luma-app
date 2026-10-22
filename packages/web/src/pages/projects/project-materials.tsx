@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { type MaterialItem, type MaterialStatus } from '@luma/shared';
+import { type MaterialInvoiceRef, type MaterialItem, type MaterialStatus } from '@luma/shared';
 import { differenceInCalendarDays, format } from 'date-fns';
 import {
   ArrowRight,
@@ -11,6 +11,7 @@ import {
   Package,
   Pencil,
   Plus,
+  ReceiptText,
   Share2,
   Trash2,
   Truck,
@@ -31,11 +32,20 @@ import {
 } from '@/components/ui/alert-dialog';
 import { fromDayKey } from '@/components/common/date-range-filter';
 import { MaterialDrawer } from '@/components/materials/material-drawer';
+import { MaterialInvoiceDialog } from '@/components/materials/material-invoice-dialog';
 import { ProviderCombobox } from '@/components/materials/provider-combobox';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { TriStateCheckbox } from '@/components/common/tri-state-checkbox';
+import {
+  ListSection,
+  ListSections,
+  RowCard,
+  RowCardAction,
+  RowCardEnd,
+  RowCardList,
+} from '@/components/common/row-card-list';
 import { Spinner } from '@/components/ui/spinner';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -54,6 +64,7 @@ import {
   useBulkDeleteMaterials,
   useBulkUpdateMaterials,
   useDeleteMaterial,
+  useDeleteMaterialInvoice,
   useMaterials,
   useUpdateMaterial,
 } from '@/hooks/materials/use-material-queries';
@@ -72,6 +83,7 @@ import {
   providerMatchFor,
   selectionState,
   supplierName,
+  type PurchaseListKind,
   type PurchaseRow,
 } from '@/lib/materials';
 import { cn } from '@/lib/utils';
@@ -99,6 +111,57 @@ function copyText(text: string) {
     document.body.removeChild(textarea);
   }
   return Promise.resolve();
+}
+
+/**
+ * Lo que cambia entre exportar la lista de compras y la de lo ya comprado.
+ * La construcción es una sola (`buildPurchaseRows`); acá sólo los textos.
+ */
+const EXPORT_COPY: Record<PurchaseListKind, { title: string; tag: string; filePrefix: string }> = {
+  toBuy: { title: 'material.pdf.title', tag: 'material.list.requestedTag', filePrefix: 'compras' },
+  bought: { title: 'material.pdf.titleBought', tag: 'material.list.onSiteTag', filePrefix: 'comprados' },
+};
+
+/** Descargar PDF, Copiar y Compartir: los mismos tres en las dos pestañas. */
+function ExportActions({
+  generatingPdf,
+  canShare,
+  onDownloadPdf,
+  onCopy,
+  onShare,
+}: {
+  generatingPdf: boolean;
+  canShare: boolean;
+  onDownloadPdf: () => void;
+  onCopy: () => void;
+  onShare: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className="max-sm:min-h-11"
+        onClick={onDownloadPdf}
+        disabled={generatingPdf}
+        aria-busy={generatingPdf}
+      >
+        {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+        {generatingPdf ? t('material.list.generatingPdf') : t('material.list.downloadPdf')}
+      </Button>
+      <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={onCopy}>
+        <Copy className="size-4" />
+        {t('material.list.copyList')}
+      </Button>
+      {canShare && (
+        <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={onShare}>
+          <Share2 className="size-4" />
+          {t('material.list.share')}
+        </Button>
+      )}
+    </>
+  );
 }
 
 /**
@@ -171,14 +234,6 @@ function GroupCheckbox({
   );
 }
 
-/**
- * El rótulo de un grupo —una tarea en "Por comprar", un tramo en "Comprados"—.
- * Chico, en mayúsculas y atenuado a propósito: con el mismo estilo que el
- * nombre de un material, el grupo se leía como una fila más y su casilla
- * parecía "seleccionar este material". Uno solo para los dos tipos de grupo.
- */
-const GROUP_LABEL = 'text-xs font-medium uppercase tracking-wide text-muted-foreground';
-
 /** Lo que una fila necesita para ofrecer su casilla. Sin esto, no la muestra. */
 interface RowSelection {
   selected: ReadonlySet<string>;
@@ -195,6 +250,8 @@ function MaterialRow({
   providers,
   onEdit,
   onDelete,
+  onInvoice,
+  onDeleteInvoice,
 }: {
   material: MaterialItem;
   selection?: RowSelection;
@@ -205,6 +262,9 @@ function MaterialRow({
   /** Los diálogos viven en la página: una lista larga no monta uno por fila. */
   onEdit: (material: MaterialItem) => void;
   onDelete: (material: MaterialItem) => void;
+  /** Cargar la factura de este material. Sin esto (sin permiso) no se ofrece. */
+  onInvoice?: (materials: MaterialItem[]) => void;
+  onDeleteInvoice?: (invoice: MaterialInvoiceRef) => void;
   /** Sólo donde la fila no está bajo el encabezado de su actividad. */
   activityName?: string;
   /** El material al que se llegó con `?material=` desde el resumen de la obra. */
@@ -225,15 +285,8 @@ function MaterialRow({
   }, [highlighted]);
 
   return (
-    <li
-      ref={rowRef}
-      aria-current={highlighted || undefined}
-      className={cn(
-        'flex flex-wrap items-center justify-between gap-2 py-3 text-sm',
-        highlighted && '-mx-2 rounded-md bg-primary/10 px-2',
-      )}
-    >
-      <div className="flex min-w-0 items-center gap-2">
+    <RowCard ref={rowRef} highlighted={highlighted} className="justify-between">
+      <div className="flex min-w-0 flex-1 basis-56 items-center gap-3">
         {selection && (
           <SelectCheckbox
             state={selection.selected.has(material.id)}
@@ -243,7 +296,7 @@ function MaterialRow({
         )}
         <div className="min-w-0">
           <p className="font-medium">{material.name}</p>
-          <p className="text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {material.quantity} {t(`material.unit.${material.unit}`)}
             {supplier ? ` · ${supplier}` : ''}
             {material.providerActive === false && ` (${t('material.provider.inactive')})`}
@@ -273,7 +326,55 @@ function MaterialRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <RowCardEnd>
+        {/*
+          La factura se ve en la fila, antes del estado: es lo que responde
+          "¿esto ya está documentado?" sin abrir Finanzas.
+        */}
+        {material.invoices && material.invoices.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1 max-sm:min-h-11"
+                aria-label={t('material.invoice.openMenu', {
+                  count: material.invoices.length,
+                  name: material.name,
+                })}
+              >
+                <ReceiptText aria-hidden className="size-4" />
+                {material.invoices.length > 1 && <span className="tabular-nums">{material.invoices.length}</span>}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {material.invoices.map((invoice) => (
+                <div key={invoice.id}>
+                  {invoice.url && (
+                    <DropdownMenuItem asChild className="max-sm:min-h-11">
+                      <a href={invoice.url} target="_blank" rel="noopener noreferrer">
+                        <ReceiptText className="size-4" />
+                        <span className="max-w-56 truncate">{invoice.fileName}</span>
+                      </a>
+                    </DropdownMenuItem>
+                  )}
+                  {invoice.canDelete && onDeleteInvoice && (
+                    <DropdownMenuItem
+                      variant="destructive"
+                      className="max-sm:min-h-11"
+                      onSelect={() => onDeleteInvoice(invoice)}
+                    >
+                      <Trash2 className="size-4" />
+                      {t('material.invoice.delete')}
+                    </DropdownMenuItem>
+                  )}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         <MaterialStatusBadge status={material.status} />
 
         {/*
@@ -282,16 +383,10 @@ function MaterialRow({
           material. El outline queda para Cancelar y Volver (DESIGN.md).
         */}
         {canEdit && next && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="max-sm:min-h-11"
-            onClick={() => setPendingStatus(next)}
-          >
+          <RowCardAction type="button" onClick={() => setPendingStatus(next)}>
             {t(`material.action.${next}`)}
             <ArrowRight aria-hidden className="size-4" />
-          </Button>
+          </RowCardAction>
         )}
 
         {/*
@@ -304,7 +399,8 @@ function MaterialRow({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="max-sm:size-11"
+            // En celular no entra junto al estado y la acción; editar sigue en "…" (IA-11).
+            className="max-sm:hidden"
             aria-label={t('material.list.edit', { name: material.name })}
             onClick={() => onEdit(material)}
           >
@@ -336,6 +432,17 @@ function MaterialRow({
                 </DropdownMenuItem>
               ))}
 
+              {/* Lo Pendiente no se compró: no tiene factura. */}
+              {onInvoice && material.status !== 'pendiente' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onInvoice([material])}>
+                    <ReceiptText className="size-4" />
+                    {t('material.invoice.action')}
+                  </DropdownMenuItem>
+                </>
+              )}
+
               <DropdownMenuSeparator />
               {material.editable ? (
                 <>
@@ -361,7 +468,7 @@ function MaterialRow({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-      </div>
+      </RowCardEnd>
 
       <AlertDialog open={pendingStatus !== null} onOpenChange={(open) => !open && setPendingStatus(null)}>
         <AlertDialogContent>
@@ -395,7 +502,7 @@ function MaterialRow({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </li>
+    </RowCard>
   );
 }
 
@@ -411,6 +518,8 @@ function ToBuyGroup({
   providers,
   onEdit,
   onDelete,
+  onInvoice,
+  onDeleteInvoice,
 }: {
   /** `null` = materiales sin actividad. */
   name: string | null;
@@ -423,6 +532,9 @@ function ToBuyGroup({
   providers?: readonly { id: string; name: string }[];
   onEdit: (material: MaterialItem) => void;
   onDelete: (material: MaterialItem) => void;
+  /** Cargar la factura de este material. Sin esto (sin permiso) no se ofrece. */
+  onInvoice?: (materials: MaterialItem[]) => void;
+  onDeleteInvoice?: (invoice: MaterialInvoiceRef) => void;
 }) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
@@ -432,21 +544,21 @@ function ToBuyGroup({
   const urgent = days !== null && days <= URGENT_WITHIN_DAYS;
 
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
-        <div className="flex min-w-0 items-center gap-2">
-          {selection && (
-            <GroupCheckbox
-              ids={materials.map((material) => material.id)}
-              selected={selection.selected}
-              label={t('material.bulk.selectGroup', { name: groupName })}
-              onSetMany={selection.onSetMany}
-            />
-          )}
-          <p className={GROUP_LABEL}>{groupName}</p>
-        </div>
-        {startDate && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+    <ListSection
+      label={groupName}
+      leading={
+        selection && (
+          <GroupCheckbox
+            ids={materials.map((material) => material.id)}
+            selected={selection.selected}
+            label={t('material.bulk.selectGroup', { name: groupName })}
+            onSetMany={selection.onSetMany}
+          />
+        )
+      }
+      meta={
+        startDate && (
+          <>
             <span>
               {t('material.list.startsOn', {
                 date: format(fromDayKey(startDate), 'PP', { locale: dateLocale }),
@@ -465,10 +577,11 @@ function ToBuyGroup({
                     : t('material.list.startsInDays', { count: days! })}
               </Badge>
             )}
-          </div>
-        )}
-      </div>
-      <ul className="flex flex-col divide-y divide-border">
+          </>
+        )
+      }
+    >
+      <RowCardList>
         {materials.map((material) => (
           <MaterialRow
             key={material.id}
@@ -480,10 +593,12 @@ function ToBuyGroup({
             providers={providers}
             onEdit={onEdit}
             onDelete={onDelete}
+            onInvoice={onInvoice}
+            onDeleteInvoice={onDeleteInvoice}
           />
         ))}
-      </ul>
-    </div>
+      </RowCardList>
+    </ListSection>
   );
 }
 
@@ -499,6 +614,8 @@ function BoughtGroup({
   providers,
   onEdit,
   onDelete,
+  onInvoice,
+  onDeleteInvoice,
 }: {
   title: string;
   materials: MaterialItem[];
@@ -510,26 +627,29 @@ function BoughtGroup({
   providers?: readonly { id: string; name: string }[];
   onEdit: (material: MaterialItem) => void;
   onDelete: (material: MaterialItem) => void;
+  /** Cargar la factura de este material. Sin esto (sin permiso) no se ofrece. */
+  onInvoice?: (materials: MaterialItem[]) => void;
+  onDeleteInvoice?: (invoice: MaterialInvoiceRef) => void;
 }) {
   const { t } = useTranslation();
   if (materials.length === 0) return null;
 
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        {selection && (
+    <ListSection
+      label={title}
+      meta={materials.length}
+      leading={
+        selection && (
           <GroupCheckbox
             ids={materials.map((material) => material.id)}
             selected={selection.selected}
             label={t('material.bulk.selectGroup', { name: title })}
             onSetMany={selection.onSetMany}
           />
-        )}
-        <p className={GROUP_LABEL}>
-          {title} ({materials.length})
-        </p>
-      </div>
-      <ul className="flex flex-col divide-y divide-border">
+        )
+      }
+    >
+      <RowCardList>
         {materials.map((material) => (
           <MaterialRow
             key={material.id}
@@ -541,11 +661,13 @@ function BoughtGroup({
             providers={providers}
             onEdit={onEdit}
             onDelete={onDelete}
+            onInvoice={onInvoice}
+            onDeleteInvoice={onDeleteInvoice}
             activityName={material.activityId ? activityById.get(material.activityId)?.name : undefined}
           />
         ))}
-      </ul>
-    </div>
+      </RowCardList>
+    </ListSection>
   );
 }
 
@@ -564,21 +686,21 @@ type PendingBulk =
  */
 function SelectionBar({
   selected,
-  exportable,
   canShare,
   generatingPdf,
   onAction,
+  onInvoice,
   onDownloadPdf,
   onCopy,
   onShare,
   onClear,
 }: {
   selected: MaterialItem[];
-  /** Copiar, compartir y PDF arman la lista de compras: sólo en "Por comprar". */
-  exportable: boolean;
   canShare: boolean;
   generatingPdf: boolean;
   onAction: (action: PendingBulk) => void;
+  /** Sin esto (sin permiso) no se ofrece. */
+  onInvoice?: () => void;
   onDownloadPdf: () => void;
   onCopy: () => void;
   onShare: () => void;
@@ -654,24 +776,30 @@ function SelectionBar({
             </DropdownMenuItem>
           ))}
 
-          {exportable && (
+          {onInvoice && selected.every((material) => material.status !== 'pendiente') && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="max-sm:min-h-11" disabled={generatingPdf} onSelect={onDownloadPdf}>
-                <FileDown className="size-4" />
-                {t('material.list.downloadPdf')}
+              <DropdownMenuItem className="max-sm:min-h-11" onSelect={onInvoice}>
+                <ReceiptText className="size-4" />
+                {t('material.invoice.action')}
               </DropdownMenuItem>
-              <DropdownMenuItem className="max-sm:min-h-11" onSelect={onCopy}>
-                <Copy className="size-4" />
-                {t('material.list.copyList')}
-              </DropdownMenuItem>
-              {canShare && (
-                <DropdownMenuItem className="max-sm:min-h-11" onSelect={onShare}>
-                  <Share2 className="size-4" />
-                  {t('material.list.share')}
-                </DropdownMenuItem>
-              )}
             </>
+          )}
+
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="max-sm:min-h-11" disabled={generatingPdf} onSelect={onDownloadPdf}>
+            <FileDown className="size-4" />
+            {t('material.list.downloadPdf')}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="max-sm:min-h-11" onSelect={onCopy}>
+            <Copy className="size-4" />
+            {t('material.list.copyList')}
+          </DropdownMenuItem>
+          {canShare && (
+            <DropdownMenuItem className="max-sm:min-h-11" onSelect={onShare}>
+              <Share2 className="size-4" />
+              {t('material.list.share')}
+            </DropdownMenuItem>
           )}
 
           {/* Asignar es corregir: sólo si todos siguen editables, como eliminar. */}
@@ -743,7 +871,12 @@ export function ProjectMaterialsPage() {
   const [bulkProviderId, setBulkProviderId] = useState<string | null>(null);
 
   // Gerente y supervisor gestionan las compras; lo decide la grilla.
-  const canWrite = useProjectCapabilities(projectId).can('material.write');
+  const { can } = useProjectCapabilities(projectId);
+  const canWrite = can('material.write');
+  const canInvoice = can('material.invoice.write');
+  const deleteInvoice = useDeleteMaterialInvoice(projectId!);
+  const [invoicing, setInvoicing] = useState<MaterialItem[] | null>(null);
+  const [deletingInvoice, setDeletingInvoice] = useState<MaterialInvoiceRef | null>(null);
   // Para vincular y asignar. Sin escritura no hace falta pedirlos.
   const { data: providersData } = useProviders(canWrite ? projectId : undefined);
   const providers = providersData?.providers;
@@ -767,14 +900,23 @@ export function ProjectMaterialsPage() {
 
   // La misma lista para copiar, compartir y el PDF: agrupada por proveedor.
   const purchaseRows = useMemo(() => buildPurchaseRows(toBuy, i18n.language), [toBuy, i18n.language]);
+  const boughtRows = useMemo(
+    () => buildPurchaseRows(bought, i18n.language, 'bought'),
+    [bought, i18n.language],
+  );
 
   // Lo seleccionado se lee contra la lista actual: un material que otra
   // persona borró o pasó de pestaña deja de contar solo, sin limpiar nada.
   const selectedToBuy = useMemo(() => toBuy.filter((m) => selected.has(m.id)), [toBuy, selected]);
   const selectedBought = useMemo(() => bought.filter((m) => selected.has(m.id)), [bought, selected]);
+  // La selección es de una pestaña a la vez: exporta con los textos de esa.
+  const selectedKind: PurchaseListKind = selectedToBuy.length > 0 ? 'toBuy' : 'bought';
   const selectedRows = useMemo(
-    () => buildPurchaseRows(selectedToBuy, i18n.language),
-    [selectedToBuy, i18n.language],
+    () =>
+      selectedKind === 'toBuy'
+        ? buildPurchaseRows(selectedToBuy, i18n.language)
+        : buildPurchaseRows(selectedBought, i18n.language, 'bought'),
+    [selectedKind, selectedToBuy, selectedBought, i18n.language],
   );
   const hasSelection = selectedToBuy.length + selectedBought.length > 0;
 
@@ -806,22 +948,22 @@ export function ProjectMaterialsPage() {
   // El PDF y su librería pesan: se bajan apenas hay algo que descargar, no al
   // tocar el botón. En Safari, descargar o compartir tiene que ocurrir dentro
   // del gesto, y esperar un chunk grande lo deja afuera.
-  const hasToBuy = toBuy.length > 0;
+  const hasExportable = toBuy.length > 0 || bought.length > 0;
   useEffect(() => {
-    if (!hasToBuy) return;
+    if (!hasExportable) return;
     void import('@/lib/materials-pdf');
     void import('jspdf');
     void import('jspdf-autotable');
-  }, [hasToBuy]);
+  }, [hasExportable]);
 
-  function buildCopyText(rows: PurchaseRow[]): string {
+  function buildCopyText(rows: PurchaseRow[], kind: PurchaseListKind): string {
     return buildPurchaseText(rows, {
       unit: (unit) => t(`material.unit.${unit}`),
-      requested: t('material.list.requestedTag'),
+      tag: t(EXPORT_COPY[kind].tag),
     });
   }
 
-  async function handleDownloadPdf(rows: PurchaseRow[]) {
+  async function handleDownloadPdf(rows: PurchaseRow[], kind: PurchaseListKind) {
     if (generatingPdf) return;
     setGeneratingPdf(true);
     try {
@@ -833,7 +975,7 @@ export function ProjectMaterialsPage() {
         dateLabel: format(now, 'P', { locale: dateLocale }),
         rows,
         labels: {
-          title: t('material.pdf.title'),
+          title: t(EXPORT_COPY[kind].title),
           summary: `${t('material.pdf.materials', { count: rows.length })} · ${t('material.pdf.suppliers', { count: countSuppliers(rows) })}`,
           columns: {
             material: t('material.pdf.columnMaterial'),
@@ -841,12 +983,12 @@ export function ProjectMaterialsPage() {
             supplier: t('material.pdf.columnSupplier'),
           },
           noSupplier: t('material.list.noSupplier'),
-          requested: t('material.list.requestedTag'),
+          tag: t(EXPORT_COPY[kind].tag),
           page: (page, total) => t('material.pdf.page', { page, total }),
           unit: (unit) => t(`material.unit.${unit}`),
         },
       });
-      const fileName = purchaseFileName(projectData?.project.name ?? '', now);
+      const fileName = purchaseFileName(projectData?.project.name ?? '', now, EXPORT_COPY[kind].filePrefix);
       const file = new File([blob], fileName, { type: 'application/pdf' });
 
       // En el celular lo útil es mandarlo —por WhatsApp al proveedor, o
@@ -885,19 +1027,19 @@ export function ProjectMaterialsPage() {
     }
   }
 
-  async function handleCopy(rows: PurchaseRow[]) {
+  async function handleCopy(rows: PurchaseRow[], kind: PurchaseListKind) {
     try {
-      await copyText(buildCopyText(rows));
+      await copyText(buildCopyText(rows, kind));
       toast.success(t('material.list.copied'));
     } catch {
       toast.error(t('material.errors.copy'));
     }
   }
 
-  async function handleShare(rows: PurchaseRow[]) {
+  async function handleShare(rows: PurchaseRow[], kind: PurchaseListKind) {
     if (typeof navigator.share === 'function') {
       try {
-        await navigator.share({ text: buildCopyText(rows) });
+        await navigator.share({ text: buildCopyText(rows, kind) });
       } catch {
         // El usuario canceló el share sheet — no es un error a mostrar.
       }
@@ -912,17 +1054,17 @@ export function ProjectMaterialsPage() {
   const highlighted = materialsData.materials.find((m) => m.id === highlightedId);
   const selectedMaterials = selectedToBuy.length > 0 ? selectedToBuy : selectedBought;
 
-  function selectionBar(exportable: boolean) {
+  function selectionBar() {
     return (
       <SelectionBar
         selected={selectedMaterials}
-        exportable={exportable}
         canShare={canShare}
         generatingPdf={generatingPdf}
         onAction={setPendingBulk}
-        onDownloadPdf={() => void handleDownloadPdf(selectedRows)}
-        onCopy={() => void handleCopy(selectedRows)}
-        onShare={() => void handleShare(selectedRows)}
+        onInvoice={canInvoice ? () => setInvoicing(selectedMaterials) : undefined}
+        onDownloadPdf={() => void handleDownloadPdf(selectedRows, selectedKind)}
+        onCopy={() => void handleCopy(selectedRows, selectedKind)}
+        onShare={() => void handleShare(selectedRows, selectedKind)}
         onClear={clearSelection}
       />
     );
@@ -976,47 +1118,30 @@ export function ProjectMaterialsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent
-          value="toBuy"
-          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
-        >
+        <TabsContent value="toBuy" className="flex flex-col gap-4">
           {toBuy.length > 0 && hasSelection && (
             <div className="flex flex-wrap items-center gap-2">
               {selectAll(toBuy)}
-              {selectionBar(true)}
+              {selectionBar()}
             </div>
           )}
           {toBuy.length > 0 && !hasSelection && (
             <div className="flex flex-wrap items-center justify-end gap-2">
               <div className="mr-auto">{selectAll(toBuy)}</div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="max-sm:min-h-11"
-                onClick={() => void handleDownloadPdf(purchaseRows)}
-                disabled={generatingPdf}
-                aria-busy={generatingPdf}
-              >
-                {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
-                {generatingPdf ? t('material.list.generatingPdf') : t('material.list.downloadPdf')}
-              </Button>
-              <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={() => void handleCopy(purchaseRows)}>
-                <Copy className="size-4" />
-                {t('material.list.copyList')}
-              </Button>
-              {canShare && (
-                <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={() => void handleShare(purchaseRows)}>
-                  <Share2 className="size-4" />
-                  {t('material.list.share')}
-                </Button>
-              )}
+              <ExportActions
+                generatingPdf={generatingPdf}
+                canShare={canShare}
+                onDownloadPdf={() => void handleDownloadPdf(purchaseRows, 'toBuy')}
+                onCopy={() => void handleCopy(purchaseRows, 'toBuy')}
+                onShare={() => void handleShare(purchaseRows, 'toBuy')}
+              />
             </div>
           )}
 
           {toBuyGroups.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('material.list.toBuyEmpty')}</p>
           ) : (
-            <div className="flex flex-col gap-5">
+            <ListSections>
               {toBuyGroups.map((group) => (
                 <ToBuyGroup
                   key={group.activityId ?? 'none'}
@@ -1030,26 +1155,38 @@ export function ProjectMaterialsPage() {
                   providers={providers}
                   onEdit={setEditing}
                   onDelete={setDeleting}
+                  onInvoice={canInvoice ? setInvoicing : undefined}
+                  onDeleteInvoice={setDeletingInvoice}
                 />
               ))}
-            </div>
+            </ListSections>
           )}
         </TabsContent>
 
-        <TabsContent
-          value="bought"
-          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
-        >
+        <TabsContent value="bought" className="flex flex-col gap-4">
           {bought.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('material.list.boughtEmpty')}</p>
           ) : (
             <>
-              {selection && (
+              {/* La misma barra que "Por comprar": la lista de lo comprado también se manda. */}
+              {hasSelection ? (
                 <div className="flex flex-wrap items-center gap-2">
                   {selectAll(bought)}
-                  {hasSelection && selectionBar(false)}
+                  {selectionBar()}
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <div className="mr-auto">{selectAll(bought)}</div>
+                  <ExportActions
+                    generatingPdf={generatingPdf}
+                    canShare={canShare}
+                    onDownloadPdf={() => void handleDownloadPdf(boughtRows, 'bought')}
+                    onCopy={() => void handleCopy(boughtRows, 'bought')}
+                    onShare={() => void handleShare(boughtRows, 'bought')}
+                  />
                 </div>
               )}
+              <ListSections>
               <BoughtGroup
                 title={t('material.list.onTheWay')}
                 materials={onTheWay}
@@ -1061,6 +1198,8 @@ export function ProjectMaterialsPage() {
                 providers={providers}
                 onEdit={setEditing}
                 onDelete={setDeleting}
+                onInvoice={canInvoice ? setInvoicing : undefined}
+                onDeleteInvoice={setDeletingInvoice}
               />
               <BoughtGroup
                 title={t('material.list.onSite')}
@@ -1073,7 +1212,10 @@ export function ProjectMaterialsPage() {
                 providers={providers}
                 onEdit={setEditing}
                 onDelete={setDeleting}
+                onInvoice={canInvoice ? setInvoicing : undefined}
+                onDeleteInvoice={setDeletingInvoice}
               />
+              </ListSections>
             </>
           )}
         </TabsContent>
@@ -1086,6 +1228,38 @@ export function ProjectMaterialsPage() {
         open={editing !== null}
         onOpenChange={(open) => !open && setEditing(null)}
       />
+
+      <MaterialInvoiceDialog
+        projectId={projectId!}
+        projectCurrency={projectData?.project.currency ?? ''}
+        materials={invoicing ?? []}
+        open={invoicing !== null}
+        onOpenChange={(open) => !open && setInvoicing(null)}
+        onCreated={clearSelection}
+      />
+
+      <AlertDialog open={deletingInvoice !== null} onOpenChange={(open) => !open && setDeletingInvoice(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('material.invoice.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingInvoice && t('material.invoice.deleteBody', { name: deletingInvoice.fileName })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => {
+                if (deletingInvoice) deleteInvoice.mutate(deletingInvoice.id);
+                setDeletingInvoice(null);
+              }}
+            >
+              {t('material.invoice.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ResponsiveDialog
         open={pendingBulk?.kind === 'provider'}

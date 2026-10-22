@@ -57,6 +57,10 @@ describe('grilla de capacidades por obra', () => {
       expect(canInProject('supervisor', 'provider.assign')).toBe(true);
       expect(canInProject('supervisor', 'provider.manage')).toBe(false);
       expect(canInProject('supervisor', 'provider.create')).toBe(true);
+      expect(canInProject('supervisor', 'material.invoice.write')).toBe(true);
+      expect(canInProject('supervisor', 'expense.read')).toBe(false);
+      expect(canInProject('cliente', 'material.invoice.read', VISIBLE)).toBe(false);
+      expect(canInProject('contador', 'material.invoice.read')).toBe(false);
       expect(canInProject('cliente', 'provider.create', VISIBLE)).toBe(false);
     });
   });

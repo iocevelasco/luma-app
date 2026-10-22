@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/empty-state';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
+import { ListSection, ListSections } from '@/components/common/row-card-list';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { FormShell } from '@/components/common/form-shell';
@@ -223,18 +224,24 @@ function buildColumns(
     {
       id: 'quantity',
       header: t('budget.fields.quantity'),
+      headerClassName: 'text-right',
+      cellClassName: 'text-right tabular-nums',
       cell: (line) => line.quantity ?? '—',
       mobile: 'field',
     },
     {
       id: 'unitCost',
       header: t('budget.fields.unitCost'),
+      headerClassName: 'text-right',
+      cellClassName: 'text-right tabular-nums',
       cell: (line) => (line.unitCost !== undefined ? formatMoney(line.unitCost, currency, locale) : '—'),
       mobile: 'field',
     },
     {
       id: 'total',
       header: t('budget.fields.total'),
+      headerClassName: 'text-right',
+      cellClassName: 'text-right tabular-nums',
       cell: (line) => formatMoney(line.total, currency, locale),
       mobile: 'secondary',
     },
@@ -332,16 +339,13 @@ export function ProjectBudgetPage() {
           : t('budget.summary.sourceManual')}
       </p>
 
-      <div className="flex flex-col gap-6">
+      <ListSections>
         {chapters.map(([chapter, lines]) => (
-          <div key={chapter} className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">
-              {chapter} ({lines.length})
-            </h3>
+          <ListSection key={chapter} label={chapter} meta={lines.length}>
             <ResponsiveTable columns={columns} rows={lines} getRowKey={(line) => line.id} />
-          </div>
+          </ListSection>
         ))}
-      </div>
+      </ListSections>
     </PageLayout>
   );
 }

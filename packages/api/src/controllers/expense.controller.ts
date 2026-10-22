@@ -6,7 +6,9 @@ import {
   updateExpenseSchema,
   type Expense as ExpenseDTO,
 } from '@luma/shared';
+import { RECEIPT_MIME_TO_EXTENSION } from '../middleware/receipt-upload.middleware.js';
 import { Expense, type IExpense } from '../models/Expense.js';
+import { MaterialItem } from '../models/MaterialItem.js';
 import { Activity } from '../models/Activity.js';
 import { Provider } from '../models/Provider.js';
 import { User } from '../models/User.js';
@@ -26,12 +28,6 @@ import {
  * gastado, su utilidad sale de una resta (regla 13).
  */
 
-const RECEIPT_MIME_TO_EXTENSION: Record<string, string> = {
-  'application/pdf': '.pdf',
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-};
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
@@ -46,7 +42,15 @@ async function toExpenseDTO(
   registeredByName: string,
   providerName?: string,
   activityName?: string,
+  materialNames?: ReadonlyMap<string, string>,
 ): Promise<ExpenseDTO> {
+  // Un material que ya no existe no se inventa: se omite. No debería pasar
+  // (sólo se borra lo Pendiente, y eso no tiene factura), pero la lista no
+  // tiene que romperse si pasa.
+  const materials = (expense.materials ?? [])
+    .map((id) => ({ id: String(id), name: materialNames?.get(String(id)) }))
+    .filter((material): material is { id: string; name: string } => Boolean(material.name));
+
   return {
     id: String(expense._id),
     projectId: String(expense.project),
@@ -60,6 +64,7 @@ async function toExpenseDTO(
     providerName,
     activityId: expense.activity ? String(expense.activity) : undefined,
     activityName,
+    materials: materials.length > 0 ? materials : undefined,
     receipt: expense.receipt
       ? {
           fileName: expense.receipt.fileName,
@@ -78,22 +83,25 @@ async function toExpenseDTO(
   };
 }
 
-/** Nombres de personas, proveedores y actividades en tres consultas, no 3×N. */
+/** Nombres de personas, proveedores, actividades y materiales en cuatro consultas, no 4×N. */
 async function resolveNames(expenses: IExpense[]) {
   const userIds = [...new Set(expenses.map((e) => String(e.registeredBy)))];
   const providerIds = [...new Set(expenses.filter((e) => e.provider).map((e) => String(e.provider)))];
   const activityIds = [...new Set(expenses.filter((e) => e.activity).map((e) => String(e.activity)))];
+  const materialIds = [...new Set(expenses.flatMap((e) => (e.materials ?? []).map(String)))];
 
-  const [users, providers, activities] = await Promise.all([
+  const [users, providers, activities, materials] = await Promise.all([
     User.find({ _id: { $in: userIds } }).select('name'),
     providerIds.length ? Provider.find({ _id: { $in: providerIds } }).select('name') : [],
     activityIds.length ? Activity.find({ _id: { $in: activityIds } }).select('name') : [],
+    materialIds.length ? MaterialItem.find({ _id: { $in: materialIds } }).select('name') : [],
   ]);
 
   return {
     users: new Map(users.map((u) => [String(u._id), u.name])),
     providers: new Map(providers.map((p) => [String(p._id), p.name])),
     activities: new Map(activities.map((a) => [String(a._id), a.name])),
+    materials: new Map(materials.map((m) => [String(m._id), m.name])),
   };
 }
 
@@ -111,6 +119,7 @@ export async function listExpenses(req: Request, res: Response) {
           names.users.get(String(doc.registeredBy)) ?? '',
           doc.provider ? names.providers.get(String(doc.provider)) : undefined,
           doc.activity ? names.activities.get(String(doc.activity)) : undefined,
+          names.materials,
         ),
       ),
     );
@@ -258,6 +267,7 @@ export async function updateExpense(req: Request, res: Response) {
           names.users.get(String(expense.registeredBy)) ?? '',
           expense.provider ? names.providers.get(String(expense.provider)) : undefined,
           expense.activity ? names.activities.get(String(expense.activity)) : undefined,
+          names.materials,
         ),
       },
     });
