@@ -1,16 +1,9 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { EmptyState } from '@/components/common/empty-state';
+import { ROW_CARD, RowCard, RowCardList } from '@/components/common/row-card-list';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +32,10 @@ export interface ResponsiveColumn<T> {
   mobile?: ResponsiveColumnRole;
   headerClassName?: string;
   cellClassName?: string;
+  /** Ancho de la columna en escritorio, como pista de `grid-template-columns`
+   *  (`'8rem'`, `'minmax(0, 1fr)'`). Por defecto, la principal se lleva lo que
+   *  sobra y las demás miden su contenido. */
+  width?: string;
 }
 
 interface ResponsiveTableProps<T> {
@@ -67,13 +64,13 @@ interface ResponsiveTableProps<T> {
 }
 
 /**
- * Tabla que no desborda en celular.
+ * Tabla que no desborda en celular, con una fila-tarjeta por registro.
  *
  * Una tabla de 5 columnas en 390px no entra: o se aplasta hasta ser ilegible, o
  * empuja el body a scrollear de costado. El scroll horizontal tampoco alcanza —
  * esconde columnas detrás de un gesto que nadie descubre. Acá el mismo dato se
- * presenta de dos formas: tabla real de md en adelante, y una lista de tarjetas
- * abajo de eso, armada desde la MISMA definición de columnas para que las dos
+ * presenta de dos formas: de md en adelante, filas-tarjeta con las columnas
+ * alineadas como en una tabla; abajo de eso, la tarjeta con los datos apilados, armada desde la MISMA definición de columnas para que las dos
  * vistas no se desincronicen.
  */
 export function ResponsiveTable<T>({
@@ -111,6 +108,12 @@ export function ResponsiveTable<T>({
   const fields = columns.filter((c) => role(c) === 'field');
   const actions = columns.filter((c) => role(c) === 'actions');
 
+  // La columna principal se lleva el ancho que sobra; las demás miden lo que
+  // su contenido. Es la plantilla que comparten el encabezado y cada fila.
+  const template = columns
+    .map((c) => c.width ?? (c === primary ? 'minmax(8rem, 1fr)' : 'auto'))
+    .join(' ');
+
   return (
     <div
       className={cn(
@@ -121,50 +124,49 @@ export function ResponsiveTable<T>({
       )}
       aria-busy={isFetching || undefined}
     >
-      {/* Desktop: tabla real, dentro de un contenedor que scrollea por su cuenta
-          si el contenido es más ancho que la caja. */}
-      <div className="hidden md:block">
-        <div
-          className="overflow-x-auto rounded-lg border border-border bg-card shadow-surface"
-          tabIndex={0}
-          role="region"
-        >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((c) => (
-                  <TableHead key={c.id} className={c.headerClassName}>
-                    {c.header}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow
-                  key={getRowKey(row)}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={onRowClick ? 'cursor-pointer' : undefined}
-                >
-                  {columns.map((c) => (
-                    <TableCell key={c.id} className={c.cellClassName}>
-                      {c.cell(row)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+      {/*
+        Desktop: una tarjeta por fila, con las columnas alineadas entre todas.
+        Cada fila es un `subgrid` de la grilla de afuera: así una celda ancha
+        en la fila 7 corre la columna en todas, como en una tabla, sin que la
+        fila deje de ser su propia caja (con su radio, su sombra y su hover).
+        Los roles de ARIA devuelven la semántica de tabla que los <div> no tienen.
+      */}
+      <div
+        role="table"
+        className="hidden gap-x-4 gap-y-3 md:grid"
+        style={{ gridTemplateColumns: template }}
+      >
+        <div role="row" className="col-span-full grid grid-cols-subgrid px-5">
+          {columns.map((c) => (
+            <div
+              key={c.id}
+              role="columnheader"
+              className={cn('min-w-0 text-xs font-medium uppercase tracking-wide text-muted-foreground', c.headerClassName)}
+            >
+              {c.header}
+            </div>
+          ))}
         </div>
+        {rows.map((row) => (
+          <div
+            key={getRowKey(row)}
+            role="row"
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
+            className={cn(ROW_CARD, 'col-span-full grid grid-cols-subgrid gap-x-4 px-5', onRowClick && 'cursor-pointer')}
+          >
+            {columns.map((c) => (
+              <div key={c.id} role="cell" className={cn('min-w-0', c.cellClassName)}>
+                {c.cell(row)}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
 
-      {/* Celular: una tarjeta por fila. */}
-      <ul className="flex flex-col gap-3 md:hidden">
+      {/* Celular: la misma fila-tarjeta, con los datos apilados. */}
+      <RowCardList className="md:hidden">
         {rows.map((row) => (
-          <li
-            key={getRowKey(row)}
-            className="rounded-lg border border-border bg-card p-4 shadow-surface"
-          >
+          <RowCard key={getRowKey(row)} className="flex-col items-stretch">
             <div
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={cn('flex flex-col gap-3', onRowClick && 'cursor-pointer')}
@@ -198,7 +200,7 @@ export function ResponsiveTable<T>({
 
             {actions.length > 0 && (
               <div
-                className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3"
+                className="flex flex-wrap items-center gap-2 border-t border-border pt-3 [&_:is(button,a)]:min-h-11 [&_:is(button,a)]:min-w-11"
                 onClick={(e) => e.stopPropagation()}
               >
                 {actions.map((c) => (
@@ -206,9 +208,9 @@ export function ResponsiveTable<T>({
                 ))}
               </div>
             )}
-          </li>
+          </RowCard>
         ))}
-      </ul>
+      </RowCardList>
     </div>
   );
 }

@@ -402,7 +402,7 @@ export function ProjectProvidersPage() {
               )}
             </div>
             {provider.companyName && (
-              <p className="text-sm text-muted-foreground">{provider.companyName}</p>
+              <p className="text-xs text-muted-foreground">{provider.companyName}</p>
             )}
           </div>
         ),

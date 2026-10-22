@@ -20,6 +20,7 @@ import {
 } from '@/hooks/labor/use-labor-queries';
 import { iconForSpecialty } from '@/lib/specialty-icons';
 import { cn } from '@/lib/utils';
+import { ListSection, RowCard, RowCardList } from '@/components/common/row-card-list';
 
 /**
  * Asistencia de una actividad: se tilda contra la cuadrilla asignada, no se
@@ -115,14 +116,21 @@ export function ActivityAttendance({
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-medium">{activity.name}</h3>
-          <p className="text-sm text-muted-foreground"><SpecialtyLabel specialty={activity.specialty} /></p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-lg tabular-nums">
+    // La actividad es el grupo, no otra caja: rótulo + divisor, y cada
+    // persona de la cuadrilla es su propia fila-tarjeta.
+    <ListSection
+      label={
+        <>
+          {activity.name}
+          <span className="font-normal normal-case tracking-normal">
+            {' · '}
+            <SpecialtyLabel specialty={activity.specialty} />
+          </span>
+        </>
+      }
+      meta={
+        <>
+          <span className="text-sm tabular-nums">
             <span
               className={cn(
                 'font-semibold',
@@ -131,15 +139,16 @@ export function ActivityAttendance({
             >
               {presentCount}
             </span>
-            <span className="text-muted-foreground"> / {expectedCount}</span>
+            {` / ${expectedCount}`}
           </span>
           {missing.length > 0 && (
             <Badge variant="danger" icon>
               {t('labor.deficit', { count: missing.length })}
             </Badge>
           )}
-        </div>
-      </header>
+        </>
+      }
+    >
 
       {usesLegacy ? (
         // Sólo lectura: así quedó cargado antes de que existiera el roster.
@@ -150,7 +159,7 @@ export function ActivityAttendance({
       ) : expected.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('labor.crew.empty')}</p>
       ) : (
-        <ul className="flex flex-col">
+        <RowCardList>
           {expected.map((member) => (
             <CrewRow
               key={member.crewMemberId}
@@ -167,15 +176,15 @@ export function ActivityAttendance({
               onCancelCover={() => setCoverFor(null)}
             />
           ))}
-        </ul>
+        </RowCardList>
       )}
 
       {replacements.length > 0 && (
-        <div className="flex flex-col gap-1 border-t border-border pt-3">
+        <div className="flex flex-col gap-2">
           <p className="text-2xs text-muted-foreground">{t('labor.crew.covering')}</p>
-          <ul className="flex flex-col">
+          <RowCardList>
             {replacements.map((member) => (
-              <li key={member.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
+              <RowCard key={member.id} className="justify-between py-2">
                 <span className="flex items-center gap-2">
                   <UserPlus className="size-4 text-muted-foreground" />
                   {member.name}
@@ -191,14 +200,14 @@ export function ActivityAttendance({
                     <X className="size-4" />
                   </Button>
                 )}
-              </li>
+              </RowCard>
             ))}
-          </ul>
+          </RowCardList>
         </div>
       )}
 
       {canManageCrew && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+        <div className="flex flex-wrap items-center gap-2">
           {adding ? (
             <>
               <Select
@@ -232,7 +241,7 @@ export function ActivityAttendance({
           )}
         </div>
       )}
-    </section>
+    </ListSection>
   );
 }
 
@@ -266,14 +275,14 @@ function CrewRow({
   const SpecialtyIcon = iconForSpecialty(member.specialty as never);
 
   return (
-    <li className="flex flex-col gap-2 border-b border-border py-2 last:border-b-0">
+    <RowCard className="flex-col items-stretch gap-2 py-3">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
           disabled={!canMarkAttendance}
           onClick={onToggle}
           className={cn(
-            'flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left',
+            'flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left',
             canMarkAttendance && 'hover:bg-accent',
           )}
           aria-pressed={present}
@@ -369,7 +378,7 @@ function CrewRow({
           </Button>
         </div>
       )}
-    </li>
+    </RowCard>
   );
 }
 

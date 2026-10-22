@@ -4,6 +4,7 @@ import { Flag, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, Outlet, useParams } from 'react-router-dom';
 import { fromDayKey } from '@/components/common/date-range-filter';
+import { ListSection, ListSections, RowCardList } from '@/components/common/row-card-list';
 import { PageLayout } from '@/components/layout/page-layout';
 import { MilestoneCard } from '@/components/milestones/milestone-card';
 import { Button } from '@/components/ui/button';
@@ -77,20 +78,13 @@ export function ProjectMilestonesPage() {
             : undefined
         }
       >
-        <div className="flex flex-col gap-6">
+        <ListSections>
           {groupByMonth(data.milestones).map(({ month, items }) => (
-            <section
+            <ListSection
               key={month}
-              aria-labelledby={`milestones-${month}`}
-              className="flex flex-col gap-3"
+              label={format(fromDayKey(`${month}-01`), 'LLLL yyyy', { locale: dateLocale })}
             >
-              <h2
-                id={`milestones-${month}`}
-                className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-              >
-                {format(fromDayKey(`${month}-01`), 'LLLL yyyy', { locale: dateLocale })}
-              </h2>
-              <ul className="flex flex-col gap-3">
+              <RowCardList>
                 {items.map((milestone) => (
                   <li key={milestone.id}>
                     <MilestoneCard
@@ -100,10 +94,10 @@ export function ProjectMilestonesPage() {
                     />
                   </li>
                 ))}
-              </ul>
-            </section>
+              </RowCardList>
+            </ListSection>
           ))}
-        </div>
+        </ListSections>
       </PageLayout>
       {/*
         Alta y edición (`hitos/nuevo`, `hitos/:id/editar`): fuera del

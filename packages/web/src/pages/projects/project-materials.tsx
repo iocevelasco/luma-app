@@ -38,6 +38,14 @@ import { MaterialStatusBadge } from '@/components/materials/material-status-badg
 import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { TriStateCheckbox } from '@/components/common/tri-state-checkbox';
+import {
+  ListSection,
+  ListSections,
+  RowCard,
+  RowCardAction,
+  RowCardEnd,
+  RowCardList,
+} from '@/components/common/row-card-list';
 import { Spinner } from '@/components/ui/spinner';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -226,14 +234,6 @@ function GroupCheckbox({
   );
 }
 
-/**
- * El rótulo de un grupo —una tarea en "Por comprar", un tramo en "Comprados"—.
- * Chico, en mayúsculas y atenuado a propósito: con el mismo estilo que el
- * nombre de un material, el grupo se leía como una fila más y su casilla
- * parecía "seleccionar este material". Uno solo para los dos tipos de grupo.
- */
-const GROUP_LABEL = 'text-xs font-medium uppercase tracking-wide text-muted-foreground';
-
 /** Lo que una fila necesita para ofrecer su casilla. Sin esto, no la muestra. */
 interface RowSelection {
   selected: ReadonlySet<string>;
@@ -285,15 +285,8 @@ function MaterialRow({
   }, [highlighted]);
 
   return (
-    <li
-      ref={rowRef}
-      aria-current={highlighted || undefined}
-      className={cn(
-        'flex flex-wrap items-center justify-between gap-2 py-3 text-sm',
-        highlighted && '-mx-2 rounded-md bg-primary/10 px-2',
-      )}
-    >
-      <div className="flex min-w-0 items-center gap-2">
+    <RowCard ref={rowRef} highlighted={highlighted} className="justify-between">
+      <div className="flex min-w-0 flex-1 basis-56 items-center gap-3">
         {selection && (
           <SelectCheckbox
             state={selection.selected.has(material.id)}
@@ -303,7 +296,7 @@ function MaterialRow({
         )}
         <div className="min-w-0">
           <p className="font-medium">{material.name}</p>
-          <p className="text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {material.quantity} {t(`material.unit.${material.unit}`)}
             {supplier ? ` · ${supplier}` : ''}
             {material.providerActive === false && ` (${t('material.provider.inactive')})`}
@@ -333,7 +326,7 @@ function MaterialRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <RowCardEnd>
         {/*
           La factura se ve en la fila, antes del estado: es lo que responde
           "¿esto ya está documentado?" sin abrir Finanzas.
@@ -390,16 +383,10 @@ function MaterialRow({
           material. El outline queda para Cancelar y Volver (DESIGN.md).
         */}
         {canEdit && next && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="max-sm:min-h-11"
-            onClick={() => setPendingStatus(next)}
-          >
+          <RowCardAction type="button" onClick={() => setPendingStatus(next)}>
             {t(`material.action.${next}`)}
             <ArrowRight aria-hidden className="size-4" />
-          </Button>
+          </RowCardAction>
         )}
 
         {/*
@@ -412,7 +399,8 @@ function MaterialRow({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="max-sm:size-11"
+            // En celular no entra junto al estado y la acción; editar sigue en "…" (IA-11).
+            className="max-sm:hidden"
             aria-label={t('material.list.edit', { name: material.name })}
             onClick={() => onEdit(material)}
           >
@@ -480,7 +468,7 @@ function MaterialRow({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-      </div>
+      </RowCardEnd>
 
       <AlertDialog open={pendingStatus !== null} onOpenChange={(open) => !open && setPendingStatus(null)}>
         <AlertDialogContent>
@@ -514,7 +502,7 @@ function MaterialRow({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </li>
+    </RowCard>
   );
 }
 
@@ -556,21 +544,21 @@ function ToBuyGroup({
   const urgent = days !== null && days <= URGENT_WITHIN_DAYS;
 
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
-        <div className="flex min-w-0 items-center gap-2">
-          {selection && (
-            <GroupCheckbox
-              ids={materials.map((material) => material.id)}
-              selected={selection.selected}
-              label={t('material.bulk.selectGroup', { name: groupName })}
-              onSetMany={selection.onSetMany}
-            />
-          )}
-          <p className={GROUP_LABEL}>{groupName}</p>
-        </div>
-        {startDate && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+    <ListSection
+      label={groupName}
+      leading={
+        selection && (
+          <GroupCheckbox
+            ids={materials.map((material) => material.id)}
+            selected={selection.selected}
+            label={t('material.bulk.selectGroup', { name: groupName })}
+            onSetMany={selection.onSetMany}
+          />
+        )
+      }
+      meta={
+        startDate && (
+          <>
             <span>
               {t('material.list.startsOn', {
                 date: format(fromDayKey(startDate), 'PP', { locale: dateLocale }),
@@ -589,10 +577,11 @@ function ToBuyGroup({
                     : t('material.list.startsInDays', { count: days! })}
               </Badge>
             )}
-          </div>
-        )}
-      </div>
-      <ul className="flex flex-col divide-y divide-border">
+          </>
+        )
+      }
+    >
+      <RowCardList>
         {materials.map((material) => (
           <MaterialRow
             key={material.id}
@@ -608,8 +597,8 @@ function ToBuyGroup({
             onDeleteInvoice={onDeleteInvoice}
           />
         ))}
-      </ul>
-    </div>
+      </RowCardList>
+    </ListSection>
   );
 }
 
@@ -646,21 +635,21 @@ function BoughtGroup({
   if (materials.length === 0) return null;
 
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        {selection && (
+    <ListSection
+      label={title}
+      meta={materials.length}
+      leading={
+        selection && (
           <GroupCheckbox
             ids={materials.map((material) => material.id)}
             selected={selection.selected}
             label={t('material.bulk.selectGroup', { name: title })}
             onSetMany={selection.onSetMany}
           />
-        )}
-        <p className={GROUP_LABEL}>
-          {title} ({materials.length})
-        </p>
-      </div>
-      <ul className="flex flex-col divide-y divide-border">
+        )
+      }
+    >
+      <RowCardList>
         {materials.map((material) => (
           <MaterialRow
             key={material.id}
@@ -677,8 +666,8 @@ function BoughtGroup({
             activityName={material.activityId ? activityById.get(material.activityId)?.name : undefined}
           />
         ))}
-      </ul>
-    </div>
+      </RowCardList>
+    </ListSection>
   );
 }
 
@@ -1129,10 +1118,7 @@ export function ProjectMaterialsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent
-          value="toBuy"
-          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
-        >
+        <TabsContent value="toBuy" className="flex flex-col gap-4">
           {toBuy.length > 0 && hasSelection && (
             <div className="flex flex-wrap items-center gap-2">
               {selectAll(toBuy)}
@@ -1155,7 +1141,7 @@ export function ProjectMaterialsPage() {
           {toBuyGroups.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('material.list.toBuyEmpty')}</p>
           ) : (
-            <div className="flex flex-col gap-5">
+            <ListSections>
               {toBuyGroups.map((group) => (
                 <ToBuyGroup
                   key={group.activityId ?? 'none'}
@@ -1173,14 +1159,11 @@ export function ProjectMaterialsPage() {
                   onDeleteInvoice={setDeletingInvoice}
                 />
               ))}
-            </div>
+            </ListSections>
           )}
         </TabsContent>
 
-        <TabsContent
-          value="bought"
-          className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-surface"
-        >
+        <TabsContent value="bought" className="flex flex-col gap-4">
           {bought.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('material.list.boughtEmpty')}</p>
           ) : (
@@ -1203,6 +1186,7 @@ export function ProjectMaterialsPage() {
                   />
                 </div>
               )}
+              <ListSections>
               <BoughtGroup
                 title={t('material.list.onTheWay')}
                 materials={onTheWay}
@@ -1231,6 +1215,7 @@ export function ProjectMaterialsPage() {
                 onInvoice={canInvoice ? setInvoicing : undefined}
                 onDeleteInvoice={setDeletingInvoice}
               />
+              </ListSections>
             </>
           )}
         </TabsContent>

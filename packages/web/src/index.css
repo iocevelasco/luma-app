@@ -131,6 +131,7 @@
 
   --surface-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
   --overlay-shadow: 0 20px 60px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(148 163 184 / 0.1) inset;
+  --lift-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 32px -12px rgb(0 0 0 / 0.7);
 }
 
 /*
@@ -241,6 +242,7 @@
 
   --surface-shadow: 0 1px 2px rgb(24 24 27 / 0.06), 0 8px 24px -12px rgb(24 24 27 / 0.12);
   --overlay-shadow: 0 20px 60px rgb(24 24 27 / 0.18), 0 0 0 1px rgb(24 24 27 / 0.06);
+  --lift-shadow: 0 1px 2px rgb(24 24 27 / 0.06), 0 16px 32px -12px rgb(24 24 27 / 0.22);
 }
 
 @theme inline {
@@ -364,6 +366,12 @@
   */
   --shadow-surface: var(--surface-shadow);
   --shadow-overlay: var(--overlay-shadow);
+  /*
+    La fila-tarjeta bajo el puntero (o con el foco adentro): sube un escalón
+    sobre `--shadow-surface` para decir "esta es la que vas a tocar", sin
+    llegar al peso de un overlay. Ver "Listas" en DESIGN.md.
+  */
+  --shadow-lift: var(--lift-shadow);
 
   /*
     Relieve de los botones. La forma ya no separa un botón de un badge —los dos

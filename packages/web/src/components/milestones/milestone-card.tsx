@@ -119,23 +119,24 @@ export function MilestoneCard({
 
   // El área estirada: cubre la card entera y deja el foco visible en el borde.
   const stretched =
-    'text-left after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring';
+    'text-left after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring';
 
   return (
     <article
       aria-labelledby={`milestone-${milestone.id}-title`}
       className={cn(
-        'relative flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-surface transition-colors',
-        clickable && 'hover:border-foreground/25',
+        // La misma fila-tarjeta de las listas (ROW_CARD): sin borde, sube al pasar.
+        'group/row relative flex flex-col gap-3 rounded-2xl bg-card p-4 shadow-surface transition-shadow duration-200 sm:px-5',
+        clickable && 'hover:shadow-lift focus-within:shadow-lift',
         // Lo crítico se distingue antes de leer el badge.
-        critical && 'border-status-danger/40 hover:border-status-danger/70',
+        critical && 'ring-1 ring-status-danger/40 hover:ring-status-danger/70',
       )}
     >
       <header className="flex items-start gap-3">
         <div
           aria-hidden
           className={cn(
-            'flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground',
+            'flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground',
             critical && 'bg-tag-danger-bg text-tag-danger-fg',
           )}
         >

@@ -55,6 +55,7 @@ import {
 } from '@/hooks/documents/use-document-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { ListSection, ListSections } from '@/components/common/row-card-list';
 import { cn, formatFileSize } from '@/lib/utils';
 
 /**
@@ -367,13 +368,13 @@ function DocumentCard({
   const date = format(new Date(doc.createdAt), 'PP', { locale: dateLocale });
 
   const thumbnail = (
-    <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-muted">
+    <div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted">
       <DocumentThumbnail doc={doc} />
     </div>
   );
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3">
+    <div className="flex flex-col gap-3 rounded-2xl bg-card p-3 shadow-surface transition-shadow duration-200 focus-within:shadow-lift hover:shadow-lift">
       {/* `doc.url` vence y viene `null` sin storage: sin URL la miniatura no es un enlace. */}
       {doc.url ? (
         <a
@@ -381,7 +382,7 @@ function DocumentCard({
           target="_blank"
           rel="noopener noreferrer"
           aria-label={t('document.open')}
-          className="focus-visible:ring-ring rounded-md outline-none focus-visible:ring-2"
+          className="focus-visible:ring-ring rounded-xl outline-none focus-visible:ring-2"
         >
           {thumbnail}
         </a>
@@ -635,7 +636,7 @@ export function ProjectDocumentsPage() {
           {t('document.filters.noResults')}
         </p>
       ) : (
-        <div className="flex flex-col gap-6">
+        <ListSections>
           {groups.map((group) => {
             // Planos y renders se subdividen por espacio: "el plano de la cocina".
             const bySpace =
@@ -643,15 +644,7 @@ export function ProjectDocumentsPage() {
                 ? groupBySpace(group.docs)
                 : null;
 
-            return (
-              <section key={group.key} className="flex flex-col gap-2">
-                {group.label && (
-                  <h3 className="text-sm font-medium">
-                    {group.label} ({group.docs.length})
-                  </h3>
-                )}
-
-                {bySpace ? (
+            const content = bySpace ? (
                   bySpace.map(([space, docs]) => (
                     <div key={space || 'sin-espacio'} className="flex flex-col gap-2">
                       <p className={cn('text-xs text-muted-foreground', !space && 'italic')}>
@@ -662,11 +655,18 @@ export function ProjectDocumentsPage() {
                   ))
                 ) : (
                   <DocumentGrid projectId={projectId!} docs={group.docs} canWrite={canWrite} />
-                )}
-              </section>
+                );
+
+            // Sin agrupar no hay rótulo: la grilla va sola, sin un divisor que no separa nada.
+            return group.label ? (
+              <ListSection key={group.key} label={group.label} meta={group.docs.length}>
+                {content}
+              </ListSection>
+            ) : (
+              <div key={group.key}>{content}</div>
             );
           })}
-        </div>
+        </ListSections>
       )}
     </PageLayout>
   );

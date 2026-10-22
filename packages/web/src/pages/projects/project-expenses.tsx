@@ -8,7 +8,6 @@ import {
   type CreateExpenseInput,
   type ExpenseCategory,
 } from '@luma/shared';
-import { format } from 'date-fns';
 import { Download, Plus, Receipt, Trash2, TrendingUp, Upload, Users } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +21,15 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  ListSection,
+  ListSections,
+  RowCard,
+  RowCardBody,
+  RowCardDate,
+  RowCardEnd,
+  RowCardList,
+} from '@/components/common/row-card-list';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -465,51 +473,54 @@ export function ProjectExpensesPage() {
           description={t('finance.expenses.emptyDescription')}
         />
       ) : (
-        <div className="flex flex-col gap-6">
+        <ListSections>
           {EXPENSE_CATEGORIES.map((category) => {
             const expenses = byCategory.get(category);
             if (!expenses || expenses.length === 0) return null;
 
             return (
-              <section key={category} className="flex flex-col gap-2">
-                <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="text-sm font-medium">{t(`finance.category.${category}`)}</h3>
-                  <span className="text-sm tabular-nums text-muted-foreground">
+              <ListSection
+                key={category}
+                label={t(`finance.category.${category}`)}
+                meta={
+                  <span className="tabular-nums">
                     {formatMoney(
                       summary?.expensesByCategory[category] ?? 0,
                       currency,
                       i18n.language,
                     )}
                   </span>
-                </div>
-
-                <ul className="flex flex-col gap-2">
+                }
+              >
+                <RowCardList>
                   {expenses.map((expense) => (
-                    <li
-                      key={expense.id}
-                      className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
-                    >
-                      <div className="flex min-w-0 flex-col gap-0.5">
-                        <p className="truncate text-sm font-medium">{expense.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(fromDayKey(expense.spentOn), 'PP', { locale: dateLocale })}
-                          {expense.providerName && ` · ${expense.providerName}`}
-                          {expense.activityName && ` · ${expense.activityName}`}
-                          {expense.materials && (
-                            <>
-                              {' · '}
-                              <ExpenseMaterials projectId={projectId!} materials={expense.materials} />
-                            </>
-                          )}
-                        </p>
+                    <RowCard key={expense.id}>
+                      {/* La fecha es el bloque de la izquierda: la línea 2 ya no la repite. */}
+                      <RowCardDate date={fromDayKey(expense.spentOn)} locale={dateLocale} />
+                      <RowCardBody
+                        title={<p className="truncate">{expense.description}</p>}
+                        meta={
+                          (expense.providerName || expense.activityName || expense.materials) && (
+                            <p>
+                              {[expense.providerName, expense.activityName].filter(Boolean).join(' · ')}
+                              {expense.materials && (
+                                <>
+                                  {(expense.providerName || expense.activityName) && ' · '}
+                                  <ExpenseMaterials projectId={projectId!} materials={expense.materials} />
+                                </>
+                              )}
+                            </p>
+                          )
+                        }
+                      >
                         {expense.currency !== currency && (
-                          <Badge className="w-fit">
+                          <Badge className="mt-1 w-fit">
                             {expense.amount} {expense.currency}
                           </Badge>
                         )}
-                      </div>
+                      </RowCardBody>
 
-                      <div className="flex shrink-0 items-center gap-2">
+                      <RowCardEnd>
                         <span className="text-sm tabular-nums">
                           {formatMoney(
                             expense.amountInProjectCurrency,
@@ -543,14 +554,14 @@ export function ProjectExpensesPage() {
                             <Trash2 className="size-4" />
                           </Button>
                         </Can>
-                      </div>
-                    </li>
+                      </RowCardEnd>
+                    </RowCard>
                   ))}
-                </ul>
-              </section>
+                </RowCardList>
+              </ListSection>
             );
           })}
-        </div>
+        </ListSections>
       )}
     </PageLayout>
   );

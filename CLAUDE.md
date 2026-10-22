@@ -270,6 +270,7 @@ responde al tamaño de texto del sistema operativo.
 (ése dice cómo se ve; éste, ubicación, orden y jerarquía). Las que más se rompen:
 
 - **Pantalla**: sin título propio; una primaria flotante (`PageLayout action`); segundo orden y exportar en `secondaryActions`, agrupado; pestañas y filtros en `toolbar`.
+- **Lista**: cada fila es su tarjeta (`RowCard`, `components/common/row-card-list.tsx`), sobre el lienzo; los grupos, `ListSection` (rótulo + divisor), nunca otra caja. Nada de `divide-y`.
 - **Fila**: línea 1 = qué es; línea 2 = `text-xs` muted, datos separados por `" · "` en orden fijo; estado como badge en columna fija.
 - **Acciones por fila**: una visible (el paso siguiente) y el resto en "…"; todo destructivo va en el menú y con `AlertDialog`.
 - **Textos y grupos**: nada repite lo que la UI ya dice; el rótulo de grupo no se parece a una fila, y la fila no repite el grupo.
