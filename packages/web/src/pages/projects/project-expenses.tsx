@@ -6,6 +6,7 @@ import {
   DOCUMENT_MAX_BYTES,
   DOCUMENT_MIME_TYPES,
   type CreateExpenseInput,
+  type Expense,
   type ExpenseCategory,
 } from '@luma/shared';
 import { format } from 'date-fns';
@@ -18,8 +19,18 @@ import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { PageLayout } from '@/components/layout/page-layout';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -386,6 +397,7 @@ export function ProjectExpensesPage() {
   const { data, isLoading, isError } = useExpenses(projectId);
   const { data: summaryData } = useFinanceSummary(projectId);
   const deleteExpense = useDeleteExpense(projectId!);
+  const [deleting, setDeleting] = useState<Expense | null>(null);
 
   const byCategory = useMemo(() => {
     const map = new Map<ExpenseCategory, typeof data extends undefined ? never : NonNullable<typeof data>['expenses']>();
@@ -530,7 +542,7 @@ export function ProjectExpensesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteExpense.mutate(expense.id)}
+                            onClick={() => setDeleting(expense)}
                             aria-label={t('finance.expenses.delete')}
                           >
                             <Trash2 className="size-4" />
@@ -545,6 +557,33 @@ export function ProjectExpensesPage() {
           })}
         </div>
       )}
+
+      <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('finance.expenses.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleting &&
+                t('finance.expenses.deleteBody', {
+                  description: deleting.description,
+                  amount: formatMoney(deleting.amountInProjectCurrency, currency, i18n.language),
+                })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => {
+                if (deleting) deleteExpense.mutate(deleting.id);
+                setDeleting(null);
+              }}
+            >
+              {t('finance.expenses.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 }

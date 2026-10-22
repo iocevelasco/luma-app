@@ -1,11 +1,22 @@
 import { useState } from 'react';
+import type { CrewMember } from '@luma/shared';
 import { Building2, UserMinus, UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { DirectoryPickerDialog } from '@/components/directory/directory-picker-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   useAddCrewMemberToProject,
   useCrewDirectory,
@@ -46,6 +57,10 @@ export function CrewRosterDialog({
   const removeMember = useRemoveCrewMemberFromProject(projectId);
   const addMember = useAddCrewMemberToProject(projectId);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [confirming, setConfirming] = useState<{
+    action: 'deactivate' | 'remove';
+    member: CrewMember;
+  } | null>(null);
   const { data: directoryData, isLoading: directoryLoading } = useCrewDirectory(
     projectId,
     open && pickerOpen,
@@ -92,7 +107,7 @@ export function CrewRosterDialog({
                         type="button"
                         variant="outline"
                         size="icon-sm"
-                        onClick={() => deactivateMember.mutate(member.id)}
+                        onClick={() => setConfirming({ action: 'deactivate', member })}
                         aria-label={t('crew.list.deactivate')}
                       >
                         <UserX className="size-4" />
@@ -102,7 +117,7 @@ export function CrewRosterDialog({
                         type="button"
                         variant="outline"
                         size="icon-sm"
-                        onClick={() => removeMember.mutate(member.id)}
+                        onClick={() => setConfirming({ action: 'remove', member })}
                         aria-label={t('directory.removeFromProject')}
                       >
                         <UserMinus className="size-4" />
@@ -148,6 +163,38 @@ export function CrewRosterDialog({
           )
         }
       />
+
+      <AlertDialog open={confirming !== null} onOpenChange={(open) => !open && setConfirming(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirming?.action === 'deactivate'
+                ? t('crew.list.confirmDeactivateTitle')
+                : t('crew.list.confirmRemoveTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirming?.action === 'deactivate'
+                ? t('crew.list.confirmDeactivateBody', { name: confirming.member.name })
+                : t('crew.list.confirmRemoveBody', { name: confirming?.member.name ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => {
+                if (confirming?.action === 'deactivate') deactivateMember.mutate(confirming.member.id);
+                if (confirming?.action === 'remove') removeMember.mutate(confirming.member.id);
+                setConfirming(null);
+              }}
+            >
+              {confirming?.action === 'deactivate'
+                ? t('crew.list.deactivate')
+                : t('directory.removeFromProject')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </FormDrawer>
   );
 }
