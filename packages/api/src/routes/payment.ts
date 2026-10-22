@@ -1,9 +1,10 @@
-import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
-import multer from 'multer';
-import { DOCUMENT_MAX_BYTES } from '@luma/shared';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
+import {
+  handleReceiptUploadError as handleUploadError,
+  receiptUpload as upload,
+} from '../middleware/receipt-upload.middleware.js';
 import {
   createExpense,
   createPayment,
@@ -19,20 +20,6 @@ import {
   updateExpense,
   updatePaymentScheduleItem,
 } from '../controllers/index.js';
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: DOCUMENT_MAX_BYTES },
-});
-
-function handleUploadError(err: unknown, _req: Request, res: Response, next: NextFunction) {
-  if (err instanceof multer.MulterError) {
-    return res
-      .status(400)
-      .json({ success: false, error: 'El comprobante es demasiado grande (máximo 20MB)' });
-  }
-  next(err);
-}
 
 /**
  * Anidado bajo `/api/projects/:projectId/finance` — ver routes/project.ts.

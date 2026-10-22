@@ -98,6 +98,8 @@ export interface Expense extends MoneyAmount {
   activityId?: string;
   activityName?: string;
   receipt?: ExpenseReceipt;
+  /** Si es una factura cargada desde Compras: los materiales que paga. */
+  materialIds?: string[];
   notes?: string;
   /** El gasto en la moneda de la obra. Derivado. */
   amountInProjectCurrency: number;

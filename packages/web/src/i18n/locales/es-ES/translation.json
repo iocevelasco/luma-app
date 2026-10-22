@@ -365,8 +365,31 @@
     }
   },
   "material": {
+    "invoice": {
+      "action": "Cargar factura",
+      "title_one": "Factura de {{count}} material",
+      "title_other": "Factura de {{count}} materiales",
+      "submit": "Guardar factura",
+      "file": "Factura",
+      "filePlaceholder": "Elegir PDF o foto",
+      "fileRequired": "Adjunta la factura: un PDF o una foto.",
+      "date": "Fecha de la factura",
+      "defaultDescription_one": "Factura de {{count}} material",
+      "defaultDescription_other": "Factura de {{count}} materiales",
+      "defaultDescriptionFrom": "Factura {{provider}}",
+      "markBought_one": "{{count}} está Solicitado: al guardar pasa a Comprado.",
+      "markBought_other": "{{count}} están Solicitados: al guardar pasan a Comprado.",
+      "created": "Factura cargada",
+      "deleted": "Factura eliminada",
+      "delete": "Eliminar factura",
+      "deleteTitle": "¿Eliminar esta factura?",
+      "deleteBody": "Se elimina «{{name}}» y su gasto en Finanzas. Los materiales siguen como comprados.",
+      "openMenu_one": "Factura de {{name}}",
+      "openMenu_other": "{{count}} facturas de {{name}}"
+    },
     "provider": {
       "placeholder": "Elige o escribe un proveedor",
+      "placeholderPick": "Elige un proveedor",
       "search": "Buscar proveedor…",
       "noResults": "No hay proveedores con ese nombre.",
       "fromDirectory": "Proveedores de la obra",

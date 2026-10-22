@@ -93,7 +93,7 @@ export function ProviderCombobox({
           <span className={cn('flex min-w-0 items-center gap-2', !label && 'text-muted-foreground')}>
             {/* Lo escrito a mano se distingue de lo vinculado: es la pista para vincularlo. */}
             {label && !linked && <PenLine aria-hidden className="size-4 shrink-0 text-muted-foreground" />}
-            <span className="truncate">{label ?? t('material.provider.placeholder')}</span>
+            <span className="truncate">{label ?? t(allowFreeText ? 'material.provider.placeholder' : 'material.provider.placeholderPick')}</span>
           </span>
           <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
         </button>

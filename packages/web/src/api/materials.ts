@@ -2,7 +2,9 @@ import type {
   ApiResponse,
   BulkDeleteMaterialsInput,
   BulkUpdateMaterialsInput,
+  CreateMaterialInvoiceInput,
   MaterialBulkResponse,
+  MaterialInvoiceResponse,
   CreateMaterialInput,
   MaterialListResponse,
   MaterialResponse,
@@ -40,6 +42,29 @@ export const materialsApi = {
   bulkUpdate: (projectId: string, payload: BulkUpdateMaterialsInput) =>
     unwrap<MaterialBulkResponse>(
       apiClient.patch(`/api/projects/${projectId}/materials/bulk`, payload),
+    ),
+
+  /** Multipart: el archivo de la factura va en `receipt`, como en el alta de gasto. */
+  createInvoice: (projectId: string, payload: CreateMaterialInvoiceInput, receipt: File) => {
+    const formData = new FormData();
+    formData.append('receipt', receipt);
+    formData.append('materialIds', payload.materialIds.join(','));
+    formData.append('amount', String(payload.amount));
+    formData.append('currency', payload.currency);
+    formData.append('exchangeRate', String(payload.exchangeRate));
+    formData.append('spentOn', payload.spentOn);
+    formData.append('description', payload.description);
+    formData.append('markBought', String(payload.markBought));
+    if (payload.providerId) formData.append('providerId', payload.providerId);
+    if (payload.notes) formData.append('notes', payload.notes);
+    return unwrap<MaterialInvoiceResponse>(
+      apiClient.post(`/api/projects/${projectId}/materials/invoices`, formData),
+    );
+  },
+
+  deleteInvoice: (projectId: string, invoiceId: string) =>
+    unwrap<{ id: string }>(
+      apiClient.delete(`/api/projects/${projectId}/materials/invoices/${invoiceId}`),
     ),
 
   bulkRemove: (projectId: string, payload: BulkDeleteMaterialsInput) =>

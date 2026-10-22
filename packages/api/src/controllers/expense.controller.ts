@@ -6,6 +6,7 @@ import {
   updateExpenseSchema,
   type Expense as ExpenseDTO,
 } from '@luma/shared';
+import { RECEIPT_MIME_TO_EXTENSION } from '../middleware/receipt-upload.middleware.js';
 import { Expense, type IExpense } from '../models/Expense.js';
 import { Activity } from '../models/Activity.js';
 import { Provider } from '../models/Provider.js';
@@ -26,12 +27,6 @@ import {
  * gastado, su utilidad sale de una resta (regla 13).
  */
 
-const RECEIPT_MIME_TO_EXTENSION: Record<string, string> = {
-  'application/pdf': '.pdf',
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-};
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
@@ -60,6 +55,7 @@ async function toExpenseDTO(
     providerName,
     activityId: expense.activity ? String(expense.activity) : undefined,
     activityName,
+    materialIds: expense.materials?.length ? expense.materials.map(String) : undefined,
     receipt: expense.receipt
       ? {
           fileName: expense.receipt.fileName,

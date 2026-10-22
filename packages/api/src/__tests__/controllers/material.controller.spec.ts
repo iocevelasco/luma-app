@@ -24,6 +24,16 @@ vi.mock('../../models/MaterialItem.js', () => ({
   },
 }));
 
+// La lista suma las facturas de cada material: sin facturas en estos tests.
+vi.mock('../../models/Expense.js', () => ({
+  Expense: { find: vi.fn(() => ({ sort: vi.fn().mockResolvedValue([]) })) },
+}));
+vi.mock('../../services/storage.service.js', () => ({
+  signObjectUrl: vi.fn(),
+  deleteObject: vi.fn(),
+  uploadProjectDocument: vi.fn(),
+  StorageNotConfiguredError: class extends Error {},
+}));
 vi.mock('../../models/Provider.js', () => ({
   Provider: { findOne: vi.fn() },
 }));

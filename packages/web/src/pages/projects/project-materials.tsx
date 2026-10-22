@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { type MaterialItem, type MaterialStatus } from '@luma/shared';
+import { type MaterialInvoiceRef, type MaterialItem, type MaterialStatus } from '@luma/shared';
 import { differenceInCalendarDays, format } from 'date-fns';
 import {
   ArrowRight,
@@ -11,6 +11,7 @@ import {
   Package,
   Pencil,
   Plus,
+  ReceiptText,
   Share2,
   Trash2,
   Truck,
@@ -31,6 +32,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { fromDayKey } from '@/components/common/date-range-filter';
 import { MaterialDrawer } from '@/components/materials/material-drawer';
+import { MaterialInvoiceDialog } from '@/components/materials/material-invoice-dialog';
 import { ProviderCombobox } from '@/components/materials/provider-combobox';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -54,6 +56,7 @@ import {
   useBulkDeleteMaterials,
   useBulkUpdateMaterials,
   useDeleteMaterial,
+  useDeleteMaterialInvoice,
   useMaterials,
   useUpdateMaterial,
 } from '@/hooks/materials/use-material-queries';
@@ -195,6 +198,8 @@ function MaterialRow({
   providers,
   onEdit,
   onDelete,
+  onInvoice,
+  onDeleteInvoice,
 }: {
   material: MaterialItem;
   selection?: RowSelection;
@@ -205,6 +210,9 @@ function MaterialRow({
   /** Los diálogos viven en la página: una lista larga no monta uno por fila. */
   onEdit: (material: MaterialItem) => void;
   onDelete: (material: MaterialItem) => void;
+  /** Cargar la factura de este material. Sin esto (sin permiso) no se ofrece. */
+  onInvoice?: (materials: MaterialItem[]) => void;
+  onDeleteInvoice?: (invoice: MaterialInvoiceRef) => void;
   /** Sólo donde la fila no está bajo el encabezado de su actividad. */
   activityName?: string;
   /** El material al que se llegó con `?material=` desde el resumen de la obra. */
@@ -274,6 +282,54 @@ function MaterialRow({
       </div>
 
       <div className="flex items-center gap-2">
+        {/*
+          La factura se ve en la fila, antes del estado: es lo que responde
+          "¿esto ya está documentado?" sin abrir Finanzas.
+        */}
+        {material.invoices && material.invoices.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1 max-sm:min-h-11"
+                aria-label={t('material.invoice.openMenu', {
+                  count: material.invoices.length,
+                  name: material.name,
+                })}
+              >
+                <ReceiptText aria-hidden className="size-4" />
+                {material.invoices.length > 1 && <span className="tabular-nums">{material.invoices.length}</span>}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {material.invoices.map((invoice) => (
+                <div key={invoice.id}>
+                  {invoice.url && (
+                    <DropdownMenuItem asChild className="max-sm:min-h-11">
+                      <a href={invoice.url} target="_blank" rel="noopener noreferrer">
+                        <ReceiptText className="size-4" />
+                        <span className="max-w-56 truncate">{invoice.fileName}</span>
+                      </a>
+                    </DropdownMenuItem>
+                  )}
+                  {invoice.canDelete && onDeleteInvoice && (
+                    <DropdownMenuItem
+                      variant="destructive"
+                      className="max-sm:min-h-11"
+                      onSelect={() => onDeleteInvoice(invoice)}
+                    >
+                      <Trash2 className="size-4" />
+                      {t('material.invoice.delete')}
+                    </DropdownMenuItem>
+                  )}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         <MaterialStatusBadge status={material.status} />
 
         {/*
@@ -335,6 +391,17 @@ function MaterialRow({
                   {t(`material.status.${status}`)}
                 </DropdownMenuItem>
               ))}
+
+              {/* Lo Pendiente no se compró: no tiene factura. */}
+              {onInvoice && material.status !== 'pendiente' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onInvoice([material])}>
+                    <ReceiptText className="size-4" />
+                    {t('material.invoice.action')}
+                  </DropdownMenuItem>
+                </>
+              )}
 
               <DropdownMenuSeparator />
               {material.editable ? (
@@ -411,6 +478,8 @@ function ToBuyGroup({
   providers,
   onEdit,
   onDelete,
+  onInvoice,
+  onDeleteInvoice,
 }: {
   /** `null` = materiales sin actividad. */
   name: string | null;
@@ -423,6 +492,9 @@ function ToBuyGroup({
   providers?: readonly { id: string; name: string }[];
   onEdit: (material: MaterialItem) => void;
   onDelete: (material: MaterialItem) => void;
+  /** Cargar la factura de este material. Sin esto (sin permiso) no se ofrece. */
+  onInvoice?: (materials: MaterialItem[]) => void;
+  onDeleteInvoice?: (invoice: MaterialInvoiceRef) => void;
 }) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
@@ -480,6 +552,8 @@ function ToBuyGroup({
             providers={providers}
             onEdit={onEdit}
             onDelete={onDelete}
+            onInvoice={onInvoice}
+            onDeleteInvoice={onDeleteInvoice}
           />
         ))}
       </ul>
@@ -499,6 +573,8 @@ function BoughtGroup({
   providers,
   onEdit,
   onDelete,
+  onInvoice,
+  onDeleteInvoice,
 }: {
   title: string;
   materials: MaterialItem[];
@@ -510,6 +586,9 @@ function BoughtGroup({
   providers?: readonly { id: string; name: string }[];
   onEdit: (material: MaterialItem) => void;
   onDelete: (material: MaterialItem) => void;
+  /** Cargar la factura de este material. Sin esto (sin permiso) no se ofrece. */
+  onInvoice?: (materials: MaterialItem[]) => void;
+  onDeleteInvoice?: (invoice: MaterialInvoiceRef) => void;
 }) {
   const { t } = useTranslation();
   if (materials.length === 0) return null;
@@ -541,6 +620,8 @@ function BoughtGroup({
             providers={providers}
             onEdit={onEdit}
             onDelete={onDelete}
+            onInvoice={onInvoice}
+            onDeleteInvoice={onDeleteInvoice}
             activityName={material.activityId ? activityById.get(material.activityId)?.name : undefined}
           />
         ))}
@@ -568,6 +649,7 @@ function SelectionBar({
   canShare,
   generatingPdf,
   onAction,
+  onInvoice,
   onDownloadPdf,
   onCopy,
   onShare,
@@ -579,6 +661,8 @@ function SelectionBar({
   canShare: boolean;
   generatingPdf: boolean;
   onAction: (action: PendingBulk) => void;
+  /** Sin esto (sin permiso) no se ofrece. */
+  onInvoice?: () => void;
   onDownloadPdf: () => void;
   onCopy: () => void;
   onShare: () => void;
@@ -653,6 +737,16 @@ function SelectionBar({
               {t(`material.status.${status}`)}
             </DropdownMenuItem>
           ))}
+
+          {onInvoice && selected.every((material) => material.status !== 'pendiente') && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="max-sm:min-h-11" onSelect={onInvoice}>
+                <ReceiptText className="size-4" />
+                {t('material.invoice.action')}
+              </DropdownMenuItem>
+            </>
+          )}
 
           {exportable && (
             <>
@@ -743,7 +837,12 @@ export function ProjectMaterialsPage() {
   const [bulkProviderId, setBulkProviderId] = useState<string | null>(null);
 
   // Gerente y supervisor gestionan las compras; lo decide la grilla.
-  const canWrite = useProjectCapabilities(projectId).can('material.write');
+  const { can } = useProjectCapabilities(projectId);
+  const canWrite = can('material.write');
+  const canInvoice = can('material.invoice.write');
+  const deleteInvoice = useDeleteMaterialInvoice(projectId!);
+  const [invoicing, setInvoicing] = useState<MaterialItem[] | null>(null);
+  const [deletingInvoice, setDeletingInvoice] = useState<MaterialInvoiceRef | null>(null);
   // Para vincular y asignar. Sin escritura no hace falta pedirlos.
   const { data: providersData } = useProviders(canWrite ? projectId : undefined);
   const providers = providersData?.providers;
@@ -920,6 +1019,7 @@ export function ProjectMaterialsPage() {
         canShare={canShare}
         generatingPdf={generatingPdf}
         onAction={setPendingBulk}
+        onInvoice={canInvoice ? () => setInvoicing(selectedMaterials) : undefined}
         onDownloadPdf={() => void handleDownloadPdf(selectedRows)}
         onCopy={() => void handleCopy(selectedRows)}
         onShare={() => void handleShare(selectedRows)}
@@ -1030,6 +1130,8 @@ export function ProjectMaterialsPage() {
                   providers={providers}
                   onEdit={setEditing}
                   onDelete={setDeleting}
+                  onInvoice={canInvoice ? setInvoicing : undefined}
+                  onDeleteInvoice={setDeletingInvoice}
                 />
               ))}
             </div>
@@ -1061,6 +1163,8 @@ export function ProjectMaterialsPage() {
                 providers={providers}
                 onEdit={setEditing}
                 onDelete={setDeleting}
+                onInvoice={canInvoice ? setInvoicing : undefined}
+                onDeleteInvoice={setDeletingInvoice}
               />
               <BoughtGroup
                 title={t('material.list.onSite')}
@@ -1073,6 +1177,8 @@ export function ProjectMaterialsPage() {
                 providers={providers}
                 onEdit={setEditing}
                 onDelete={setDeleting}
+                onInvoice={canInvoice ? setInvoicing : undefined}
+                onDeleteInvoice={setDeletingInvoice}
               />
             </>
           )}
@@ -1086,6 +1192,38 @@ export function ProjectMaterialsPage() {
         open={editing !== null}
         onOpenChange={(open) => !open && setEditing(null)}
       />
+
+      <MaterialInvoiceDialog
+        projectId={projectId!}
+        projectCurrency={projectData?.project.currency ?? ''}
+        materials={invoicing ?? []}
+        open={invoicing !== null}
+        onOpenChange={(open) => !open && setInvoicing(null)}
+        onCreated={clearSelection}
+      />
+
+      <AlertDialog open={deletingInvoice !== null} onOpenChange={(open) => !open && setDeletingInvoice(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('material.invoice.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingInvoice && t('material.invoice.deleteBody', { name: deletingInvoice.fileName })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => {
+                if (deletingInvoice) deleteInvoice.mutate(deletingInvoice.id);
+                setDeletingInvoice(null);
+              }}
+            >
+              {t('material.invoice.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ResponsiveDialog
         open={pendingBulk?.kind === 'provider'}

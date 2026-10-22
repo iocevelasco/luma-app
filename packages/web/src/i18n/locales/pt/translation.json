@@ -365,8 +365,31 @@
     }
   },
   "material": {
+    "invoice": {
+      "action": "Enviar nota fiscal",
+      "title_one": "Nota fiscal de {{count}} material",
+      "title_other": "Nota fiscal de {{count}} materiais",
+      "submit": "Salvar nota fiscal",
+      "file": "Nota fiscal",
+      "filePlaceholder": "Escolher PDF ou foto",
+      "fileRequired": "Anexe a nota fiscal: um PDF ou uma foto.",
+      "date": "Data da nota fiscal",
+      "defaultDescription_one": "Nota fiscal de {{count}} material",
+      "defaultDescription_other": "Nota fiscal de {{count}} materiais",
+      "defaultDescriptionFrom": "Nota fiscal {{provider}}",
+      "markBought_one": "{{count}} está Solicitado: ao salvar passa para Comprado.",
+      "markBought_other": "{{count}} estão Solicitados: ao salvar passam para Comprado.",
+      "created": "Nota fiscal enviada",
+      "deleted": "Nota fiscal excluída",
+      "delete": "Excluir nota fiscal",
+      "deleteTitle": "Excluir esta nota fiscal?",
+      "deleteBody": "Exclui «{{name}}» e o gasto em Finanças. Os materiais continuam como comprados.",
+      "openMenu_one": "Nota fiscal de {{name}}",
+      "openMenu_other": "{{count}} notas fiscais de {{name}}"
+    },
     "provider": {
       "placeholder": "Escolha ou digite um fornecedor",
+      "placeholderPick": "Escolha um fornecedor",
       "search": "Buscar fornecedor…",
       "noResults": "Não há fornecedores com esse nome.",
       "fromDirectory": "Fornecedores da obra",

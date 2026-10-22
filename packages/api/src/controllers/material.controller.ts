@@ -9,6 +9,7 @@ import {
   type MaterialItem as MaterialDTO,
 } from '@luma/shared';
 import { Activity } from '../models/Activity.js';
+import { invoicesByMaterial } from './material-invoice.controller.js';
 import { MaterialItem, type IMaterialItem } from '../models/MaterialItem.js';
 import type { IProject } from '../models/Project.js';
 import { Provider, type IProvider } from '../models/Provider.js';
@@ -143,9 +144,21 @@ export const listMaterials = wrap(async (req, res) => {
     .populate('provider', PROVIDER_FIELDS)
     .sort({ createdAt: -1 });
 
+  // Las facturas, sólo para quien puede verlas: para el resto el campo no
+  // viene, y no un arreglo vacío que diga "no tiene" cuando sí tiene.
+  const canSeeInvoices = Boolean(req.can?.('material.invoice.read') || req.can?.('expense.read'));
+  const invoices = canSeeInvoices
+    ? await invoicesByMaterial(req, project._id, materials.map((material) => String(material._id)))
+    : null;
+
   return res.json({
     success: true,
-    data: { materials: materials.map((material) => toMaterialDTO(material, viewerCanSeeDetail)) },
+    data: {
+      materials: materials.map((material) => ({
+        ...toMaterialDTO(material, viewerCanSeeDetail),
+        ...(invoices ? { invoices: invoices.get(String(material._id)) ?? [] } : {}),
+      })),
+    },
   });
 });
 
