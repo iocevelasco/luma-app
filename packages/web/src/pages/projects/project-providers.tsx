@@ -9,6 +9,7 @@ import {
   Building2,
   CalendarClock,
   FileSignature,
+  Package,
   Pencil,
   Plus,
   UserMinus,
@@ -34,6 +35,7 @@ import { FormDrawer } from '@/components/common/form-drawer';
 import { ProviderFormFields } from '@/components/providers/provider-form-fields';
 import { DirectoryPickerDialog } from '@/components/directory/directory-picker-dialog';
 import { ProviderEngagementDialog } from '@/components/providers/provider-engagement-dialog';
+import { ProviderMaterialsDialog } from '@/components/providers/provider-materials-dialog';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
@@ -106,7 +108,7 @@ function AssignOnCreateField({
   );
 }
 
-function NewProviderDialog({ projectId }: { projectId: string }) {
+function NewProviderDialog({ projectId, canManage }: { projectId: string; canManage: boolean }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [selectedActivityIds, setSelectedActivityIds] = useState<Set<string>>(new Set());
@@ -122,7 +124,8 @@ function NewProviderDialog({ projectId }: { projectId: string }) {
     formState: { errors },
   } = useForm<CreateProviderInput>({
     resolver: zodResolver(createProviderSchema),
-    defaultValues: { scope: 'organization' },
+    // Sin `provider.manage` el alta es de esta obra: la API lo fuerza igual.
+    defaultValues: { scope: canManage ? 'organization' : 'project' },
   });
 
   function toggleActivity(activityId: string) {
@@ -179,7 +182,7 @@ function NewProviderDialog({ projectId }: { projectId: string }) {
           control={control}
           errors={errors}
           specialty={watch('specialty')}
-          showScope
+          showScope={canManage}
         />
         <AssignOnCreateField
           projectId={projectId}
@@ -371,6 +374,7 @@ export function ProjectProvidersPage() {
   const [deactivatingProvider, setDeactivatingProvider] = useState<Provider | null>(null);
   const [assigningProvider, setAssigningProvider] = useState<Provider | null>(null);
   const [contractingProvider, setContractingProvider] = useState<Provider | null>(null);
+  const [materialsProvider, setMaterialsProvider] = useState<Provider | null>(null);
 
   // El directorio (crear, editar, dar de baja, traer de la Empresa) es del
   // gerente; asignar a tareas y abrir la contratación lo hace también quien
@@ -378,6 +382,9 @@ export function ProjectProvidersPage() {
   const { can } = useProjectCapabilities(projectId);
   const canManage = can('provider.manage');
   const canAssign = can('provider.assign');
+  // El cliente puede ver proveedores (si la obra lo habilita) pero no Compras.
+  const canReadMaterials = can('material.read');
+  const canCreate = can('provider.create');
 
   const columns = useMemo<ResponsiveColumn<Provider>[]>(() => {
     const base: ResponsiveColumn<Provider>[] = [
@@ -451,6 +458,17 @@ export function ProjectProvidersPage() {
             >
               <FileSignature className="size-4" />
             </Button>
+            {canReadMaterials && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={() => setMaterialsProvider(provider)}
+                aria-label={t('provider.materials.title', { name: provider.name })}
+              >
+                <Package className="size-4" />
+              </Button>
+            )}
             {canManage && (
               <>
                 <Button
@@ -492,7 +510,7 @@ export function ProjectProvidersPage() {
         mobile: 'actions',
       },
     ];
-  }, [canAssign, canManage, removeFromProject, t]);
+  }, [canAssign, canManage, canReadMaterials, removeFromProject, t]);
 
   if (isError) return <PageLayout isError />;
 
@@ -500,7 +518,7 @@ export function ProjectProvidersPage() {
     <>
       <PageLayout
         isLoading={isLoading}
-        action={canManage ? <NewProviderDialog projectId={projectId!} /> : undefined}
+        action={canCreate ? <NewProviderDialog projectId={projectId!} canManage={canManage} /> : undefined}
         secondaryActions={
           canManage ? (
             <Button variant="outline" onClick={() => setPickerOpen(true)}>
@@ -562,6 +580,15 @@ export function ProjectProvidersPage() {
           provider={assigningProvider}
           open={Boolean(assigningProvider)}
           onOpenChange={(open) => !open && setAssigningProvider(null)}
+        />
+      )}
+
+      {materialsProvider && (
+        <ProviderMaterialsDialog
+          projectId={projectId!}
+          provider={materialsProvider}
+          open={Boolean(materialsProvider)}
+          onOpenChange={(open) => !open && setMaterialsProvider(null)}
         />
       )}
 

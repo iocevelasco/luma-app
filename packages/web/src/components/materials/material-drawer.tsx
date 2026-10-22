@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { editMaterialSchema, type EditMaterialInput, type MaterialItem } from '@luma/shared';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { FormDrawer } from '@/components/common/form-drawer';
+import { ProviderCombobox } from '@/components/materials/provider-combobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +16,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
+import { QuickProviderDialog } from '@/components/providers/quick-provider-dialog';
 import { useCreateMaterial, useEditMaterial } from '@/hooks/materials/use-material-queries';
+import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
+import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { isApiError } from '@/lib/api-client';
 
 export const MATERIAL_UNITS = ['un', 'm', 'm2', 'm3', 'kg', 'l', 'bolsa', 'rollo', 'global'] as const;
@@ -31,6 +36,7 @@ function valuesFor(material: MaterialItem): EditMaterialInput {
     unit: material.unit,
     activityId: material.activityId ?? null,
     estimatedCost: material.estimatedCost ?? null,
+    providerId: material.providerId ?? null,
     supplier: material.supplier ?? '',
   };
 }
@@ -59,18 +65,26 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
   const editMaterial = useEditMaterial(projectId);
   const mutation = isEdit ? editMaterial : createMaterial;
   const { data: activitiesData } = useAllActivities(projectId);
+  const { data: providersData } = useProviders(projectId);
+  const canCreateProvider = useProjectCapabilities(projectId).can('provider.create');
+  // El alta rápida: `null` cerrada, un texto (aunque vacío) abierta con ese nombre.
+  const [newProviderName, setNewProviderName] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
     control,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<EditMaterialInput>({
     resolver: zodResolver(editMaterialSchema),
     // Con `values` el form se recarga solo cuando se abre otro material.
     values: material ? valuesFor(material) : (EMPTY_VALUES as EditMaterialInput),
   });
+
+  const providerId = useWatch({ control, name: 'providerId' }) ?? null;
+  const supplier = useWatch({ control, name: 'supplier' }) ?? '';
 
   const locked = isApiError(mutation.error) && mutation.error.code === 'MATERIAL_LOCKED';
 
@@ -106,8 +120,19 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
       }
       onSubmit={handleSubmit((values) => {
         if (material) {
+          // El proveedor viaja sólo si cambió: reenviar el mismo haría que la
+          // API lo valide otra vez, y uno dado de baja frenaría corregir la
+          // cantidad. Con uno vinculado, el texto no viaja: lo borra la API.
+          const sameProvider = values.providerId === material.providerId;
           editMaterial.mutate(
-            { materialId: material.id, payload: values },
+            {
+              materialId: material.id,
+              payload: {
+                ...values,
+                providerId: sameProvider ? undefined : values.providerId,
+                supplier: values.providerId ? undefined : values.supplier,
+              },
+            },
             { onSuccess: close },
           );
           return;
@@ -117,7 +142,8 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
             ...values,
             status: 'pendiente',
             estimatedCost: values.estimatedCost ?? undefined,
-            supplier: values.supplier || undefined,
+            providerId: values.providerId || undefined,
+            supplier: values.providerId ? undefined : values.supplier || undefined,
           },
           { onSuccess: close },
         );
@@ -193,6 +219,38 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
           />
         </div>
 
+        {/* Fila entera: los nombres de proveedor son largos y el buscador necesita aire. */}
+        <div className="flex flex-col gap-2 sm:col-span-2">
+          <Label htmlFor="material-supplier">{t('material.fields.supplier')}</Label>
+          <ProviderCombobox
+            id="material-supplier"
+            providers={providersData?.providers ?? []}
+            value={{ providerId, supplier }}
+            linkedName={material?.providerName}
+            onChange={(next) => {
+              setValue('providerId', next.providerId, { shouldDirty: true });
+              setValue('supplier', next.supplier, { shouldDirty: true });
+            }}
+            onCreate={canCreateProvider ? setNewProviderName : undefined}
+          />
+          <QuickProviderDialog
+            projectId={projectId}
+            open={newProviderName !== null}
+            onOpenChange={(next) => {
+              if (next) return;
+              setNewProviderName(null);
+              // Se abrió desde una opción del buscador, que ya no existe: sin
+              // esto el foco cae en el <body> y Escape ya no cierra el drawer.
+              window.setTimeout(() => document.getElementById('material-supplier')?.focus(), 0);
+            }}
+            initialName={newProviderName ?? undefined}
+            onCreated={(provider) => {
+              // Recién creado: queda elegido, que es para lo que se creó.
+              setValue('providerId', provider.id, { shouldDirty: true });
+              setValue('supplier', '', { shouldDirty: true });
+            }}
+          />
+        </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="material-cost">{t('material.fields.estimatedCost')}</Label>
           <Input
@@ -209,10 +267,6 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="material-supplier">{t('material.fields.supplier')}</Label>
-          <Input id="material-supplier" {...register('supplier')} />
-        </div>
       </div>
     </FormDrawer>
   );

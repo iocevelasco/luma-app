@@ -22,3 +22,18 @@ export function isMaterialEditable(material: {
 }): boolean {
   return material.status === 'pendiente' && !material.statusChangedAt;
 }
+
+/**
+ * Con qué se compara el nombre de un proveedor para saber si dos son el
+ * mismo. "Corralón Sur", " corralon  sur" y "CORRALÓN SUR" son el mismo
+ * negocio. Lo usan la lista de compras (para agrupar) y la API (para saber si
+ * vincular un texto viejo al directorio cambia algo o sólo lo formaliza).
+ */
+export function supplierKey(supplier: string | null | undefined): string {
+  return (supplier ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}

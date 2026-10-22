@@ -109,6 +109,9 @@ export type Capability =
   | 'document.write'
   // Proveedores: el directorio, la asignación y la plata comprometida
   | 'provider.read'
+  // Dar de alta un proveedor desde la obra. Sin `provider.manage` queda sólo
+  // en esa obra: la libreta de la Empresa la cuida el gerente.
+  | 'provider.create'
   | 'provider.manage'
   | 'provider.assign'
   | 'engagement.write';
@@ -173,6 +176,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'crew.manage',
     'crew.attendance.write',
     'provider.read',
+    'provider.create',
     'provider.manage',
     'provider.assign',
     'engagement.write',
@@ -194,6 +198,9 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'crew.create',
     'crew.attendance.write',
     'provider.read',
+    // El que está en la obra encuentra al corralón de la esquina: lo carga
+    // desde Compras sin esperar al gerente, pero sólo para esta obra.
+    'provider.create',
     'provider.assign',
   ],
   // La documentación es la columna derecha de la matriz: el cliente accede a

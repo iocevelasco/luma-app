@@ -10,6 +10,10 @@ import type { MaterialStatus, MaterialUnit } from '@luma/shared';
  * salió de Pendiente (`isMaterialEditable` en `@luma/shared`). Nada lo
  * referencia (ningún gasto, compromiso ni hito guarda un `materialId`), así
  * que el borrado duro de un Pendiente no deja nada colgando.
+ *
+ * El proveedor es `provider` (del directorio) o `supplier` (texto libre),
+ * nunca los dos: el controller borra uno al setear el otro. `supplier` queda
+ * para el que no está cargado en Proveedores y para los datos de antes.
  */
 export interface IMaterialItem extends Document {
   project: mongoose.Types.ObjectId;
@@ -21,6 +25,7 @@ export interface IMaterialItem extends Document {
   statusChangedBy?: mongoose.Types.ObjectId;
   statusChangedAt?: Date;
   estimatedCost?: number;
+  provider?: mongoose.Types.ObjectId | null;
   supplier?: string;
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -52,6 +57,7 @@ const materialItemSchema = new Schema<IMaterialItem>(
     statusChangedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     statusChangedAt: { type: Date },
     estimatedCost: { type: Number, min: 0 },
+    provider: { type: Schema.Types.ObjectId, ref: 'Provider', default: null, index: true },
     supplier: { type: String, trim: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },

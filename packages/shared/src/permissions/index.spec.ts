@@ -56,6 +56,8 @@ describe('grilla de capacidades por obra', () => {
     it('asigna proveedores a actividades pero no administra el directorio', () => {
       expect(canInProject('supervisor', 'provider.assign')).toBe(true);
       expect(canInProject('supervisor', 'provider.manage')).toBe(false);
+      expect(canInProject('supervisor', 'provider.create')).toBe(true);
+      expect(canInProject('cliente', 'provider.create', VISIBLE)).toBe(false);
     });
   });
 

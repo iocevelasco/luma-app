@@ -1,4 +1,6 @@
-import type { MaterialItem, MaterialStatus } from '@luma/shared';
+import { supplierKey, type MaterialItem, type MaterialStatus } from '@luma/shared';
+
+export { supplierKey };
 
 /** Las dos pestañas de Compras: lo que falta comprar y lo que ya se compró. */
 export type MaterialTab = 'toBuy' | 'bought';
@@ -141,18 +143,27 @@ export interface PurchaseRow {
 }
 
 /**
- * Con qué se compara un proveedor para saber si dos son el mismo. Es texto
- * libre: "Corralón Sur", " corralon  sur" y "CORRALÓN SUR" son el mismo
- * negocio, y si se agrupan como tres, quien compra le pide al mismo
- * proveedor tres veces.
+ * A quién se le compra, para mostrar: el proveedor vinculado si hay uno, si no
+ * lo escrito a mano. `supplierKey` (en `@luma/shared`) es con qué se compara.
  */
-export function supplierKey(supplier: string | null | undefined): string {
-  return (supplier ?? '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+export function supplierName(material: Pick<MaterialItem, 'providerName' | 'supplier'>): string | null {
+  const name = material.providerName ?? material.supplier;
+  return name?.trim() ? name.trim() : null;
+}
+
+/**
+ * El proveedor del directorio que se llama igual que lo escrito a mano en un
+ * material sin vincular. Es la sugerencia de "Vincular": nunca se vincula
+ * solo, porque "JDR" y "JDR Ferretería" pueden ser dos negocios.
+ */
+export function providerMatchFor<P extends { id: string; name: string }>(
+  material: Pick<MaterialItem, 'providerId' | 'supplier'>,
+  providers: readonly P[],
+): P | null {
+  if (material.providerId) return null;
+  const key = supplierKey(material.supplier);
+  if (!key) return null;
+  return providers.find((provider) => supplierKey(provider.name) === key) ?? null;
 }
 
 /**
@@ -165,14 +176,18 @@ export function supplierKey(supplier: string | null | undefined): string {
  * armara su lista, las tres terminarían diciendo cosas distintas.
  */
 export function buildPurchaseRows(toBuy: MaterialItem[], locale = 'es'): PurchaseRow[] {
-  // De las grafías de un mismo proveedor se muestra la más repetida.
+  // De las grafías de un mismo proveedor se muestra la más repetida. La del
+  // directorio gana siempre: es la que alguien cargó con cuidado, y así un
+  // material vinculado y uno viejo escrito a mano caen en el mismo grupo.
+  const LINKED_WEIGHT = 1_000_000;
   const spellings = new Map<string, Map<string, number>>();
   for (const material of toBuy) {
-    const key = supplierKey(material.supplier);
+    const name = supplierName(material);
+    const key = supplierKey(name);
     if (!key) continue;
-    const label = (material.supplier ?? '').trim().replace(/\s+/g, ' ');
+    const label = (name ?? '').replace(/\s+/g, ' ');
     const counts = spellings.get(key) ?? new Map<string, number>();
-    counts.set(label, (counts.get(label) ?? 0) + 1);
+    counts.set(label, (counts.get(label) ?? 0) + (material.providerName ? LINKED_WEIGHT : 1));
     spellings.set(key, counts);
   }
   const labelFor = (key: string): string | null => {
@@ -188,7 +203,7 @@ export function buildPurchaseRows(toBuy: MaterialItem[], locale = 'es'): Purchas
       name: material.name,
       quantity: material.quantity,
       unit: material.unit,
-      supplier: labelFor(supplierKey(material.supplier)),
+      supplier: labelFor(supplierKey(supplierName(material))),
       requested: material.status === 'solicitado',
     }))
     .sort((a, b) => {

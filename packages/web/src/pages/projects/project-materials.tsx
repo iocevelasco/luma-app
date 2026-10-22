@@ -1,7 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type MaterialItem, type MaterialStatus } from '@luma/shared';
 import { differenceInCalendarDays, format } from 'date-fns';
-import { Copy, FileDown, MoreHorizontal, Package, Pencil, Plus, Share2, Trash2, X } from 'lucide-react';
+import {
+  ArrowRight,
+  CalendarClock,
+  Copy,
+  FileDown,
+  Link2,
+  MoreHorizontal,
+  Package,
+  Pencil,
+  Plus,
+  Share2,
+  Trash2,
+  Truck,
+  X,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -17,6 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { fromDayKey } from '@/components/common/date-range-filter';
 import { MaterialDrawer } from '@/components/materials/material-drawer';
+import { ProviderCombobox } from '@/components/materials/provider-combobox';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +47,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import {
   useBulkDeleteMaterials,
@@ -41,6 +58,7 @@ import {
   useUpdateMaterial,
 } from '@/hooks/materials/use-material-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
+import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import {
@@ -51,7 +69,9 @@ import {
   countSuppliers,
   materialTab,
   organizeMaterials,
+  providerMatchFor,
   selectionState,
+  supplierName,
   type PurchaseRow,
 } from '@/lib/materials';
 import { cn } from '@/lib/utils';
@@ -151,6 +171,14 @@ function GroupCheckbox({
   );
 }
 
+/**
+ * El rótulo de un grupo —una tarea en "Por comprar", un tramo en "Comprados"—.
+ * Chico, en mayúsculas y atenuado a propósito: con el mismo estilo que el
+ * nombre de un material, el grupo se leía como una fila más y su casilla
+ * parecía "seleccionar este material". Uno solo para los dos tipos de grupo.
+ */
+const GROUP_LABEL = 'text-xs font-medium uppercase tracking-wide text-muted-foreground';
+
 /** Lo que una fila necesita para ofrecer su casilla. Sin esto, no la muestra. */
 interface RowSelection {
   selected: ReadonlySet<string>;
@@ -164,11 +192,14 @@ function MaterialRow({
   activityName,
   highlighted = false,
   selection,
+  providers,
   onEdit,
   onDelete,
 }: {
   material: MaterialItem;
   selection?: RowSelection;
+  /** Para sugerir vincular un proveedor escrito a mano. Sin esto, no sugiere. */
+  providers?: readonly { id: string; name: string }[];
   projectId: string;
   canEdit: boolean;
   /** Los diálogos viven en la página: una lista larga no monta uno por fila. */
@@ -184,6 +215,8 @@ function MaterialRow({
   const [pendingStatus, setPendingStatus] = useState<MaterialStatus | null>(null);
   const next = NEXT_MATERIAL_STATUS[material.status];
   const rowRef = useRef<HTMLLIElement>(null);
+  const supplier = supplierName(material);
+  const match = canEdit && providers ? providerMatchFor(material, providers) : null;
 
   // Sin el scroll, la fila puede quedar abajo del pliegue y el click en el
   // resumen parece no haber hecho nada.
@@ -212,8 +245,30 @@ function MaterialRow({
           <p className="font-medium">{material.name}</p>
           <p className="text-muted-foreground">
             {material.quantity} {t(`material.unit.${material.unit}`)}
-            {material.supplier ? ` · ${material.supplier}` : ''}
+            {supplier ? ` · ${supplier}` : ''}
+            {material.providerActive === false && ` (${t('material.provider.inactive')})`}
             {activityName ? ` · ${activityName}` : ''}
+            {/*
+              Sólo cuando hay un proveedor del directorio que se llama igual:
+              un "Sin vincular" en cada fila vieja sería ruido sin salida.
+            */}
+            {match && (
+              <>
+                {' · '}
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-2 hover:underline max-sm:min-h-11"
+                  aria-label={t('material.provider.linkAria', { name: match.name })}
+                  disabled={updateMaterial.isPending}
+                  onClick={() =>
+                    updateMaterial.mutate({ materialId: material.id, payload: { providerId: match.id } })
+                  }
+                >
+                  <Link2 aria-hidden className="size-3.5" />
+                  {t('material.provider.link')}
+                </button>
+              </>
+            )}
           </p>
         </div>
       </div>
@@ -221,15 +276,21 @@ function MaterialRow({
       <div className="flex items-center gap-2">
         <MaterialStatusBadge status={material.status} />
 
+        {/*
+          Una acción visible por fila, pero liviana: con borde, repetida en
+          cada fila, armaba una columna de píldoras que se leía antes que el
+          material. El outline queda para Cancelar y Volver (DESIGN.md).
+        */}
         {canEdit && next && (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             className="max-sm:min-h-11"
             onClick={() => setPendingStatus(next)}
           >
             {t(`material.action.${next}`)}
+            <ArrowRight aria-hidden className="size-4" />
           </Button>
         )}
 
@@ -347,6 +408,7 @@ function ToBuyGroup({
   canEdit,
   highlightedId,
   selection,
+  providers,
   onEdit,
   onDelete,
 }: {
@@ -358,6 +420,7 @@ function ToBuyGroup({
   canEdit: boolean;
   highlightedId: string | null;
   selection?: RowSelection;
+  providers?: readonly { id: string; name: string }[];
   onEdit: (material: MaterialItem) => void;
   onDelete: (material: MaterialItem) => void;
 }) {
@@ -380,7 +443,7 @@ function ToBuyGroup({
               onSetMany={selection.onSetMany}
             />
           )}
-          <p className="text-sm font-medium">{groupName}</p>
+          <p className={GROUP_LABEL}>{groupName}</p>
         </div>
         {startDate && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -389,8 +452,12 @@ function ToBuyGroup({
                 date: format(fromDayKey(startDate), 'PP', { locale: dateLocale }),
               })}
             </span>
+            {/*
+              Calendario y no el reloj del tono: el reloj ya es "Solicitado",
+              y la urgencia habla de la tarea, no del material.
+            */}
             {urgent && (
-              <Badge variant={days! < 0 ? 'danger' : 'warning'} icon>
+              <Badge variant={days! < 0 ? 'danger' : 'warning'} icon={CalendarClock}>
                 {days! < 0
                   ? t('material.list.startedAlready')
                   : days === 0
@@ -410,6 +477,7 @@ function ToBuyGroup({
             canEdit={canEdit}
             highlighted={material.id === highlightedId}
             selection={selection}
+            providers={providers}
             onEdit={onEdit}
             onDelete={onDelete}
           />
@@ -428,6 +496,7 @@ function BoughtGroup({
   highlightedId,
   activityById,
   selection,
+  providers,
   onEdit,
   onDelete,
 }: {
@@ -438,6 +507,7 @@ function BoughtGroup({
   highlightedId: string | null;
   activityById: ReadonlyMap<string, { name: string }>;
   selection?: RowSelection;
+  providers?: readonly { id: string; name: string }[];
   onEdit: (material: MaterialItem) => void;
   onDelete: (material: MaterialItem) => void;
 }) {
@@ -455,7 +525,7 @@ function BoughtGroup({
             onSetMany={selection.onSetMany}
           />
         )}
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <p className={GROUP_LABEL}>
           {title} ({materials.length})
         </p>
       </div>
@@ -468,6 +538,7 @@ function BoughtGroup({
             canEdit={canEdit}
             highlighted={material.id === highlightedId}
             selection={selection}
+            providers={providers}
             onEdit={onEdit}
             onDelete={onDelete}
             activityName={material.activityId ? activityById.get(material.activityId)?.name : undefined}
@@ -479,7 +550,10 @@ function BoughtGroup({
 }
 
 /** Lo que la barra de selección pide confirmar antes de mandar. */
-type PendingBulk = { kind: 'status'; status: MaterialStatus } | { kind: 'delete' };
+type PendingBulk =
+  | { kind: 'status'; status: MaterialStatus }
+  | { kind: 'delete' }
+  | { kind: 'provider' };
 
 /**
  * La barra que reemplaza a "Descargar PDF / Copiar / Compartir" mientras hay
@@ -600,6 +674,17 @@ function SelectionBar({
             </>
           )}
 
+          {/* Asignar es corregir: sólo si todos siguen editables, como eliminar. */}
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onAction({ kind: 'provider' })}>
+                <Truck className="size-4" />
+                {t('material.bulk.assignProvider')}
+              </DropdownMenuItem>
+            </>
+          )}
+
           {canDelete && (
             <>
               <DropdownMenuSeparator />
@@ -655,9 +740,13 @@ export function ProjectMaterialsPage() {
   const panelRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [pendingBulk, setPendingBulk] = useState<PendingBulk | null>(null);
+  const [bulkProviderId, setBulkProviderId] = useState<string | null>(null);
 
   // Gerente y supervisor gestionan las compras; lo decide la grilla.
   const canWrite = useProjectCapabilities(projectId).can('material.write');
+  // Para vincular y asignar. Sin escritura no hace falta pedirlos.
+  const { data: providersData } = useProviders(canWrite ? projectId : undefined);
+  const providers = providersData?.providers;
 
   const activityById = useMemo(() => {
     const map = new Map<string, { name: string; startDate: string }>();
@@ -708,8 +797,10 @@ export function ProjectMaterialsPage() {
     const ids = materials.map((material) => material.id);
     const options = { onSuccess: clearSelection };
     if (pendingBulk.kind === 'delete') bulkDelete.mutate({ ids }, options);
-    else bulkUpdate.mutate({ ids, status: pendingBulk.status }, options);
+    else if (pendingBulk.kind === 'status') bulkUpdate.mutate({ ids, status: pendingBulk.status }, options);
+    else if (bulkProviderId) bulkUpdate.mutate({ ids, providerId: bulkProviderId }, options);
     setPendingBulk(null);
+    setBulkProviderId(null);
   }
 
   // El PDF y su librería pesan: se bajan apenas hay algo que descargar, no al
@@ -936,6 +1027,7 @@ export function ProjectMaterialsPage() {
                   canEdit={canWrite}
                   highlightedId={highlightedId}
                   selection={selection}
+                  providers={providers}
                   onEdit={setEditing}
                   onDelete={setDeleting}
                 />
@@ -966,6 +1058,7 @@ export function ProjectMaterialsPage() {
                 highlightedId={highlightedId}
                 activityById={activityById}
                 selection={selection}
+                providers={providers}
                 onEdit={setEditing}
                 onDelete={setDeleting}
               />
@@ -977,6 +1070,7 @@ export function ProjectMaterialsPage() {
                 highlightedId={highlightedId}
                 activityById={activityById}
                 selection={selection}
+                providers={providers}
                 onEdit={setEditing}
                 onDelete={setDeleting}
               />
@@ -993,7 +1087,46 @@ export function ProjectMaterialsPage() {
         onOpenChange={(open) => !open && setEditing(null)}
       />
 
-      <AlertDialog open={pendingBulk !== null} onOpenChange={(open) => !open && setPendingBulk(null)}>
+      <ResponsiveDialog
+        open={pendingBulk?.kind === 'provider'}
+        onOpenChange={(open) => {
+          if (open) return;
+          setPendingBulk(null);
+          setBulkProviderId(null);
+        }}
+        title={t('material.bulk.assignTitle', { count: bulkCount })}
+        description={t('material.bulk.assignHint')}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="bulk-provider">{t('material.fields.supplier')}</Label>
+            <ProviderCombobox
+              id="bulk-provider"
+              providers={providers ?? []}
+              allowFreeText={false}
+              value={{ providerId: bulkProviderId, supplier: '' }}
+              onChange={(next) => setBulkProviderId(next.providerId)}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setPendingBulk(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              type="button"
+              disabled={!bulkProviderId || bulkUpdate.isPending}
+              onClick={() => confirmBulk(selectedMaterials)}
+            >
+              {t('material.bulk.assignSubmit')}
+            </Button>
+          </div>
+        </div>
+      </ResponsiveDialog>
+
+      <AlertDialog
+        open={pendingBulk !== null && pendingBulk.kind !== 'provider'}
+        onOpenChange={(open) => !open && setPendingBulk(null)}
+      >
         <AlertDialogContent
           // Las filas que abrieron el diálogo se van de la pestaña al confirmar.
           onCloseAutoFocus={(event) => {
@@ -1010,7 +1143,7 @@ export function ProjectMaterialsPage() {
             <AlertDialogDescription>
               {pendingBulk?.kind === 'delete'
                 ? t('material.bulk.deleteBody')
-                : pendingBulk &&
+                : pendingBulk?.kind === 'status' &&
                   t('material.bulk.confirmStatusBody', {
                     count: bulkCount,
                     status: t(`material.status.${pendingBulk.status}`),

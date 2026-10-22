@@ -365,6 +365,19 @@
     }
   },
   "material": {
+    "provider": {
+      "placeholder": "Elige o escribe un proveedor",
+      "search": "Buscar proveedor…",
+      "noResults": "No hay proveedores con ese nombre.",
+      "fromDirectory": "Proveedores de la obra",
+      "useTyped": "Usar «{{name}}» sin vincular",
+      "none": "Sin proveedor",
+      "inactive": "dado de baja",
+      "link": "Vincular",
+      "linkAria": "Vincular a {{name}} de Proveedores",
+      "create": "Agregar proveedor",
+      "createHint": "Queda disponible solo en esta obra. Para añadirlo a todas, pídeselo al gerente."
+    },
     "list": {
       "navLink": "Compras",
       "title": "Compras",
@@ -427,7 +440,12 @@
       "updated_one": "{{count}} material actualizado",
       "updated_other": "{{count}} materiales actualizados",
       "deleted_one": "{{count}} material eliminado",
-      "deleted_other": "{{count}} materiales eliminados"
+      "deleted_other": "{{count}} materiales eliminados",
+      "assignProvider": "Asignar proveedor",
+      "assignTitle_one": "Asignar proveedor a {{count}} material",
+      "assignTitle_other": "Asignar proveedor a {{count}} materiales",
+      "assignHint": "Reemplaza el proveedor que tengan, también el escrito a mano.",
+      "assignSubmit": "Asignar"
     },
     "pdf": {
       "title": "Lista de compras",
@@ -481,6 +499,11 @@
     }
   },
   "provider": {
+    "materials": {
+      "title": "Materiales de {{name}}",
+      "empty": "Todavía no hay materiales de este proveedor en esta obra.",
+      "openPurchases": "Ir a Compras"
+    },
     "list": {
       "navLink": "Proveedores",
       "title": "Proveedores",

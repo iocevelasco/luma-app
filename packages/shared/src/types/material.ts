@@ -20,6 +20,16 @@ export interface MaterialItem {
   /** La API ya lo resolvió con `isMaterialEditable`: la UI lo lee, no lo deriva. */
   editable: boolean;
   estimatedCost?: number;
+  /**
+   * El proveedor del directorio, si está vinculado. Excluye a `supplier`:
+   * un material tiene uno o el otro, nunca los dos.
+   */
+  providerId: string | null;
+  /** Nombre del proveedor vinculado, resuelto por la API. */
+  providerName?: string;
+  /** `false` si el proveedor vinculado se dio de baja: se sigue mostrando, no se elige. */
+  providerActive?: boolean;
+  /** Proveedor escrito a mano: el que no está en el directorio, y los datos viejos. */
   supplier?: string;
   createdBy: string;
   createdAt: string;
