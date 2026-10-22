@@ -1,4 +1,4 @@
-import type { ProviderSpecialty } from './provider.js';
+import type { TradeSpecialty } from './provider.js';
 
 /**
  * Personal fijo de obra.
@@ -27,7 +27,7 @@ export interface CrewMember {
   name: string;
   kind: CrewMemberKind;
   /** Mismo catálogo que los proveedores: es el mismo rubro de obra. */
-  specialty?: ProviderSpecialty;
+  specialty?: TradeSpecialty;
   /**
    * Encargado de su especialidad — el que "reporta como un ingeniero" en una
    * obra grande. Es un flag y no un rol del sistema: no cambia permisos, sólo
@@ -77,7 +77,7 @@ export interface CrewMemberSummary {
   id: string;
   name: string;
   kind: CrewMemberKind;
-  specialty?: ProviderSpecialty;
+  specialty?: TradeSpecialty;
   isLead: boolean;
 }
 

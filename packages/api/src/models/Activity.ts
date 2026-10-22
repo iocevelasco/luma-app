@@ -1,5 +1,5 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { ActivityStatus, ProviderSpecialty } from '@luma/shared';
+import type { ActivityStatus, TradeSpecialty } from '@luma/shared';
 
 /**
  * Actividad de la planificación semanal de una obra (RF-01). Borrado DURO
@@ -39,7 +39,7 @@ export interface IActivity extends Document {
   endDate: string;
   responsible: IActivityResponsible;
   status: ActivityStatus;
-  specialty?: ProviderSpecialty;
+  specialty?: TradeSpecialty;
   review?: IActivityReview | null;
   notes?: string;
   evidence: mongoose.Types.DocumentArray<IActivityEvidence>;

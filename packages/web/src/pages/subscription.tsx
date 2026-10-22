@@ -18,6 +18,7 @@ import { PaymentStatusBadge } from '@/components/subscription/payment-status-bad
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ListSection, RowCard, RowCardList } from '@/components/common/row-card-list';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   useInvalidateSubscription,
@@ -330,17 +331,13 @@ function HistoryCard({ payments }: { payments: SubscriptionPaymentSummary[] }) {
   const formatDate = useFormatDate();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t('subscription.history.title')}</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <ListSection label={t('subscription.history.title')}>
         {payments.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('subscription.history.empty')}</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-border">
+          <RowCardList>
             {payments.map((payment) => (
-              <li key={payment.id} className="flex flex-col gap-1 py-3 text-sm first:pt-0 last:pb-0">
+              <RowCard key={payment.id} className="flex-col items-stretch gap-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium">
                     {t(`subscription.method.${payment.method}`)} · {formatDate(payment.submittedAt)}
@@ -374,12 +371,11 @@ function HistoryCard({ payments }: { payments: SubscriptionPaymentSummary[] }) {
                     {t('subscription.history.receipt')}
                   </a>
                 )}
-              </li>
+              </RowCard>
             ))}
-          </ul>
+          </RowCardList>
         )}
-      </CardContent>
-    </Card>
+    </ListSection>
   );
 }
 

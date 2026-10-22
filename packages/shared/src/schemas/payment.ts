@@ -102,6 +102,39 @@ export const createExpenseSchema = z.object({
   notes: z.string().trim().max(1000).optional(),
 });
 
+/** Lista de ids que en multipart llega como un solo texto separado por comas. */
+const idListSchema = z.preprocess(
+  (value) => (typeof value === 'string' ? value.split(',').filter(Boolean) : value),
+  z
+    .array(z.string().regex(/^[a-f0-9]{24}$/i, 'Identificador inválido'))
+    .min(1, 'Elegí al menos un material')
+    .max(200, 'Son demasiados: hasta 200 por factura')
+    .transform((ids) => [...new Set(ids)]),
+);
+
+/**
+ * La factura de una compra, cargada desde Compras. Es un gasto de categoría
+ * `material` (la fuerza el controller, no viaja) con los materiales que paga.
+ * Multipart por el archivo: por eso los números y el booleano vienen como
+ * texto y se convierten acá.
+ */
+export const createMaterialInvoiceSchema = z.object({
+  materialIds: idListSchema,
+  amount: z.coerce.number().pipe(amountSchema),
+  currency: currencySchema,
+  exchangeRate: z.coerce.number().pipe(exchangeRateSchema),
+  spentOn: dayKeySchema,
+  description: z
+    .string()
+    .trim()
+    .min(1, 'La descripción es obligatoria')
+    .max(300, 'La descripción es demasiado larga'),
+  providerId: z.string().trim().optional(),
+  notes: z.string().trim().max(1000).optional(),
+  /** Los Solicitados de la factura pasan a Comprado al guardar. */
+  markBought: z.preprocess((value) => value === true || value === 'true', z.boolean()).default(false),
+});
+
 export const updateExpenseSchema = z
   .object({
     amount: z.coerce.number().pipe(amountSchema).optional(),
@@ -130,3 +163,4 @@ export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
 export type PayrollQueryInput = z.infer<typeof payrollQuerySchema>;
+export type CreateMaterialInvoiceInput = z.infer<typeof createMaterialInvoiceSchema>;

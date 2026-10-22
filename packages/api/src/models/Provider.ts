@@ -58,6 +58,7 @@ const providerSchema = new Schema<IProvider>(
         'pisos_revestimientos',
         'jardineria',
         'demolicion',
+        'materiales',
         'otra',
       ],
       required: true,

@@ -1,4 +1,6 @@
-import type { MaterialItem, MaterialStatus } from '@luma/shared';
+import { supplierKey, type MaterialItem, type MaterialStatus } from '@luma/shared';
+
+export { supplierKey };
 
 /** Las dos pestañas de Compras: lo que falta comprar y lo que ya se compró. */
 export type MaterialTab = 'toBuy' | 'bought';
@@ -7,6 +9,60 @@ const TO_BUY: ReadonlySet<MaterialStatus> = new Set(['pendiente', 'solicitado'])
 
 export function materialTab(status: MaterialStatus): MaterialTab {
   return TO_BUY.has(status) ? 'toBuy' : 'bought';
+}
+
+/**
+ * El paso siguiente de cada material. El camino es lineal —se pide, se
+ * compra, llega— y casi todos los cambios de estado son "el que sigue": un
+ * botón con el nombre de lo que va a pasar, en vez de un selector con los
+ * cuatro estados donde hay que saber cuál elegir. Los demás cambios (volver
+ * atrás, corregir) quedan en el menú.
+ */
+export const NEXT_MATERIAL_STATUS: Partial<Record<MaterialStatus, MaterialStatus>> = {
+  pendiente: 'solicitado',
+  solicitado: 'comprado',
+  comprado: 'en_obra',
+};
+
+/**
+ * Cuántos nadie pidió todavía. Es la pregunta de "Por comprar" —¿qué tengo
+ * que pedir?—, y el orden por fecha de la tarea no la responde: un Pendiente
+ * sin tarea queda último. Derivado siempre, nunca guardado.
+ */
+export function countUnrequested(materials: readonly Pick<MaterialItem, 'status'>[]): number {
+  return materials.filter((material) => material.status === 'pendiente').length;
+}
+
+/** Estado de una casilla que agrupa a otras: la maestra o la de un grupo. */
+export type SelectionState = 'none' | 'some' | 'all';
+
+export function selectionState(ids: readonly string[], selected: ReadonlySet<string>): SelectionState {
+  const count = ids.filter((id) => selected.has(id)).length;
+  if (count === 0) return 'none';
+  return count === ids.length ? 'all' : 'some';
+}
+
+/**
+ * Qué se le puede ofrecer a una selección. Sólo lo que vale para TODOS: un
+ * "Eliminar" que después falla para la mitad obliga a adivinar cuál era.
+ *
+ * - `next`: el paso siguiente, si todos están en el mismo estado y hay uno.
+ * - `canDelete`: todos siguen editables (la API ya lo resolvió en `editable`).
+ * - `locksSome`: alguno sigue editable y un cambio de estado lo bloquearía.
+ */
+export function bulkActionsFor(selected: readonly MaterialItem[]): {
+  next: MaterialStatus | null;
+  canDelete: boolean;
+  locksSome: boolean;
+} {
+  if (selected.length === 0) return { next: null, canDelete: false, locksSome: false };
+  const first = selected[0]!.status;
+  const sameStatus = selected.every((material) => material.status === first);
+  return {
+    next: sameStatus ? (NEXT_MATERIAL_STATUS[first] ?? null) : null,
+    canDelete: selected.every((material) => material.editable),
+    locksSome: selected.some((material) => material.editable),
+  };
 }
 
 export interface ActivityRef {
@@ -91,23 +147,44 @@ export interface PurchaseRow {
   unit: MaterialItem['unit'];
   /** `null` = sin proveedor. Ya viene con la grafía que se muestra. */
   supplier: string | null;
-  /** Ya se le encargó al proveedor: va en la lista, pero marcado. */
-  requested: boolean;
+  /**
+   * Va en la lista, pero marcado: en "Por comprar", lo que ya se le encargó
+   * al proveedor; en "Comprados", lo que ya llegó a la obra. Lo marcado va
+   * último dentro de cada proveedor: arriba queda lo que todavía pide algo.
+   */
+  tagged: boolean;
+}
+
+/** Las dos listas que se exportan: la de compras y la de lo ya comprado. */
+export type PurchaseListKind = MaterialTab;
+
+const TAGGED_STATUS: Record<PurchaseListKind, MaterialStatus> = {
+  toBuy: 'solicitado',
+  bought: 'en_obra',
+};
+
+/**
+ * A quién se le compra, para mostrar: el proveedor vinculado si hay uno, si no
+ * lo escrito a mano. `supplierKey` (en `@luma/shared`) es con qué se compara.
+ */
+export function supplierName(material: Pick<MaterialItem, 'providerName' | 'supplier'>): string | null {
+  const name = material.providerName ?? material.supplier;
+  return name?.trim() ? name.trim() : null;
 }
 
 /**
- * Con qué se compara un proveedor para saber si dos son el mismo. Es texto
- * libre: "Corralón Sur", " corralon  sur" y "CORRALÓN SUR" son el mismo
- * negocio, y si se agrupan como tres, quien compra le pide al mismo
- * proveedor tres veces.
+ * El proveedor del directorio que se llama igual que lo escrito a mano en un
+ * material sin vincular. Es la sugerencia de "Vincular": nunca se vincula
+ * solo, porque "JDR" y "JDR Ferretería" pueden ser dos negocios.
  */
-export function supplierKey(supplier: string | null | undefined): string {
-  return (supplier ?? '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+export function providerMatchFor<P extends { id: string; name: string }>(
+  material: Pick<MaterialItem, 'providerId' | 'supplier'>,
+  providers: readonly P[],
+): P | null {
+  if (material.providerId) return null;
+  const key = supplierKey(material.supplier);
+  if (!key) return null;
+  return providers.find((provider) => supplierKey(provider.name) === key) ?? null;
 }
 
 /**
@@ -119,15 +196,23 @@ export function supplierKey(supplier: string | null | undefined): string {
  * Es UNA sola construcción para el PDF, copiar y compartir: si cada salida
  * armara su lista, las tres terminarían diciendo cosas distintas.
  */
-export function buildPurchaseRows(toBuy: MaterialItem[], locale = 'es'): PurchaseRow[] {
-  // De las grafías de un mismo proveedor se muestra la más repetida.
+export function buildPurchaseRows(
+  toBuy: MaterialItem[],
+  locale = 'es',
+  kind: PurchaseListKind = 'toBuy',
+): PurchaseRow[] {
+  // De las grafías de un mismo proveedor se muestra la más repetida. La del
+  // directorio gana siempre: es la que alguien cargó con cuidado, y así un
+  // material vinculado y uno viejo escrito a mano caen en el mismo grupo.
+  const LINKED_WEIGHT = 1_000_000;
   const spellings = new Map<string, Map<string, number>>();
   for (const material of toBuy) {
-    const key = supplierKey(material.supplier);
+    const name = supplierName(material);
+    const key = supplierKey(name);
     if (!key) continue;
-    const label = (material.supplier ?? '').trim().replace(/\s+/g, ' ');
+    const label = (name ?? '').replace(/\s+/g, ' ');
     const counts = spellings.get(key) ?? new Map<string, number>();
-    counts.set(label, (counts.get(label) ?? 0) + 1);
+    counts.set(label, (counts.get(label) ?? 0) + (material.providerName ? LINKED_WEIGHT : 1));
     spellings.set(key, counts);
   }
   const labelFor = (key: string): string | null => {
@@ -143,14 +228,14 @@ export function buildPurchaseRows(toBuy: MaterialItem[], locale = 'es'): Purchas
       name: material.name,
       quantity: material.quantity,
       unit: material.unit,
-      supplier: labelFor(supplierKey(material.supplier)),
-      requested: material.status === 'solicitado',
+      supplier: labelFor(supplierKey(supplierName(material))),
+      tagged: material.status === TAGGED_STATUS[kind],
     }))
     .sort((a, b) => {
       if (!a.supplier !== !b.supplier) return a.supplier ? -1 : 1;
       const bySupplier = supplierKey(a.supplier).localeCompare(supplierKey(b.supplier), locale);
       if (bySupplier !== 0) return bySupplier;
-      if (a.requested !== b.requested) return Number(a.requested) - Number(b.requested);
+      if (a.tagged !== b.tagged) return Number(a.tagged) - Number(b.tagged);
       return a.name.localeCompare(b.name, locale);
     });
 }
@@ -163,13 +248,13 @@ export function countSuppliers(rows: PurchaseRow[]): number {
 /** El texto de copiar y compartir: una línea por material, la misma lista que el PDF. */
 export function buildPurchaseText(
   rows: PurchaseRow[],
-  labels: { unit: (unit: PurchaseRow['unit']) => string; requested: string },
+  labels: { unit: (unit: PurchaseRow['unit']) => string; tag: string },
 ): string {
   return rows
     .map((row) => {
       const supplier = row.supplier ? ` · ${row.supplier}` : '';
-      const requested = row.requested ? ` (${labels.requested})` : '';
-      return `- ${row.name}: ${row.quantity} ${labels.unit(row.unit)}${supplier}${requested}`;
+      const tag = row.tagged ? ` (${labels.tag})` : '';
+      return `- ${row.name}: ${row.quantity} ${labels.unit(row.unit)}${supplier}${tag}`;
     })
     .join('\n');
 }

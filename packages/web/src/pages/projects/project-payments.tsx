@@ -33,6 +33,15 @@ import {
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  ListSection,
+  ListSections,
+  RowCard,
+  RowCardBody,
+  RowCardDate,
+  RowCardEnd,
+  RowCardList,
+} from '@/components/common/row-card-list';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
@@ -453,39 +462,40 @@ export function ProjectPaymentsPage() {
         </CardContent>
       </Card>
 
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-4">
-          <h3 className="text-sm font-medium">{t('finance.schedule.title')}</h3>
-        </div>
-
+      <ListSections>
+      <ListSection label={t('finance.schedule.title')} meta={items.length > 0 ? items.length : undefined}>
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('finance.schedule.empty')}</p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <RowCardList>
             {items.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
-              >
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-medium">{item.concept}</p>
-                    <Badge variant={STATUS_TAG[item.status].variant} icon={STATUS_TAG[item.status].icon}>
-                      {t(`finance.status.${item.status}`)}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t('finance.schedule.dueOn', {
-                      date: format(fromDayKey(item.dueOn), 'PP', { locale: dateLocale }),
-                    })}
-                    {item.paidAmount > 0 &&
-                      ` · ${t('finance.schedule.paidSoFar', {
-                        amount: formatMoney(item.paidAmount, currency, i18n.language),
-                      })}`}
-                  </p>
-                </div>
+              <RowCard key={item.id}>
+                <RowCardDate
+                  date={fromDayKey(item.dueOn)}
+                  locale={dateLocale}
+                  label={t('finance.schedule.dueOn', {
+                    date: format(fromDayKey(item.dueOn), 'PP', { locale: dateLocale }),
+                  })}
+                />
+                <RowCardBody
+                  title={item.concept}
+                  meta={
+                    item.paidAmount > 0 && (
+                      // El texto venía después de un " · "; ahora abre la línea.
+                      <p className="first-letter:uppercase">
+                        {t('finance.schedule.paidSoFar', {
+                          amount: formatMoney(item.paidAmount, currency, i18n.language),
+                        })}
+                      </p>
+                    )
+                  }
+                />
 
-                <div className="flex shrink-0 items-center gap-2">
+                <RowCardEnd>
+                  {/* El estado abre el bloque derecho, en la misma columna en todas las cuotas. */}
+                  <Badge variant={STATUS_TAG[item.status].variant} icon={STATUS_TAG[item.status].icon}>
+                    {t(`finance.status.${item.status}`)}
+                  </Badge>
                   <span className="text-sm tabular-nums">
                     {formatMoney(item.scheduledAmount, currency, i18n.language)}
                   </span>
@@ -499,40 +509,32 @@ export function ProjectPaymentsPage() {
                       <Trash2 className="size-4" />
                     </Button>
                   </Can>
-                </div>
-              </li>
+                </RowCardEnd>
+              </RowCard>
             ))}
-          </ul>
+          </RowCardList>
         )}
-      </section>
+      </ListSection>
 
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-4">
-          <h3 className="text-sm font-medium">{t('finance.payments.title')}</h3>
-        </div>
-
+      <ListSection label={t('finance.payments.title')} meta={payments.length > 0 ? payments.length : undefined}>
         {payments.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('finance.payments.empty')}</p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <RowCardList>
             {payments.map((payment) => (
-              <li
-                key={payment.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
-              >
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <p className="text-sm font-medium">
-                    {payment.scheduleItemConcept ?? t('finance.payments.onAccount')}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(fromDayKey(payment.paidOn), 'PP', { locale: dateLocale })}
-                    {' · '}
-                    {t(`finance.method.${payment.method}`)}
-                    {payment.reference && ` · ${payment.reference}`}
-                  </p>
-                </div>
+              <RowCard key={payment.id}>
+                <RowCardDate date={fromDayKey(payment.paidOn)} locale={dateLocale} tone="success" />
+                <RowCardBody
+                  title={payment.scheduleItemConcept ?? t('finance.payments.onAccount')}
+                  meta={
+                    <>
+                      {t(`finance.method.${payment.method}`)}
+                      {payment.reference && ` · ${payment.reference}`}
+                    </>
+                  }
+                />
 
-                <div className="flex shrink-0 items-center gap-2">
+                <RowCardEnd>
                   <span className="text-sm tabular-nums">
                     {formatMoney(payment.amountInProjectCurrency, currency, i18n.language)}
                   </span>
@@ -546,12 +548,13 @@ export function ProjectPaymentsPage() {
                       <Trash2 className="size-4" />
                     </Button>
                   </Can>
-                </div>
-              </li>
+                </RowCardEnd>
+              </RowCard>
             ))}
-          </ul>
+          </RowCardList>
         )}
-      </section>
+      </ListSection>
+      </ListSections>
 
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>

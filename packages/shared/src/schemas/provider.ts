@@ -39,6 +39,7 @@ export const providerSpecialtySchema = z.enum(
     'pisos_revestimientos',
     'jardineria',
     'demolicion',
+    'materiales',
     'otra',
   ],
   { required_error: 'Elegí una especialidad', invalid_type_error: 'Elegí una especialidad' },

@@ -41,7 +41,9 @@ export function PaymentReviewCard({ payment }: { payment: AdminSubscriptionPayme
   const approveError = review.variables?.decision.decision === 'aprobar' ? review.error : null;
 
   return (
-    <Card>
+    // Una fila-tarjeta de la lista de pagos (DESIGN.md, "Listas"): sin borde,
+    // con el radio de fila y la misma subida al pasar.
+    <Card className="rounded-2xl border-0 transition-shadow duration-200 focus-within:shadow-lift hover:shadow-lift">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium">{payment.organization.name}</p>

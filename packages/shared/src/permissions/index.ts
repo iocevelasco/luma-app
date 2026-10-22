@@ -88,6 +88,10 @@ export type Capability =
   // Materiales y herramientas
   | 'material.read'
   | 'material.write'
+  // Facturas de materiales: un gasto acotado. Quien las tiene carga y ve las
+  // facturas de lo que compró, pero no Finanzas ni el total gastado.
+  | 'material.invoice.read'
+  | 'material.invoice.write'
   // Personal en obra: sumar gente, administrar el roster y la asistencia.
   // Lo que cada uno tiene que hacer son tareas: `activity.*`.
   | 'crew.read'
@@ -109,6 +113,9 @@ export type Capability =
   | 'document.write'
   // Proveedores: el directorio, la asignación y la plata comprometida
   | 'provider.read'
+  // Dar de alta un proveedor desde la obra. Sin `provider.manage` queda sólo
+  // en esa obra: la libreta de la Empresa la cuida el gerente.
+  | 'provider.create'
   | 'provider.manage'
   | 'provider.assign'
   | 'engagement.write';
@@ -163,6 +170,8 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'activity.evidence.write',
     'material.read',
     'material.write',
+    'material.invoice.read',
+    'material.invoice.write',
     'milestone.read',
     'milestone.report',
     'milestone.publish',
@@ -173,6 +182,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'crew.manage',
     'crew.attendance.write',
     'provider.read',
+    'provider.create',
     'provider.manage',
     'provider.assign',
     'engagement.write',
@@ -185,6 +195,10 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'activity.evidence.write',
     'material.read',
     'material.write',
+    // Carga la factura de lo que compró. Sin `expense.*`: no ve Finanzas, ni
+    // cobros, así que tampoco puede calcular el margen.
+    'material.invoice.read',
+    'material.invoice.write',
     'milestone.read',
     'milestone.report',
     'document.read',
@@ -194,6 +208,9 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'crew.create',
     'crew.attendance.write',
     'provider.read',
+    // El que está en la obra encuentra al corralón de la esquina: lo carga
+    // desde Compras sin esperar al gerente, pero sólo para esta obra.
+    'provider.create',
     'provider.assign',
   ],
   // La documentación es la columna derecha de la matriz: el cliente accede a

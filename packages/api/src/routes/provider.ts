@@ -40,7 +40,9 @@ providerRouter.use(isAuthenticated, requireProjectAccess);
 // Lectura: gerente y supervisor siempre, el cliente sólo si la obra lo
 // habilitó — esa excepción vive en la grilla, no acá.
 providerRouter.get('/', requireCapability('provider.read'), listProviders);
-providerRouter.post('/', requireCapability('provider.manage'), createProvider);
+// `provider.create`, no `manage`: el supervisor también da de alta, pero el
+// controller le deja sólo el alcance de esta obra.
+providerRouter.post('/', requireCapability('provider.create'), createProvider);
 
 // Sumar a esta obra lo que ya está en la libreta de la Empresa. Antes que
 // `/:providerId` para que "directory" no se lea como un id.

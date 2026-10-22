@@ -7,6 +7,7 @@ import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ListSection, RowCard, RowCardList } from '@/components/common/row-card-list';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -108,14 +109,10 @@ export function ExchangeRatesPanel() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('platform.rates.history')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="flex flex-col divide-y divide-border text-sm">
+      <ListSection label={t('platform.rates.history')}>
+          <RowCardList>
             {(data?.rates ?? []).map((record) => (
-              <li key={record.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+              <RowCard key={record.id} className="justify-between gap-2 py-3">
                 <span>
                   {day(record.valueDate)} · {t(`platform.rates.source.${record.source}`)}
                 </span>
@@ -130,11 +127,10 @@ export function ExchangeRatesPanel() {
                     {format(new Date(record.lastSeenAt), 'Pp', { locale })}
                   </span>
                 </span>
-              </li>
+              </RowCard>
             ))}
-          </ul>
-        </CardContent>
-      </Card>
+          </RowCardList>
+      </ListSection>
     </div>
   );
 }

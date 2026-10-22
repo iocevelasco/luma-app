@@ -48,6 +48,7 @@ import {
   useRemoveProjectMember,
   useUpdateProjectMemberRole,
 } from '@/hooks/projects/use-project-queries';
+import { RowCard, RowCardBody, RowCardEnd, RowCardLead, RowCardList } from '@/components/common/row-card-list';
 import { cn } from '@/lib/utils';
 
 /** Un ícono por rol: la fila se escanea por forma antes que por texto. */
@@ -245,16 +246,16 @@ function MemberRow({ projectId, member }: { projectId: string; member: ProjectMe
   const isManager = member.role === 'gerente';
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <Icon className="size-4 shrink-0 text-muted-foreground" />
-        <div className="flex min-w-0 flex-col">
-          <p className="truncate text-sm font-medium">{member.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{member.email}</p>
-        </div>
-      </div>
+    <RowCard>
+      <RowCardLead tone={isManager ? 'brand' : 'neutral'}>
+        <Icon aria-hidden className="size-5" />
+      </RowCardLead>
+      <RowCardBody
+        title={<p className="truncate">{member.name}</p>}
+        meta={<p className="truncate">{member.email}</p>}
+      />
 
-      <div className="flex shrink-0 items-center gap-2">
+      <RowCardEnd>
         {isManager ? (
           <Badge variant="solid">{t('project.role.gerente')}</Badge>
         ) : (
@@ -280,8 +281,8 @@ function MemberRow({ projectId, member }: { projectId: string; member: ProjectMe
             <RemoveMemberButton projectId={projectId} member={member} />
           </>
         )}
-      </div>
-    </li>
+      </RowCardEnd>
+    </RowCard>
   );
 }
 
@@ -315,11 +316,11 @@ export function ProjectTeamPage() {
     >
 
       {/* Nunca está vacía: el gerente siempre viene en la lista. */}
-      <ul className="flex flex-col gap-2">
+      <RowCardList>
         {data.members.map((member) => (
           <MemberRow key={member.id} projectId={projectId!} member={member} />
         ))}
-      </ul>
+      </RowCardList>
 
       <p className="text-xs text-muted-foreground">{t('project.team.activationHint')}</p>
     </PageLayout>
