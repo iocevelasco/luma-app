@@ -1,6 +1,6 @@
 # Compras: proveedor vinculado, selección múltiple y facturas
 
-**Estado:** Fase 1 implementada · preguntas bloqueantes cerradas (1 y 3, 2026-10-22) · **Fecha:** 2026-10-22 · **Pantalla:** `/app/admin/proyectos/:projectId/materiales` (Compras)
+**Estado:** Fases 1 y 2 implementadas · preguntas bloqueantes cerradas (1 y 3, 2026-10-22) · **Fecha:** 2026-10-22 · **Pantalla:** `/app/admin/proyectos/:projectId/materiales` (Compras)
 
 ## Resumen
 
@@ -198,11 +198,14 @@ El campo "Proveedor (opcional)" pasa a ser un combobox con búsqueda:
   contrata, se le compra.
 - Si lo escrito no coincide con ninguno, la última opción es "Usar «800
   Aluminio» sin vincular", que guarda texto como hoy.
-- Si la persona tiene `provider.manage`, una opción "Agregar a Proveedores…" abre
-  el alta con el nombre ya escrito. **Ver pregunta 2.**
+- "Agregar proveedor", al pie del buscador, abre el alta con el nombre que se
+  venía buscando y lo deja elegido al guardar. Lo tienen gerente y supervisor
+  (`provider.create`, pregunta 2). El campo ocupa una fila entera del drawer.
 
-**R2.3 — Validación en la API.** Un `provider` que la obra no ve → 422. Nunca se
-acepta un proveedor de otra Empresa.
+**R2.3 — Validación en la API.** Un `provider` que la obra no ve, o dado de baja
+→ 400 `VALIDATION` (el mismo criterio que una tarea de otra obra). Nunca se
+acepta un proveedor de otra Empresa. Proveedor y texto se excluyen: elegir uno
+borra `supplier`, escribir texto desvincula, y mandar los dos es 400.
 
 **R2.4 — Baja del proveedor.** `Provider` tiene baja lógica: el material lo sigue
 mostrando con su nombre y una marca "dado de baja". No se lo puede elegir en
@@ -211,10 +214,14 @@ materiales nuevos.
 **R2.5 — Materiales viejos.** Un material con sólo `supplier` muestra un aviso
 discreto "Sin vincular" y, si existe un proveedor de la obra con el **mismo
 nombre exacto** (sin mayúsculas ni espacios), sugiere vincularlo con un toque.
-Nada se vincula solo.
+Nada se vincula solo. Vincular el **mismo nombre** se permite aunque el material
+ya no esté Pendiente: no cambia la compra, sólo la formaliza. Cualquier otro
+cambio de proveedor sigue la regla de sólo-Pendiente.
 
-**R2.6 — Desde Proveedores.** La ficha del proveedor dentro de la obra muestra
-sus materiales, agrupados por estado, con link a Compras. Lectura con
+**R2.6 — Desde Proveedores.** Cada fila de la tabla de Proveedores tiene la
+acción "Materiales de {nombre}": la lista de sus materiales vinculados con su
+estado y link a cada uno en Compras. No hay endpoint nuevo: filtra la misma
+consulta de Compras. Lectura con
 `material.read` (el cliente no la ve aunque tenga `provider.read`).
 
 Criterios de aceptación:
@@ -326,7 +333,7 @@ Criterios de aceptación:
 | # | Pregunta | Quién | ¿Bloquea? |
 |---|---|---|---|
 | 1 | ~~¿El supervisor carga facturas?~~ **Cerrada: sí**, con `material.invoice.*` y sin `expense.*` (R3.6). | Stakeholder | — |
-| 2 | **¿Quién da de alta un proveedor desde Compras?** El supervisor tiene `provider.read`/`assign`, no `manage`. Si no puede, escribe el nombre suelto (R2.2) y el gerente lo vincula. Recomendación: así, sin permiso nuevo. | Stakeholder | No |
+| 2 | ~~¿Quién da de alta un proveedor desde Compras?~~ **Cerrada: gerente y supervisor**, con la capacidad nueva `provider.create`. Sin `provider.manage` el alta queda sólo en esa obra (la API lo fuerza); la libreta de la Empresa sigue siendo del gerente. | Stakeholder | — |
 | 3 | ~~¿Qué es "autorizados y planificados"?~~ **Cerrada**: elegir el proveedor del material de la lista de Proveedores, sin filtro por contratación (R2.2). | Cliente | — |
 | 6 | ~~¿Agregamos una especialidad para quien vende materiales?~~ **Cerrada: sí**, `materiales` ("Venta de materiales"), sólo en proveedores. Actividades y personal siguen con `TradeSpecialty`. | Stakeholder | — |
 | 4 | Una factura que cubre materiales de **dos obras**: ¿se parte en dos gastos o queda fuera de v1? Recomendación: fuera; se cargan dos. | Stakeholder | No |

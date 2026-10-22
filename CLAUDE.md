@@ -263,6 +263,17 @@ salen con hash en `/home/assets`); no se piden a Google Fonts.
 Piso de tamaño: 11px (`text-2xs`), y siempre en `rem`. Un `text-[10px]` en px no
 responde al tamaño de texto del sistema operativo.
 
+## Arquitectura de la información
+
+**Qué va dónde** en una pantalla del panel vive en
+`docs/design/arquitectura-de-informacion.md` y manda junto con `DESIGN.md`
+(ése dice cómo se ve; éste, ubicación, orden y jerarquía). Las que más se rompen:
+
+- **Pantalla**: sin título propio; una primaria flotante (`PageLayout action`); segundo orden y exportar en `secondaryActions`, agrupado; pestañas y filtros en `toolbar`.
+- **Fila**: línea 1 = qué es; línea 2 = `text-xs` muted, datos separados por `" · "` en orden fijo; estado como badge en columna fija.
+- **Acciones por fila**: una visible (el paso siguiente) y el resto en "…"; todo destructivo va en el menú y con `AlertDialog`.
+- **Textos y grupos**: nada repite lo que la UI ya dice; el rótulo de grupo no se parece a una fila, y la fila no repite el grupo.
+
 ## i18n — obligatorio
 
 Ningún string visible se escribe inline en el JSX.
