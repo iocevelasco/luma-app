@@ -5,6 +5,7 @@ import {
   bulkActionsFor,
   buildPurchaseText,
   countSuppliers,
+  countUnrequested,
   materialTab,
   organizeMaterials,
   providerMatchFor,
@@ -279,5 +280,14 @@ describe('lista de lo comprado', () => {
   it('en "Por comprar" lo marcado sigue siendo lo Solicitado', () => {
     const [row] = buildPurchaseRows([material('a', 'solicitado')]);
     expect(row?.tagged).toBe(true);
+  });
+});
+
+describe('countUnrequested', () => {
+  it('cuenta sólo lo Pendiente: lo Solicitado ya se pidió', () => {
+    expect(
+      countUnrequested([material('a', 'pendiente'), material('b', 'solicitado'), material('c', 'pendiente')]),
+    ).toBe(2);
+    expect(countUnrequested([])).toBe(0);
   });
 });

@@ -404,6 +404,8 @@
       "createHint": "Queda disponible solo en esta obra. Para añadirlo a todas, pídeselo al gerente."
     },
     "list": {
+      "unrequested_one": "{{count}} sin pedir",
+      "unrequested_other": "{{count}} sin pedir",
       "navLink": "Compras",
       "title": "Compras",
       "toBuy": "Por comprar",

@@ -24,6 +24,15 @@ export const NEXT_MATERIAL_STATUS: Partial<Record<MaterialStatus, MaterialStatus
   comprado: 'en_obra',
 };
 
+/**
+ * Cuántos nadie pidió todavía. Es la pregunta de "Por comprar" —¿qué tengo
+ * que pedir?—, y el orden por fecha de la tarea no la responde: un Pendiente
+ * sin tarea queda último. Derivado siempre, nunca guardado.
+ */
+export function countUnrequested(materials: readonly Pick<MaterialItem, 'status'>[]): number {
+  return materials.filter((material) => material.status === 'pendiente').length;
+}
+
 /** Estado de una casilla que agrupa a otras: la maestra o la de un grupo. */
 export type SelectionState = 'none' | 'some' | 'all';
 

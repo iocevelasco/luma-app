@@ -78,6 +78,7 @@ import {
   buildPurchaseText,
   bulkActionsFor,
   countSuppliers,
+  countUnrequested,
   materialTab,
   organizeMaterials,
   providerMatchFor,
@@ -542,6 +543,7 @@ function ToBuyGroup({
 
   const days = startDate ? differenceInCalendarDays(fromDayKey(startDate), new Date()) : null;
   const urgent = days !== null && days <= URGENT_WITHIN_DAYS;
+  const unrequested = countUnrequested(materials);
 
   return (
     <ListSection
@@ -557,13 +559,25 @@ function ToBuyGroup({
         )
       }
       meta={
-        startDate && (
+        (startDate || unrequested > 0) && (
           <>
-            <span>
-              {t('material.list.startsOn', {
-                date: format(fromDayKey(startDate), 'PP', { locale: dateLocale }),
-              })}
-            </span>
+            {/*
+              Lo que pide acción, a la vista en el rótulo: con el orden por
+              fecha, un Pendiente sin tarea queda último y bajo el pliegue.
+              Mismo rojo que el tag "Pendiente": es la misma información.
+            */}
+            {unrequested > 0 && (
+              <span className="font-medium text-tag-danger-fg">
+                {t('material.list.unrequested', { count: unrequested })}
+              </span>
+            )}
+            {startDate && (
+              <span>
+                {t('material.list.startsOn', {
+                  date: format(fromDayKey(startDate), 'PP', { locale: dateLocale }),
+                })}
+              </span>
+            )}
             {/*
               Calendario y no el reloj del tono: el reloj ya es "Solicitado",
               y la urgencia habla de la tarea, no del material.
@@ -1051,6 +1065,7 @@ export function ProjectMaterialsPage() {
 
   const canShare = typeof navigator.share === 'function';
   const total = materialsData.materials.length;
+  const toBuyUnrequested = countUnrequested(toBuy);
   const highlighted = materialsData.materials.find((m) => m.id === highlightedId);
   const selectedMaterials = selectedToBuy.length > 0 ? selectedToBuy : selectedBought;
 
@@ -1112,6 +1127,16 @@ export function ProjectMaterialsPage() {
         <TabsList>
           <TabsTrigger value="toBuy">
             {t('material.list.toBuy')} ({toBuy.length})
+            {/* El total de lo que nadie pidió, visible desde cualquier pestaña. */}
+            {toBuyUnrequested > 0 && (
+              <span
+                className="rounded-full bg-tag-danger-bg px-1.5 text-2xs font-medium tabular-nums text-tag-danger-fg"
+                aria-label={t('material.list.unrequested', { count: toBuyUnrequested })}
+                title={t('material.list.unrequested', { count: toBuyUnrequested })}
+              >
+                {toBuyUnrequested}
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="bought">
             {t('material.list.bought')} ({bought.length})

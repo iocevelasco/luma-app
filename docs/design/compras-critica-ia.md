@@ -82,6 +82,8 @@ empieza pronto). Casi todo se arregla sin tocar datos ni agregar entidades.
 
 #### A4. Lo que más frena puede quedar último
 
+> **Aplicado** con la recomendación principal (sin reordenar): "N sin pedir" en el rótulo de cada grupo y el total en la pestaña "Por comprar", derivados con `countUnrequested`.
+
 - **Qué pasa.** `organizeMaterials` (`lib/materials.ts`, líneas 92–125) ordena
   los grupos por fecha de inicio y manda "Sin tarea asociada" al final. Adentro
   de cada grupo, lo Pendiente va antes que lo Solicitado (bien). Pero en la
