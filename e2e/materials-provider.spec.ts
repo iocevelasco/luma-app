@@ -110,7 +110,8 @@ test.describe('proveedor vinculado en Compras', () => {
 
     // --- Desde Proveedores: los dos materiales, ya vinculados.
     await page.getByRole('link', { name: /^proveedores$/i }).click();
-    await page.getByRole('button', { name: `Materiales de ${PROVIDER}` }).first().click();
+    await page.getByRole('button', { name: `Más acciones de ${PROVIDER}` }).first().click();
+    await page.getByRole('menuitem', { name: /^materiales$/i }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByText(BOARD)).toBeVisible();
     await expect(dialog.getByText(OLD)).toBeVisible();

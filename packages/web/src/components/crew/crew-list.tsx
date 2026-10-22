@@ -3,7 +3,7 @@ import type { OrganizationCrewMember } from '@luma/shared';
 import { MapPin, Pencil, UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ProjectAssignmentDialog } from '@/components/directory/project-assignment-dialog';
-import { RowCardList } from '@/components/common/row-card-list';
+import { RowCardAction, RowCardList, RowCardMenu, RowCardMenuItem } from '@/components/common/row-card-list';
 import { PersonRow } from '@/components/organization/person-row';
 import {
   AlertDialog,
@@ -16,7 +16,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import {
   useDeactivateOrganizationCrewMember,
   useOrganizationCrew,
@@ -80,35 +81,28 @@ export function CrewList({ onEdit }: { onEdit: (member: OrganizationCrewMember) 
                 member.phone,
                 t('directory.projectsCount', { count: member.projectIds.length }),
               ]}
+              // Visible: en qué obras está. Editar y dar de baja, en "…" (IA-11).
               actions={
                 <>
-                  <Button
+                  <RowCardAction
                     type="button"
-                    variant="outline"
-                    size="icon-sm"
                     onClick={() => setAssigning(member)}
                     aria-label={t('directory.projectsTitle', { name: member.name })}
                   >
-                    <MapPin className="size-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => onEdit(member)}
-                    aria-label={t('crew.list.editTitle')}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => setDeactivating(member)}
-                    aria-label={t('crew.list.deactivate')}
-                  >
-                    <UserX className="size-4" />
-                  </Button>
+                    <MapPin aria-hidden className="size-4" />
+                    {t('directory.projectsAction')}
+                  </RowCardAction>
+                  <RowCardMenu label={t('common.moreActions', { name: member.name })}>
+                    <RowCardMenuItem onSelect={() => onEdit(member)}>
+                      <Pencil className="size-4" />
+                      {t('common.edit')}
+                    </RowCardMenuItem>
+                    <DropdownMenuSeparator />
+                    <RowCardMenuItem variant="destructive" onSelect={() => setDeactivating(member)}>
+                      <UserX className="size-4" />
+                      {t('crew.list.deactivate')}
+                    </RowCardMenuItem>
+                  </RowCardMenu>
                 </>
               }
             />
@@ -149,6 +143,7 @@ export function CrewList({ onEdit }: { onEdit: (member: OrganizationCrewMember) 
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
               onClick={() => {
                 if (deactivating) deactivate.mutate(deactivating.id);
                 setDeactivating(null);

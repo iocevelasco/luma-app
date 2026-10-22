@@ -6,6 +6,7 @@ import {
   DOCUMENT_MAX_BYTES,
   DOCUMENT_MIME_TYPES,
   type CreateExpenseInput,
+  type Expense,
   type ExpenseCategory,
 } from '@luma/shared';
 import { Download, Plus, Receipt, Trash2, TrendingUp, Upload, Users } from 'lucide-react';
@@ -13,6 +14,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Can } from '@/components/permissions/can';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { EmptyState } from '@/components/common/empty-state';
 import { ExpenseMaterials } from '@/components/finance/expense-materials';
 import { FormDrawer } from '@/components/common/form-drawer';
@@ -25,10 +27,13 @@ import {
   ListSection,
   ListSections,
   RowCard,
+  RowCardAction,
   RowCardBody,
   RowCardDate,
   RowCardEnd,
   RowCardList,
+  RowCardMenu,
+  RowCardMenuItem,
 } from '@/components/common/row-card-list';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -395,6 +400,7 @@ export function ProjectExpensesPage() {
   const { data, isLoading, isError } = useExpenses(projectId);
   const { data: summaryData } = useFinanceSummary(projectId);
   const deleteExpense = useDeleteExpense(projectId!);
+  const [deleting, setDeleting] = useState<Expense | null>(null);
 
   const byCategory = useMemo(() => {
     const map = new Map<ExpenseCategory, typeof data extends undefined ? never : NonNullable<typeof data>['expenses']>();
@@ -528,31 +534,28 @@ export function ProjectExpensesPage() {
                             i18n.language,
                           )}
                         </span>
+                        {/* Visible: el comprobante, lo que se viene a buscar. Borrar va
+                            en "…" y confirma (IA-11). */}
                         {expense.receipt?.url && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            asChild
-                            aria-label={t('finance.expenses.openReceipt')}
-                          >
+                          <RowCardAction asChild>
                             <a
                               href={expense.receipt.url}
                               target="_blank"
                               rel="noopener noreferrer"
+                              aria-label={t('finance.expenses.openReceipt')}
                             >
-                              <Download className="size-4" />
+                              <Download aria-hidden className="size-4" />
+                              {t('finance.expenses.receiptAction')}
                             </a>
-                          </Button>
+                          </RowCardAction>
                         )}
                         <Can I="expense.write">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteExpense.mutate(expense.id)}
-                            aria-label={t('finance.expenses.delete')}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
+                          <RowCardMenu label={t('common.moreActions', { name: expense.description })}>
+                            <RowCardMenuItem variant="destructive" onSelect={() => setDeleting(expense)}>
+                              <Trash2 className="size-4" />
+                              {t('finance.expenses.delete')}
+                            </RowCardMenuItem>
+                          </RowCardMenu>
                         </Can>
                       </RowCardEnd>
                     </RowCard>
@@ -563,6 +566,15 @@ export function ProjectExpensesPage() {
           })}
         </ListSections>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleting)}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title={t('finance.expenses.confirmDeleteTitle')}
+        description={t('finance.expenses.confirmDeleteBody', { description: deleting?.description ?? '' })}
+        confirmLabel={t('finance.expenses.delete')}
+        onConfirm={() => deleting && deleteExpense.mutate(deleting.id)}
+      />
     </PageLayout>
   );
 }

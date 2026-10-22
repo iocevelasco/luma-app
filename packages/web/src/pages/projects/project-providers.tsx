@@ -36,11 +36,14 @@ import { ProviderFormFields } from '@/components/providers/provider-form-fields'
 import { DirectoryPickerDialog } from '@/components/directory/directory-picker-dialog';
 import { ProviderEngagementDialog } from '@/components/providers/provider-engagement-dialog';
 import { ProviderMaterialsDialog } from '@/components/providers/provider-materials-dialog';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
+import { RowCardAction, RowCardMenu, RowCardMenuItem } from '@/components/common/row-card-list';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -372,6 +375,7 @@ export function ProjectProvidersPage() {
 
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [deactivatingProvider, setDeactivatingProvider] = useState<Provider | null>(null);
+  const [removingProvider, setRemovingProvider] = useState<Provider | null>(null);
   const [assigningProvider, setAssigningProvider] = useState<Provider | null>(null);
   const [contractingProvider, setContractingProvider] = useState<Provider | null>(null);
   const [materialsProvider, setMaterialsProvider] = useState<Provider | null>(null);
@@ -438,79 +442,58 @@ export function ProjectProvidersPage() {
       {
         id: 'actions',
         header: '',
+        // Una acción visible —abrir la contratación, el paso siguiente con un
+        // proveedor de la obra— y el resto en "…" (IA-11).
         cell: (provider) => (
-          <div className="flex justify-end gap-2">
-            <Button
+          <div className="flex items-center justify-end gap-2">
+            <RowCardAction
               type="button"
-              variant="outline"
-              size="icon-sm"
-              onClick={() => setAssigningProvider(provider)}
-              aria-label={t('provider.list.activitiesTitle', { name: provider.name })}
-            >
-              <CalendarClock className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
               onClick={() => setContractingProvider(provider)}
               aria-label={t('engagement.title', { name: provider.name })}
             >
-              <FileSignature className="size-4" />
-            </Button>
-            {canReadMaterials && (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                onClick={() => setMaterialsProvider(provider)}
-                aria-label={t('provider.materials.title', { name: provider.name })}
-              >
-                <Package className="size-4" />
-              </Button>
-            )}
-            {canManage && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => setEditingProvider(provider)}
-                  aria-label={t('provider.list.editTitle')}
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                {/* De la libreta de la Empresa: se saca DE ESTA OBRA, no se da de
-                    baja — la baja es de la Empresa y alcanza a todas las obras. */}
-                {provider.scope === 'project' ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => setDeactivatingProvider(provider)}
-                    aria-label={t('provider.list.deactivate')}
-                  >
-                    <UserX className="size-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => removeFromProject.mutate(provider.id)}
-                    aria-label={t('directory.removeFromProject')}
-                  >
-                    <UserMinus className="size-4" />
-                  </Button>
-                )}
-              </>
-            )}
+              <FileSignature aria-hidden className="size-4" />
+              {t('provider.list.engagementAction')}
+            </RowCardAction>
+            <RowCardMenu label={t('common.moreActions', { name: provider.name })}>
+              <RowCardMenuItem onSelect={() => setAssigningProvider(provider)}>
+                <CalendarClock className="size-4" />
+                {t('provider.list.activitiesAction')}
+              </RowCardMenuItem>
+              {canReadMaterials && (
+                <RowCardMenuItem onSelect={() => setMaterialsProvider(provider)}>
+                  <Package className="size-4" />
+                  {t('provider.materials.action')}
+                </RowCardMenuItem>
+              )}
+              {canManage && (
+                <>
+                  <RowCardMenuItem onSelect={() => setEditingProvider(provider)}>
+                    <Pencil className="size-4" />
+                    {t('common.edit')}
+                  </RowCardMenuItem>
+                  <DropdownMenuSeparator />
+                  {/* De la libreta de la Empresa: se saca DE ESTA OBRA, no se da de
+                      baja — la baja es de la Empresa y alcanza a todas las obras. */}
+                  {provider.scope === 'project' ? (
+                    <RowCardMenuItem variant="destructive" onSelect={() => setDeactivatingProvider(provider)}>
+                      <UserX className="size-4" />
+                      {t('provider.list.deactivate')}
+                    </RowCardMenuItem>
+                  ) : (
+                    <RowCardMenuItem variant="destructive" onSelect={() => setRemovingProvider(provider)}>
+                      <UserMinus className="size-4" />
+                      {t('directory.removeFromProject')}
+                    </RowCardMenuItem>
+                  )}
+                </>
+              )}
+            </RowCardMenu>
           </div>
         ),
         mobile: 'actions',
       },
     ];
-  }, [canAssign, canManage, canReadMaterials, removeFromProject, t]);
+  }, [canAssign, canManage, canReadMaterials, t]);
 
   if (isError) return <PageLayout isError />;
 
@@ -601,6 +584,15 @@ export function ProjectProvidersPage() {
           onOpenChange={(open) => !open && setContractingProvider(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={Boolean(removingProvider)}
+        onOpenChange={(open) => !open && setRemovingProvider(null)}
+        title={t('directory.confirmRemoveFromProjectTitle')}
+        description={t('directory.confirmRemoveFromProjectBody', { name: removingProvider?.name ?? '' })}
+        confirmLabel={t('directory.removeFromProject')}
+        onConfirm={() => removingProvider && removeFromProject.mutate(removingProvider.id)}
+      />
 
       <AlertDialog
         open={Boolean(deactivatingProvider)}

@@ -6,6 +6,7 @@ import {
   PAYMENT_METHODS,
   type CreatePaymentInput,
   type CreatePaymentScheduleItemInput,
+  type Payment,
   type PaymentScheduleItem,
   type PaymentScheduleStatus,
 } from '@luma/shared';
@@ -16,6 +17,7 @@ import type { FieldErrors, FieldValues, Path, UseFormRegister } from 'react-hook
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Can } from '@/components/permissions/can';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -30,6 +32,8 @@ import {
   RowCardDate,
   RowCardEnd,
   RowCardList,
+  RowCardMenu,
+  RowCardMenuItem,
 } from '@/components/common/row-card-list';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -355,6 +359,8 @@ export function ProjectPaymentsPage() {
   const { data: paymentsData } = usePayments(projectId);
   const deleteItem = useDeleteScheduleItem(projectId!);
   const deletePayment = useDeletePayment(projectId!);
+  const [deletingItem, setDeletingItem] = useState<PaymentScheduleItem | null>(null);
+  const [deletingPayment, setDeletingPayment] = useState<Payment | null>(null);
 
   if (isError) return <PageLayout isError />;
   if (isLoading || !data || !projectData) return <PageLayout isLoading />;
@@ -484,14 +490,12 @@ export function ProjectPaymentsPage() {
                     {formatMoney(item.scheduledAmount, currency, i18n.language)}
                   </span>
                   <Can I="payment.write">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteItem.mutate(item.id)}
-                      aria-label={t('finance.schedule.delete')}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                    <RowCardMenu label={t('common.moreActions', { name: item.concept })}>
+                      <RowCardMenuItem variant="destructive" onSelect={() => setDeletingItem(item)}>
+                        <Trash2 className="size-4" />
+                        {t('finance.schedule.delete')}
+                      </RowCardMenuItem>
+                    </RowCardMenu>
                   </Can>
                 </RowCardEnd>
               </RowCard>
@@ -522,15 +526,19 @@ export function ProjectPaymentsPage() {
                   <span className="text-sm tabular-nums">
                     {formatMoney(payment.amountInProjectCurrency, currency, i18n.language)}
                   </span>
+                  {/* Un cobro no se edita, sólo se borra: por eso el borrado pide
+                      confirmación y explica cómo corregir un monto (IA-11). */}
                   <Can I="payment.write">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deletePayment.mutate(payment.id)}
-                      aria-label={t('finance.payments.delete')}
+                    <RowCardMenu
+                      label={t('common.moreActions', {
+                        name: payment.scheduleItemConcept ?? t('finance.payments.onAccount'),
+                      })}
                     >
-                      <Trash2 className="size-4" />
-                    </Button>
+                      <RowCardMenuItem variant="destructive" onSelect={() => setDeletingPayment(payment)}>
+                        <Trash2 className="size-4" />
+                        {t('finance.payments.delete')}
+                      </RowCardMenuItem>
+                    </RowCardMenu>
                   </Can>
                 </RowCardEnd>
               </RowCard>
@@ -539,6 +547,28 @@ export function ProjectPaymentsPage() {
         )}
       </ListSection>
       </ListSections>
+
+      <ConfirmDialog
+        open={Boolean(deletingItem)}
+        onOpenChange={(open) => !open && setDeletingItem(null)}
+        title={t('finance.schedule.confirmDeleteTitle')}
+        description={t('finance.schedule.confirmDeleteBody', { concept: deletingItem?.concept ?? '' })}
+        confirmLabel={t('finance.schedule.delete')}
+        onConfirm={() => deletingItem && deleteItem.mutate(deletingItem.id)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deletingPayment)}
+        onOpenChange={(open) => !open && setDeletingPayment(null)}
+        title={t('finance.payments.confirmDeleteTitle')}
+        description={t('finance.payments.confirmDeleteBody', {
+          amount: deletingPayment
+            ? formatMoney(deletingPayment.amountInProjectCurrency, currency, i18n.language)
+            : '',
+        })}
+        confirmLabel={t('finance.payments.delete')}
+        onConfirm={() => deletingPayment && deletePayment.mutate(deletingPayment.id)}
+      />
     </PageLayout>
   );
 }

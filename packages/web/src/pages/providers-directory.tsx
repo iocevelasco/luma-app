@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
+import { RowCardAction, RowCardMenu, RowCardMenuItem } from '@/components/common/row-card-list';
 import { PageLayout } from '@/components/layout/page-layout';
 import { ProjectAssignmentDialog } from '@/components/directory/project-assignment-dialog';
 import { ProviderFormFields } from '@/components/providers/provider-form-fields';
@@ -19,7 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import {
   useCreateOrganizationProvider,
   useDeactivateOrganizationProvider,
@@ -162,38 +164,34 @@ export function ProvidersDirectoryPage() {
       {
         id: 'actions',
         header: '',
+        // Visible: en qué obras está, el paso siguiente después del alta. El
+        // resto en "…" (IA-11).
         cell: (provider) => (
-          <div className="flex justify-end gap-2">
-            <Button
+          <div className="flex items-center justify-end gap-2">
+            <RowCardAction
               type="button"
-              variant="outline"
-              size="icon-sm"
               onClick={() => setAssigning(provider)}
               aria-label={t('directory.projectsTitle', { name: provider.name })}
             >
-              <MapPin className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              onClick={() => {
-                setEditing(provider);
-                setDrawerOpen(true);
-              }}
-              aria-label={t('provider.list.editTitle')}
-            >
-              <Pencil className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              onClick={() => setDeactivating(provider)}
-              aria-label={t('provider.list.deactivate')}
-            >
-              <UserX className="size-4" />
-            </Button>
+              <MapPin aria-hidden className="size-4" />
+              {t('directory.projectsAction')}
+            </RowCardAction>
+            <RowCardMenu label={t('common.moreActions', { name: provider.name })}>
+              <RowCardMenuItem
+                onSelect={() => {
+                  setEditing(provider);
+                  setDrawerOpen(true);
+                }}
+              >
+                <Pencil className="size-4" />
+                {t('common.edit')}
+              </RowCardMenuItem>
+              <DropdownMenuSeparator />
+              <RowCardMenuItem variant="destructive" onSelect={() => setDeactivating(provider)}>
+                <UserX className="size-4" />
+                {t('provider.list.deactivate')}
+              </RowCardMenuItem>
+            </RowCardMenu>
           </div>
         ),
         mobile: 'actions',
@@ -283,6 +281,7 @@ export function ProvidersDirectoryPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
               onClick={() => {
                 if (deactivating) deactivate.mutate(deactivating.id);
                 setDeactivating(null);

@@ -119,7 +119,9 @@ por fila.
 - Por qué: N filas × M botones es una grilla de controles; la persona viene a
   leer la lista.
 - Implementa: `MaterialRow` (menú, nota de bloqueo), `MilestoneCard` (título
-  que abre edición + menú).
+  que abre edición + menú). Las piezas: `RowCardAction` (la visible),
+  `RowCardMenu` + `RowCardMenuItem` (el "…", en `row-card-list.tsx`) y
+  `ConfirmDialog` (`components/common/confirm-dialog.tsx`) para lo destructivo.
 
 **IA-12. Un código visual, un significado por pantalla.** Dos tags con el mismo
 tono y el mismo glifo no pueden decir cosas distintas en la misma vista
@@ -213,7 +215,7 @@ la fila de IA-15, contra `claude/row-cards`.
 | IA-8 la fila no repite el grupo | parcial ⁶ | — | sí | sí | sí | sí | — | — |
 | IA-9 línea 1 / línea 2 | parcial ⁷ | sí | sí | sí | — | parcial ⁸ | sí | — |
 | IA-10 estado en lugar fijo | parcial ⁹ | — | — | no ¹⁰ | — | parcial ⁸ | — | — |
-| IA-11 una acción + "…", destructivo confirmado | parcial ⁹ | no ¹¹ | no ¹² | no ¹² | parcial ¹³ | sí | parcial ¹⁴ | — |
+| IA-11 una acción + "…", destructivo confirmado | parcial ⁹ | sí ¹¹ | sí ¹² | sí ¹² | parcial ¹³ | sí | parcial ¹⁴ | — |
 | IA-12 un código, un significado | no ¹⁵ | sí | sí | sí | sí | sí | sí | — |
 | IA-13 selección múltiple | sí | — | — | — | — | — | — | — |
 | IA-15 filas-tarjeta, grupos con divisor | sí | sí | sí | sí | sí ¹⁶ | sí | sí | sí |
@@ -228,12 +230,18 @@ la fila de IA-15, contra `claude/row-cards`.
 8. `MilestoneCard` es tarjeta, no fila: metadatos arriba del título como antetítulo. Aceptable para tarjetas; no copiar a filas.
 9. El lápiz sólo en Pendiente corre la columna de estado y duplica "Editar" del menú.
 10. El badge de la cuota va en la línea 1, pegado al concepto.
-11. Hasta cinco botones de ícono visibles por fila; "Quitar de la obra" (`removeFromProject.mutate`) sin confirmación.
-12. Tacho visible que borra al toque (`deleteExpense.mutate`, `deleteItem.mutate`, `deletePayment.mutate`), sin `AlertDialog`. En Cobros pesa más: un cobro no se edita, sólo se borra.
+11. Visible: "Contratación" en la obra, "Obras" en la libreta de la Empresa. Tareas, Materiales y Editar en "…"; "Sacar de la obra" y "Dar de baja", en "…" y confirmados. Antes: hasta cinco íconos por fila y "Sacar de la obra" al toque.
+12. Gastos: visible "Comprobante" (si hay); eliminar en "…" y confirmado. Cobros: cuotas y cobros sólo con "…"; el borrado confirma y explica que un cobro no se edita. Antes: tacho visible que borraba al toque.
 13. Descargar y borrar visibles; el borrado sí confirma.
 14. `Select` de rol inline + tacho visible; el tacho sí confirma.
 15. "Solicitado" y "Empieza en N días": mismo tono `warning` y mismo glifo `Clock`.
 16. Documentos es una grilla de miniaturas, no una lista: cada documento ya es su tarjeta; los grupos sí van con `ListSection`.
+
+Empleados de la Empresa (`StaffList` en `organization-panel.tsx` y
+`CrewList`) cumple IA-11: visible "Obras" para el personal de obra y, para el
+administrativo, "Reenviar invitación" si no activó la cuenta o "Dar acceso a
+obras" si ya la activó; Editar y la baja en "…", la baja confirmada. Antes:
+tres o cuatro íconos por fila.
 
 No revisado en detalle: el Tablero (`TaskBoard`), el Gantt del Cronograma por
 dentro, Presupuesto y el Resumen de la obra (`project-detail.tsx`, sólo se
