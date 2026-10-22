@@ -39,7 +39,7 @@ import { ProviderMaterialsDialog } from '@/components/providers/provider-materia
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
@@ -372,6 +372,7 @@ export function ProjectProvidersPage() {
 
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [deactivatingProvider, setDeactivatingProvider] = useState<Provider | null>(null);
+  const [removingProvider, setRemovingProvider] = useState<Provider | null>(null);
   const [assigningProvider, setAssigningProvider] = useState<Provider | null>(null);
   const [contractingProvider, setContractingProvider] = useState<Provider | null>(null);
   const [materialsProvider, setMaterialsProvider] = useState<Provider | null>(null);
@@ -497,7 +498,7 @@ export function ProjectProvidersPage() {
                     type="button"
                     variant="outline"
                     size="icon-sm"
-                    onClick={() => removeFromProject.mutate(provider.id)}
+                    onClick={() => setRemovingProvider(provider)}
                     aria-label={t('directory.removeFromProject')}
                   >
                     <UserMinus className="size-4" />
@@ -510,7 +511,7 @@ export function ProjectProvidersPage() {
         mobile: 'actions',
       },
     ];
-  }, [canAssign, canManage, canReadMaterials, removeFromProject, t]);
+  }, [canAssign, canManage, canReadMaterials, t]);
 
   if (isError) return <PageLayout isError />;
 
@@ -624,6 +625,32 @@ export function ProjectProvidersPage() {
               }}
             >
               {t('common.continue')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(removingProvider)}
+        onOpenChange={(open) => !open && setRemovingProvider(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('directory.confirmRemoveProviderTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('directory.confirmRemoveProviderBody', { name: removingProvider?.name ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => {
+                if (removingProvider) removeFromProject.mutate(removingProvider.id);
+                setRemovingProvider(null);
+              }}
+            >
+              {t('directory.removeFromProject')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

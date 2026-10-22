@@ -165,9 +165,9 @@ export interface ProviderEngagement {
   providerId: string;
   status: ProviderEngagementStatus;
   /**
-   * Montos como COMPROMISO contra el presupuesto, no como contabilidad: la
-   * plataforma no registra pagos ni cuentas por pagar (ver documento
-   * funcional, "Exclusión explícita: pagos y anticipos").
+   * Montos como COMPROMISO contra el presupuesto (`commitment.service.ts`),
+   * no como gasto: lo que efectivamente sale se registra aparte, como
+   * `Expense`. Un adelanto está en los dos, así que no se suman.
    */
   quotedAmount?: number;
   advanceAmount?: number;

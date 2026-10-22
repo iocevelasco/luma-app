@@ -6,6 +6,7 @@ import {
   PAYMENT_METHODS,
   type CreatePaymentInput,
   type CreatePaymentScheduleItemInput,
+  type Payment,
   type PaymentScheduleItem,
   type PaymentScheduleStatus,
 } from '@luma/shared';
@@ -19,8 +20,18 @@ import { Can } from '@/components/permissions/can';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { PageLayout } from '@/components/layout/page-layout';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ListSection,
@@ -355,6 +366,11 @@ export function ProjectPaymentsPage() {
   const { data: paymentsData } = usePayments(projectId);
   const deleteItem = useDeleteScheduleItem(projectId!);
   const deletePayment = useDeletePayment(projectId!);
+  // Un solo diálogo para las dos bajas de la pantalla. El cobro pesa más: no
+  // se edita, así que borrarlo es la única forma de corregirlo.
+  const [deleting, setDeleting] = useState<
+    { kind: 'item'; item: PaymentScheduleItem } | { kind: 'payment'; payment: Payment } | null
+  >(null);
 
   if (isError) return <PageLayout isError />;
   if (isLoading || !data || !projectData) return <PageLayout isLoading />;
@@ -487,7 +503,7 @@ export function ProjectPaymentsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteItem.mutate(item.id)}
+                      onClick={() => setDeleting({ kind: 'item', item })}
                       aria-label={t('finance.schedule.delete')}
                     >
                       <Trash2 className="size-4" />
@@ -526,7 +542,7 @@ export function ProjectPaymentsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deletePayment.mutate(payment.id)}
+                      onClick={() => setDeleting({ kind: 'payment', payment })}
                       aria-label={t('finance.payments.delete')}
                     >
                       <Trash2 className="size-4" />
@@ -539,6 +555,49 @@ export function ProjectPaymentsPage() {
         )}
       </ListSection>
       </ListSections>
+
+      <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleting?.kind === 'payment'
+                ? t('finance.payments.deleteTitle')
+                : t('finance.schedule.deleteTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleting?.kind === 'item' &&
+                t('finance.schedule.deleteBody', {
+                  concept: deleting.item.concept,
+                  amount: formatMoney(deleting.item.scheduledAmount, currency, i18n.language),
+                })}
+              {deleting?.kind === 'payment' &&
+                t('finance.payments.deleteBody', {
+                  amount: formatMoney(
+                    deleting.payment.amountInProjectCurrency,
+                    currency,
+                    i18n.language,
+                  ),
+                  date: format(fromDayKey(deleting.payment.paidOn), 'PP', { locale: dateLocale }),
+                })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => {
+                if (deleting?.kind === 'item') deleteItem.mutate(deleting.item.id);
+                if (deleting?.kind === 'payment') deletePayment.mutate(deleting.payment.id);
+                setDeleting(null);
+              }}
+            >
+              {deleting?.kind === 'payment'
+                ? t('finance.payments.delete')
+                : t('finance.schedule.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 }

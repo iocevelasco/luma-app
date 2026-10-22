@@ -361,7 +361,9 @@
       "evidence": "Evidência fotográfica",
       "addEvidence": "Adicionar foto",
       "noEvidence": "Ainda não foram enviadas fotos de progresso.",
-      "removeEvidence": "Remover foto"
+      "removeEvidence": "Remover foto",
+      "removeEvidenceTitle": "Remover esta foto?",
+      "removeEvidenceBody": "A foto é apagada da evidência da tarefa. Não é possível desfazer."
     }
   },
   "material": {
@@ -640,7 +642,9 @@
       "update": "Não conseguimos atualizar a contratação.",
       "delete": "Não conseguimos excluir a contratação.",
       "requirement": "Não conseguimos atualizar o requisito."
-    }
+    },
+    "deleteTitle": "Excluir esta contratação?",
+    "deleteBody": "Os valores, a data e a lista de requisitos são apagados, e o orçado deixa de contar como comprometido. Não é possível desfazer."
   },
   "crew": {
     "list": {
@@ -654,7 +658,11 @@
       "new": "Novo funcionário",
       "newTitle": "Novo funcionário",
       "newSubmit": "Criar funcionário",
-      "editTitle": "Editar funcionário"
+      "editTitle": "Editar funcionário",
+      "confirmDeactivateTitle": "Desativar este funcionário?",
+      "confirmDeactivateBody": "“{{name}}” deixa de aparecer para atribuir nesta obra. A presença e as metas passadas são mantidas.",
+      "confirmRemoveTitle": "Tirar o funcionário desta obra?",
+      "confirmRemoveBody": "“{{name}}” deixa de estar disponível nesta obra. Continua na agenda da sua Empresa e você pode adicioná-lo de novo quando quiser."
     },
     "fields": {
       "name": "Nome",
@@ -1077,7 +1085,9 @@
       "empty": "Ainda não há parcelas acordadas.",
       "dueOn": "Vence em {{date}}",
       "paidSoFar": "recebido {{amount}}",
-      "delete": "Excluir parcela"
+      "delete": "Excluir parcela",
+      "deleteTitle": "Excluir esta parcela?",
+      "deleteBody": "Você vai tirar “{{concept}}” ({{amount}}) do cronograma acordado. Não é possível desfazer."
     },
     "payments": {
       "title": "Recebimentos",
@@ -1086,7 +1096,9 @@
       "newSubmit": "Registrar",
       "empty": "Você ainda não registrou recebimentos.",
       "onAccount": "Por conta",
-      "delete": "Excluir recebimento"
+      "delete": "Excluir recebimento",
+      "deleteTitle": "Excluir este recebimento?",
+      "deleteBody": "Você vai excluir o recebimento de {{amount}} de {{date}}. O saldo do cliente é recalculado sem ele. Não é possível desfazer."
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1099,7 +1111,9 @@
       "emptyTitle": "Ainda não há despesas",
       "emptyDescription": "Registre materiais, ferramentas, folha e insumos para ver o resultado da obra.",
       "delete": "Excluir despesa",
-      "openReceipt": "Abrir comprovante"
+      "openReceipt": "Abrir comprovante",
+      "deleteTitle": "Excluir esta despesa?",
+      "deleteBody": "Você vai excluir “{{description}}” de {{amount}}. O resultado da obra é recalculado. Não é possível desfazer."
     },
     "payroll": {
       "title": "Folha de pagamento",
@@ -1227,7 +1241,9 @@
     "pickProviderTitle": "Fornecedores da Empresa",
     "pickCrewTitle": "Funcionários da Empresa",
     "pickEmptyProviders": "Não há mais fornecedores na Empresa para adicionar a esta obra.",
-    "pickEmptyCrew": "Não há mais funcionários na Empresa para adicionar a esta obra."
+    "pickEmptyCrew": "Não há mais funcionários na Empresa para adicionar a esta obra.",
+    "confirmRemoveProviderTitle": "Tirar o fornecedor desta obra?",
+    "confirmRemoveProviderBody": "“{{name}}” deixa de estar disponível nesta obra. Continua na agenda da sua Empresa e você pode adicioná-lo de novo quando quiser."
   },
   "company": {
     "saved": "Dados da Empresa salvos",

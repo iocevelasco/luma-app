@@ -361,7 +361,9 @@
       "evidence": "Evidencia fotográfica",
       "addEvidence": "Agregar foto",
       "noEvidence": "Todavía no se subieron fotos de avance.",
-      "removeEvidence": "Quitar foto"
+      "removeEvidence": "Quitar foto",
+      "removeEvidenceTitle": "¿Quitar esta foto?",
+      "removeEvidenceBody": "La foto se borra de la evidencia de la tarea. No se puede deshacer."
     }
   },
   "material": {
@@ -640,7 +642,9 @@
       "update": "No pudimos actualizar la contratación.",
       "delete": "No pudimos eliminar la contratación.",
       "requirement": "No pudimos actualizar el requisito."
-    }
+    },
+    "deleteTitle": "¿Eliminar esta contratación?",
+    "deleteBody": "Se borran los montos, la fecha y la checklist de requisitos, y lo cotizado deja de contar como comprometido. No se puede deshacer."
   },
   "crew": {
     "list": {
@@ -654,7 +658,11 @@
       "new": "Nuevo empleado",
       "newTitle": "Nuevo empleado",
       "newSubmit": "Crear empleado",
-      "editTitle": "Editar empleado"
+      "editTitle": "Editar empleado",
+      "confirmDeactivateTitle": "¿Dar de baja a este empleado?",
+      "confirmDeactivateBody": "«{{name}}» deja de aparecer para asignar en esta obra. Su asistencia y sus metas pasadas se conservan.",
+      "confirmRemoveTitle": "¿Sacar al empleado de esta obra?",
+      "confirmRemoveBody": "«{{name}}» deja de estar disponible en esta obra. Sigue en la libreta de tu Empresa y podés volver a sumarlo cuando quieras."
     },
     "fields": {
       "name": "Nombre",
@@ -1077,7 +1085,9 @@
       "empty": "Todavía no hay cuotas acordadas.",
       "dueOn": "Vence el {{date}}",
       "paidSoFar": "cobrado {{amount}}",
-      "delete": "Eliminar cuota"
+      "delete": "Eliminar cuota",
+      "deleteTitle": "¿Eliminar esta cuota?",
+      "deleteBody": "Vas a sacar «{{concept}}» ({{amount}}) del cronograma acordado. No se puede deshacer."
     },
     "payments": {
       "title": "Cobros recibidos",
@@ -1086,7 +1096,9 @@
       "newSubmit": "Registrar",
       "empty": "Todavía no registraste cobros.",
       "onAccount": "A cuenta",
-      "delete": "Eliminar cobro"
+      "delete": "Eliminar cobro",
+      "deleteTitle": "¿Eliminar este cobro?",
+      "deleteBody": "Vas a eliminar el cobro de {{amount}} del {{date}}. El saldo del cliente se recalcula sin él. No se puede deshacer."
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1099,7 +1111,9 @@
       "emptyTitle": "Todavía no hay gastos",
       "emptyDescription": "Registrá materiales, herramientas, nómina e insumos para ver el resultado de la obra.",
       "delete": "Eliminar gasto",
-      "openReceipt": "Abrir comprobante"
+      "openReceipt": "Abrir comprobante",
+      "deleteTitle": "¿Eliminar este gasto?",
+      "deleteBody": "Vas a eliminar «{{description}}» por {{amount}}. El resultado de la obra se recalcula. No se puede deshacer."
     },
     "payroll": {
       "title": "Nómina",
@@ -1227,7 +1241,9 @@
     "pickProviderTitle": "Proveedores de la Empresa",
     "pickCrewTitle": "Empleados de la Empresa",
     "pickEmptyProviders": "No hay más proveedores en la Empresa para sumar a esta obra.",
-    "pickEmptyCrew": "No hay más empleados en la Empresa para sumar a esta obra."
+    "pickEmptyCrew": "No hay más empleados en la Empresa para sumar a esta obra.",
+    "confirmRemoveProviderTitle": "¿Sacar al proveedor de esta obra?",
+    "confirmRemoveProviderBody": "«{{name}}» deja de estar disponible en esta obra. Sigue en la libreta de tu Empresa y podés volver a sumarlo cuando quieras."
   },
   "company": {
     "saved": "Datos de la Empresa guardados",
