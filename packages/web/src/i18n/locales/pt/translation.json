@@ -342,7 +342,15 @@
     },
     "gantt": {
       "goToToday": "Ir para hoje",
-      "emptyState": "Não há tarefas planejadas neste período."
+      "emptyState": "Não há tarefas planejadas neste período.",
+      "emptyFiltered": "Não há tarefas nesse status neste período.",
+      "statusFilter": {
+        "aria": "Filtrar por status",
+        "all": "Todos os status",
+        "count_one": "{{count}} status",
+        "count_other": "{{count}} status",
+        "clear": "Mostrar todos"
+      }
     },
     "detail": {
       "title": "Detalhe da tarefa",

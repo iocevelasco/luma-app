@@ -342,7 +342,15 @@
     },
     "gantt": {
       "goToToday": "Ir a hoy",
-      "emptyState": "No hay tareas planificadas en este rango de fechas."
+      "emptyState": "No hay tareas planificadas en este rango de fechas.",
+      "emptyFiltered": "No hay tareas en ese estado en este rango de fechas.",
+      "statusFilter": {
+        "aria": "Filtrar por estado",
+        "all": "Todos los estados",
+        "count_one": "{{count}} estado",
+        "count_other": "{{count}} estados",
+        "clear": "Mostrar todos"
+      }
     },
     "detail": {
       "title": "Detalle de la tarea",
