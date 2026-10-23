@@ -38,4 +38,6 @@ export enum QueryKeys {
   bolivaresQuote = 'bolivares-quote',
   adminSubscriptionPayments = 'admin-subscription-payments',
   exchangeRates = 'exchange-rates',
+  platformUsersOverview = 'platform-users-overview',
+  platformUsers = 'platform-users',
 }
