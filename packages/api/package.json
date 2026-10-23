@@ -23,7 +23,8 @@
     "rates:refresh": "tsx src/scripts/refresh-bcv-rate.ts",
     "stripe:setup": "tsx src/scripts/stripe-setup.ts",
     "seed:subscription-demo": "tsx src/scripts/seed-subscription-demo.ts",
-    "subscription:reminders": "tsx src/scripts/send-subscription-reminders.ts"
+    "subscription:reminders": "tsx src/scripts/send-subscription-reminders.ts",
+    "email:preview": "tsx src/scripts/email-preview.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

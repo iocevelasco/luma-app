@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { dueReminder } from '@luma/shared';
+import { STRIPE_CONFIG } from '../config/app.config.js';
 import { Organization } from '../models/Organization.js';
 import { OrganizationMember } from '../models/OrganizationMember.js';
 import { Subscription } from '../models/Subscription.js';
@@ -125,8 +126,9 @@ export async function sendDueReminders(now: Date = new Date()): Promise<Reminder
               owner.name,
               reminder.daysLeft,
               reminder.trialEndsAt,
+              STRIPE_CONFIG.ENABLED,
             )
-          : await EmailService.sendSubscriptionExpired(owner.email, owner.name);
+          : await EmailService.sendSubscriptionExpired(owner.email, owner.name, STRIPE_CONFIG.ENABLED);
 
       if (sent) {
         await Subscription.updateOne(

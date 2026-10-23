@@ -73,3 +73,70 @@ describe('EmailService.sendAccountActivationEmail', () => {
     expect(sent.text).toContain('https://luma.test/app/activate?token=tok123');
   });
 });
+
+describe('EmailService: contenido', () => {
+  beforeEach(() => {
+    send.mockReset();
+    send.mockResolvedValue({ data: { id: 'mail-1' }, error: null });
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('la activación por invitación dice a qué obra y con qué rol', async () => {
+    const service = await loadService('re_key');
+
+    await service.sendAccountActivationEmail('beto@x.com', 'tok', 'Beto', {
+      inviterName: 'Ana',
+      projectName: 'Casa Pérez',
+      role: 'supervisor',
+    });
+
+    const sent = send.mock.calls[0]![0] as { subject: string; html: string };
+    expect(sent.subject).toBe('Te invitaron a Casa Pérez en Luma');
+    expect(sent.html).toContain('Casa Pérez');
+    expect(sent.html).toContain('Supervisor');
+  });
+
+  it('escapa lo que viene de la base: un nombre de obra no puede meter HTML', async () => {
+    const service = await loadService('re_key');
+
+    await service.sendProjectInvitation({
+      to: 'carla@x.com',
+      name: 'Carla',
+      projectName: '<script>alert(1)</script>',
+      projectId: 'p1',
+      role: 'cliente',
+    });
+
+    const sent = send.mock.calls[0]![0] as { html: string };
+    expect(sent.html).not.toContain('<script>');
+    expect(sent.html).toContain('&lt;script&gt;');
+  });
+
+  it('el aviso de obra lleva a la ruta del aviso sobre APP_URL', async () => {
+    const service = await loadService('re_key');
+
+    await service.sendProjectNotification({
+      to: 'ana@x.com',
+      name: 'Ana',
+      type: 'eventualidad',
+      projectName: 'Casa Pérez',
+      subjectName: 'Fisura',
+      link: '/admin/proyectos/p1/hitos',
+    });
+
+    const sent = send.mock.calls[0]![0] as { subject: string; html: string };
+    expect(sent.subject).toBe('Eventualidad en Casa Pérez: Fisura');
+    expect(sent.html).toContain('https://luma.test/app/admin/proyectos/p1/hitos');
+  });
+
+  it('sin tarjeta habilitada, el aviso de fin de prueba no la menciona', async () => {
+    const service = await loadService('re_key');
+
+    await service.sendTrialEnding('ana@x.com', 'Ana', 3, new Date('2026-11-01T00:00:00Z'), false);
+
+    const sent = send.mock.calls[0]![0] as { html: string };
+    expect(sent.html).not.toContain('tarjeta');
+    expect(sent.html).toContain('en bolívares');
+  });
+});

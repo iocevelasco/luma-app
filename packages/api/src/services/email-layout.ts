@@ -31,9 +31,24 @@ export interface EmailBrand {
 export interface EmailLayoutOptions {
   /** Encabezado principal, y también el `<title>`. */
   heading: string;
-  /** Cuerpo ya armado en HTML: párrafos, listas, lo que sea. */
+  /**
+   * Una línea que los clientes de correo muestran al lado del asunto, en la
+   * bandeja. No se ve al abrir el mail. Sin ella, la bandeja muestra el
+   * principio del cuerpo ("Hola Ana,"), que no dice nada.
+   */
+  preheader?: string;
+  /** Cuerpo ya armado en HTML. Los `<p>` sin estilo toman el del sistema. */
   bodyHtml: string;
+  /** Datos sueltos en una caja: "Obra: Casa Pérez", "Rol: Supervisor". */
+  details?: { label: string; value: string }[];
   cta?: { label: string; url: string };
+  /**
+   * El enlace del botón, escrito, por si el botón no abre (clientes que
+   * bloquean links con estilo, o quien lee el texto plano).
+   */
+  showFallbackLink?: boolean;
+  /** Letra chica bajo el botón: "El enlace vence en 24 horas." */
+  note?: string;
   brand?: EmailBrand;
   /**
    * Sólo para comunicados COMERCIALES. Los operativos y los transaccionales no
@@ -82,54 +97,128 @@ function safeUrl(value: string | undefined): string | null {
   }
 }
 
+/**
+ * Colores del panel claro (DESIGN.md, "Panel claro"). Un mail se lee sobre
+ * blanco casi siempre, y muchos clientes ignoran o invierten un fondo oscuro:
+ * el negro del sistema queda en la franja de arriba, como el header de la app.
+ */
+const C = {
+  canvas: '#f4f4f5',
+  card: '#ffffff',
+  border: '#e4e4e7',
+  text: '#18181b',
+  muted: '#52525b',
+  subtle: '#71717a',
+  field: '#f0f0f2',
+  header: PLATFORM_TEXT_COLOR,
+} as const;
+
+/** Sin fuentes web: un mail no puede cargarlas de forma fiable. */
+const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
+const P_STYLE = `margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: ${C.text};`;
+
+/** Los `<p>` sueltos del cuerpo, con el estilo del sistema (los clientes ignoran `<style>`). */
+function styleParagraphs(html: string): string {
+  return html.replace(/<p>/g, `<p style="${P_STYLE}">`);
+}
+
 export function renderEmailLayout(opts: EmailLayoutOptions): string {
-  const { heading, bodyHtml, cta, brand, unsubscribeUrl, appName } = opts;
+  const { heading, preheader, bodyHtml, details, cta, showFallbackLink, note, brand, unsubscribeUrl, appName } =
+    opts;
 
   const color = safeColor(brand?.primaryColor);
   const logoUrl = safeUrl(brand?.logoUrl);
   const senderName = brand?.name ? escapeHtml(brand.name) : escapeHtml(appName);
   const ctaUrl = cta ? safeUrl(cta.url) : null;
   const unsubUrl = safeUrl(unsubscribeUrl);
+  const ctaText = color === PLATFORM_COLOR ? PLATFORM_TEXT_COLOR : '#ffffff';
+
+  const preheaderBlock = preheader
+    ? `<div style="display: none; max-height: 0; overflow: hidden; mso-hide: all;">${escapeHtml(preheader)}&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>`
+    : '';
 
   const logoBlock = logoUrl
-    ? `<div style="text-align: center; margin-bottom: 24px;">
-         <img src="${logoUrl}" alt="${senderName}" style="max-height: 56px; max-width: 200px;">
-       </div>`
+    ? `<img src="${logoUrl}" alt="${senderName}" style="display: block; max-height: 40px; max-width: 180px; margin: 0 0 24px;">`
     : '';
+
+  const detailsBlock =
+    details && details.length > 0
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: ${C.field}; border-radius: 12px; margin: 0 0 24px;">
+           ${details
+             .map(
+               (row, index) => `<tr>
+             <td style="padding: ${index === 0 ? '14px' : '4px'} 16px ${index === details.length - 1 ? '14px' : '4px'}; font-size: 13px; color: ${C.muted}; width: 110px; vertical-align: top;">${escapeHtml(row.label)}</td>
+             <td style="padding: ${index === 0 ? '14px' : '4px'} 16px ${index === details.length - 1 ? '14px' : '4px'}; font-size: 14px; color: ${C.text}; font-weight: 600; vertical-align: top;">${escapeHtml(row.value)}</td>
+           </tr>`,
+             )
+             .join('')}
+         </table>`
+      : '';
 
   const ctaBlock =
     cta && ctaUrl
-      ? `<div style="text-align: center; margin: 30px 0;">
-           <a href="${ctaUrl}" style="background-color: ${color}; color: ${color === PLATFORM_COLOR ? PLATFORM_TEXT_COLOR : '#ffffff'}; padding: 14px 28px; text-decoration: none; border-radius: 999px; display: inline-block; font-weight: bold;">
-             ${escapeHtml(cta.label)}
-           </a>
-         </div>`
+      ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin: 8px 0 24px;">
+           <tr><td style="border-radius: 999px; background: ${color};">
+             <a href="${ctaUrl}" style="display: inline-block; padding: 13px 28px; font-family: ${FONT}; font-size: 15px; font-weight: 600; color: ${ctaText}; text-decoration: none; border-radius: 999px;">${escapeHtml(cta.label)}</a>
+           </td></tr>
+         </table>`
+      : '';
+
+  const noteBlock = note
+    ? `<p style="margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: ${C.muted};">${escapeHtml(note)}</p>`
+    : '';
+
+  const fallbackBlock =
+    showFallbackLink && ctaUrl
+      ? `<p style="margin: 0; font-size: 12px; line-height: 1.5; color: ${C.subtle};">¿El botón no funciona? Copiá este enlace en tu navegador:<br>
+           <a href="${ctaUrl}" style="color: ${C.muted}; word-break: break-all;">${escapeHtml(ctaUrl)}</a></p>`
       : '';
 
   const unsubBlock = unsubUrl
-    ? `<p style="font-size: 12px; color: #666; margin-top: 8px;">
-         ¿No querés recibir más estos avisos?
-         <a href="${unsubUrl}" style="color: #666;">Darte de baja</a>.
-       </p>`
+    ? `<br>¿No querés recibir más estos avisos? <a href="${unsubUrl}" style="color: ${C.subtle};">Darte de baja</a>.`
     : '';
 
   return `<!DOCTYPE html>
-<html>
+<html lang="es">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
     <title>${escapeHtml(heading)} - ${senderName}</title>
   </head>
-  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: ${MAX_WIDTH_PX}px; margin: 0 auto; padding: 20px;">
-    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      ${logoBlock}
-      <h1 style="color: #1a1a1a; margin-top: 0;">${escapeHtml(heading)}</h1>
-      ${bodyHtml}
-      ${ctaBlock}
-      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-      <p style="font-size: 12px; color: #666;">Este es un correo automático, por favor no respondas a este mensaje.</p>
-      ${unsubBlock}
-    </div>
+  <body style="margin: 0; padding: 0; background: ${C.canvas}; font-family: ${FONT}; -webkit-text-size-adjust: 100%;">
+    ${preheaderBlock}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: ${C.canvas};">
+      <tr>
+        <td align="center" style="padding: 32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: ${MAX_WIDTH_PX}px;">
+            <tr>
+              <td style="background: ${C.header}; border-radius: 16px 16px 0 0; padding: 18px 32px; border-bottom: 3px solid ${color};">
+                <span style="font-family: ${FONT}; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: #ffffff;">${senderName}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="background: ${C.card}; border: 1px solid ${C.border}; border-top: 0; border-radius: 0 0 16px 16px; padding: 32px;">
+                ${logoBlock}
+                <h1 style="margin: 0 0 20px; font-family: ${FONT}; font-size: 24px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; color: ${C.text};">${escapeHtml(heading)}</h1>
+                ${styleParagraphs(bodyHtml)}
+                ${detailsBlock}
+                ${ctaBlock}
+                ${noteBlock}
+                ${fallbackBlock}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 20px 32px 0; text-align: center; font-family: ${FONT}; font-size: 12px; line-height: 1.5; color: ${C.subtle};">
+                Este correo lo envió ${escapeHtml(appName)} automáticamente. No respondas a este mensaje.${unsubBlock}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>`;
 }

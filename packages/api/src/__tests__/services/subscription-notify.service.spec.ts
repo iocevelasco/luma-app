@@ -110,7 +110,13 @@ describe('sendDueReminders', () => {
 
     const run = await notify.sendDueReminders(d('2026-10-28T12:00:00Z')); // quedan 3 días
 
-    expect(EmailService.sendTrialEnding).toHaveBeenCalledWith('ana@obra.test', 'Ana', 3, d('2026-10-31T00:00:00Z'));
+    expect(EmailService.sendTrialEnding).toHaveBeenCalledWith(
+      'ana@obra.test',
+      'Ana',
+      3,
+      d('2026-10-31T00:00:00Z'),
+      expect.any(Boolean), // si se ofrece tarjeta: el mail no la menciona si está apagada
+    );
     expect(Subscription.updateOne).toHaveBeenCalledWith({ _id: 's1' }, { $addToSet: { remindersSent: 'trial-3' } });
     expect(run).toEqual({ checked: 1, sent: 1, failed: 0 });
   });

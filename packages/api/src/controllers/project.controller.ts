@@ -283,6 +283,8 @@ export async function inviteProjectMember(req: Request, res: Response) {
     let user = await User.findOne({ email });
     // Sólo si esta invitación crea la cuenta: ver `activationDelivery`.
     let delivery: ActivationDelivery | undefined;
+    // Quien ya tenía cuenta no recibe activación: recibe un aviso de la obra.
+    let notifyExistingUser = false;
 
     if (user) {
       // Ver `isLinkedToAnotherInviter`: la cuenta puede estar en manos de quien
@@ -301,6 +303,7 @@ export async function inviteProjectMember(req: Request, res: Response) {
           .status(409)
           .json({ success: false, error: 'Esa persona ya tiene acceso a la obra' });
       }
+      notifyExistingUser = true;
     } else {
       const activationToken = randomToken();
       const name = email.split('@')[0];
@@ -313,7 +316,11 @@ export async function inviteProjectMember(req: Request, res: Response) {
         emailVerificationTokenExpires: new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS),
       });
       await createPersonalOrganization(String(user._id), name);
-      const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name, {
+        inviterName: inviter?.name,
+        projectName: project.name,
+        role,
+      });
       await recordActivationDelivery(user._id, emailSent, req.user.sub);
       delivery = activationDelivery(emailSent, activationToken);
     }
@@ -324,6 +331,18 @@ export async function inviteProjectMember(req: Request, res: Response) {
       role,
       invitedBy: req.user.sub,
     });
+
+    if (notifyExistingUser) {
+      // Sin `await`: el mail no demora ni voltea la invitación.
+      void EmailService.sendProjectInvitation({
+        to: user.email,
+        name: user.name,
+        inviterName: inviter?.name,
+        projectName: project.name,
+        projectId: String(project._id),
+        role,
+      });
+    }
 
     const member: ProjectMemberSummary = {
       id: String(membership._id),
