@@ -127,6 +127,15 @@ Los cobros **no se editan**, sólo se crean o se borran: un cobro es un hecho
 con fecha, y corregirle el monto in situ deja el saldo cuadrando con una
 historia que nadie vivió.
 
+## Correos
+
+Todos salen de `EmailService` con la plantilla única de `email-layout.ts`
+(guía: `docs/CORREOS.md`). Un correo nunca lanza ni voltea la acción que lo
+dispara; si quien llama no necesita saber si salió, no lo espera (`void`).
+Texto de la base siempre con `escapeHtml()`. Un correo nuevo se suma a
+`src/scripts/email-preview.ts`. Los avisos de obra que van por mail y a quién:
+`EMAIL_AUDIENCE` en `notification-email.service.ts`.
+
 ## Suscripción
 
 Lo que paga el dueño de una Empresa por usar Luma. **No confundir con los

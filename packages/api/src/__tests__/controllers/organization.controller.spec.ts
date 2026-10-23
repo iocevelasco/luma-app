@@ -7,7 +7,11 @@ import type { Response } from 'express';
  * queda en la fila de la Empresa — no en el usuario, que puede trabajar con
  * varias.
  */
-vi.mock('../../models/Organization.js', () => ({ Organization: {} }));
+vi.mock('../../models/Organization.js', () => ({
+  Organization: {
+    findById: vi.fn(() => ({ select: vi.fn().mockResolvedValue({ name: 'Estudio Pérez' }) })),
+  },
+}));
 vi.mock('../../models/OrganizationMember.js', () => ({
   OrganizationMember: { create: vi.fn(), exists: vi.fn(), find: vi.fn(), findOne: vi.fn() },
 }));
@@ -28,7 +32,7 @@ vi.mock('../../services/organization.service.js', () => ({
   createPersonalOrganization: vi.fn(),
 }));
 vi.mock('../../services/email.service.js', () => ({
-  EmailService: { sendAccountActivationEmail: vi.fn() },
+  EmailService: { sendAccountActivationEmail: vi.fn(), sendTeamInvitation: vi.fn() },
 }));
 vi.mock('../../controllers/auth.controller.js', () => ({
   ACTIVATION_TOKEN_TTL_MS: 1000,
@@ -87,10 +91,12 @@ describe('inviteMember', () => {
 
     expect(User.create).toHaveBeenCalledWith(expect.objectContaining({ name: 'Ana Pérez' }));
     expect(createPersonalOrganization).toHaveBeenCalledWith('user-9', 'Ana Pérez');
+    // El mail cuenta a qué equipo la sumaron y con qué función.
     expect(EmailService.sendAccountActivationEmail).toHaveBeenCalledWith(
       'ana@estudio.com',
       'token',
       'Ana Pérez',
+      expect.objectContaining({ organizationName: 'Estudio Pérez', role: 'contador' }),
     );
     expect(OrganizationMember.create).toHaveBeenCalledWith(
       expect.objectContaining({ role: 'member', staffRole: 'contador' }),
@@ -291,6 +297,15 @@ describe('inviteMember', () => {
     expect(EmailService.sendAccountActivationEmail).not.toHaveBeenCalled();
     const body = vi.mocked(res.json).mock.calls[0]![0] as { data: { member: { name: string } } };
     expect(body.data.member.name).toBe('Ana P.');
+    // En su lugar le avisa que la sumaron, con su nombre de siempre.
+    expect(EmailService.sendTeamInvitation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'ana@estudio.com',
+        name: 'Ana P.',
+        organizationName: 'Estudio Pérez',
+        staffRole: 'supervisor',
+      }),
+    );
   });
 
   it('guarda el teléfono en la fila de la Empresa y no en la cuenta', async () => {

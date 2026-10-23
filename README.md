@@ -52,6 +52,8 @@ pnpm test:e2e:ci  # E2E chromium
 - `CLAUDE.md` — convenciones del repo (patrón de llamadas a la API, estilos, i18n,
   cross-browsing).
 - `docs/DEPLOY.md` — topología, recursos de Coolify, variables de entorno.
+- `docs/CORREOS.md` — qué correos manda Luma, cómo configurar Resend y cómo ver
+  el diseño de todos en local (`pnpm --filter @luma/api email:preview`).
 - `docs/SUSCRIPCION.md` — planes Gratis y Pro, cómo probar en local el pago con
   tarjeta (Stripe) y en bolívares (aprobación manual), cuentas y datos de prueba.
 - `docs/BASE-PROMPT.md` — el prompt con el que se generó esta base a partir de otro

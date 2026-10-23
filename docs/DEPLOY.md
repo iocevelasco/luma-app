@@ -59,7 +59,7 @@ nombre de la base no admite guiones en el formulario de Coolify.
 | `APP_URL` | raíz del SPA **con subpath**: `https://<DOMINIO>/app` | cae a `FRONTEND_URL`; rompe los links de los mails y los redirects |
 | `ALLOWED_ORIGINS` | whitelist de CORS, separada por comas | sólo entra `FRONTEND_URL` |
 | `LANDING_URL` | `http://luma-landing:8080` | cae a `http://landing:8080` — **que en la red compartida de Coolify puede ser la landing de otra app** |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails | aviso; los mails quedan deshabilitados |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails (cómo configurar Resend y el dominio: `docs/CORREOS.md`) | aviso; los mails quedan deshabilitados |
 | `MEDIA_SERVICE_URL`, `MEDIA_SERVICE_API_KEY` | storage de archivos (evidencia RF-04 y documentación de obra) vía el microservicio `media-service` (ej. `https://media.matflow.site`); la key se emite con `bucket key create luma` | aviso; subir archivos da 503, el resto de la app sigue |
 | `STORAGE_SIGNED_URL_TTL` | opcional: vida de las URLs firmadas de lectura | `3600` segundos (máximo que admite el servicio) |
 | `STRIPE_SECRET_KEY` | pago de la suscripción con tarjeta. **Sólo se ofrece con `sk_live_…`**: con una `sk_test_…` queda apagado | no se ofrece pago con tarjeta |

@@ -188,6 +188,9 @@ export async function inviteMember(req: Request, res: Response) {
     // Sólo cuando esta invitación crea la cuenta: quien ya existía no recibe
     // mail de activación, así que no hay nada que contar.
     let delivery: ActivationDelivery | undefined;
+    // Quien ya tenía cuenta recibe un aviso de que lo sumaron, no una activación.
+    let notifyExistingUser = false;
+    const organization = await Organization.findById(organizationId).select('name');
 
     if (user) {
       // Si otra persona tiene (o usó) el enlace de esa cuenta, sumarla acá le
@@ -204,6 +207,7 @@ export async function inviteMember(req: Request, res: Response) {
           .status(409)
           .json({ success: false, error: 'Esa persona ya forma parte de tu equipo' });
       }
+      notifyExistingUser = true;
     } else {
       const activationToken = randomToken();
       user = await User.create({
@@ -215,9 +219,24 @@ export async function inviteMember(req: Request, res: Response) {
         emailVerificationTokenExpires: new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS),
       });
       await createPersonalOrganization(String(user._id), name);
-      const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name);
+      const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name, {
+        inviterName: inviter?.name,
+        organizationName: organization?.name,
+        role: staffRole,
+      });
       await recordActivationDelivery(user._id, emailSent, req.user.sub);
       delivery = activationDelivery(emailSent, activationToken);
+    }
+
+    if (notifyExistingUser && organization) {
+      // Sin `await`: el mail no demora ni voltea el alta.
+      void EmailService.sendTeamInvitation({
+        to: user.email,
+        name: user.name,
+        inviterName: inviter?.name,
+        organizationName: organization.name,
+        staffRole,
+      });
     }
 
     const memberRow = await OrganizationMember.create({

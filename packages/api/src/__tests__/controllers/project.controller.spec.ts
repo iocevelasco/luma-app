@@ -22,7 +22,7 @@ vi.mock('../../services/organization.service.js', () => ({
   createPersonalOrganization: vi.fn(),
 }));
 vi.mock('../../services/email.service.js', () => ({
-  EmailService: { sendAccountActivationEmail: vi.fn() },
+  EmailService: { sendAccountActivationEmail: vi.fn(), sendProjectInvitation: vi.fn() },
 }));
 vi.mock('../../controllers/auth.controller.js', () => ({
   ACTIVATION_TOKEN_TTL_MS: 1000,
@@ -195,6 +195,22 @@ describe('inviteProjectMember: enlace de activación en manos de otra persona', 
 
     expect(res.status).toHaveBeenCalledWith(201);
     expect(ProjectMembership.create).toHaveBeenCalled();
+  });
+
+  it('a quien ya tenía cuenta le avisa por mail que lo sumaron a la obra', async () => {
+    const res = await invite({ email_verified: true });
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(EmailService.sendAccountActivationEmail).not.toHaveBeenCalled();
+    expect(EmailService.sendProjectInvitation).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'ana@estudio.com', projectId: 'p-1', role: 'supervisor' }),
+    );
+  });
+
+  it('si la invitación no se concreta, no manda el aviso', async () => {
+    await invite({ activationLinkHeldBy: 'owner-OTRO' });
+
+    expect(EmailService.sendProjectInvitation).not.toHaveBeenCalled();
   });
 });
 

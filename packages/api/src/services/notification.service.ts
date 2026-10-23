@@ -3,6 +3,7 @@ import type { NotificationType, ProjectRole } from '@luma/shared';
 import { Notification } from '../models/Notification.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
 import type { IProject } from '../models/Project.js';
+import { EMAIL_AUDIENCE, emailProjectNotification } from './notification-email.service.js';
 
 /**
  * Reparto de avisos.
@@ -76,9 +77,28 @@ export async function notifyProject(params: NotifyParams): Promise<number> {
         link: params.link,
       }));
 
-    if (docs.length === 0) return 0;
+    if (docs.length > 0) await Notification.insertMany(docs);
 
-    await Notification.insertMany(docs);
+    // Algunos avisos además van por mail (ver `notification-email.service.ts`).
+    // Sin `await`: la acción no espera a Resend, y un mail que falla no la toca.
+    const emailRoles = EMAIL_AUDIENCE[params.type];
+    if (emailRoles) {
+      try {
+        const emailRecipients = (await recipientsFor(params.project, emailRoles)).filter(
+          (userId) => String(userId) !== params.actorId,
+        );
+        void emailProjectNotification({
+          recipientIds: emailRecipients,
+          type: params.type,
+          projectName: params.project.name,
+          subjectName: params.subjectName,
+          link: params.link,
+        });
+      } catch (error) {
+        console.error('❌ [NOTIFICATION] destinatarios del mail:', error);
+      }
+    }
+
     return docs.length;
   } catch (error) {
     // A propósito no se relanza: ver el comentario de arriba.

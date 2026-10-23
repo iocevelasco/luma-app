@@ -11,14 +11,19 @@ vi.mock('../../models/Notification.js', () => ({
 vi.mock('../../models/ProjectMembership.js', () => ({
   ProjectMembership: { find: vi.fn() },
 }));
+vi.mock('../../services/notification-email.service.js', () => ({
+  EMAIL_AUDIENCE: { actividad_en_revision: ['gerente'], eventualidad: ['gerente'], hito: ['cliente'] },
+  emailProjectNotification: vi.fn().mockResolvedValue(0),
+}));
 
 const { Notification } = await import('../../models/Notification.js');
 const { ProjectMembership } = await import('../../models/ProjectMembership.js');
+const { emailProjectNotification } = await import('../../services/notification-email.service.js');
 const { notifyProject, unreadCountFor } = await import(
   '../../services/notification.service.js'
 );
 
-const PROJECT = { _id: 'project-1', createdBy: 'gerente-1' } as never;
+const PROJECT = { _id: 'project-1', createdBy: 'gerente-1', name: 'Casa Pérez' } as never;
 
 function mockMemberships(rows: { user: string; role: string }[]) {
   vi.mocked(ProjectMembership.find).mockReturnValue({
@@ -140,5 +145,52 @@ describe('unreadCountFor', () => {
 
     await expect(unreadCountFor('user-1')).resolves.toBe(3);
     expect(Notification.countDocuments).toHaveBeenCalledWith({ user: 'user-1', readAt: null });
+  });
+});
+
+describe('notifyProject: mails', () => {
+  beforeEach(() => {
+    vi.mocked(Notification.insertMany).mockResolvedValue([] as never);
+  });
+
+  const base = { project: PROJECT, subjectName: 'Fisura en losa', link: '/admin/proyectos/project-1/hitos' };
+
+  it('una eventualidad le llega por mail al gerente, no al supervisor que la reportó', async () => {
+    mockMemberships([{ user: 'super-1', role: 'supervisor' }]);
+
+    await notifyProject({ ...base, type: 'eventualidad', audience: ['gerente', 'supervisor'], actorId: 'super-1' });
+
+    expect(emailProjectNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'eventualidad', projectName: 'Casa Pérez', subjectName: 'Fisura en losa' }),
+    );
+    const { recipientIds } = vi.mocked(emailProjectNotification).mock.calls[0]![0];
+    expect(recipientIds.map(String)).toEqual(['gerente-1']);
+  });
+
+  it('un hito le llega por mail sólo al cliente', async () => {
+    mockMemberships([{ user: 'cliente-1', role: 'cliente' }]);
+
+    await notifyProject({ ...base, type: 'hito', audience: ['gerente', 'supervisor', 'cliente'], actorId: 'gerente-1' });
+
+    // La consulta de membresías para el mail pide sólo clientes.
+    expect(ProjectMembership.find).toHaveBeenLastCalledWith(
+      expect.objectContaining({ role: { $in: ['cliente'] } }),
+    );
+    const { recipientIds } = vi.mocked(emailProjectNotification).mock.calls[0]![0];
+    expect(recipientIds.map(String)).toEqual(['cliente-1']);
+  });
+
+  it('una actividad iniciada queda sólo en la campanita', async () => {
+    await notifyProject({ ...base, type: 'actividad_iniciada', audience: ['gerente'], actorId: 'super-1' });
+
+    expect(Notification.insertMany).toHaveBeenCalled();
+    expect(emailProjectNotification).not.toHaveBeenCalled();
+  });
+
+  it('nadie recibe mail de lo que hizo él mismo', async () => {
+    await notifyProject({ ...base, type: 'actividad_en_revision', audience: ['gerente'], actorId: 'gerente-1' });
+
+    const { recipientIds } = vi.mocked(emailProjectNotification).mock.calls[0]![0];
+    expect(recipientIds).toEqual([]);
   });
 });
