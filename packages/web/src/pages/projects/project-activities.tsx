@@ -11,10 +11,11 @@ import {
 import { ArrowLeft, CalendarRange, Camera, Check, PackageX, Pencil, Plus, Trash2, Undo2, X } from 'lucide-react';
 import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { ResponsibleField } from '@/components/activities/responsible-field';
 import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityGantt } from '@/components/activities/activity-gantt';
+import { ActivityStatusFilter } from '@/components/activities/activity-status-filter';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
 import {
@@ -72,6 +73,7 @@ import { useAssignableCrew } from '@/hooks/crew/use-crew-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { scheduleRange } from '@/lib/activity-range';
+import { parseStatusFilter, serializeStatusFilter } from '@/lib/activity-status-filter';
 import { isWithinNextDays } from '@/lib/week';
 
 const ACTIVITY_STATUSES = [
@@ -855,6 +857,9 @@ export function ProjectActivitiesPage() {
   // rango propio: ahí manda lo que pidió, no el default.
   const [rangeTouched, setRangeTouched] = useState(false);
   const [todayRequest, setTodayRequest] = useState(0);
+  // El estado vive en la URL (IA-4): un recargue o un "atrás" no lo pierde.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = parseStatusFilter(searchParams.get('status'));
 
   const allActivitiesQuery = useAllActivities(projectId);
   const { data: allActivitiesData } = allActivitiesQuery;
@@ -907,7 +912,11 @@ export function ProjectActivitiesPage() {
 
   if (isError) return <PageLayout isError />;
 
-  const activities = activitiesData?.activities ?? [];
+  const rangeActivities = activitiesData?.activities ?? [];
+  const activities =
+    statusFilter.length > 0
+      ? rangeActivities.filter((a) => statusFilter.includes(a.status))
+      : rangeActivities;
   const selectedActivity = activities.find((a) => a.id === selectedActivityId);
   const selectedActivityMaterials = selectedActivity
     ? (materialsData?.materials ?? []).filter((m) => m.activityId === selectedActivity.id)
@@ -926,6 +935,21 @@ export function ProjectActivitiesPage() {
               setRange(next);
             }}
             disableFuture={false}
+          />
+          <ActivityStatusFilter
+            value={statusFilter}
+            onChange={(next) => {
+              setSearchParams(
+                (current) => {
+                  const params = new URLSearchParams(current);
+                  const serialized = serializeStatusFilter(next);
+                  if (serialized) params.set('status', serialized);
+                  else params.delete('status');
+                  return params;
+                },
+                { replace: true },
+              );
+            }}
           />
           {(todayInRange || rangeTouched) && (
             <Button
@@ -956,7 +980,14 @@ export function ProjectActivitiesPage() {
       }
       empty={
         !isLoading && activities.length === 0
-          ? { icon: CalendarRange, title: t('activity.gantt.emptyState') }
+          ? {
+              icon: CalendarRange,
+              // Con el filtro puesto, "no hay tareas" mentiría: hay, en otro estado.
+              title:
+                rangeActivities.length > 0
+                  ? t('activity.gantt.emptyFiltered')
+                  : t('activity.gantt.emptyState'),
+            }
           : undefined
       }
     >
