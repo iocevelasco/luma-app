@@ -39,6 +39,9 @@ nombre de paquete contra su `dist`.
   `refresh_token` (90 días). HS256 si hay `JWT_SECRET`, si no RS256 con el par PEM.
 - **Roles de plataforma**: `admin` y `user`. Middlewares: `isAuthenticated` →
   `requireAdmin` | `requireRole`. No gatean ninguna pantalla del producto.
+  El admin tiene su propia área, **fuera del panel de obras**: `/plataforma`
+  (cuentas y pagos), con su propio layout (`PlatformLayout`). Una pantalla de
+  administración global no va dentro de `DashboardLayout`.
 - **Roles de obra**: `gerente` | `supervisor` | `cliente`, por obra y no por
   Empresa. El gerente sale de `Project.createdBy`; los otros dos son filas de
   `ProjectMembership`. **Quién puede qué vive en una sola grilla**:

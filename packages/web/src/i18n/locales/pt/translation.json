@@ -49,7 +49,7 @@
     "settings": "Configurações",
     "logout": "Sair",
     "subscription": "Assinatura",
-    "platformBilling": "Pagamentos da plataforma"
+    "platform": "Administração da plataforma"
   },
   "project": {
     "list": {
@@ -1455,7 +1455,6 @@
     }
   },
   "platform": {
-    "title": "Pagamentos da plataforma",
     "tabs": {
       "pendiente": "Pendentes",
       "aprobado": "Aprovados",
@@ -1508,6 +1507,56 @@
       "savedImplausible": "Taxa salva, mas salta mais de 20% em relação à anterior. Confira.",
       "history": "Últimas leituras",
       "flagged": "Marcada"
+    },
+    "users": {
+      "searchPlaceholder": "Buscar por nome ou e-mail",
+      "filters": {
+        "all": "Todas",
+        "active": "Ativas",
+        "unverified": "Não confirmadas",
+        "inactive": "Desativadas"
+      },
+      "stats": {
+        "total": "Contas",
+        "active": "Ativas",
+        "verified": "Confirmadas",
+        "unverified": "Não confirmadas",
+        "inactive": "Desativadas"
+      },
+      "signups": {
+        "title": "Cadastros por semana",
+        "label": "Cadastros por semana, da mais antiga à atual",
+        "total": "{{amount}} nas últimas {{weeks}} semanas",
+        "week": "Semana de {{date}}: {{amount}}"
+      },
+      "role": {
+        "admin": "Admin da plataforma",
+        "user": "Usuário"
+      },
+      "status": {
+        "active": "Ativa",
+        "inactive": "Desativada"
+      },
+      "verified": "Confirmada",
+      "unverified": "Não confirmada",
+      "joined": "Cadastro em {{date}}",
+      "empty": "Não há contas para mostrar.",
+      "emptyFiltered": "Tente outro filtro ou outra busca.",
+      "pagination": {
+        "label": "Paginação",
+        "previous": "Anterior",
+        "next": "Próxima",
+        "status": "Página {{page}} de {{pages}} · {{total}} contas"
+      }
+    },
+    "layout": {
+      "badge": "Plataforma",
+      "back": "Voltar ao app",
+      "navLabel": "Seções da plataforma"
+    },
+    "nav": {
+      "users": "Contas",
+      "billing": "Pagamentos"
     }
   }
 }
