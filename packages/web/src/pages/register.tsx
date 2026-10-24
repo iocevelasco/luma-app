@@ -105,7 +105,7 @@ export function RegisterPage() {
             )}
           </div>
 
-          <div className="flex gap-3 rounded-md border border-border p-3">
+          <div className="flex gap-3 rounded-md border border-border bg-card p-3">
             <ShieldCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
             <div className="flex flex-col gap-1">
               <p className="text-sm font-medium">{t('legal.notice.title')}</p>
