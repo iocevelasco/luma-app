@@ -640,7 +640,7 @@ export function ProjectDetailPage() {
         <WeekTasksCard projectId={project.id} canSeeCrew={can('crew.read')} />
       )}
       {can('budget.read') && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
-      <MaterialsCard projectId={project.id} />
+      {can('material.read') && <MaterialsCard projectId={project.id} />}
 
       {/* Con quién se trabaja. */}
       {can('provider.read') && <ProvidersCard projectId={project.id} />}

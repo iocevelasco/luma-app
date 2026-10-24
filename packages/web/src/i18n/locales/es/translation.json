@@ -118,7 +118,7 @@
       "providersVisibleToClient": "El cliente ve los proveedores",
       "providersVisibleToClientHint": "Si lo activás, el cliente ve el directorio de esta obra y quién está asignado a cada tarea.",
       "purchasesVisibleToClient": "El cliente ve las compras",
-      "purchasesVisibleToClientHint": "Si lo activás, el cliente ve en Compras lo cargado, cuánto costó y las facturas. Pensado para obras que se cobran por porcentaje de ejecución.",
+      "purchasesVisibleToClientHint": "Si lo activás, el cliente ve en Compras los materiales cargados, su estado, el proveedor de cada uno y las facturas. Pensado para obras que se cobran por porcentaje de ejecución.",
       "settingsSaved": "Ajuste guardado",
       "team": "Equipo de la obra",
       "memberInvited": "Acceso otorgado"
@@ -493,6 +493,7 @@
       "updated": "Material actualizado",
       "deleted": "Material eliminado",
       "empty": "Todavía no cargaste materiales.",
+      "emptyReadOnly": "Todavía no hay compras cargadas.",
       "withoutActivity": "Sin tarea asociada",
       "copyList": "Copiar lista",
       "share": "Compartir",

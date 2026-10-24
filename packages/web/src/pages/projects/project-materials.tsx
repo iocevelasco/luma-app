@@ -1111,7 +1111,7 @@ export function ProjectMaterialsPage() {
     <PageLayout
       // Mientras hay selección, la barra ocupa el lugar del botón flotante.
       action={canWrite && !hasSelection ? <NewMaterialButton projectId={projectId!} /> : undefined}
-      empty={total === 0 ? { icon: Package, title: t('material.list.empty') } : undefined}
+      empty={total === 0 ? { icon: Package, title: t(canWrite ? 'material.list.empty' : 'material.list.emptyReadOnly') } : undefined}
     >
       {/*
         `defaultValue` y no controlado: la pestaña del material pedido se

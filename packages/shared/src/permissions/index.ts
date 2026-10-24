@@ -91,8 +91,9 @@ export type Capability =
   // Materiales y herramientas
   | 'material.read'
   | 'material.write'
-  // Cuánto costó cada compra. Va aparte de `material.read` porque ver qué
-  // falta comprar no es ver cuánto se pagó.
+  // El costo estimado de cada material (`estimatedCost`). Es lo presupuestado,
+  // no lo pagado: lo pagado está en la factura. Va aparte de `material.read`
+  // porque ver qué falta comprar no es ver cuánto cuesta.
   | 'material.cost.read'
   // Facturas de materiales: un gasto acotado. Quien las tiene carga y ve las
   // facturas de lo que compró, pero no Finanzas ni el total gastado.

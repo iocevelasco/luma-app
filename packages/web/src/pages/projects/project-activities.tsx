@@ -707,11 +707,14 @@ function ActivityDetailModal({
   canWriteEvidence,
   canEdit,
   canReadProviders,
+  canReadMaterials,
   onClose,
 }: {
   projectId: string;
   activity: Activity | undefined;
   materials: MaterialItem[];
+  /** Compras: `material.read`. Para el cliente depende del flag de la obra. */
+  canReadMaterials: boolean;
   missingMaterials: boolean;
   /** Aprobar y devolver: `activity.review`. */
   canReview: boolean;
@@ -803,10 +806,12 @@ function ActivityDetailModal({
                 canReview={canReview}
               />
 
-              <div className="flex flex-col gap-3 border-t border-border pt-6">
-                <h3 className="text-sm font-medium">{t('activity.detail.materials')}</h3>
-                <ActivityMaterialsList materials={materials} />
-              </div>
+              {canReadMaterials && (
+                <div className="flex flex-col gap-3 border-t border-border pt-6">
+                  <h3 className="text-sm font-medium">{t('activity.detail.materials')}</h3>
+                  <ActivityMaterialsList materials={materials} />
+                </div>
+              )}
 
               <ActivityProvidersSection
                 projectId={projectId}
@@ -877,10 +882,11 @@ export function ProjectActivitiesPage() {
   const todayInRange = todayKey >= range.from && todayKey <= range.to;
 
   const { data: activitiesData, isLoading, isError } = useActivities(projectId, range);
-  const { data: materialsData } = useMaterials(projectId);
-
   const { can } = useProjectCapabilities(projectId);
   const canReadProviders = can('provider.read');
+  const canReadMaterials = can('material.read');
+  // Sin permiso no se pide: un 403 acá se vería como "sin materiales".
+  const { data: materialsData } = useMaterials(canReadMaterials ? projectId : undefined);
 
   const missingByActivity = useMemo(() => {
     const map = new Set<string>();
@@ -987,6 +993,7 @@ export function ProjectActivitiesPage() {
         canWriteEvidence={can('activity.evidence.write')}
         canEdit={can('activity.plan')}
         canReadProviders={canReadProviders}
+        canReadMaterials={canReadMaterials}
         onClose={() => setSelectedActivityId(null)}
       />
     </PageLayout>
