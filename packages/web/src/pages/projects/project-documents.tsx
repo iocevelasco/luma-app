@@ -447,7 +447,9 @@ function DocumentGrid({
   canWrite: boolean;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    // Tarjetas de ancho acotado: con el ancho entero, columnas fluidas
+    // estirarían cada preview hasta ocupar media pantalla.
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(10rem,12rem))] gap-3 max-sm:grid-cols-2">
       {docs.map((doc) => (
         <DocumentCard key={doc.id} projectId={projectId} doc={doc} canWrite={canWrite} />
       ))}
@@ -617,6 +619,8 @@ export function ProjectDocumentsPage() {
 
   return (
     <PageLayout
+      // Ancho entero: la lista arranca en el mismo borde que los filtros.
+      width="full"
       toolbar={documents.length > 0 ? filters : undefined}
       action={canWrite ? <NewDocumentDrawer projectId={projectId!} /> : undefined}
       empty={
