@@ -53,7 +53,15 @@ export function AuthSplitLayout({ children, width = 'sm' }: AuthSplitLayoutProps
 
         <main className="overflow-y-auto">
           <div className="flex min-h-full items-center justify-center px-6 py-10 sm:px-10">
-            <div className={cn('flex w-full flex-col gap-6', widths[width])}>{children}</div>
+            {/* Card translúcida: deja asomar la textura sin que compita con el texto. */}
+            <div
+              className={cn(
+                'flex w-full flex-col gap-6 rounded-3xl border border-border bg-card/70 p-6 sm:p-8',
+                widths[width],
+              )}
+            >
+              {children}
+            </div>
           </div>
         </main>
       </div>
