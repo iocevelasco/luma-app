@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
 import { STORAGE_CONFIG } from '../config/app.config.js';
 
 /**
@@ -148,6 +149,37 @@ export async function signObjectUrl(key: string): Promise<string | null> {
   return body.url;
 }
 
+/**
+ * El contenido de un archivo como stream, o `null` si ya no existe. Para lo
+ * que la API tiene que servir ella misma: el navegador no puede leer los
+ * píxeles de una URL firmada de otro dominio (para dibujarla en un PDF, por
+ * ejemplo) sin que el media-service habilite CORS, y eso no está en nuestras
+ * manos.
+ *
+ * Stream y no buffer: con varias personas pidiendo varias fotos a la vez, un
+ * `arrayBuffer()` por request mantiene cada archivo entero en el heap hasta
+ * terminar de responder.
+ */
+export async function openObject(
+  key: string,
+): Promise<{ stream: Readable; contentType: string; contentLength: number | null } | null> {
+  const url = await signObjectUrl(key);
+  if (!url) return null;
+
+  const res = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  if (res.status === 404) return null;
+  if (!res.ok) throw await toRequestError(res, 'leer el archivo');
+  if (!res.body) return null;
+
+  const length = Number(res.headers.get('content-length'));
+  return {
+    // El tipo del body web y el de `fromWeb` no coinciden en `@types/node`.
+    stream: Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]),
+    contentType: res.headers.get('content-type') ?? 'application/octet-stream',
+    contentLength: Number.isFinite(length) && length > 0 ? length : null,
+  };
+}
+
 // ── Evidencia fotográfica de actividades (RF-04) ────────────────────────────
 
 export interface UploadEvidencePhotoParams {
@@ -171,6 +203,28 @@ export async function uploadEvidencePhoto(
 
 export const deleteEvidencePhoto = deleteObject;
 export const signEvidencePhotoUrl = signObjectUrl;
+
+// ── Foto de referencia de un material ──────────────────────────────────────
+
+export interface UploadMaterialPhotoParams {
+  projectId: string;
+  materialId: string;
+  buffer: Buffer;
+  contentType: string;
+  /** Con el punto incluido, ej. `.jpg`. */
+  extension: string;
+}
+
+/** Prefijo propio: se distingue de la evidencia de avance en el media-service. */
+export async function uploadMaterialPhoto(
+  params: UploadMaterialPhotoParams,
+): Promise<{ key: string }> {
+  return putObject({
+    fileName: `material-${params.projectId}-${params.materialId}-${randomUUID()}${params.extension}`,
+    buffer: params.buffer,
+    contentType: params.contentType,
+  });
+}
 
 // ── Documentación de obra: permisos, planos y renders ───────────────────────
 

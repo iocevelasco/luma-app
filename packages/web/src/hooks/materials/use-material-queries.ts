@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -11,6 +12,7 @@ import type {
 import { materialsApi } from '@/api/materials';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
+import { prepareUploadPhoto } from '@/lib/material-photo-export';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -94,6 +96,63 @@ export function useEditMaterial(projectId: string) {
       toast.success(t('material.list.updated'));
     },
     onError: (error) => refreshWhenLocked(error, queryClient, projectId),
+  });
+}
+
+/**
+ * Los bytes de la foto de un material, para el PDF y el compartir de la lista
+ * de compras. `version` es lo que cambia cuando se reemplaza la foto (el
+ * `updatedAt` del material): con la misma, la copia que ya se bajó sirve, y
+ * con otra se vuelve a pedir. Sin `useQuery`: no es algo que la pantalla
+ * muestre, es algo que se tiene listo antes de que la persona toque el botón.
+ */
+export function useMaterialPhotoLoader(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (materialId: string, version: string) =>
+      queryClient.fetchQuery({
+        queryKey: [QueryKeys.materialPhoto, projectId, materialId, version],
+        queryFn: () => materialsApi.photo(projectId, materialId, version),
+        staleTime: Infinity,
+        gcTime: 30 * 60 * 1000,
+      }),
+    [queryClient, projectId],
+  );
+}
+
+/**
+ * Subir o cambiar la foto. Sin formulario propio —sale del drawer una vez
+ * guardado el material, o del menú de la fila—, así que la falla va por toast.
+ */
+export function useUploadMaterialPhoto(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    // Se achica antes de subir: una foto de celular son varios MB, y es lo que
+    // después bajan, por datos móviles, quienes miran Compras o exportan la lista.
+    mutationFn: async ({ materialId, file }: { materialId: string; file: File }) =>
+      materialsApi.uploadPhoto(projectId, materialId, await prepareUploadPhoto(file)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      toast.success(t('material.photo.saved'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
+export function useRemoveMaterialPhoto(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (materialId: string) => materialsApi.removePhoto(projectId, materialId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      toast.success(t('material.photo.removed'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
 

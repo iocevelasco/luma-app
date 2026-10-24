@@ -117,6 +117,8 @@
       "gantt": "Cronograma de tareas",
       "providersVisibleToClient": "El cliente ve los proveedores",
       "providersVisibleToClientHint": "Si lo activas, el cliente ve el directorio de esta obra y quién está asignado a cada tarea.",
+      "purchasesVisibleToClient": "El cliente ve las compras",
+      "purchasesVisibleToClientHint": "Si lo activas, el cliente ve en Compras los materiales cargados, su estado, el proveedor de cada uno y los justificantes. Pensado para obras que se cobran por porcentaje de ejecución.",
       "settingsSaved": "Ajuste guardado",
       "team": "Equipo de la obra",
       "memberInvited": "Acceso otorgado"
@@ -452,7 +454,9 @@
       "deleteTitle": "¿Eliminar esta factura?",
       "deleteBody": "Se elimina «{{name}}» y su gasto en Finanzas. Los materiales siguen como comprados.",
       "openMenu_one": "Factura de {{name}}",
-      "openMenu_other": "{{count}} facturas de {{name}}"
+      "openMenu_other": "{{count}} facturas de {{name}}",
+      "tooltip_one": "Ver factura",
+      "tooltip_other": "Ver {{count}} facturas"
     },
     "provider": {
       "placeholder": "Elige o escribe un proveedor",
@@ -491,6 +495,7 @@
       "updated": "Material actualizado",
       "deleted": "Material eliminado",
       "empty": "Todavía no has añadido materiales.",
+      "emptyReadOnly": "Todavía no hay compras cargadas.",
       "withoutActivity": "Sin tarea asociada",
       "copyList": "Copiar lista",
       "share": "Compartir",
@@ -514,6 +519,31 @@
       "requestedTag": "ya pedido",
       "onSiteTag": "ya en obra",
       "noSupplier": "Sin proveedor"
+    },
+    "photo": {
+      "label": "Foto",
+      "hint": "Para que quien compra y el vendedor sepan cuál es la pieza, aunque la llamen distinto.",
+      "add": "Añadir foto",
+      "change": "Cambiar foto",
+      "remove": "Quitar foto",
+      "removeTitle": "¿Quitar la foto?",
+      "removeBody": "Se borra la foto de {{name}}. Puedes subir otra cuando quieras.",
+      "saved": "Foto guardada",
+      "removed": "Foto quitada",
+      "tooLarge": "La foto pesa más de 30 MB. Hazla de nuevo o elige una más ligera.",
+      "unsupported": "Formato no soportado. Usa una foto .jpg, .png o .webp.",
+      "open": "Ver la foto de {{name}}",
+      "previewAlt": "Foto elegida del material"
+    },
+    "export": {
+      "download": "Descargar",
+      "pdf": "PDF",
+      "pdfHint": "Para imprimir o enviar. Incluye las fotos.",
+      "csv": "CSV",
+      "csvHint": "Para abrir en Excel o en una hoja de cálculo.",
+      "csvDownloaded": "CSV descargado",
+      "columnUnit": "Unidad",
+      "columnNote": "Nota"
     },
     "bulk": {
       "toolbar": "Acciones para los materiales seleccionados",
@@ -550,7 +580,8 @@
       "columnMaterial": "Material",
       "columnQuantity": "Cantidad",
       "columnSupplier": "Proveedor",
-      "page": "Página {{page}} de {{total}}"
+      "page": "Página {{page}} de {{total}}",
+      "columnPhoto": "Foto"
     },
     "fields": {
       "name": "Nombre",
@@ -589,7 +620,8 @@
       "update": "No hemos podido actualizar el material.",
       "delete": "No hemos podido eliminar el material.",
       "copy": "No hemos podido copiar la lista.",
-      "pdf": "No hemos podido generar el PDF. Prueba de nuevo."
+      "pdf": "No hemos podido generar el PDF. Prueba de nuevo.",
+      "share": "No se ha podido compartir la lista. Prueba a copiarla o a descargar el PDF."
     }
   },
   "provider": {

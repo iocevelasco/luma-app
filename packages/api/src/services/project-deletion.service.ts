@@ -81,7 +81,13 @@ export const PROJECT_OWNED: ReadonlyArray<{ model: AnyModel; label: string }> = 
 const ACTIVITY_OWNED: ReadonlyArray<AnyModel> = [ActivityCrew, ActivityProvider];
 
 /** Los modelos que guardan archivos del media-service como `{ key }`. */
-const FILE_OWNERS: ReadonlyArray<AnyModel> = [Activity, Milestone, Expense, ProjectDocument];
+const FILE_OWNERS: ReadonlyArray<AnyModel> = [
+  Activity,
+  Milestone,
+  Expense,
+  ProjectDocument,
+  MaterialItem,
+];
 
 export function purgeDateFrom(deletedAt: Date): Date {
   return new Date(deletedAt.getTime() + PROJECT_TRASH_RETENTION_DAYS * DAY_MS);

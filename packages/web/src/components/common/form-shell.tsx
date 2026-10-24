@@ -94,7 +94,9 @@ export function FormShell({
     <form
       onSubmit={onSubmit}
       noValidate
-      className={cn('flex min-h-0 flex-1 flex-col', className)}
+      // `min-w-0`: en un diálogo el form es ítem de una grilla, y sin esto no
+      // baja del ancho de su contenido más largo (el nombre de un archivo).
+      className={cn('flex min-h-0 min-w-0 flex-1 flex-col', className)}
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className={cn('flex flex-col gap-4', variant !== 'embedded' && 'pb-4')}>{children}</div>

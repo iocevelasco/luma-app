@@ -168,7 +168,7 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
           );
         })}
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="document-file">{t('document.fields.file')}</Label>
           {/*
             El input nativo de archivo no se puede estilar, así que se esconde
@@ -187,10 +187,10 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
             type="button"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            className="justify-start font-normal"
+            className="w-full min-w-0 justify-start font-normal"
           >
             <Upload className="size-4" />
-            {file ? file.name : t('document.fields.filePlaceholder')}
+            <span className="min-w-0 truncate">{file ? file.name : t('document.fields.filePlaceholder')}</span>
           </Button>
           {file && (
             <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
@@ -337,6 +337,7 @@ function DocumentThumbnail({ doc }: { doc: ProjectDocument }) {
         src={doc.url}
         alt={doc.title}
         loading="lazy"
+        decoding="async"
         onError={() => setFailed(true)}
         className="size-full object-cover"
       />
@@ -447,7 +448,9 @@ function DocumentGrid({
   canWrite: boolean;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    // Tarjetas de ancho acotado: con el ancho entero, columnas fluidas
+    // estirarían cada preview hasta ocupar media pantalla.
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(10rem,12rem))] gap-3 max-sm:grid-cols-2">
       {docs.map((doc) => (
         <DocumentCard key={doc.id} projectId={projectId} doc={doc} canWrite={canWrite} />
       ))}
@@ -617,6 +620,8 @@ export function ProjectDocumentsPage() {
 
   return (
     <PageLayout
+      // Ancho entero: la lista arranca en el mismo borde que los filtros.
+      width="full"
       toolbar={documents.length > 0 ? filters : undefined}
       action={canWrite ? <NewDocumentDrawer projectId={projectId!} /> : undefined}
       empty={

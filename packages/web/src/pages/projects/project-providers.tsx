@@ -383,7 +383,7 @@ export function ProjectProvidersPage() {
   const { can } = useProjectCapabilities(projectId);
   const canManage = can('provider.manage');
   const canAssign = can('provider.assign');
-  // El cliente puede ver proveedores (si la obra lo habilita) pero no Compras.
+  // El cliente puede ver Compras sólo si la obra lo habilita (`purchasesVisibleToClient`).
   const canReadMaterials = can('material.read');
   const canCreate = can('provider.create');
 

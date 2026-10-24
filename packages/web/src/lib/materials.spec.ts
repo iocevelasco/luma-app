@@ -1,11 +1,13 @@
 import type { MaterialItem, MaterialStatus } from '@luma/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  buildPurchaseCsv,
   buildPurchaseRows,
   bulkActionsFor,
   buildPurchaseText,
   countSuppliers,
   countUnrequested,
+  csvCell,
   materialTab,
   organizeMaterials,
   providerMatchFor,
@@ -32,6 +34,8 @@ function material(
     statusChangedAt: changedAt,
     editable: false,
     providerId: null,
+    photoUrl: null,
+    photoUploadedAt: null,
     createdBy: 'u1',
     createdAt: changedAt,
     updatedAt: changedAt,
@@ -182,6 +186,88 @@ describe('buildPurchaseText', () => {
       '- Arena: 1 Unidad · Corralón Sur (ya pedido)',
       '- Pintura: 1 Unidad',
     ]);
+  });
+});
+
+describe('buildPurchaseRows — versión de la foto', () => {
+  const withPhoto = (overrides: Partial<MaterialItem>): MaterialItem => ({
+    ...material('a', 'pendiente'),
+    photoUrl: 'https://files.test/a',
+    photoUploadedAt: '2026-10-20T10:00:00.000Z',
+    updatedAt: '2026-10-24T10:00:00.000Z',
+    ...overrides,
+  });
+
+  it('es cuándo se subió la foto, no cuándo se tocó el material', () => {
+    const [row] = buildPurchaseRows([withPhoto({})]);
+    expect(row.photoVersion).toBe('2026-10-20T10:00:00.000Z');
+  });
+
+  it('cambiar el material (estado, proveedor) no cambia la versión: la foto no se vuelve a bajar', () => {
+    const [before] = buildPurchaseRows([withPhoto({})]);
+    const [after] = buildPurchaseRows([
+      withPhoto({ status: 'solicitado', updatedAt: '2026-10-25T09:00:00.000Z' }),
+    ]);
+    expect(after.photoVersion).toBe(before.photoVersion);
+  });
+
+  it('reemplazar la foto sí la cambia', () => {
+    const [row] = buildPurchaseRows([withPhoto({ photoUploadedAt: '2026-10-26T08:00:00.000Z' })]);
+    expect(row.photoVersion).toBe('2026-10-26T08:00:00.000Z');
+  });
+
+  it('sin foto no hay versión', () => {
+    const [row] = buildPurchaseRows([material('a', 'pendiente')]);
+    expect(row.photoVersion).toBeNull();
+  });
+});
+
+describe('buildPurchaseCsv', () => {
+  const labels = {
+    header: { material: 'Material', quantity: 'Cantidad', unit: 'Unidad', supplier: 'Proveedor', note: 'Nota' },
+    unit: () => 'Unidad',
+    tag: 'ya pedido',
+    number: (value: number) => String(value).replace('.', ','),
+  };
+
+  it('arranca con BOM, usa ; y CRLF, y marca lo ya pedido en la columna Nota', () => {
+    const rows = buildPurchaseRows([
+      withSupplier('a', 'Corralón Sur', 'pendiente', 'Cemento'),
+      withSupplier('b', 'Corralón Sur', 'solicitado', 'Arena'),
+      withSupplier('c', undefined, 'pendiente', 'Pintura'),
+    ]);
+    const csv = buildPurchaseCsv(rows, labels);
+
+    expect(csv.startsWith('\uFEFF')).toBe(true);
+    expect(csv.slice(1).split('\r\n')).toEqual([
+      'Material;Cantidad;Unidad;Proveedor;Nota',
+      'Cemento;1;Unidad;Corralón Sur;',
+      'Arena;1;Unidad;Corralón Sur;ya pedido',
+      'Pintura;1;Unidad;;',
+      '',
+    ]);
+  });
+
+  it('la cantidad sale con el decimal del idioma, que es lo que Excel lee como número', () => {
+    const rows = [{ ...buildPurchaseRows([withSupplier('a', undefined, 'pendiente', 'Cable')])[0], quantity: 2.5 }];
+    expect(buildPurchaseCsv(rows, labels)).toContain('Cable;2,5;Unidad');
+  });
+
+  it('un nombre con ; o comillas no rompe las columnas', () => {
+    const rows = buildPurchaseRows([withSupplier('a', undefined, 'pendiente', 'Caño 1/2"; gris')]);
+    expect(buildPurchaseCsv(rows, labels)).toContain('"Caño 1/2""; gris";1;');
+  });
+});
+
+describe('csvCell', () => {
+  it('lo que Excel tomaría por una fórmula se neutraliza', () => {
+    for (const value of ['=SUM(A1:A9)', '+54 11', '-5 mm', '@usuario']) {
+      expect(csvCell(value, ';')).toBe(`'${value}`);
+    }
+  });
+
+  it('un texto común queda tal cual', () => {
+    expect(csvCell('Cemento 50 kg', ';')).toBe('Cemento 50 kg');
   });
 });
 

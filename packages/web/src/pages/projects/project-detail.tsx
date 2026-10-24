@@ -109,6 +109,26 @@ function ProvidersVisibilitySwitch({
   );
 }
 
+function PurchasesVisibilitySwitch({
+  projectId,
+  checked,
+}: {
+  projectId: string;
+  checked: boolean;
+}) {
+  const { t } = useTranslation();
+  const updateProject = useUpdateProject(projectId);
+
+  return (
+    <Switch
+      checked={checked}
+      disabled={updateProject.isPending}
+      onCheckedChange={(next) => updateProject.mutate({ purchasesVisibleToClient: next })}
+      aria-label={t('project.detail.purchasesVisibleToClient')}
+    />
+  );
+}
+
 /**
  * % de avance (RF-04): días de tareas completadas sobre días de tareas no
  * canceladas.
@@ -620,7 +640,7 @@ export function ProjectDetailPage() {
         <WeekTasksCard projectId={project.id} canSeeCrew={can('crew.read')} />
       )}
       {can('budget.read') && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
-      <MaterialsCard projectId={project.id} />
+      {can('material.read') && <MaterialsCard projectId={project.id} />}
 
       {/* Con quién se trabaja. */}
       {can('provider.read') && <ProvidersCard projectId={project.id} />}
@@ -670,6 +690,23 @@ export function ProjectDetailPage() {
                 <ProvidersVisibilitySwitch
                   projectId={project.id}
                   checked={project.providersVisibleToClient}
+                />
+              </div>
+            )}
+
+            {can('project.update') && (
+              <div className="flex items-start justify-between gap-4 border-t border-border pt-4">
+                <div>
+                  <h3 className="text-sm font-medium">
+                    {t('project.detail.purchasesVisibleToClient')}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t('project.detail.purchasesVisibleToClientHint')}
+                  </p>
+                </div>
+                <PurchasesVisibilitySwitch
+                  projectId={project.id}
+                  checked={project.purchasesVisibleToClient}
                 />
               </div>
             )}

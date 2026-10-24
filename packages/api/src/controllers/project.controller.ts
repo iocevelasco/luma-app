@@ -45,6 +45,7 @@ export function toProjectDTO(project: IProject): ProjectDTO {
     currency: project.currency,
     status: project.status,
     providersVisibleToClient: Boolean(project.providersVisibleToClient),
+    purchasesVisibleToClient: Boolean(project.purchasesVisibleToClient),
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };

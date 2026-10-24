@@ -143,7 +143,7 @@ export function MaterialInvoiceDialog({
         })}
       >
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 flex-col gap-2">
             <Label htmlFor="invoice-file">{t('material.invoice.file')}</Label>
             <input
               ref={fileInputRef}
@@ -157,11 +157,11 @@ export function MaterialInvoiceDialog({
               type="button"
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
-              className="justify-start font-normal"
+              className="w-full min-w-0 justify-start font-normal"
               aria-invalid={Boolean(fileError)}
             >
               <Upload className="size-4" />
-              {receipt ? receipt.name : t('material.invoice.filePlaceholder')}
+              <span className="min-w-0 truncate">{receipt ? receipt.name : t('material.invoice.filePlaceholder')}</span>
             </Button>
             {receipt && <p className="text-xs text-muted-foreground">{formatFileSize(receipt.size)}</p>}
             {fileError && <p className="text-sm text-destructive">{fileError}</p>}
