@@ -284,3 +284,17 @@ describe('modo sólo lectura (suscripción vencida)', () => {
   });
 });
 
+describe('project.delete', () => {
+  it('es sólo del gerente: ningún otro rol puede mandar la obra a la papelera', () => {
+    expect(canInProject('gerente', 'project.delete')).toBe(true);
+    for (const role of ['supervisor', 'contador', 'cliente'] as const) {
+      expect(canInProject(role, 'project.delete', VISIBLE)).toBe(false);
+    }
+  });
+
+  it('con la suscripción vencida tampoco se elimina: es una escritura', () => {
+    expect(capabilitiesInProject('gerente', VISIBLE, { readOnly: true })).not.toContain(
+      'project.delete',
+    );
+  });
+});

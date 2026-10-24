@@ -156,3 +156,19 @@ export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type InviteClientInput = z.infer<typeof inviteClientSchema>;
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 export type InviteProjectMemberInput = z.infer<typeof inviteProjectMemberSchema>;
+
+/**
+ * Cuántos días una obra eliminada se queda en la papelera antes de borrarse
+ * de verdad. Mientras tanto se puede restaurar con todo lo que tenía.
+ */
+export const PROJECT_TRASH_RETENTION_DAYS = 90;
+
+/**
+ * Eliminar una obra exige escribir su nombre. No es burocracia: es lo que
+ * separa "toqué el botón sin querer" de "sé qué estoy mandando a la papelera".
+ */
+export const deleteProjectSchema = z.object({
+  confirmName: z.string().trim().min(1, 'Escribí el nombre de la obra para confirmar'),
+});
+
+export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;

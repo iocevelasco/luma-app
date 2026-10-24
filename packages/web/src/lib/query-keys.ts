@@ -9,6 +9,8 @@ export enum QueryKeys {
   emailVerification = 'email-verification',
   projects = 'projects',
   project = 'project',
+  deletedProjects = 'deleted-projects',
+  projectDeletionSummary = 'project-deletion-summary',
   organization = 'organization',
   organizationMembers = 'organization-members',
   activities = 'activities',

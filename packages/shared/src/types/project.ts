@@ -125,8 +125,19 @@ export interface ProjectListItem extends Project {
   readOnly: boolean;
 }
 
+/**
+ * Una obra a la que la persona tenía acceso y que su gerente eliminó. La UI se
+ * lo avisa en vez de dejarla frente a una lista vacía sin explicación.
+ */
+export interface RemovedProjectNotice {
+  id: string;
+  name: string;
+}
+
 export interface ProjectListResponse {
   projects: ProjectListItem[];
+  /** Obras en la papelera donde la persona es miembro invitado (no las suyas). */
+  removedProjects: RemovedProjectNotice[];
 }
 
 export interface ProjectDetailResponse {
@@ -161,6 +172,75 @@ export interface InviteProjectMemberResponse extends Partial<ActivationDelivery>
 
 export interface UpdateProjectMemberResponse {
   member: ProjectMemberSummary;
+}
+
+/**
+ * Qué se va con la obra, para mostrarlo antes de confirmar. Sólo cuenta lo que
+ * una persona reconoce como "mío": nada de filas internas.
+ */
+export interface ProjectDeletionSummary {
+  projectName: string;
+  retentionDays: number;
+  counts: {
+    activities: number;
+    materials: number;
+    laborRecords: number;
+    crewMembers: number;
+    providers: number;
+    documents: number;
+    milestones: number;
+    payments: number;
+    expenses: number;
+    members: number;
+  };
+  /**
+   * Proveedores y personal de la Empresa que estaban asignados a esta obra.
+   * NO se borran —se comparten con las otras obras—: sólo se desasignan.
+   * `counts.providers` y `counts.crewMembers` son únicamente los que eran de
+   * esta obra sola.
+   */
+  shared: {
+    providers: number;
+    crewMembers: number;
+  };
+  /** Personas con acceso que perderían la obra, sin contar al gerente. */
+  affectedPeople: number;
+  /** Se libera un lugar en el límite de obras activas de la suscripción. */
+  freesSubscriptionSlot: boolean;
+}
+
+/** Una obra en la papelera. */
+export interface DeletedProject {
+  id: string;
+  name: string;
+  location: string;
+  deletedAt: string;
+  /** Cuándo se borra de forma definitiva. Hasta ahí se puede restaurar. */
+  purgeAt: string;
+  daysLeft: number;
+  /**
+   * Qué pasa si se restaura, resuelto contra la suscripción: gratis, se cobra
+   * como obra extra (prorrateada desde hoy) o no se puede hasta activar/renovar
+   * el plan. La pantalla lo dice ANTES de restaurar.
+   */
+  restore: {
+    allowed: boolean;
+    isExtra: boolean;
+    blockedBy?: 'SUBSCRIPTION_REQUIRED' | 'PAID_PLAN_REQUIRED';
+  };
+}
+
+export interface DeletedProjectsResponse {
+  projects: DeletedProject[];
+}
+
+export interface DeleteProjectResponse {
+  projectId: string;
+  purgeAt: string;
+}
+
+export interface RestoreProjectResponse {
+  project: Project;
 }
 
 export interface RemoveProjectMemberResponse {

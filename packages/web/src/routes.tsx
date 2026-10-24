@@ -42,6 +42,9 @@ const EmployeesPage = lazy(() =>
 const ProvidersDirectoryPage = lazy(() =>
   import('./pages/providers-directory').then((m) => ({ default: m.ProvidersDirectoryPage })),
 );
+const ProjectsTrashPage = lazy(() =>
+  import('./pages/projects/projects-trash').then((m) => ({ default: m.ProjectsTrashPage })),
+);
 const ProjectNewPage = lazy(() =>
   import('./pages/projects/project-new').then((m) => ({ default: m.ProjectNewPage })),
 );
@@ -169,6 +172,10 @@ export function AppRoutes() {
             element={<Navigate to={ROUTES.PLATFORM_BILLING} replace />}
           />
           <Route path={ROUTES.PROJECT_NEW} element={<LazyRoute><ProjectNewPage /></LazyRoute>} />
+          <Route
+            path={ROUTES.PROJECTS_TRASH}
+            element={<LazyRoute><ProjectsTrashPage /></LazyRoute>}
+          />
           <Route
             path={ROUTES.PROJECT_DETAIL}
             element={<LazyRoute><ProjectDetailPage /></LazyRoute>}

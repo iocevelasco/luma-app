@@ -180,6 +180,71 @@
       "removed": "Acesso removido",
       "capabilityCount": "{{count}} permissões",
       "activationHint": "Quem ainda não tem conta recebe um e-mail para ativá-la e escolher a senha. Até lá, aparece na lista mesmo assim."
+    },
+    "delete": {
+      "sectionTitle": "Excluir esta obra",
+      "sectionHint": "Ela fica oculta para toda a equipe e permanece 90 dias na lixeira, onde você pode restaurá-la.",
+      "action": "Excluir obra",
+      "dialogTitle": "Excluir «{{name}}»?",
+      "summaryIntro": "Vai embora com a obra:",
+      "nothingLoaded": "Esta obra ainda não tem nada cadastrado.",
+      "counts": {
+        "activities_one": "{{count}} tarefa",
+        "activities_other": "{{count}} tarefas",
+        "materials_one": "{{count}} material",
+        "materials_other": "{{count}} materiais",
+        "laborRecords_one": "{{count}} registro de jornada",
+        "laborRecords_other": "{{count}} registros de jornada",
+        "crewMembers_one": "{{count}} pessoa de pessoal cadastrada só nesta obra",
+        "crewMembers_other": "{{count}} pessoas de pessoal cadastradas só nesta obra",
+        "providers_one": "{{count}} fornecedor cadastrado só nesta obra",
+        "providers_other": "{{count}} fornecedores cadastrados só nesta obra",
+        "documents_one": "{{count}} documento",
+        "documents_other": "{{count}} documentos",
+        "milestones_one": "{{count}} marco",
+        "milestones_other": "{{count}} marcos",
+        "payments_one": "{{count}} recebimento",
+        "payments_other": "{{count}} recebimentos",
+        "expenses_one": "{{count}} despesa",
+        "expenses_other": "{{count}} despesas"
+      },
+      "affectedPeople_one": "{{count}} pessoa com acesso deixará de ver a obra.",
+      "affectedPeople_other": "{{count}} pessoas com acesso deixarão de ver a obra.",
+      "freesSlot": "Libera uma vaga no seu limite de obras ativas. Se você a restaurar e a vaga já estiver ocupada, ela é cobrada como obra extra.",
+      "retention": "Fica {{days}} dias na lixeira. Nesse prazo você pode restaurá-la com tudo o que tinha; depois é apagada definitivamente, arquivos incluídos.",
+      "confirmLabel": "Para confirmar, digite o nome da obra",
+      "submit": "Excluir obra",
+      "deleting": "Excluindo…",
+      "done": "Obra enviada para a lixeira",
+      "copyName": "Copiar nome",
+      "nameCopied": "Nome copiado",
+      "sharedProviders_one": "{{count}} fornecedor da sua Empresa estava atribuído à obra: continua no seu diretório e apenas é desatribuído.",
+      "sharedProviders_other": "{{count}} fornecedores da sua Empresa estavam atribuídos à obra: continuam no seu diretório e apenas são desatribuídos.",
+      "sharedCrew_one": "{{count}} pessoa do pessoal da sua Empresa estava atribuída à obra: continua na Empresa e apenas é desatribuída.",
+      "sharedCrew_other": "{{count}} pessoas do pessoal da sua Empresa estavam atribuídas à obra: continuam na Empresa e apenas são desatribuídas."
+    },
+    "trash": {
+      "title": "Lixeira de obras",
+      "link_one": "Lixeira ({{count}})",
+      "link_other": "Lixeira ({{count}})",
+      "emptyTitle": "A lixeira está vazia",
+      "emptyBody": "As obras que você excluir ficam aqui 90 dias antes de serem apagadas definitivamente.",
+      "deletedOn": "Excluída em {{date}}",
+      "daysLeft_one": "Resta {{count}} dia",
+      "daysLeft_other": "Restam {{count}} dias",
+      "restore": "Restaurar",
+      "restored": "Obra restaurada",
+      "restoreExtraTitle": "Entra como obra extra",
+      "restoreExtraBody": "Seu plano inclui {{included}} obras ativas e você já as tem. Restaurar «{{name}}» a conta como obra extra: USD {{price}}/mês, proporcional desde hoje até a próxima renovação.",
+      "restoreConfirm": "Restaurar",
+      "blocked": {
+        "PAID_PLAN_REQUIRED": "Você já tem {{included}} obras ativas. Ative o plano para restaurá-la.",
+        "SUBSCRIPTION_REQUIRED": "Sua assinatura venceu. Renove o plano para restaurá-la."
+      }
+    },
+    "removed": {
+      "title": "A obra «{{name}}» foi excluída.",
+      "contact": "Entre em contato com o arquiteto ou o gerente de obra."
     }
   },
   "auth": {

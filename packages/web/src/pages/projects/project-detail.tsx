@@ -21,6 +21,7 @@ import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { Can } from '@/components/permissions/can';
 import { PageLayout } from '@/components/layout/page-layout';
+import { DeleteProjectSection } from '@/components/projects/delete-project-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -708,6 +709,10 @@ export function ProjectDetailPage() {
           </ul>
         </CardContent>
       </Card>
+
+      <Can I="project.delete">
+        <DeleteProjectSection projectId={project.id} projectName={project.name} />
+      </Can>
     </div>
     </PageLayout>
   );

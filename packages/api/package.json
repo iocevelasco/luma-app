@@ -24,6 +24,7 @@
     "stripe:setup": "tsx src/scripts/stripe-setup.ts",
     "seed:subscription-demo": "tsx src/scripts/seed-subscription-demo.ts",
     "subscription:reminders": "tsx src/scripts/send-subscription-reminders.ts",
+    "projects:purge": "tsx src/scripts/purge-deleted-projects.ts",
     "email:preview": "tsx src/scripts/email-preview.ts"
   },
   "dependencies": {
