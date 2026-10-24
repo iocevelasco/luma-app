@@ -105,3 +105,4 @@ export * from './money.js';
 export * from './payment.js';
 export * from './errors.js';
 export * from './subscription.js';
+export * from './platform.js';
