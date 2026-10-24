@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type {
   CreateProjectInput,
+  DeleteProjectInput,
   InvitableProjectRole,
   InviteProjectMemberInput,
   UpdateProjectInput,
@@ -12,7 +13,7 @@ import { projectsApi } from '@/api/projects';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
-import { projectDetailPath } from '@/lib/routes';
+import { projectDetailPath, ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-auth-queries.ts`. */
@@ -186,6 +187,68 @@ export function useRemoveProjectMember(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
       toast.success(t('project.team.removed'));
     },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
+/** Qué se va con la obra. Se pide recién al abrir el diálogo, no antes. */
+export function useProjectDeletionSummary(projectId: string, enabled: boolean) {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.projectDeletionSummary, projectId],
+    queryFn: () => projectsApi.deletionSummary(projectId),
+    enabled: isAuthenticated && enabled,
+    // Un conteo viejo en una confirmación es peor que ninguno.
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+export function useDeleteProject(projectId: string) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: DeleteProjectInput) => projectsApi.remove(projectId, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.projects] });
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.deletedProjects] });
+      // Una obra menos libera un lugar en el límite y baja el próximo cobro.
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.subscription] });
+      // La obra ya no existe para la pantalla en la que estamos.
+      queryClient.removeQueries({ queryKey: [QueryKeys.project, projectId] });
+      toast.success(t('project.delete.done'));
+      navigate(ROUTES.ADMIN);
+    },
+    // Sin `onError`: se envía desde un diálogo que muestra la falla adentro.
+  });
+}
+
+export function useDeletedProjects() {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.deletedProjects],
+    queryFn: () => projectsApi.listDeleted(),
+    enabled: isAuthenticated,
+  });
+}
+
+export function useRestoreProject() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (projectId: string) => projectsApi.restore(projectId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.projects] });
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.deletedProjects] });
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.subscription] });
+      toast.success(t('project.trash.restored'));
+    },
+    // Una falla acá no tiene formulario detrás: va por toast.
     onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

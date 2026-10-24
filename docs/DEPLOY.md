@@ -181,6 +181,24 @@ de `EMAIL_FROM` más arriba): sin él no sale nada y no se marca nada. Los otros
 mails de la suscripción (pago aprobado/rechazado, pago a revisar para los
 admins, cobro con tarjeta fallido) salen en el momento, sin tarea.
 
+### Papelera de obras
+
+Eliminar una obra es lógico: queda 90 días en la papelera y se puede
+restaurar. Esta tarea es la que la borra de verdad (con cobros, gastos,
+archivos del media-service y todo lo que colgaba de ella) cuando vence.
+**Sin ella la papelera nunca se vacía.**
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/purge-deleted-projects.js` |
+| Container | `app` |
+| Frequency | `30 7 * * *` — todos los días a las 3:30 de Caracas |
+
+Correrla más de una vez es inofensivo. Si el media-service falla con una obra,
+esa obra no se toca y se reintenta al otro día; el script sale con código 1
+para que se vea en el historial. A mano: `pnpm --filter @luma/api projects:purge`.
+
+
 ## Verificar
 
 ```bash

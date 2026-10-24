@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import {
   PLAN,
   activeProjectsAt,
+  billableWindows,
   canCreateProject,
   effectiveTrialEnd,
   nextPeriodStart,
@@ -133,16 +134,46 @@ export async function startTrialFor(
   );
 }
 
-/** Las obras de la Empresa como las ve la facturación: cuándo nacieron y cuándo se archivaron. */
+/**
+ * Las obras de la Empresa como las ve la facturación: cuándo nacieron y cuándo
+ * dejaron de estar activas, **incluidas las que están en la papelera**.
+ *
+ * Una obra eliminada no desaparece de acá: su tramo se cierra al eliminarla, y
+ * lo que ya usó se cobra (regla 8 de `@luma/shared/billing`). Y una restaurada
+ * es un tramo nuevo desde el día que volvió. Pedirlas aparte —y nombrando
+ * `deletedAt`— es lo que hace que el hook de `Project` no las esconda.
+ */
 export async function billableProjects(organizationId: OrgId): Promise<BillableProject[]> {
-  const projects = await Project.find({ organization: organizationId }).select(
-    '_id createdAt archivedAt',
+  const select = '_id createdAt archivedAt deletedAt trashedPeriods';
+  const [live, trashed] = await Promise.all([
+    Project.find({ organization: organizationId }).select(select),
+    Project.find({ organization: organizationId, deletedAt: { $ne: null } }).select(select),
+  ]);
+  return [...live, ...trashed].flatMap((p) =>
+    billableWindows({
+      id: String(p._id),
+      createdAt: p.createdAt,
+      archivedAt: p.archivedAt ?? null,
+      deletedAt: p.deletedAt ?? null,
+      trashedPeriods: p.trashedPeriods ?? [],
+    }),
   );
-  return projects.map((p) => ({
-    id: String(p._id),
-    createdAt: p.createdAt,
-    archivedAt: p.archivedAt ?? null,
-  }));
+}
+
+/**
+ * ¿Puede esta Empresa sumar una obra más —crear una o restaurar una—? Sólo
+ * mira: no arranca ninguna prueba. Lo usa la papelera para avisar de antemano
+ * si restaurar se va a cobrar como extra.
+ */
+export async function previewProjectCreation(
+  organizationId: OrgId,
+  now: Date = new Date(),
+): Promise<CreateProjectDecision> {
+  const [facts, projects] = await Promise.all([
+    loadFacts(organizationId),
+    billableProjects(organizationId),
+  ]);
+  return canCreateProject(subscriptionState(facts, now), activeProjectsAt(projects, now));
 }
 
 /**
@@ -154,11 +185,7 @@ export async function decideProjectCreation(
   ownerId: OrgId,
   now: Date = new Date(),
 ): Promise<CreateProjectDecision> {
-  const [facts, projects] = await Promise.all([
-    loadFacts(organizationId),
-    billableProjects(organizationId),
-  ]);
-  const decision = canCreateProject(subscriptionState(facts, now), activeProjectsAt(projects, now));
+  const decision = await previewProjectCreation(organizationId, now);
 
   if (decision.allowed && decision.startsTrial) {
     await startTrialFor(organizationId, ownerId, now);

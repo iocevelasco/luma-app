@@ -28,6 +28,10 @@
  *    se crea otra, no se prorratea (sólo se prorratea lo que supera las
  *    extras pagadas por adelantado).
  * 7. Vencida = sólo lectura. Nunca se borra nada.
+ * 8. Eliminar una obra es archivarla a efectos del cobro: deja de contar
+ *    desde ese momento, pero lo ya usado se cobra (regla 6). Restaurarla es
+ *    crearla de nuevo: cuenta desde que se restaura y, si supera lo pago, se
+ *    prorratea como cualquier obra nueva (ver `billableWindows`).
  */
 
 import type {
@@ -220,6 +224,69 @@ export interface BillableProject {
   id: string;
   createdAt: Date;
   archivedAt?: Date | null;
+}
+
+/** Un tramo de la papelera: desde que se eliminó hasta que se restauró. */
+export interface TrashedPeriod {
+  from: Date;
+  to: Date;
+}
+
+export interface ProjectLifecycle {
+  id: string;
+  createdAt: Date;
+  archivedAt?: Date | null;
+  /** Si está en la papelera ahora: desde cuándo. */
+  deletedAt?: Date | null;
+  /** Veces que estuvo en la papelera y volvió. */
+  trashedPeriods?: TrashedPeriod[];
+}
+
+/**
+ * La vida de una obra como obras facturables: **un tramo por cada vez que
+ * estuvo en pie**. Una obra que nunca se eliminó es un solo tramo; una que se
+ * eliminó y se restauró son dos, y el segundo "nace" al restaurar.
+ *
+ * Es lo que hace que eliminar no sea un agujero de facturación:
+ * - eliminar cierra el tramo, no lo borra — lo usado hasta ahí se sigue
+ *   cobrando, igual que si se archivara (regla 6);
+ * - restaurar abre un tramo nuevo, que `quoteCharge` trata como una obra
+ *   creada ese día: se prorratea si supera lo pago. Nadie recupera una
+ *   cuarta obra gratis, ni la elimina el día 29 para no pagarla.
+ *
+ * Los tramos siguientes al primero llevan el id `<id>#<n>` para que sean
+ * obras distintas ante el resto de las reglas.
+ */
+export function billableWindows(project: ProjectLifecycle): BillableProject[] {
+  const trashed = [...(project.trashedPeriods ?? [])].sort(
+    (a, b) => a.from.getTime() - b.from.getTime(),
+  );
+  const archivedAt = project.archivedAt ?? null;
+
+  // Dónde arranca y dónde termina cada tramo, antes de aplicar archivado/papelera final.
+  const raw: Array<{ start: Date; end: Date | null }> = [];
+  let start = project.createdAt;
+  for (const period of trashed) {
+    raw.push({ start, end: period.from });
+    start = period.to;
+  }
+  raw.push({ start, end: project.deletedAt ?? null });
+
+  const earliest = (a: Date | null, b: Date | null) =>
+    a && b ? (a < b ? a : b) : (a ?? b);
+
+  return raw
+    .map(({ start, end }, index) => ({
+      start,
+      end: earliest(end, archivedAt),
+      index,
+    }))
+    .filter(({ start, end }) => !end || end > start)
+    .map(({ start, end, index }) => ({
+      id: index === 0 ? project.id : `${project.id}#${index + 1}`,
+      createdAt: start,
+      archivedAt: end,
+    }));
 }
 
 function isActiveAt(project: BillableProject, at: Date): boolean {

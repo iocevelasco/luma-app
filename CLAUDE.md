@@ -39,6 +39,9 @@ nombre de paquete contra su `dist`.
   `refresh_token` (90 días). HS256 si hay `JWT_SECRET`, si no RS256 con el par PEM.
 - **Roles de plataforma**: `admin` y `user`. Middlewares: `isAuthenticated` →
   `requireAdmin` | `requireRole`. No gatean ninguna pantalla del producto.
+  El admin tiene su propia área, **fuera del panel de obras**: `/plataforma`
+  (cuentas y pagos), con su propio layout (`PlatformLayout`). Una pantalla de
+  administración global no va dentro de `DashboardLayout`.
 - **Roles de obra**: `gerente` | `supervisor` | `cliente`, por obra y no por
   Empresa. El gerente sale de `Project.createdBy`; los otros dos son filas de
   `ProjectMembership`. **Quién puede qué vive en una sola grilla**:
@@ -50,6 +53,14 @@ nombre de paquete contra su `dist`.
   `role === 'supervisor'` en cualquier lado, estás en el camino equivocado.
 - **Baja lógica**: `account_status: 'inactive'` + `enabled: false`. Nunca se borra
   el documento.
+- **Eliminar una obra** es lógico: `Project.deletedAt` + `purgeAt` (90 días,
+  `PROJECT_TRASH_RETENTION_DAYS`). El hook de `models/Project.ts` esconde las
+  eliminadas de todo `find`/`count`/`update`; sólo la papelera y el restaurar
+  las piden **nombrando `deletedAt` en el filtro**. Lo que cuelga de la obra no
+  se toca; lo borra `purge-deleted-projects` (tarea diaria de Coolify) con
+  `PROJECT_OWNED` en `project-deletion.service.ts`. **Un modelo nuevo con campo
+  `project` se suma a esa lista** — un test falla si no. Sólo el gerente
+  (`project.delete`).
 - **Errores**: toda respuesta de error tiene la forma
   `{ success: false, error, code, details? }`. Las exitosas son
   `{ success: true, data }`.
@@ -429,13 +440,17 @@ Detalle en `docs/DEPLOY.md`.
 Cuando se pida un cambio relacionado con la **configuración del proyecto** —
 env vars, scopes, deploys, métricas, analytics, dominios del server, storages,
 backups, tareas programadas, servicios, bases de datos, o cualquier otra cosa
-que Coolify ofrezca— **usá siempre primero el skill `~/Documents/Claude/coolify-deploy`
+que Coolify ofrezca— **usá siempre primero el skill `~/.claude/skills/coolify-deploy`
 y el MCP de Coolify** (`.mcp.json`), con todas sus capabilities, **antes de
 ejecutar el cambio**.
 
-- Leé `~/Documents/Claude/coolify-deploy/SKILL.md` (y `REFERENCE.md` si hace
+- Leé `~/.claude/skills/coolify-deploy/SKILL.md` (y `REFERENCE.md` si hace
   falta) para saber qué operación corresponde, y recién después actuá.
 - Inspeccioná el estado actual (list/get) antes de modificar.
+- El MCP sólo conecta si `COOLIFY_URL` y `COOLIFY_TOKEN` están en el entorno
+  desde el que se abre Claude (si no, responde `Invalid URL`). El CLI del skill
+  (`python3 ~/.claude/skills/coolify-deploy/scripts/coolify.py …`) lee su
+  propio token y funciona igual: es el camino que no depende del entorno.
 - No edites la configuración de deploy a mano ni por fuera de Coolify: si el
   cambio se puede hacer por el skill o el MCP, se hace por ahí.
 - Las herramientas destructivas del MCP siguen pidiendo aprobación; el skill no

@@ -72,6 +72,9 @@ export type Capability =
   | 'project.read'
   | 'project.update'
   | 'project.invite'
+  // Mandar la obra a la papelera y sacarla de ahí. Sólo el gerente: es la
+  // única acción que hace desaparecer una obra para todo el equipo.
+  | 'project.delete'
   // Presupuesto y Consultor IA — información económica interna
   | 'budget.read'
   | 'budget.write'
@@ -159,6 +162,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'project.read',
     'project.update',
     'project.invite',
+    'project.delete',
     'budget.read',
     'budget.write',
     'advisor.use',

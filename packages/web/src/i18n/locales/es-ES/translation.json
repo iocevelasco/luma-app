@@ -49,7 +49,7 @@
     "settings": "Configuración",
     "logout": "Cerrar sesión",
     "subscription": "Suscripción",
-    "platformBilling": "Pagos de la plataforma"
+    "platform": "Administración de la plataforma"
   },
   "project": {
     "list": {
@@ -182,6 +182,71 @@
       "removed": "Acceso quitado",
       "capabilityCount": "{{count}} permisos",
       "activationHint": "Quien todavía no tiene cuenta recibe un correo para activarla y elegir su contraseña. Hasta que lo haga, figura igual en la lista."
+    },
+    "delete": {
+      "sectionTitle": "Eliminar esta obra",
+      "sectionHint": "Se oculta para todo el equipo y se queda 90 días en la papelera, donde puedes restaurarla.",
+      "action": "Eliminar obra",
+      "dialogTitle": "¿Eliminar «{{name}}»?",
+      "summaryIntro": "Se va con la obra:",
+      "nothingLoaded": "Esta obra todavía no tiene nada cargado.",
+      "counts": {
+        "activities_one": "{{count}} tarea",
+        "activities_other": "{{count}} tareas",
+        "materials_one": "{{count}} material",
+        "materials_other": "{{count}} materiales",
+        "laborRecords_one": "{{count}} registro de jornada",
+        "laborRecords_other": "{{count}} registros de jornada",
+        "crewMembers_one": "{{count}} persona de personal añadida sólo a esta obra",
+        "crewMembers_other": "{{count}} personas de personal añadidas sólo a esta obra",
+        "providers_one": "{{count}} proveedor añadido sólo a esta obra",
+        "providers_other": "{{count}} proveedores añadidos sólo a esta obra",
+        "documents_one": "{{count}} documento",
+        "documents_other": "{{count}} documentos",
+        "milestones_one": "{{count}} hito",
+        "milestones_other": "{{count}} hitos",
+        "payments_one": "{{count}} cobro",
+        "payments_other": "{{count}} cobros",
+        "expenses_one": "{{count}} gasto",
+        "expenses_other": "{{count}} gastos"
+      },
+      "affectedPeople_one": "{{count}} persona con acceso dejará de ver la obra.",
+      "affectedPeople_other": "{{count}} personas con acceso dejarán de ver la obra.",
+      "freesSlot": "Se libera un hueco en tu límite de obras activas. Si la restauras y ese hueco ya está ocupado, se cobra como obra extra.",
+      "retention": "Se queda {{days}} días en la papelera. En ese plazo puedes restaurarla con todo lo que tenía; después se borra definitivamente, archivos incluidos.",
+      "confirmLabel": "Para confirmar, escribe el nombre de la obra",
+      "submit": "Eliminar obra",
+      "deleting": "Eliminando…",
+      "done": "Obra enviada a la papelera",
+      "copyName": "Copiar nombre",
+      "nameCopied": "Nombre copiado",
+      "sharedProviders_one": "{{count}} proveedor de tu Empresa estaba asignado a la obra: se queda en tu directorio y sólo se desasigna.",
+      "sharedProviders_other": "{{count}} proveedores de tu Empresa estaban asignados a la obra: se quedan en tu directorio y sólo se desasignan.",
+      "sharedCrew_one": "{{count}} persona del personal de tu Empresa estaba asignada a la obra: sigue en tu Empresa y sólo se desasigna.",
+      "sharedCrew_other": "{{count}} personas del personal de tu Empresa estaban asignadas a la obra: siguen en tu Empresa y sólo se desasignan."
+    },
+    "trash": {
+      "title": "Papelera de obras",
+      "link_one": "Papelera ({{count}})",
+      "link_other": "Papelera ({{count}})",
+      "emptyTitle": "La papelera está vacía",
+      "emptyBody": "Las obras que elimines se quedan aquí 90 días antes de borrarse definitivamente.",
+      "deletedOn": "Eliminada el {{date}}",
+      "daysLeft_one": "Queda {{count}} día",
+      "daysLeft_other": "Quedan {{count}} días",
+      "restore": "Restaurar",
+      "restored": "Obra restaurada",
+      "restoreExtraTitle": "Se suma como obra extra",
+      "restoreExtraBody": "Tu plan incluye {{included}} obras activas y ya las tienes. Restaurar «{{name}}» la cuenta como obra extra: {{price}} USD/mes, prorrateado desde hoy hasta tu próxima renovación.",
+      "restoreConfirm": "Restaurar",
+      "blocked": {
+        "PAID_PLAN_REQUIRED": "Ya tienes {{included}} obras activas. Activa el plan para restaurarla.",
+        "SUBSCRIPTION_REQUIRED": "Tu suscripción ha vencido. Renueva el plan para restaurarla."
+      }
+    },
+    "removed": {
+      "title": "La obra «{{name}}» ha sido eliminada.",
+      "contact": "Ponte en contacto con el arquitecto o el jefe de obra."
     }
   },
   "auth": {
@@ -1457,7 +1522,6 @@
     }
   },
   "platform": {
-    "title": "Pagos de la plataforma",
     "tabs": {
       "pendiente": "Pendientes",
       "aprobado": "Aprobados",
@@ -1510,6 +1574,56 @@
       "savedImplausible": "Tasa guardada, pero salta más de un 20% contra la anterior. Revísala.",
       "history": "Últimas lecturas",
       "flagged": "Marcada"
+    },
+    "users": {
+      "searchPlaceholder": "Buscar por nombre o correo",
+      "filters": {
+        "all": "Todas",
+        "active": "Activas",
+        "unverified": "Sin confirmar",
+        "inactive": "Dadas de baja"
+      },
+      "stats": {
+        "total": "Cuentas",
+        "active": "Activas",
+        "verified": "Confirmadas",
+        "unverified": "Sin confirmar",
+        "inactive": "Dadas de baja"
+      },
+      "signups": {
+        "title": "Altas por semana",
+        "label": "Altas por semana, de la más antigua a la actual",
+        "total": "{{amount}} en las últimas {{weeks}} semanas",
+        "week": "Semana del {{date}}: {{amount}}"
+      },
+      "role": {
+        "admin": "Admin de plataforma",
+        "user": "Usuario"
+      },
+      "status": {
+        "active": "Activa",
+        "inactive": "Dada de baja"
+      },
+      "verified": "Confirmada",
+      "unverified": "Sin confirmar",
+      "joined": "Alta el {{date}}",
+      "empty": "No hay cuentas para mostrar.",
+      "emptyFiltered": "Prueba con otro filtro o con otra búsqueda.",
+      "pagination": {
+        "label": "Paginación",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "status": "Página {{page}} de {{pages}} · {{total}} cuentas"
+      }
+    },
+    "layout": {
+      "badge": "Plataforma",
+      "back": "Volver a la app",
+      "navLabel": "Secciones de la plataforma"
+    },
+    "nav": {
+      "users": "Cuentas",
+      "billing": "Pagos"
     }
   }
 }

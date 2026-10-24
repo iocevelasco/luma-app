@@ -44,13 +44,13 @@ function usePageTitle(): { title: string | null; crumbs: Crumb[] } {
     let title: string | null = null;
     if (destination) title = t(`layout.${destination.labelKey}`);
     else if (pathname === ROUTES.PROJECT_NEW) title = t('project.new.title');
+    else if (pathname === ROUTES.PROJECTS_TRASH) title = t('project.trash.title');
     else if (pathname === ROUTES.ACCOUNT_SETTINGS) title = t('auth.account.title');
     else if (pathname === ROUTES.SUBSCRIPTION) title = t('subscription.title');
-    else if (pathname === ROUTES.PLATFORM_BILLING) title = t('platform.title');
 
-    // Nueva obra cuelga de Obras; el resto es de primer nivel.
+    // Nueva obra y la papelera cuelgan de Obras; el resto es de primer nivel.
     const crumbs: Crumb[] =
-      pathname === ROUTES.PROJECT_NEW ? [{ label: t('layout.projects'), to: ROUTES.ADMIN }] : [];
+      pathname === ROUTES.PROJECT_NEW || pathname === ROUTES.PROJECTS_TRASH ? [{ label: t('layout.projects'), to: ROUTES.ADMIN }] : [];
     return { title, crumbs };
   }
 

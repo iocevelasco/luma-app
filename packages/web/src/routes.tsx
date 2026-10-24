@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { DashboardLayout } from './components/dashboard-layout';
+import { PlatformLayout } from './components/platform/platform-layout';
 import { AdminLayout, AuthenticatedLayout, PublicOnlyLayout } from './components/route-layouts';
 import { RouteLoading } from './components/routes/route-loading';
 import { ROUTES } from './lib/routes';
@@ -40,6 +41,9 @@ const EmployeesPage = lazy(() =>
 );
 const ProvidersDirectoryPage = lazy(() =>
   import('./pages/providers-directory').then((m) => ({ default: m.ProvidersDirectoryPage })),
+);
+const ProjectsTrashPage = lazy(() =>
+  import('./pages/projects/projects-trash').then((m) => ({ default: m.ProjectsTrashPage })),
 );
 const ProjectNewPage = lazy(() =>
   import('./pages/projects/project-new').then((m) => ({ default: m.ProjectNewPage })),
@@ -104,6 +108,9 @@ const SubscriptionPage = lazy(() =>
 const PlatformBillingPage = lazy(() =>
   import('./pages/platform/platform-billing').then((m) => ({ default: m.PlatformBillingPage })),
 );
+const PlatformUsersPage = lazy(() =>
+  import('./pages/platform/platform-users').then((m) => ({ default: m.PlatformUsersPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -159,14 +166,16 @@ export function AppRoutes() {
             path={ROUTES.SUBSCRIPTION}
             element={<LazyRoute><SubscriptionPage /></LazyRoute>}
           />
-          {/* Sólo admin de plataforma: la cola de pagos en Bs y la tasa BCV. */}
-          <Route element={<AdminLayout />}>
-            <Route
-              path={ROUTES.PLATFORM_BILLING}
-              element={<LazyRoute><PlatformBillingPage /></LazyRoute>}
-            />
-          </Route>
+          {/* La cola de pagos vivía acá: quien tenga el enlace viejo guardado llega igual. */}
+          <Route
+            path={ROUTES.LEGACY_PLATFORM_BILLING}
+            element={<Navigate to={ROUTES.PLATFORM_BILLING} replace />}
+          />
           <Route path={ROUTES.PROJECT_NEW} element={<LazyRoute><ProjectNewPage /></LazyRoute>} />
+          <Route
+            path={ROUTES.PROJECTS_TRASH}
+            element={<LazyRoute><ProjectsTrashPage /></LazyRoute>}
+          />
           <Route
             path={ROUTES.PROJECT_DETAIL}
             element={<LazyRoute><ProjectDetailPage /></LazyRoute>}
@@ -230,6 +239,25 @@ export function AppRoutes() {
             path={ROUTES.PROJECT_ADVISOR}
             element={<LazyRoute><ProjectAdvisorPage /></LazyRoute>}
           />
+        </Route>
+
+        {/*
+          Administración global de la plataforma. Aparte del panel: su propio
+          chrome, sin obras ni navegación de obra. Sólo `role: 'admin'`; la API
+          lo vuelve a exigir en cada endpoint.
+        */}
+        <Route element={<AdminLayout />}>
+          <Route element={<PlatformLayout />}>
+            <Route path={ROUTES.PLATFORM} element={<Navigate to={ROUTES.PLATFORM_USERS} replace />} />
+            <Route
+              path={ROUTES.PLATFORM_USERS}
+              element={<LazyRoute><PlatformUsersPage /></LazyRoute>}
+            />
+            <Route
+              path={ROUTES.PLATFORM_BILLING}
+              element={<LazyRoute><PlatformBillingPage /></LazyRoute>}
+            />
+          </Route>
         </Route>
       </Route>
 

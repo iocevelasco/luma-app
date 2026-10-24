@@ -9,6 +9,8 @@ export enum QueryKeys {
   emailVerification = 'email-verification',
   projects = 'projects',
   project = 'project',
+  deletedProjects = 'deleted-projects',
+  projectDeletionSummary = 'project-deletion-summary',
   organization = 'organization',
   organizationMembers = 'organization-members',
   activities = 'activities',
@@ -38,4 +40,6 @@ export enum QueryKeys {
   bolivaresQuote = 'bolivares-quote',
   adminSubscriptionPayments = 'admin-subscription-payments',
   exchangeRates = 'exchange-rates',
+  platformUsersOverview = 'platform-users-overview',
+  platformUsers = 'platform-users',
 }

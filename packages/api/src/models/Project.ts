@@ -26,6 +26,22 @@ export interface IProject extends Document {
    * estarlo. Lo pone el hook de abajo: nadie lo escribe a mano.
    */
   archivedAt: Date | null;
+  /**
+   * Papelera. Una obra eliminada no se borra: queda con `deletedAt` y se
+   * esconde de todas las consultas (ver el hook de abajo). Sus datos
+   * —actividades, gastos, cobros— no se tocan, así que restaurarla es limpiar
+   * estos tres campos. `purgeAt` es cuándo la barre `purge-deleted-projects`.
+   */
+  deletedAt: Date | null;
+  deletedBy: mongoose.Types.ObjectId | null;
+  purgeAt: Date | null;
+  /**
+   * Cada vez que estuvo en la papelera y volvió. Es un hecho, no un derivado:
+   * la facturación lo necesita para saber que la obra "nació de nuevo" al
+   * restaurarla (ver `billableWindows` en `@luma/shared`). Se agrega al
+   * restaurar; nadie lo escribe a mano.
+   */
+  trashedPeriods: Array<{ from: Date; to: Date }>;
   providersVisibleToClient: boolean;
   purchasesVisibleToClient: boolean;
   createdAt: Date;
@@ -50,6 +66,13 @@ const projectSchema = new Schema<IProject>(
     currency: { type: String, required: true, trim: true },
     status: { type: String, enum: ['active', 'archived'], default: 'active' },
     archivedAt: { type: Date, default: null },
+    deletedAt: { type: Date, default: null },
+    deletedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    purgeAt: { type: Date, default: null, index: true },
+    trashedPeriods: {
+      type: [new Schema({ from: Date, to: Date }, { _id: false })],
+      default: [],
+    },
     // Default cerrado: el cliente no ve proveedores salvo que el dueño lo
     // habilite — la regla 4 del documento (nada de información operativa
     // interna) es el default, y esto es la excepción explícita.
@@ -81,6 +104,33 @@ projectSchema.pre('findOneAndUpdate', function stampArchivedAtOnUpdate(next) {
   if (status) this.set('archivedAt', status === 'archived' ? new Date() : null);
   next();
 });
+
+/**
+ * Las obras en la papelera no existen para nadie: ni para el listado, ni para
+ * el control de acceso, ni para el conteo de la suscripción, ni para ningún
+ * `Project.find` que se escriba mañana. Filtrar a mano en cada consulta es el
+ * olvido que deja una obra "eliminada" visible en una pantalla.
+ *
+ * Quien necesite las eliminadas lo pide **nombrando el campo** —
+ * `{ deletedAt: { $ne: null } }— y el hook no se mete. Sólo la papelera, el
+ * restaurar y el purgado lo hacen.
+ */
+const HIDE_DELETED_ON = [
+  'find',
+  'findOne',
+  'findOneAndUpdate',
+  'countDocuments',
+  'distinct',
+  'updateOne',
+  'updateMany',
+] as const;
+
+for (const op of HIDE_DELETED_ON) {
+  projectSchema.pre(op, function hideDeleted(next) {
+    if (!Object.hasOwn(this.getFilter(), 'deletedAt')) this.where({ deletedAt: null });
+    next();
+  });
+}
 
 export const Project: Model<IProject> =
   (mongoose.models.Project as Model<IProject>) ?? mongoose.model<IProject>('Project', projectSchema);
