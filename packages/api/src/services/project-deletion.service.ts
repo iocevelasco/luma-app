@@ -178,6 +178,24 @@ export async function listTrash(userId: string, now = new Date()): Promise<Delet
   }));
 }
 
+/**
+ * Las obras en la papelera donde esta persona fue invitada (supervisor,
+ * contador, cliente). Mientras la obra está ahí, la membresía sigue viva: es lo
+ * que permite avisarles que existió y a quién consultar. Tras el purgado la
+ * membresía se borra y el aviso desaparece con ella.
+ */
+export async function removedProjectsForMember(userId: string, now = new Date()) {
+  const memberships = await ProjectMembership.find({ user: userId }).select('project').lean();
+  if (memberships.length === 0) return [];
+
+  const removed = await Project.find({
+    _id: { $in: memberships.map((m) => m.project) },
+    deletedAt: { $ne: null },
+    purgeAt: { $gt: now },
+  }).select('name');
+  return removed.map((p) => ({ id: String(p._id), name: p.name }));
+}
+
 /** La obra en la papelera de este gerente que todavía se puede restaurar. */
 export async function findRestorable(projectId: string, userId: string, now = new Date()) {
   return Project.findOne({

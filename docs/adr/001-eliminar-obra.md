@@ -49,7 +49,7 @@ Restricciones que mandan:
 | Asignaciones `ProjectCrewMember` / `ProjectProvider`, `ActivityCrew` / `ActivityProvider` | Intactas | **Se borran** | Son vínculos, no entidades |
 | **Personal y proveedores de la Empresa** (`scope: 'organization'`, `project: null`) | Intactos | **Se QUEDAN** | Se comparten con otras obras; sólo se suelta el vínculo |
 | Personal y proveedores **creados sólo para esa obra** (`scope: 'project'`) | Intactos | **Se borran** | Nadie más los usa |
-| `User` (incluidos los invitados a la obra) | Intactos | **Se quedan** | Una cuenta puede estar en otras obras o ser dueña de la suya |
+| `User` (incluidos los invitados a la obra) | Intactos | **Se quedan** | Una cuenta puede estar en otras obras o ser dueña de la suya. **Las cuentas que quedan sin obras no se purgan** (decisión vigente) |
 | `Organization`, `OrganizationMember` | Intactos | **Se quedan** | La Empresa sobrevive a sus obras |
 | `Subscription`, `SubscriptionPayment`, `StripeEvent` | Intactos | **Se quedan** | Es plata de Luma, no de la obra; cada pago congela su desglose |
 | `ExchangeRate` | Intacto | **Se queda** | Dato global |
@@ -119,5 +119,10 @@ no vuelve. Se descarta.
 3. [ ] Crear la tarea programada en Coolify (ver `docs/DEPLOY.md`). **Sin ella la
        papelera nunca se vacía.**
 4. [ ] Probar el enlace firmado de un proveedor con la obra en la papelera.
-5. [ ] Decidir qué hacer con cuentas que quedan sin ninguna obra tras el purgado.
+5. [x] Cuentas sin obras tras el purgado: **no se tocan, por ahora**.
+5b. [x] Invitados (supervisor, contador, cliente) que entran con la obra en la papelera
+       ven el aviso «La obra X fue eliminada. Comunicate con el arquitecto o el
+       gerente de obra» (`removedProjects` en `GET /api/projects`). El aviso vive
+       lo que vive la papelera: al purgar se borra su membresía y, con ella, el
+       aviso; después ven la lista vacía.
 6. [ ] Aviso por mail al gerente unos días antes del purgado (hoy no hay).

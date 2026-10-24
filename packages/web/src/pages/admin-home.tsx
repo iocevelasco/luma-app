@@ -5,6 +5,7 @@ import { HardHat, MapPin, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { fromDayKey } from '@/components/common/date-range-filter';
+import { RemovedProjectsNotice } from '@/components/projects/removed-projects-notice';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -72,6 +73,7 @@ export function AdminHomePage() {
   const [payingInBolivares, setPayingInBolivares] = useState(false);
 
   const projects = data?.projects ?? [];
+  const removed = data?.removedProjects ?? [];
   // "Nueva obra" hace lo que corresponde según la suscripción: en la prueba
   // con 3 activas abre el pase al plan (la cuarta no se puede crear gratis)
   // y vencida lleva a pagar. El resto entra al alta como siempre.
@@ -110,7 +112,10 @@ export function AdminHomePage() {
         )
       }
       empty={
-        projects.length === 0
+        projects.length === 0 && removed.length > 0
+          ? // Sin obras y con avisos: el aviso ES el contenido, no un vacío con "creá tu primera obra".
+            undefined
+          : projects.length === 0
           ? {
               icon: HardHat,
               title: t('project.list.emptyTitle'),
@@ -119,6 +124,7 @@ export function AdminHomePage() {
           : undefined
       }
     >
+      <RemovedProjectsNotice projects={removed} />
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-4">
         {projects.map((project) => (
           <li key={project.id} className="flex">

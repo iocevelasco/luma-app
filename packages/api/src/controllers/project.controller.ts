@@ -14,6 +14,7 @@ import { User } from '../models/User.js';
 import { Project, type IProject } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
+import { removedProjectsForMember } from '../services/project-deletion.service.js';
 import { decideProjectCreation, statesFor } from '../services/subscription.service.js';
 import { syncStripeExtras } from '../services/stripe.service.js';
 import { AppError, isAppError } from '../utils/errors.js';
@@ -160,6 +161,7 @@ export async function listProjects(req: Request, res: Response) {
     return res.json({
       success: true,
       data: {
+        removedProjects: await removedProjectsForMember(userId),
         projects: projects.map((project) => {
           // El gerente no tiene fila: sale de `createdBy` y gana sobre
           // cualquier membresía (mismo criterio que `requireProjectAccess`).

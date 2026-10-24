@@ -14,6 +14,9 @@ vi.mock('../../services/subscription.service.js', () => ({
   statesFor: vi.fn(),
   decideProjectCreation: vi.fn(),
 }));
+vi.mock('../../services/project-deletion.service.js', () => ({
+  removedProjectsForMember: vi.fn().mockResolvedValue([]),
+}));
 vi.mock('../../models/ProjectMembership.js', () => ({
   ProjectMembership: { find: vi.fn(), exists: vi.fn(), create: vi.fn() },
 }));
@@ -144,6 +147,31 @@ describe('listProjects', () => {
     };
     expect(body.data.projects[0]!.role).toBe('supervisor');
     expect(body.data.projects[0]!.capabilities).not.toContain('project.invite');
+  });
+});
+
+describe('listProjects: obras eliminadas', () => {
+  it('avisa de las obras en la papelera a las que la persona fue invitada', async () => {
+    const { removedProjectsForMember } = await import(
+      '../../services/project-deletion.service.js'
+    );
+    vi.mocked(removedProjectsForMember).mockResolvedValueOnce([{ id: 'p9', name: 'Casa Norte' }]);
+    vi.mocked(statesFor).mockResolvedValue(new Map() as never);
+    vi.mocked(ProjectMembership.find).mockReturnValue({
+      select: vi.fn().mockResolvedValue([{ project: 'p9', role: 'cliente' }]),
+    } as never);
+    vi.mocked(Project.find).mockReturnValue({
+      sort: () => ({ limit: () => Promise.resolve([]) }),
+    } as never);
+    const res = mockRes();
+
+    await listProjects({ user: { sub: 'user-1' } } as never, res);
+
+    const body = vi.mocked(res.json).mock.calls[0]![0] as {
+      data: { projects: unknown[]; removedProjects: { id: string; name: string }[] };
+    };
+    expect(body.data.projects).toEqual([]);
+    expect(body.data.removedProjects).toEqual([{ id: 'p9', name: 'Casa Norte' }]);
   });
 });
 

@@ -234,6 +234,10 @@
       "daysLeft_other": "Quedan {{count}} días",
       "restore": "Restaurar",
       "restored": "Obra restaurada"
+    },
+    "removed": {
+      "title": "La obra «{{name}}» ha sido eliminada.",
+      "contact": "Ponte en contacto con el arquitecto o el jefe de obra."
     }
   },
   "auth": {

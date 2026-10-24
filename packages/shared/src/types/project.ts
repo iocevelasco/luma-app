@@ -125,8 +125,19 @@ export interface ProjectListItem extends Project {
   readOnly: boolean;
 }
 
+/**
+ * Una obra a la que la persona tenía acceso y que su gerente eliminó. La UI se
+ * lo avisa en vez de dejarla frente a una lista vacía sin explicación.
+ */
+export interface RemovedProjectNotice {
+  id: string;
+  name: string;
+}
+
 export interface ProjectListResponse {
   projects: ProjectListItem[];
+  /** Obras en la papelera donde la persona es miembro invitado (no las suyas). */
+  removedProjects: RemovedProjectNotice[];
 }
 
 export interface ProjectDetailResponse {
