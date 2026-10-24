@@ -28,7 +28,7 @@ export function AuthSplitLayout({ children, width = 'sm' }: AuthSplitLayoutProps
 
   return (
     <div className="relative h-screen bg-background p-3 text-foreground supports-[height:100dvh]:h-dvh sm:p-4">
-      <GridBackground size={12} opacity={0.035} />
+      <GridBackground size={4} opacity={0.02} />
       <div className="relative grid h-full overflow-hidden rounded-3xl text-card-foreground shadow-[var(--shadow-surface)] lg:grid-cols-2">
         <aside className="relative hidden bg-card p-3 lg:block">
           <div className="relative h-full overflow-hidden rounded-2xl bg-muted">
