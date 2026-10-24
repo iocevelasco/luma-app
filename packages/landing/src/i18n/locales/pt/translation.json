@@ -134,11 +134,15 @@
   "security": {
     "label": "Segurança",
     "title": "Suas informações estão protegidas.",
-    "lead": "A segurança da informação é prioridade para o nosso serviço. Não vendemos nem alugamos os seus dados, e os usamos apenas para que o Luma funcione.",
+    "lead": "A segurança da informação é prioridade para o nosso serviço.",
     "items": [
       {
         "title": "Confidencial",
         "body": "Suas obras e tudo o que você carrega são privados. Ninguém entra se você não convidar."
+      },
+      {
+        "title": "Seus dados não são vendidos",
+        "body": "Não vendemos nem alugamos os seus dados, nem exibimos publicidade de terceiros. Usamos apenas para o Luma funcionar."
       },
       {
         "title": "Backups todos os dias",
