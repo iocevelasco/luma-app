@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import type { Project } from '@luma/shared';
-import { HardHat, MapPin, Plus } from 'lucide-react';
+import { HardHat, MapPin, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { fromDayKey } from '@/components/common/date-range-filter';
@@ -9,7 +9,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { useProjects } from '@/hooks/projects/use-project-queries';
+import { useDeletedProjects, useProjects } from '@/hooks/projects/use-project-queries';
 import { ROUTES, projectActivitiesPath } from '@/lib/routes';
 import { ActivatePlanDialog } from '@/components/subscription/activate-plan-dialog';
 import { BolivaresPaymentDrawer } from '@/components/subscription/bolivares-payment-drawer';
@@ -66,6 +66,7 @@ function ProjectCard({ project }: { project: Project }) {
 export function AdminHomePage() {
   const { t } = useTranslation();
   const { data, isLoading } = useProjects();
+  const { data: trash } = useDeletedProjects();
   const { data: subscription } = useMySubscription();
   const [activating, setActivating] = useState(false);
   const [payingInBolivares, setPayingInBolivares] = useState(false);
@@ -87,6 +88,16 @@ export function AdminHomePage() {
     <PageLayout
       width="full"
       isLoading={isLoading}
+      secondaryActions={
+        trash && trash.projects.length > 0 ? (
+          <Button variant="outline" size="sm" asChild>
+            <Link to={ROUTES.PROJECTS_TRASH}>
+              <Trash2 className="size-4" />
+              {t('project.trash.link', { count: trash.projects.length })}
+            </Link>
+          </Button>
+        ) : undefined
+      }
       action={
         next === 'trialLimit' ? (
           <Button onClick={() => setActivating(true)}>{newProjectLabel}</Button>

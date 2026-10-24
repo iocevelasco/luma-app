@@ -2,6 +2,11 @@ import type {
   ApiResponse,
   CreateProjectInput,
   CreateProjectResponse,
+  DeleteProjectInput,
+  DeleteProjectResponse,
+  DeletedProjectsResponse,
+  ProjectDeletionSummary,
+  RestoreProjectResponse,
   InvitableProjectRole,
   InviteProjectMemberInput,
   InviteProjectMemberResponse,
@@ -34,6 +39,24 @@ export const projectsApi = {
 
   update: (projectId: string, payload: UpdateProjectInput) =>
     unwrap<CreateProjectResponse>(apiClient.patch(`/api/projects/${projectId}`, payload)),
+
+  deletionSummary: (projectId: string) =>
+    unwrap<{ summary: ProjectDeletionSummary }>(
+      apiClient.get(`/api/projects/${projectId}/deletion-summary`),
+    ),
+
+  /** Manda la obra a la papelera. El nombre viaja y el servidor lo vuelve a chequear. */
+  remove: (projectId: string, payload: DeleteProjectInput) =>
+    unwrap<DeleteProjectResponse>(
+      apiClient.delete(`/api/projects/${projectId}`, { body: JSON.stringify(payload) }),
+    ),
+
+  listDeleted: () => unwrap<DeletedProjectsResponse>(apiClient.get('/api/projects/papelera')),
+
+  restore: (projectId: string) =>
+    unwrap<RestoreProjectResponse>(
+      apiClient.post(`/api/projects/papelera/${projectId}/restaurar`),
+    ),
 
   inviteMember: (projectId: string, payload: InviteProjectMemberInput) =>
     unwrap<InviteProjectMemberResponse>(

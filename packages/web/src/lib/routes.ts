@@ -32,6 +32,8 @@ export const ROUTES = {
   /** Dónde vivía la cola de pagos antes de separar la administración: sigue redirigiendo. */
   LEGACY_PLATFORM_BILLING: '/admin/plataforma/pagos',
   PROJECT_NEW: '/admin/proyectos/nuevo',
+  /** Las obras eliminadas, restaurables durante 90 días. */
+  PROJECTS_TRASH: '/admin/proyectos/papelera',
   PROJECT_DETAIL: '/admin/proyectos/:projectId',
   PROJECT_ACTIVITIES: '/admin/proyectos/:projectId/actividades',
   PROJECT_MATERIALS: '/admin/proyectos/:projectId/materiales',

@@ -53,6 +53,14 @@ nombre de paquete contra su `dist`.
   `role === 'supervisor'` en cualquier lado, estás en el camino equivocado.
 - **Baja lógica**: `account_status: 'inactive'` + `enabled: false`. Nunca se borra
   el documento.
+- **Eliminar una obra** es lógico: `Project.deletedAt` + `purgeAt` (90 días,
+  `PROJECT_TRASH_RETENTION_DAYS`). El hook de `models/Project.ts` esconde las
+  eliminadas de todo `find`/`count`/`update`; sólo la papelera y el restaurar
+  las piden **nombrando `deletedAt` en el filtro**. Lo que cuelga de la obra no
+  se toca; lo borra `purge-deleted-projects` (tarea diaria de Coolify) con
+  `PROJECT_OWNED` en `project-deletion.service.ts`. **Un modelo nuevo con campo
+  `project` se suma a esa lista** — un test falla si no. Sólo el gerente
+  (`project.delete`).
 - **Errores**: toda respuesta de error tiene la forma
   `{ success: false, error, code, details? }`. Las exitosas son
   `{ success: true, data }`.

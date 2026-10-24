@@ -30,7 +30,7 @@ function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
 }
 
-function toProjectDTO(project: IProject): ProjectDTO {
+export function toProjectDTO(project: IProject): ProjectDTO {
   return {
     id: String(project._id),
     organizationId: String(project.organization),

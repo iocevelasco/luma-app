@@ -163,6 +163,65 @@ export interface UpdateProjectMemberResponse {
   member: ProjectMemberSummary;
 }
 
+/**
+ * Qué se va con la obra, para mostrarlo antes de confirmar. Sólo cuenta lo que
+ * una persona reconoce como "mío": nada de filas internas.
+ */
+export interface ProjectDeletionSummary {
+  projectName: string;
+  retentionDays: number;
+  counts: {
+    activities: number;
+    materials: number;
+    laborRecords: number;
+    crewMembers: number;
+    providers: number;
+    documents: number;
+    milestones: number;
+    payments: number;
+    expenses: number;
+    members: number;
+  };
+  /**
+   * Proveedores y personal de la Empresa que estaban asignados a esta obra.
+   * NO se borran —se comparten con las otras obras—: sólo se desasignan.
+   * `counts.providers` y `counts.crewMembers` son únicamente los que eran de
+   * esta obra sola.
+   */
+  shared: {
+    providers: number;
+    crewMembers: number;
+  };
+  /** Personas con acceso que perderían la obra, sin contar al gerente. */
+  affectedPeople: number;
+  /** Se libera un lugar en el límite de obras activas de la suscripción. */
+  freesSubscriptionSlot: boolean;
+}
+
+/** Una obra en la papelera. */
+export interface DeletedProject {
+  id: string;
+  name: string;
+  location: string;
+  deletedAt: string;
+  /** Cuándo se borra de forma definitiva. Hasta ahí se puede restaurar. */
+  purgeAt: string;
+  daysLeft: number;
+}
+
+export interface DeletedProjectsResponse {
+  projects: DeletedProject[];
+}
+
+export interface DeleteProjectResponse {
+  projectId: string;
+  purgeAt: string;
+}
+
+export interface RestoreProjectResponse {
+  project: Project;
+}
+
 export interface RemoveProjectMemberResponse {
   membershipId: string;
 }
