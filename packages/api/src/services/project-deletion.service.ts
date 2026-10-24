@@ -27,6 +27,7 @@ import { ProjectProvider } from '../models/ProjectProvider.js';
 import { Provider } from '../models/Provider.js';
 import { ProviderEngagement } from '../models/ProviderEngagement.js';
 import { deleteObject } from './storage.service.js';
+import { previewProjectCreation } from './subscription.service.js';
 
 /**
  * Eliminar una obra es **lógico**: se marca `deletedAt` y se esconde. Nada de
@@ -168,14 +169,32 @@ export async function listTrash(userId: string, now = new Date()): Promise<Delet
     .sort({ deletedAt: -1 })
     .limit(100);
 
-  return projects.map((p) => ({
-    id: String(p._id),
-    name: p.name,
-    location: p.location,
-    deletedAt: (p.deletedAt as Date).toISOString(),
-    purgeAt: (p.purgeAt as Date).toISOString(),
-    daysLeft: Math.max(0, Math.ceil(((p.purgeAt as Date).getTime() - now.getTime()) / DAY_MS)),
-  }));
+  // Una consulta por Empresa, no por obra.
+  const orgs = [...new Set(projects.map((p) => String(p.organization)))];
+  const decisions = new Map(
+    await Promise.all(
+      orgs.map(async (org) => [org, await previewProjectCreation(org, now)] as const),
+    ),
+  );
+
+  return projects.map((p) => {
+    const decision = decisions.get(String(p.organization))!;
+    // Una obra archivada no ocupa lugar: restaurarla no se cobra.
+    const counts = p.status === 'active';
+    return {
+      id: String(p._id),
+      name: p.name,
+      location: p.location,
+      deletedAt: (p.deletedAt as Date).toISOString(),
+      purgeAt: (p.purgeAt as Date).toISOString(),
+      daysLeft: Math.max(0, Math.ceil(((p.purgeAt as Date).getTime() - now.getTime()) / DAY_MS)),
+      restore: !counts
+        ? { allowed: true, isExtra: false }
+        : decision.allowed
+          ? { allowed: true, isExtra: decision.isExtra }
+          : { allowed: false, isExtra: false, blockedBy: decision.code },
+    };
+  });
 }
 
 /**
@@ -206,10 +225,15 @@ export async function findRestorable(projectId: string, userId: string, now = ne
   });
 }
 
-export async function restoreFromTrash(project: IProject) {
+export async function restoreFromTrash(project: IProject, now = new Date()) {
   return Project.findOneAndUpdate(
     { _id: project._id, deletedAt: { $ne: null } },
-    { $set: { deletedAt: null, deletedBy: null, purgeAt: null } },
+    {
+      $set: { deletedAt: null, deletedBy: null, purgeAt: null },
+      // Queda anotado el tramo en la papelera: la facturación cuenta la obra
+      // como nueva desde `to` (ver `billableWindows`).
+      $push: { trashedPeriods: { from: project.deletedAt, to: now } },
+    },
     { new: true },
   );
 }

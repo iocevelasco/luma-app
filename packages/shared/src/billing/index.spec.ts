@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PLAN,
   activeProjectsAt,
+  billableWindows,
   addMonths,
   canCreateProject,
   dueReminder,
@@ -442,5 +443,144 @@ describe('dueReminder', () => {
 
   it('activa o sin iniciar: nada', () => {
     expect(dueReminder({ trialStartedAt: null, trialEndsAt: null, periods: [] }, d('2026-10-01T00:00:00Z'), [])).toBeNull();
+  });
+});
+
+describe('billableWindows: eliminar y restaurar', () => {
+  it('una obra común es un solo tramo, con su id', () => {
+    expect(
+      billableWindows({ id: 'a', createdAt: d('2026-01-01T00:00:00Z') }),
+    ).toEqual([{ id: 'a', createdAt: d('2026-01-01T00:00:00Z'), archivedAt: null }]);
+  });
+
+  it('en la papelera: el tramo se cierra al eliminar, no desaparece', () => {
+    const windows = billableWindows({
+      id: 'a',
+      createdAt: d('2026-01-01T00:00:00Z'),
+      deletedAt: d('2026-10-20T00:00:00Z'),
+    });
+    expect(windows).toEqual([
+      { id: 'a', createdAt: d('2026-01-01T00:00:00Z'), archivedAt: d('2026-10-20T00:00:00Z') },
+    ]);
+  });
+
+  it('restaurada: dos tramos, el segundo nace al restaurar', () => {
+    const windows = billableWindows({
+      id: 'a',
+      createdAt: d('2026-01-01T00:00:00Z'),
+      trashedPeriods: [{ from: d('2026-10-20T00:00:00Z'), to: d('2026-10-25T00:00:00Z') }],
+    });
+    expect(windows).toEqual([
+      { id: 'a', createdAt: d('2026-01-01T00:00:00Z'), archivedAt: d('2026-10-20T00:00:00Z') },
+      { id: 'a#2', createdAt: d('2026-10-25T00:00:00Z'), archivedAt: null },
+    ]);
+  });
+
+  it('eliminada estando archivada: no inventa un tramo activo después del archivado', () => {
+    const windows = billableWindows({
+      id: 'a',
+      createdAt: d('2026-01-01T00:00:00Z'),
+      archivedAt: d('2026-09-01T00:00:00Z'),
+      trashedPeriods: [{ from: d('2026-10-20T00:00:00Z'), to: d('2026-10-25T00:00:00Z') }],
+    });
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.archivedAt).toEqual(d('2026-09-01T00:00:00Z'));
+  });
+
+  it('no cuenta como activa mientras está en la papelera', () => {
+    const windows = billableWindows({
+      id: 'a',
+      createdAt: d('2026-01-01T00:00:00Z'),
+      trashedPeriods: [{ from: d('2026-10-20T00:00:00Z'), to: d('2026-10-25T00:00:00Z') }],
+    });
+    expect(activeProjectsAt(windows, d('2026-10-22T00:00:00Z'))).toBe(0);
+    expect(activeProjectsAt(windows, d('2026-10-26T00:00:00Z'))).toBe(1);
+  });
+});
+
+describe('quoteCharge: eliminar no abre huecos', () => {
+  const previousPeriod = { start: d('2026-10-01T00:00:00Z'), end: d('2026-11-01T00:00:00Z') };
+  const three = [
+    project('a', '2026-01-01T00:00:00Z'),
+    project('b', '2026-01-02T00:00:00Z'),
+    project('c', '2026-01-03T00:00:00Z'),
+  ];
+
+  it('crear la cuarta el día 2 y eliminarla el día 29 igual se prorratea', () => {
+    // Antes de este cambio la obra eliminada salía de la lista y no pagaba nada.
+    const fourth = billableWindows({
+      id: 'd',
+      createdAt: d('2026-10-02T00:00:00Z'),
+      deletedAt: d('2026-10-29T00:00:00Z'),
+    });
+    const quote = quoteCharge({ periodStart: previousPeriod.end, projects: [...three, ...fourth], previousPeriod });
+    const prorrateo = quote.lines.filter((l) => l.kind === 'prorrateo');
+    expect(prorrateo.map((l) => l.projectId)).toEqual(['d']);
+    expect(quote.lines.some((l) => l.kind === 'extra')).toBe(false);
+  });
+
+  it('eliminar una extra pagada y crear otra en el período no cobra de más', () => {
+    const paidFourth = billableWindows({
+      id: 'd',
+      createdAt: d('2026-09-01T00:00:00Z'),
+      deletedAt: d('2026-10-20T00:00:00Z'),
+    });
+    const fifth = project('e', '2026-10-25T00:00:00Z');
+    const quote = quoteCharge({
+      periodStart: previousPeriod.end,
+      projects: [...three, ...paidFourth, fifth],
+      previousPeriod,
+    });
+    expect(quote.lines.some((l) => l.kind === 'prorrateo')).toBe(false);
+  });
+
+  it('restaurar dentro del período en que ya se pagaba esa extra no cobra dos veces', () => {
+    // Estaba activa al arrancar el período (lugar pago), se eliminó y volvió.
+    const restored = billableWindows({
+      id: 'd',
+      createdAt: d('2026-08-01T00:00:00Z'),
+      trashedPeriods: [{ from: d('2026-10-05T00:00:00Z'), to: d('2026-10-16T00:00:00Z') }],
+    });
+    const quote = quoteCharge({
+      periodStart: previousPeriod.end,
+      projects: [...three, ...restored],
+      previousPeriod,
+    });
+    expect(quote.lines.some((l) => l.kind === 'prorrateo')).toBe(false);
+  });
+
+  it('restaurar a mitad de período, con 3 activas, se prorratea desde que se restaura', () => {
+    // Se eliminó antes de que arrancara el período: el lugar no estaba pago.
+    const restored = billableWindows({
+      id: 'd',
+      createdAt: d('2026-08-01T00:00:00Z'),
+      trashedPeriods: [{ from: d('2026-09-20T00:00:00Z'), to: d('2026-10-16T00:00:00Z') }],
+    });
+    const quote = quoteCharge({
+      periodStart: previousPeriod.end,
+      projects: [...three, ...restored],
+      previousPeriod,
+    });
+    const line = quote.lines.find((l) => l.kind === 'prorrateo');
+    expect(line?.projectId).toBe('d#2');
+    // 16 de octubre → 1 de noviembre: 16 días de 31.
+    expect(line?.days).toBe(16);
+    expect(line?.amountUsd).toBeCloseTo((8 * 16) / 31, 2);
+    // Y desde la renovación es una extra completa.
+    expect(quote.lines).toContainEqual({ kind: 'extra', quantity: 1, unitUsd: 8, amountUsd: 8 });
+  });
+
+  it('restaurar con menos de 3 activas no cuesta nada extra', () => {
+    const restored = billableWindows({
+      id: 'd',
+      createdAt: d('2026-08-01T00:00:00Z'),
+      trashedPeriods: [{ from: d('2026-09-20T00:00:00Z'), to: d('2026-10-16T00:00:00Z') }],
+    });
+    const quote = quoteCharge({
+      periodStart: previousPeriod.end,
+      projects: [three[0]!, three[1]!, ...restored],
+      previousPeriod,
+    });
+    expect(quote.totalUsd).toBe(PLAN.basePriceUsd);
   });
 });

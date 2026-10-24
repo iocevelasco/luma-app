@@ -218,6 +218,16 @@ export interface DeletedProject {
   /** Cuándo se borra de forma definitiva. Hasta ahí se puede restaurar. */
   purgeAt: string;
   daysLeft: number;
+  /**
+   * Qué pasa si se restaura, resuelto contra la suscripción: gratis, se cobra
+   * como obra extra (prorrateada desde hoy) o no se puede hasta activar/renovar
+   * el plan. La pantalla lo dice ANTES de restaurar.
+   */
+  restore: {
+    allowed: boolean;
+    isExtra: boolean;
+    blockedBy?: 'SUBSCRIPTION_REQUIRED' | 'PAID_PLAN_REQUIRED';
+  };
 }
 
 export interface DeletedProjectsResponse {

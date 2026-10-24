@@ -210,7 +210,7 @@
       },
       "affectedPeople_one": "{{count}} pessoa com acesso deixará de ver a obra.",
       "affectedPeople_other": "{{count}} pessoas com acesso deixarão de ver a obra.",
-      "freesSlot": "Libera uma vaga no seu limite de obras ativas.",
+      "freesSlot": "Libera uma vaga no seu limite de obras ativas. Se você a restaurar e a vaga já estiver ocupada, ela é cobrada como obra extra.",
       "retention": "Fica {{days}} dias na lixeira. Nesse prazo você pode restaurá-la com tudo o que tinha; depois é apagada definitivamente, arquivos incluídos.",
       "confirmLabel": "Para confirmar, digite o nome da obra",
       "submit": "Excluir obra",
@@ -233,7 +233,14 @@
       "daysLeft_one": "Resta {{count}} dia",
       "daysLeft_other": "Restam {{count}} dias",
       "restore": "Restaurar",
-      "restored": "Obra restaurada"
+      "restored": "Obra restaurada",
+      "restoreExtraTitle": "Entra como obra extra",
+      "restoreExtraBody": "Seu plano inclui {{included}} obras ativas e você já as tem. Restaurar «{{name}}» a conta como obra extra: USD {{price}}/mês, proporcional desde hoje até a próxima renovação.",
+      "restoreConfirm": "Restaurar",
+      "blocked": {
+        "PAID_PLAN_REQUIRED": "Você já tem {{included}} obras ativas. Ative o plano para restaurá-la.",
+        "SUBSCRIPTION_REQUIRED": "Sua assinatura venceu. Renove o plano para restaurá-la."
+      }
     },
     "removed": {
       "title": "A obra «{{name}}» foi excluída.",

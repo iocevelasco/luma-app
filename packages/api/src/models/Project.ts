@@ -35,6 +35,13 @@ export interface IProject extends Document {
   deletedAt: Date | null;
   deletedBy: mongoose.Types.ObjectId | null;
   purgeAt: Date | null;
+  /**
+   * Cada vez que estuvo en la papelera y volvió. Es un hecho, no un derivado:
+   * la facturación lo necesita para saber que la obra "nació de nuevo" al
+   * restaurarla (ver `billableWindows` en `@luma/shared`). Se agrega al
+   * restaurar; nadie lo escribe a mano.
+   */
+  trashedPeriods: Array<{ from: Date; to: Date }>;
   providersVisibleToClient: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -61,6 +68,10 @@ const projectSchema = new Schema<IProject>(
     deletedAt: { type: Date, default: null },
     deletedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     purgeAt: { type: Date, default: null, index: true },
+    trashedPeriods: {
+      type: [new Schema({ from: Date, to: Date }, { _id: false })],
+      default: [],
+    },
     // Default cerrado: el cliente no ve proveedores salvo que el dueño lo
     // habilite — la regla 4 del documento (nada de información operativa
     // interna) es el default, y esto es la excepción explícita.

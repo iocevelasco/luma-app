@@ -58,6 +58,31 @@ Restricciones que mandan:
 La lista de lo que se purga es `PROJECT_OWNED` en `project-deletion.service.ts`.
 Un test falla si aparece un modelo con campo `project` que no esté ahí.
 
+## Suscripción: eliminar es archivar, restaurar es crear
+
+La facturación se calcula de hechos (CLAUDE.md, "Suscripción"). Si el hook que
+esconde las obras eliminadas también las sacara de `billableProjects`, eliminar
+reescribiría la historia: crear la cuarta obra el día 2 y eliminarla el 29 no
+pagaría nada, y el lugar ya pago por una extra eliminada se prorratearía de nuevo.
+
+Regla 8 de `@luma/shared/billing`, implementada con `billableWindows`:
+
+- **Eliminar cierra el tramo** de la obra en `deletedAt`; lo usado se sigue
+  cobrando, igual que al archivar (regla 6). Las obras en la papelera se
+  consultan aparte y siguen en `billableProjects`.
+- **Restaurar abre un tramo nuevo** (`Project.trashedPeriods` guarda el hecho).
+  `quoteCharge` lo trata como una obra creada ese día: si ya hay 3 activas se
+  prorratea hasta la renovación, igual con tarjeta que en bolívares. Si el lugar
+  ya estaba pago en ese período (la extra estaba activa al arrancarlo), no se
+  cobra dos veces.
+- **Antes de restaurar** la papelera dice si se cobra como extra (USD 8/mes
+  prorrateado) o si está bloqueado (prueba con 3 activas → activar el plan;
+  suscripción vencida → renovar). En la prueba, restaurar la cuarta obliga a
+  activar el plan, igual que crearla.
+- **Límite conocido:** la obra se factura en tramos, pero un tramo anterior que
+  ya salió de su período se pierde cuando pasa el purgado. No importa: los
+  períodos pagos congelan su desglose.
+
 ## Opciones consideradas
 
 ### A — Marcar en la obra y esconder con un hook (elegida)

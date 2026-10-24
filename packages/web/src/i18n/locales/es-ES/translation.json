@@ -210,7 +210,7 @@
       },
       "affectedPeople_one": "{{count}} persona con acceso dejará de ver la obra.",
       "affectedPeople_other": "{{count}} personas con acceso dejarán de ver la obra.",
-      "freesSlot": "Se libera un hueco en tu límite de obras activas.",
+      "freesSlot": "Se libera un hueco en tu límite de obras activas. Si la restauras y ese hueco ya está ocupado, se cobra como obra extra.",
       "retention": "Se queda {{days}} días en la papelera. En ese plazo puedes restaurarla con todo lo que tenía; después se borra definitivamente, archivos incluidos.",
       "confirmLabel": "Para confirmar, escribe el nombre de la obra",
       "submit": "Eliminar obra",
@@ -233,7 +233,14 @@
       "daysLeft_one": "Queda {{count}} día",
       "daysLeft_other": "Quedan {{count}} días",
       "restore": "Restaurar",
-      "restored": "Obra restaurada"
+      "restored": "Obra restaurada",
+      "restoreExtraTitle": "Se suma como obra extra",
+      "restoreExtraBody": "Tu plan incluye {{included}} obras activas y ya las tienes. Restaurar «{{name}}» la cuenta como obra extra: {{price}} USD/mes, prorrateado desde hoy hasta tu próxima renovación.",
+      "restoreConfirm": "Restaurar",
+      "blocked": {
+        "PAID_PLAN_REQUIRED": "Ya tienes {{included}} obras activas. Activa el plan para restaurarla.",
+        "SUBSCRIPTION_REQUIRED": "Tu suscripción ha vencido. Renueva el plan para restaurarla."
+      }
     },
     "removed": {
       "title": "La obra «{{name}}» ha sido eliminada.",
