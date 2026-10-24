@@ -337,6 +337,7 @@ function DocumentThumbnail({ doc }: { doc: ProjectDocument }) {
         src={doc.url}
         alt={doc.title}
         loading="lazy"
+        decoding="async"
         onError={() => setFailed(true)}
         className="size-full object-cover"
       />

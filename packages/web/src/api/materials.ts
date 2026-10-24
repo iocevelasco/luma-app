@@ -53,9 +53,16 @@ export const materialsApi = {
     );
   },
 
-  /** Los bytes de la foto, servidos por la API (la URL firmada es de otro dominio y no se puede dibujar). */
-  photo: (projectId: string, materialId: string) =>
-    apiClient.getBlob(`/api/projects/${projectId}/materials/${materialId}/photo`),
+  /**
+   * Los bytes de la foto, servidos por la API (la URL firmada es de otro
+   * dominio y no se puede dibujar). `version` va en la URL: esa URL es siempre
+   * la misma foto, y por eso el navegador puede guardarla sin que un
+   * reemplazo le devuelva la vieja.
+   */
+  photo: (projectId: string, materialId: string, version: string) =>
+    apiClient.getBlob(
+      `/api/projects/${projectId}/materials/${materialId}/photo?v=${encodeURIComponent(version)}`,
+    ),
 
   removePhoto: (projectId: string, materialId: string) =>
     unwrap<MaterialResponse>(

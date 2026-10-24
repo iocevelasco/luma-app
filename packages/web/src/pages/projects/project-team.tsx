@@ -69,9 +69,12 @@ const ROLE_ICON: Record<ProjectRole, ComponentType<{ className?: string }>> = {
  */
 function RoleCapabilityCount({ role }: { role: ProjectRole }) {
   const { t } = useTranslation();
-  // `providersVisibleToClient: true` para contar el techo de lo que ese rol
-  // puede llegar a hacer, no lo que puede en esta obra puntual.
-  const count = capabilitiesInProject(role, { providersVisibleToClient: true }).length;
+  // Los flags en `true` para contar el techo de lo que ese rol puede llegar a
+  // hacer, no lo que puede en esta obra puntual.
+  const count = capabilitiesInProject(role, {
+    providersVisibleToClient: true,
+    purchasesVisibleToClient: true,
+  }).length;
 
   return <span className="text-2xs text-muted-foreground">{t('project.team.capabilityCount', { count })}</span>;
 }

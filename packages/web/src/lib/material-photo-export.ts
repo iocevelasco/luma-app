@@ -10,8 +10,14 @@ export interface ResizedPhoto {
 
 /** Lo que baja el PDF: una foto de 20 mm no necesita más, y pesa poco. */
 export const PDF_PHOTO = { maxSide: 480, quality: 0.8 } as const;
-/** Lo que se comparte: la persona la va a mirar en el celular y mostrársela a un vendedor. */
-export const SHARE_PHOTO = { maxSide: 1280, quality: 0.85 } as const;
+/**
+ * Lo que se guarda al subirla: alcanza para mirarla en el celular y mostrársela
+ * a un vendedor, y pesa unos cientos de KB en vez de varios MB. Es lo que se
+ * comparte tal cual, sin trabajo pesado dentro del gesto de la persona.
+ */
+export const UPLOAD_PHOTO = { maxSide: 1600, quality: 0.85 } as const;
+/** Cuántas fotos se bajan a la vez: las 50 de una obra grande no se piden juntas. */
+export const PHOTO_PREFETCH_CONCURRENCY = 3;
 /** WhatsApp admite hasta 30 imágenes por envío; más que eso se pierde sin avisar. */
 export const MAX_SHARED_PHOTOS = 30;
 
@@ -77,6 +83,48 @@ export async function resizePhoto(
 }
 
 /**
+ * La foto lista para subir: reducida a `UPLOAD_PHOTO`. Si no se puede leer (un
+ * formato que el navegador no decodifica) o no sale más liviana, se sube la
+ * original: la API la valida igual.
+ */
+export async function prepareUploadPhoto(file: File): Promise<File> {
+  try {
+    const { blob } = await resizePhoto(file, UPLOAD_PHOTO);
+    if (blob.size >= file.size) return file;
+    const name = file.name.replace(/\.[^./\\]+$/, '') || 'foto';
+    return new File([blob], `${name}.jpg`, { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+}
+
+/**
+ * Corre `task` sobre cada elemento con a lo sumo `limit` en vuelo, y deja de
+ * tomar nuevos cuando `shouldStop()` da `true` (la pantalla ya se cambió). Una
+ * tarea que falla no frena al resto: de eso se ocupa quien la define.
+ */
+export async function runPool<T>(
+  items: readonly T[],
+  limit: number,
+  task: (item: T) => Promise<unknown>,
+  shouldStop: () => boolean = () => false,
+): Promise<void> {
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length && !shouldStop()) {
+      const item = items[next];
+      next += 1;
+      try {
+        await task(item);
+      } catch {
+        // Ver arriba.
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+}
+
+/**
  * Las fotos de las filas que tienen. Una que no se puede bajar se salta: la
  * lista sale igual, esa fila sin foto. Es mejor que un PDF que no sale porque
  * falló una imagen.
@@ -102,7 +150,12 @@ export async function loadRowPhotos(
  * la recibe sepa qué es. Sin caracteres que un sistema de archivos rechace, y
  * sin repetirse dentro de un mismo envío.
  */
-export function photoFileName(name: string, taken: Set<string>): string {
+const EXTENSION_BY_TYPE: Record<string, string> = {
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
+
+export function photoFileName(name: string, taken: Set<string>, mimeType = 'image/jpeg'): string {
   const printable = [...name.normalize('NFC')].filter((char) => char.charCodeAt(0) >= 32).join('');
   const base =
     printable
@@ -114,5 +167,5 @@ export function photoFileName(name: string, taken: Set<string>): string {
   let candidate = base;
   for (let n = 2; taken.has(candidate.toLowerCase()); n += 1) candidate = `${base} (${n})`;
   taken.add(candidate.toLowerCase());
-  return `${candidate}.jpg`;
+  return `${candidate}${EXTENSION_BY_TYPE[mimeType] ?? '.jpg'}`;
 }

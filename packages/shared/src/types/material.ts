@@ -48,6 +48,13 @@ export interface MaterialItem {
    * y con vencimiento, resuelta por la API; `null` si no hay foto.
    */
   photoUrl: string | null;
+  /**
+   * Cuándo se subió la foto actual, `null` si no hay. Es su versión: cambia
+   * sólo cuando se reemplaza (a diferencia de `updatedAt`, que cambia con
+   * cualquier edición del material), y con eso el navegador sabe si la copia
+   * que ya bajó sigue valiendo.
+   */
+  photoUploadedAt: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

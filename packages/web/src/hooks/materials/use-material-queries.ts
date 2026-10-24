@@ -12,6 +12,7 @@ import type {
 import { materialsApi } from '@/api/materials';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
+import { prepareUploadPhoto } from '@/lib/material-photo-export';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -112,7 +113,7 @@ export function useMaterialPhotoLoader(projectId: string) {
     (materialId: string, version: string) =>
       queryClient.fetchQuery({
         queryKey: [QueryKeys.materialPhoto, projectId, materialId, version],
-        queryFn: () => materialsApi.photo(projectId, materialId),
+        queryFn: () => materialsApi.photo(projectId, materialId, version),
         staleTime: Infinity,
         gcTime: 30 * 60 * 1000,
       }),
@@ -129,8 +130,10 @@ export function useUploadMaterialPhoto(projectId: string) {
   const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: ({ materialId, file }: { materialId: string; file: File }) =>
-      materialsApi.uploadPhoto(projectId, materialId, file),
+    // Se achica antes de subir: una foto de celular son varios MB, y es lo que
+    // después bajan, por datos móviles, quienes miran Compras o exportan la lista.
+    mutationFn: async ({ materialId, file }: { materialId: string; file: File }) =>
+      materialsApi.uploadPhoto(projectId, materialId, await prepareUploadPhoto(file)),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
       toast.success(t('material.photo.saved'));

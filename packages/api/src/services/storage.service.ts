@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
 import { STORAGE_CONFIG } from '../config/app.config.js';
 
 /**
@@ -149,24 +150,33 @@ export async function signObjectUrl(key: string): Promise<string | null> {
 }
 
 /**
- * Los bytes de un archivo, o `null` si ya no existe. Para lo que la API tiene
- * que servir ella misma: el navegador no puede leer los píxeles de una URL
- * firmada de otro dominio (para dibujarla en un PDF, por ejemplo) sin que el
- * media-service habilite CORS, y eso no está en nuestras manos.
+ * El contenido de un archivo como stream, o `null` si ya no existe. Para lo
+ * que la API tiene que servir ella misma: el navegador no puede leer los
+ * píxeles de una URL firmada de otro dominio (para dibujarla en un PDF, por
+ * ejemplo) sin que el media-service habilite CORS, y eso no está en nuestras
+ * manos.
+ *
+ * Stream y no buffer: con varias personas pidiendo varias fotos a la vez, un
+ * `arrayBuffer()` por request mantiene cada archivo entero en el heap hasta
+ * terminar de responder.
  */
-export async function readObject(
+export async function openObject(
   key: string,
-): Promise<{ buffer: Buffer; contentType: string } | null> {
+): Promise<{ stream: Readable; contentType: string; contentLength: number | null } | null> {
   const url = await signObjectUrl(key);
   if (!url) return null;
 
   const res = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   if (res.status === 404) return null;
   if (!res.ok) throw await toRequestError(res, 'leer el archivo');
+  if (!res.body) return null;
 
+  const length = Number(res.headers.get('content-length'));
   return {
-    buffer: Buffer.from(await res.arrayBuffer()),
+    // El tipo del body web y el de `fromWeb` no coinciden en `@types/node`.
+    stream: Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]),
     contentType: res.headers.get('content-type') ?? 'application/octet-stream',
+    contentLength: Number.isFinite(length) && length > 0 ? length : null,
   };
 }
 

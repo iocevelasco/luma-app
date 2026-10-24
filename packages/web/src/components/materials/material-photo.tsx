@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Camera, ImageOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -38,7 +38,8 @@ export function MaterialPhotoThumb({ url, name }: { url: string; name: string })
         aria-label={t('material.photo.open', { name })}
         onClick={() => setOpen(true)}
       >
-        <img src={url} alt="" loading="lazy" className="size-full object-cover" />
+        {/* `lazy`: baja cuando la fila se acerca al pantallazo; `async`: decodificar no traba el scroll. */}
+        <img src={url} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
       </button>
       <ResponsiveDialog open={open} onOpenChange={setOpen} title={name} hideHeader>
         <img src={url} alt={name} className="max-h-[70dvh] w-full rounded-md object-contain" />
@@ -73,11 +74,18 @@ export function MaterialPhotoField({
   const inputRef = useRef<HTMLInputElement>(null);
   const validate = useValidMaterialPhoto();
 
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  // Creada y revocada en el mismo efecto: con `useMemo` + cleanup aparte, el
+  // doble montaje de StrictMode revoca una URL que el memo no vuelve a crear.
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   useEffect(() => {
-    if (!previewUrl) return;
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   const shown = previewUrl ?? (removed ? null : (currentUrl ?? null));
 

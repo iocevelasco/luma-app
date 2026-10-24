@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type MaterialInvoiceRef, type MaterialItem, type MaterialStatus } from '@luma/shared';
 import { differenceInCalendarDays, format } from 'date-fns';
 import {
@@ -81,9 +81,10 @@ import {
   loadRowPhotos,
   MAX_SHARED_PHOTOS,
   PDF_PHOTO,
+  PHOTO_PREFETCH_CONCURRENCY,
   photoFileName,
   resizePhoto,
-  SHARE_PHOTO,
+  runPool,
   type ResizedPhoto,
 } from '@/lib/material-photo-export';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -127,6 +128,11 @@ function downloadBlob(blob: Blob, fileName: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
+/** Cancelar la hoja de compartir no es un error; lo demás (en Safari, el gesto vencido) sí. */
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
+}
+
 function copyText(text: string) {
   if (typeof navigator.clipboard === 'object' && typeof navigator.clipboard.writeText === 'function') {
     return navigator.clipboard.writeText(text);
@@ -164,6 +170,7 @@ function ExportActions({
   onDownloadCsv,
   onCopy,
   onShare,
+  onWarm,
 }: {
   generatingPdf: boolean;
   canShare: boolean;
@@ -171,11 +178,13 @@ function ExportActions({
   onDownloadCsv: () => void;
   onCopy: () => void;
   onShare: () => void;
+  /** Hay señal de que se va a exportar: que se vayan bajando las fotos. */
+  onWarm: () => void;
 }) {
   const { t } = useTranslation();
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={(open) => open && onWarm()}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
@@ -200,12 +209,29 @@ function ExportActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={onCopy}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="max-sm:min-h-11"
+        onClick={onCopy}
+        onPointerEnter={onWarm}
+        onFocus={onWarm}
+      >
         <Copy className="size-4" />
         {t('material.list.copyList')}
       </Button>
       {canShare && (
-        <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={onShare}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="max-sm:min-h-11"
+          onClick={onShare}
+          // `pointerdown` y no sólo `enter`: en el celular no hay hover, y es lo
+          // más temprano que se sabe que viene el toque.
+          onPointerEnter={onWarm}
+          onPointerDown={onWarm}
+          onFocus={onWarm}
+        >
           <Share2 className="size-4" />
           {t('material.list.share')}
         </Button>
@@ -1094,14 +1120,45 @@ export function ProjectMaterialsPage() {
     setBulkProviderId(null);
   }
 
-  // Las fotos de la lista, bajadas apenas se muestra: el PDF y el compartir las
-  // usan, y por el mismo motivo que el PDF (abajo) no pueden esperar al gesto.
+  // Las fotos para exportar se bajan de forma perezosa: no al abrir la pantalla
+  // (casi nadie exporta, y son archivos, no miniaturas) sino cuando hay señal de
+  // que se va a exportar: abrir "Descargar", acercarse a Compartir o Copiar, o
+  // tildar materiales. En Safari PDF y Compartir tienen que ocurrir dentro del
+  // gesto, y bajar imágenes ahí lo deja afuera: por eso se adelanta con la
+  // señal en vez de esperar al toque. Se piden de a pocas y ya vienen
+  // reducidas desde que se suben.
   const loadPhoto = useMaterialPhotoLoader(projectId!);
+  const pdfPhotoCache = useRef(new Map<string, Promise<ResizedPhoto | null>>());
+  const pdfPhoto = useCallback(
+    (row: PurchaseRow): Promise<ResizedPhoto | null> => {
+      if (!row.photoVersion) return Promise.resolve(null);
+      const key = `${row.id}:${row.photoVersion}`;
+      let hit = pdfPhotoCache.current.get(key);
+      if (!hit) {
+        hit = loadPhoto(row.id, row.photoVersion)
+          .then((original) => resizePhoto(original, PDF_PHOTO))
+          .catch(() => {
+            // No se guarda el fallo: la próxima vez que se pida, se reintenta.
+            pdfPhotoCache.current.delete(key);
+            return null;
+          });
+        pdfPhotoCache.current.set(key, hit);
+      }
+      return hit;
+    },
+    [loadPhoto],
+  );
+  /** Pide las fotos de esas filas. Las que ya están (o van en camino) no se piden de nuevo. */
+  const warmPhotos = useCallback(
+    (rows: PurchaseRow[]) => {
+      const withPhoto = rows.filter((row) => row.photoVersion);
+      if (withPhoto.length > 0) void runPool(withPhoto, PHOTO_PREFETCH_CONCURRENCY, pdfPhoto);
+    },
+    [pdfPhoto],
+  );
   useEffect(() => {
-    for (const row of [...purchaseRows, ...boughtRows]) {
-      if (row.photoVersion) void loadPhoto(row.id, row.photoVersion).catch(() => undefined);
-    }
-  }, [purchaseRows, boughtRows, loadPhoto]);
+    if (hasSelection) warmPhotos(selectedRows);
+  }, [hasSelection, selectedRows, warmPhotos]);
 
   // El PDF y su librería pesan: se bajan apenas hay algo que descargar, no al
   // tocar el botón. En Safari, descargar o compartir tiene que ocurrir dentro
@@ -1127,15 +1184,15 @@ export function ProjectMaterialsPage() {
     try {
       const { buildPurchasePdf, purchaseFileName } = await import('@/lib/materials-pdf');
       const now = new Date();
-      // Casi siempre ya están bajadas: la pantalla las pide apenas se muestra.
+      // Casi siempre ya están listas: la pantalla las prepara apenas se muestra.
+      // Una que no se pudo leer deja esa fila sin foto, no tira el PDF.
       const photos = new Map<string, ResizedPhoto>();
-      for (const [id, original] of await loadRowPhotos(rows, loadPhoto)) {
-        try {
-          photos.set(id, await resizePhoto(original, PDF_PHOTO));
-        } catch {
-          // Una foto que no se puede leer deja esa fila sin foto, no tira el PDF.
-        }
-      }
+      await Promise.all(
+        rows.map(async (row) => {
+          const photo = await pdfPhoto(row);
+          if (photo) photos.set(row.id, photo);
+        }),
+      );
       const blob = await buildPurchasePdf({
         photos,
         projectName: projectData?.project.name ?? '',
@@ -1172,11 +1229,12 @@ export function ProjectMaterialsPage() {
       ) {
         try {
           await navigator.share({ files: [file], title: fileName });
+          return;
         } catch (error) {
-          // Cancelar la hoja no es un error. Cualquier otra cosa sí.
-          if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
+          if (isAbortError(error)) return;
+          // Cualquier otro motivo (en Safari, que el gesto ya venció) no es
+          // razón para quedarse sin el PDF: se baja directo.
         }
-        return;
       }
 
       downloadBlob(blob, fileName);
@@ -1232,39 +1290,42 @@ export function ProjectMaterialsPage() {
    * de los materiales: quien recibe ve de qué pieza se habla sin pedirla por
    * WhatsApp. Cada foto lleva el nombre del material.
    *
-   * Las fotos ya están bajadas (ver el efecto de arriba): en Safari compartir
-   * tiene que pasar dentro del gesto, y bajarlas acá lo dejaría afuera.
+   * Las fotos ya están bajadas (ver el efecto de arriba) y ya vienen reducidas
+   * desde que se subieron: acá no se procesa nada. En Safari compartir tiene
+   * que pasar dentro del gesto, y cualquier trabajo largo antes lo deja afuera.
    */
   async function handleShare(rows: PurchaseRow[], kind: PurchaseListKind) {
     if (typeof navigator.share !== 'function') return;
-    const data: ShareData = { text: buildCopyText(rows, kind) };
+    const text = buildCopyText(rows, kind);
 
-    try {
-      const photos = await loadRowPhotos(rows, loadPhoto);
-      const taken = new Set<string>();
-      const files: File[] = [];
-      for (const row of rows) {
-        const original = photos.get(row.id);
-        if (!original || files.length >= MAX_SHARED_PHOTOS) continue;
-        const resized = await resizePhoto(original, SHARE_PHOTO);
-        files.push(new File([resized.blob], photoFileName(row.name, taken), { type: 'image/jpeg' }));
-      }
-      if (
-        files.length > 0 &&
-        typeof navigator.canShare === 'function' &&
-        navigator.canShare({ files })
-      ) {
-        data.files = files;
-      }
-    } catch {
-      // Sin fotos se comparte el texto: es la lista de siempre.
-    }
+    const photos = await loadRowPhotos(rows, loadPhoto);
+    const taken = new Set<string>();
+    const files = rows
+      .filter((row) => photos.has(row.id))
+      .slice(0, MAX_SHARED_PHOTOS)
+      .map((row) => {
+        const photo = photos.get(row.id) as Blob;
+        return new File([photo], photoFileName(row.name, taken, photo.type), {
+          type: photo.type || 'image/jpeg',
+        });
+      });
+    const withPhotos =
+      files.length > 0 && typeof navigator.canShare === 'function' && navigator.canShare({ files });
 
-    try {
-      await navigator.share(data);
-    } catch {
-      // El usuario canceló el share sheet — no es un error a mostrar.
-    }
+    /** `cancelled` si la persona cerró la hoja; `failed` si el sistema la rechazó. */
+    const attempt = async (data: ShareData): Promise<'shared' | 'cancelled' | 'failed'> => {
+      try {
+        await navigator.share(data);
+        return 'shared';
+      } catch (error) {
+        return isAbortError(error) ? 'cancelled' : 'failed';
+      }
+    };
+
+    let result = await attempt(withPhotos ? { text, files } : { text });
+    // Con las fotos no pudo: que no se quede sin la lista.
+    if (result === 'failed' && withPhotos) result = await attempt({ text });
+    if (result === 'failed') toast.error(t('material.errors.share'));
   }
 
   if (isError) return <PageLayout isError />;
@@ -1368,6 +1429,7 @@ export function ProjectMaterialsPage() {
                 onDownloadCsv={() => void handleDownloadCsv(purchaseRows, 'toBuy')}
                 onCopy={() => void handleCopy(purchaseRows, 'toBuy')}
                 onShare={() => void handleShare(purchaseRows, 'toBuy')}
+                onWarm={() => warmPhotos(purchaseRows)}
               />
             </div>
           )}
@@ -1418,6 +1480,7 @@ export function ProjectMaterialsPage() {
                     onDownloadCsv={() => void handleDownloadCsv(boughtRows, 'bought')}
                     onCopy={() => void handleCopy(boughtRows, 'bought')}
                     onShare={() => void handleShare(boughtRows, 'bought')}
+                    onWarm={() => warmPhotos(boughtRows)}
                   />
                 </div>
               )}

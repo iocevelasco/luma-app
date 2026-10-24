@@ -154,9 +154,9 @@ export interface PurchaseRow {
    */
   tagged: boolean;
   /**
-   * Cuándo se cambió el material si tiene foto, `null` si no. Es la versión de
-   * la foto: cambia cuando se reemplaza, y con eso se sabe si la copia que se
-   * bajó para el PDF o el compartir sigue valiendo.
+   * Cuándo se subió la foto si la hay, `null` si no. Es su versión: cambia sólo
+   * cuando se reemplaza (no con cualquier edición del material), y con eso se
+   * sabe si la copia que se bajó para el PDF o el compartir sigue valiendo.
    */
   photoVersion: string | null;
 }
@@ -236,7 +236,7 @@ export function buildPurchaseRows(
       unit: material.unit,
       supplier: labelFor(supplierKey(supplierName(material))),
       tagged: material.status === TAGGED_STATUS[kind],
-      photoVersion: material.photoUrl ? material.updatedAt : null,
+      photoVersion: material.photoUrl ? material.photoUploadedAt : null,
     }))
     .sort((a, b) => {
       if (!a.supplier !== !b.supplier) return a.supplier ? -1 : 1;

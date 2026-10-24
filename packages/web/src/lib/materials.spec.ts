@@ -35,6 +35,7 @@ function material(
     editable: false,
     providerId: null,
     photoUrl: null,
+    photoUploadedAt: null,
     createdBy: 'u1',
     createdAt: changedAt,
     updatedAt: changedAt,
@@ -185,6 +186,39 @@ describe('buildPurchaseText', () => {
       '- Arena: 1 Unidad · Corralón Sur (ya pedido)',
       '- Pintura: 1 Unidad',
     ]);
+  });
+});
+
+describe('buildPurchaseRows — versión de la foto', () => {
+  const withPhoto = (overrides: Partial<MaterialItem>): MaterialItem => ({
+    ...material('a', 'pendiente'),
+    photoUrl: 'https://files.test/a',
+    photoUploadedAt: '2026-10-20T10:00:00.000Z',
+    updatedAt: '2026-10-24T10:00:00.000Z',
+    ...overrides,
+  });
+
+  it('es cuándo se subió la foto, no cuándo se tocó el material', () => {
+    const [row] = buildPurchaseRows([withPhoto({})]);
+    expect(row.photoVersion).toBe('2026-10-20T10:00:00.000Z');
+  });
+
+  it('cambiar el material (estado, proveedor) no cambia la versión: la foto no se vuelve a bajar', () => {
+    const [before] = buildPurchaseRows([withPhoto({})]);
+    const [after] = buildPurchaseRows([
+      withPhoto({ status: 'solicitado', updatedAt: '2026-10-25T09:00:00.000Z' }),
+    ]);
+    expect(after.photoVersion).toBe(before.photoVersion);
+  });
+
+  it('reemplazar la foto sí la cambia', () => {
+    const [row] = buildPurchaseRows([withPhoto({ photoUploadedAt: '2026-10-26T08:00:00.000Z' })]);
+    expect(row.photoVersion).toBe('2026-10-26T08:00:00.000Z');
+  });
+
+  it('sin foto no hay versión', () => {
+    const [row] = buildPurchaseRows([material('a', 'pendiente')]);
+    expect(row.photoVersion).toBeNull();
   });
 });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { loadRowPhotos, photoFileName } from './material-photo-export';
+import { loadRowPhotos, photoFileName, runPool } from './material-photo-export';
 import type { PurchaseRow } from './materials';
 
 describe('photoFileName', () => {
@@ -20,6 +20,12 @@ describe('photoFileName', () => {
 
   it('un nombre que queda vacío no deja un archivo sin nombre', () => {
     expect(photoFileName('///', new Set())).toBe('material.jpg');
+  });
+
+  it('la extensión sigue al tipo real de la foto: una vieja en PNG no se llama .jpg', () => {
+    expect(photoFileName('Cemento', new Set(), 'image/png')).toBe('Cemento.png');
+    expect(photoFileName('Cemento', new Set(), 'image/webp')).toBe('Cemento.webp');
+    expect(photoFileName('Cemento', new Set(), 'image/jpeg')).toBe('Cemento.jpg');
   });
 });
 
@@ -52,5 +58,58 @@ describe('loadRowPhotos', () => {
     const photos = await loadRowPhotos([row('ok', 'v1'), row('rota', 'v1')], load);
 
     expect([...photos.keys()]).toEqual(['ok']);
+  });
+});
+
+describe('runPool', () => {
+  const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('nunca hay más tareas en vuelo que el límite, y se hacen todas', async () => {
+    let inFlight = 0;
+    let peak = 0;
+    const done: number[] = [];
+
+    await runPool([1, 2, 3, 4, 5, 6, 7], 3, async (n) => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await tick();
+      inFlight -= 1;
+      done.push(n);
+    });
+
+    expect(peak).toBe(3);
+    expect(done.sort()).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it('una tarea que falla no frena a las demás', async () => {
+    const done: number[] = [];
+
+    await runPool([1, 2, 3], 2, async (n) => {
+      if (n === 2) throw new Error('falló');
+      done.push(n);
+    });
+
+    expect(done.sort()).toEqual([1, 3]);
+  });
+
+  it('deja de tomar elementos nuevos cuando se pide parar', async () => {
+    const started: number[] = [];
+    let stop = false;
+
+    await runPool(
+      [1, 2, 3, 4, 5, 6],
+      1,
+      async (n) => {
+        started.push(n);
+        if (n === 2) stop = true;
+      },
+      () => stop,
+    );
+
+    expect(started).toEqual([1, 2]);
+  });
+
+  it('sin elementos no hace nada', async () => {
+    await expect(runPool([], 3, async () => undefined)).resolves.toBeUndefined();
   });
 });

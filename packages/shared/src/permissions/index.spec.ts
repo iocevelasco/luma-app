@@ -328,3 +328,13 @@ describe('compras visibles para el cliente', () => {
     expect(canInProject('contador', 'material.read', OPEN)).toBe(false);
   });
 });
+
+describe('project.update — el flag que abre Compras', () => {
+  it('es sólo del gerente, aunque la obra tenga todos los flags abiertos', () => {
+    const OPEN_ALL = { providersVisibleToClient: true, purchasesVisibleToClient: true };
+    expect(canInProject('gerente', 'project.update', OPEN_ALL)).toBe(true);
+    for (const role of ['supervisor', 'contador', 'cliente'] as const) {
+      expect(canInProject(role, 'project.update', OPEN_ALL)).toBe(false);
+    }
+  });
+});

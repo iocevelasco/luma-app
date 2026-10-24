@@ -1,3 +1,4 @@
+import { pipeline } from 'node:stream/promises';
 import type { NextFunction, Request, Response } from 'express';
 import {
   bulkDeleteMaterialsSchema,
@@ -17,7 +18,7 @@ import { MATERIAL_PHOTO_MIME_TO_EXTENSION } from '../middleware/material-photo-u
 import { visibleProviderFilter } from '../services/directory.service.js';
 import {
   deleteObject,
-  readObject,
+  openObject,
   signObjectUrl,
   StorageNotConfiguredError,
   uploadMaterialPhoto as storeMaterialPhoto,
@@ -129,6 +130,7 @@ function toMaterialDTO(
     editable: isMaterialEditable(material),
     estimatedCost: viewerCanSeeDetail ? material.estimatedCost : undefined,
     photoUrl,
+    photoUploadedAt: material.photo ? material.photo.uploadedAt.toISOString() : null,
     ...providerFields(material),
     supplier: material.supplier,
     createdBy: String(material.createdBy),
@@ -343,17 +345,15 @@ export const uploadMaterialPhoto = wrap(async (req, res) => {
   if (!extension) throw badRequest('Formato no soportado. Subí una foto .jpg, .png o .webp.');
 
   const project = req.project as IProject;
-  const existing = await MaterialItem.findOne({
-    _id: req.params.materialId,
-    project: project._id,
-  });
-  if (!existing) throw notFound('No encontramos ese material.');
+  // Antes de subir: al revés, un material que no existe deja un archivo huérfano.
+  const found = await MaterialItem.exists({ _id: req.params.materialId, project: project._id });
+  if (!found) throw notFound('No encontramos ese material.');
 
   let key: string;
   try {
     ({ key } = await storeMaterialPhoto({
       projectId: String(project._id),
-      materialId: String(existing._id),
+      materialId: String(found._id),
       buffer: file.buffer,
       contentType: file.mimetype,
       extension,
@@ -365,8 +365,11 @@ export const uploadMaterialPhoto = wrap(async (req, res) => {
     throw error;
   }
 
-  const material = await MaterialItem.findOneAndUpdate(
-    { _id: existing._id, project: project._id },
+  // `new: false`: devuelve el documento como estaba, o sea la foto que este
+  // update acaba de reemplazar. Con dos subidas a la vez, cada una borra la que
+  // de verdad pisó: leerla antes dejaría la del medio sin dueño y sin limpiar.
+  const previous = await MaterialItem.findOneAndUpdate(
+    { _id: found._id, project: project._id },
     {
       $set: {
         photo: {
@@ -377,16 +380,22 @@ export const uploadMaterialPhoto = wrap(async (req, res) => {
         },
       },
     },
-    { new: true },
-  ).populate('provider', PROVIDER_FIELDS);
+    { new: false },
+  );
 
-  // Lo borraron entre la lectura y la escritura: la foto quedó sin dueño.
-  if (!material) {
+  // Lo borraron entre la comprobación y la escritura: la foto quedó sin dueño.
+  if (!previous) {
     await discardPhotoFile(key);
     throw notFound('No encontramos ese material.');
   }
 
-  if (existing.photo) await discardPhotoFile(existing.photo.key);
+  if (previous.photo) await discardPhotoFile(previous.photo.key);
+
+  const material = await MaterialItem.findOne({ _id: found._id, project: project._id }).populate(
+    'provider',
+    PROVIDER_FIELDS,
+  );
+  if (!material) throw notFound('No encontramos ese material.');
 
   return res.status(201).json({
     success: true,
@@ -411,7 +420,7 @@ export const getMaterialPhoto = wrap(async (req, res) => {
 
   let file;
   try {
-    file = await readObject(material.photo.key);
+    file = await openObject(material.photo.key);
   } catch (error) {
     if (error instanceof StorageNotConfiguredError) {
       throw serviceUnavailable('La carga de fotos todavía no está configurada en este entorno.');
@@ -420,12 +429,31 @@ export const getMaterialPhoto = wrap(async (req, res) => {
   }
   if (!file) throw notFound('Ese material no tiene foto.');
 
-  // La foto cambia sólo si se reemplaza, y el navegador la pide con su
-  // `updatedAt` en la caché propia de la pantalla: acá alcanza con no
-  // compartirla entre usuarios.
-  res.set('Cache-Control', 'private, max-age=300');
+  // La pantalla pide la foto con `?v=<cuándo se subió>`: esa URL siempre es la
+  // misma foto, así que se puede guardar para siempre. Reemplazarla cambia la
+  // versión, y con ella la URL. Sin versión no se sabe, y no se guarda.
+  res.set(
+    'Cache-Control',
+    typeof req.query.v === 'string' && req.query.v
+      ? 'private, max-age=31536000, immutable'
+      : 'private, no-cache',
+  );
+  // Lo que se sirve lo subió una persona: que el navegador no lo "adivine" como otra cosa.
+  res.set('X-Content-Type-Options', 'nosniff');
   res.type(material.photo.contentType);
-  return res.send(file.buffer);
+  if (file.contentLength) res.set('Content-Length', String(file.contentLength));
+
+  try {
+    await pipeline(file.stream, res);
+  } catch (error) {
+    // Ya salieron las cabeceras: no se puede responder un error en JSON. Se
+    // corta la conexión (el cliente ve la descarga incompleta y reintenta).
+    if (res.headersSent) {
+      res.destroy();
+      return;
+    }
+    throw error;
+  }
 });
 
 /** Requiere `requireProjectAccess` + `requireCapability('material.write')`. Idempotente. */

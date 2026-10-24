@@ -530,7 +530,7 @@
       "removeBody": "A foto de {{name}} será apagada. Você pode enviar outra quando quiser.",
       "saved": "Foto salva",
       "removed": "Foto removida",
-      "tooLarge": "A foto tem mais de 8 MB. Tire de novo ou escolha uma mais leve.",
+      "tooLarge": "A foto tem mais de 30 MB. Tire de novo ou escolha uma mais leve.",
       "unsupported": "Formato não suportado. Use uma foto .jpg, .png ou .webp.",
       "open": "Ver a foto de {{name}}",
       "previewAlt": "Foto escolhida do material"
@@ -620,7 +620,8 @@
       "update": "Não conseguimos atualizar o material.",
       "delete": "Não conseguimos excluir o material.",
       "copy": "Não conseguimos copiar a lista.",
-      "pdf": "Não conseguimos gerar o PDF. Tente de novo."
+      "pdf": "Não conseguimos gerar o PDF. Tente de novo.",
+      "share": "Não foi possível compartilhar a lista. Tente copiá-la ou baixar o PDF."
     }
   },
   "provider": {
