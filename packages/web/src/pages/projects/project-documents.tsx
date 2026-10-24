@@ -168,7 +168,7 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
           );
         })}
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="document-file">{t('document.fields.file')}</Label>
           {/*
             El input nativo de archivo no se puede estilar, así que se esconde
@@ -187,10 +187,10 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
             type="button"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            className="justify-start font-normal"
+            className="w-full min-w-0 justify-start font-normal"
           >
             <Upload className="size-4" />
-            {file ? file.name : t('document.fields.filePlaceholder')}
+            <span className="min-w-0 truncate">{file ? file.name : t('document.fields.filePlaceholder')}</span>
           </Button>
           {file && (
             <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
