@@ -440,13 +440,17 @@ Detalle en `docs/DEPLOY.md`.
 Cuando se pida un cambio relacionado con la **configuración del proyecto** —
 env vars, scopes, deploys, métricas, analytics, dominios del server, storages,
 backups, tareas programadas, servicios, bases de datos, o cualquier otra cosa
-que Coolify ofrezca— **usá siempre primero el skill `~/Documents/Claude/coolify-deploy`
+que Coolify ofrezca— **usá siempre primero el skill `~/.claude/skills/coolify-deploy`
 y el MCP de Coolify** (`.mcp.json`), con todas sus capabilities, **antes de
 ejecutar el cambio**.
 
-- Leé `~/Documents/Claude/coolify-deploy/SKILL.md` (y `REFERENCE.md` si hace
+- Leé `~/.claude/skills/coolify-deploy/SKILL.md` (y `REFERENCE.md` si hace
   falta) para saber qué operación corresponde, y recién después actuá.
 - Inspeccioná el estado actual (list/get) antes de modificar.
+- El MCP sólo conecta si `COOLIFY_URL` y `COOLIFY_TOKEN` están en el entorno
+  desde el que se abre Claude (si no, responde `Invalid URL`). El CLI del skill
+  (`python3 ~/.claude/skills/coolify-deploy/scripts/coolify.py …`) lee su
+  propio token y funciona igual: es el camino que no depende del entorno.
 - No edites la configuración de deploy a mano ni por fuera de Coolify: si el
   cambio se puede hacer por el skill o el MCP, se hace por ahí.
 - Las herramientas destructivas del MCP siguen pidiendo aprobación; el skill no
