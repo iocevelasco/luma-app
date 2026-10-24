@@ -17,6 +17,8 @@ interface LegalSection {
  */
 export function LegalPage() {
   const { t } = useTranslation();
+  const contactEmail =
+    import.meta.env.VITE_LEGAL_CONTACT_EMAIL || LEGAL_CONTACT_EMAIL;
   const sections = t('legal.page.sections', { returnObjects: true }) as LegalSection[];
 
   return (
@@ -56,11 +58,9 @@ export function LegalPage() {
           </section>
         ))}
 
-        {LEGAL_CONTACT_EMAIL && (
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {t('legal.page.contact', { email: LEGAL_CONTACT_EMAIL })}
-          </p>
-        )}
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {t('legal.page.contact', { email: contactEmail })}
+        </p>
       </div>
     </div>
   );

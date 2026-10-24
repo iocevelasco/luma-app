@@ -21,6 +21,7 @@ COPY packages/web/package.json ./packages/web/
 
 RUN pnpm install --frozen-lockfile --prod=false --filter @luma/landing...
 
+COPY shared ./shared
 COPY packages/landing ./packages/landing
 
 ARG VITE_APP_URL=http://localhost:5173

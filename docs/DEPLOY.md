@@ -202,8 +202,15 @@ para que se vea en el historial. A mano: `pnpm --filter @luma/api projects:purge
 
 La Política de Privacidad promete borrar los datos personales de una cuenta
 90 días después de darla de baja. Esta tarea lo cumple: deja el documento (lo
-referencian obras, cobros y gastos) pero borra email, nombre, foto,
-contraseña, tokens y la IP y el user agent de la aceptación de los Términos.
+referencian obras, cobros y gastos) pero borra lo que identifica a la persona:
+email, nombre, foto, contraseña, tokens, IP y user agent de la aceptación; sus
+notificaciones y accesos a obras; los datos de pago de la suscripción (banco,
+referencia, documento y comprobante, archivo incluido); y su cliente de Stripe
+si era la única persona de su Empresa, que además queda sin nombre ni contacto.
+Pisa su nombre como responsable de tareas dentro de sus obras. Los archivos y
+Stripe van primero: si fallan, la cuenta se reintenta al otro día.
+Cuenta los 90 días desde `deactivated_at` (el modelo la completa solo al pasar
+a `inactive`); una baja sin esa fecha cuenta desde `updatedAt`.
 **Sin ella esa promesa del texto legal no se cumple.**
 
 | Campo | Valor |

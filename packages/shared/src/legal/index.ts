@@ -10,11 +10,10 @@
 export const LEGAL_VERSION = '2026-10-24';
 
 /**
- * Correo donde se ejercen los derechos sobre los datos. Vacío hasta que el
- * titular defina uno: mientras lo esté, la página legal no promete un canal
- * que no existe.
+ * Correo donde se ejercen los derechos sobre los datos. Es el valor por
+ * defecto: la web lo puede pisar con `VITE_LEGAL_CONTACT_EMAIL` sin tocar código.
  */
-export const LEGAL_CONTACT_EMAIL = '';
+export const LEGAL_CONTACT_EMAIL = 'legales@lumas.systems.com';
 
 /** Cuánto se conserva una cuenta dada de baja antes de purgarla. */
 export const ACCOUNT_PURGE_RETENTION_DAYS = 90;

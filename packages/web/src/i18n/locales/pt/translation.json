@@ -1740,8 +1740,8 @@
         {
           "title": "7. Por quanto tempo os guardamos e o que acontece se você sair",
           "paragraphs": [
-            "Guardamos os seus dados enquanto a sua conta estiver ativa. Ao sair, mantemos a conta por 90 dias, caso você se arrependa, e depois apagamos os seus dados pessoais: e-mail, nome, foto, senha e os dados técnicos da aceitação.",
-            "As obras que você exclui ficam 90 dias na lixeira e depois são apagadas com tudo o que tinham. Os registros de uma obra compartilhada com outras pessoas podem permanecer sem dados que identifiquem você."
+            "Guardamos os seus dados enquanto a sua conta estiver ativa. Ao sair, mantemos a conta por 90 dias, caso você se arrependa, e depois apagamos os seus dados pessoais: e-mail, nome, foto, senha, telefone, os dados de pagamento da assinatura (banco, referência, documento e comprovante) e o registro técnico da sua aceitação. Também encerramos o seu cadastro no processador de pagamentos com cartão e eliminamos as suas notificações e os seus acessos às obras.",
+            "As obras que você exclui ficam 90 dias na lixeira e depois são apagadas com tudo o que tinham. Se a sua Empresa não tinha mais ninguém, ela fica sem nome nem contato. Os valores e datas dos pagamentos, e o histórico de uma obra compartilhada com outras pessoas, são mantidos ligados a uma «Conta eliminada» e sem dados que identifiquem você. O que outras pessoas tenham escrito em texto livre numa obra compartilhada (por exemplo, uma nota) pode continuar mencionando você."
           ]
         },
         {

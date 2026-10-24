@@ -117,6 +117,32 @@ const userSchema = new Schema<IUser>(
   { timestamps: true },
 );
 
+/**
+ * Toda baja deja fecha. La purga de datos personales cuenta sus 90 días desde
+ * `deactivated_at`: una cuenta que quedara `inactive` sin ella dependería de un
+ * respaldo (`updatedAt`) en vez de una fecha dicha. Se completa acá, en el
+ * modelo, y no en cada lugar que da de baja — hoy hay más de uno (la
+ * plataforma, scripts) y mañana habrá otro.
+ */
+userSchema.pre('save', function stampDeactivation(next) {
+  if (this.isModified('account_status') && this.account_status === 'inactive') {
+    this.deactivated_at ??= new Date();
+  }
+  next();
+});
+
+userSchema.pre(['updateOne', 'updateMany', 'findOneAndUpdate'], function stampDeactivation(next) {
+  const update = this.getUpdate() as {
+    $set?: Record<string, unknown>;
+    account_status?: string;
+  } | null;
+  const status = update?.$set?.account_status ?? update?.account_status;
+  if (status === 'inactive' && update?.$set?.deactivated_at === undefined) {
+    this.set({ deactivated_at: new Date() });
+  }
+  next();
+});
+
 export const User: Model<IUser> =
   (mongoose.models.User as Model<IUser>) ?? mongoose.model<IUser>('User', userSchema);
 
