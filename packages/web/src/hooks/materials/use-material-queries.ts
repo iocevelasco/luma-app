@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -95,6 +96,28 @@ export function useEditMaterial(projectId: string) {
     },
     onError: (error) => refreshWhenLocked(error, queryClient, projectId),
   });
+}
+
+/**
+ * Los bytes de la foto de un material, para el PDF y el compartir de la lista
+ * de compras. `version` es lo que cambia cuando se reemplaza la foto (el
+ * `updatedAt` del material): con la misma, la copia que ya se bajó sirve, y
+ * con otra se vuelve a pedir. Sin `useQuery`: no es algo que la pantalla
+ * muestre, es algo que se tiene listo antes de que la persona toque el botón.
+ */
+export function useMaterialPhotoLoader(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (materialId: string, version: string) =>
+      queryClient.fetchQuery({
+        queryKey: [QueryKeys.materialPhoto, projectId, materialId, version],
+        queryFn: () => materialsApi.photo(projectId, materialId),
+        staleTime: Infinity,
+        gcTime: 30 * 60 * 1000,
+      }),
+    [queryClient, projectId],
+  );
 }
 
 /**

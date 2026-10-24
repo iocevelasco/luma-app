@@ -148,6 +148,28 @@ export async function signObjectUrl(key: string): Promise<string | null> {
   return body.url;
 }
 
+/**
+ * Los bytes de un archivo, o `null` si ya no existe. Para lo que la API tiene
+ * que servir ella misma: el navegador no puede leer los píxeles de una URL
+ * firmada de otro dominio (para dibujarla en un PDF, por ejemplo) sin que el
+ * media-service habilite CORS, y eso no está en nuestras manos.
+ */
+export async function readObject(
+  key: string,
+): Promise<{ buffer: Buffer; contentType: string } | null> {
+  const url = await signObjectUrl(key);
+  if (!url) return null;
+
+  const res = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  if (res.status === 404) return null;
+  if (!res.ok) throw await toRequestError(res, 'leer el archivo');
+
+  return {
+    buffer: Buffer.from(await res.arrayBuffer()),
+    contentType: res.headers.get('content-type') ?? 'application/octet-stream',
+  };
+}
+
 // ── Evidencia fotográfica de actividades (RF-04) ────────────────────────────
 
 export interface UploadEvidencePhotoParams {

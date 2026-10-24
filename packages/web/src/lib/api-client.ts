@@ -279,6 +279,25 @@ class ApiClient {
     return this.request<T>(endpoint, { ...config, method: 'GET' });
   }
 
+  /**
+   * Un archivo binario autenticado (una foto). Mismo manejo de sesión que el
+   * resto: un 401 renueva el token y reintenta una vez. Existe aparte porque
+   * `request` lo lee todo como JSON.
+   */
+  async getBlob(endpoint: string): Promise<Blob> {
+    let response = await this.performRequest(endpoint, { method: 'GET' }, false);
+
+    if (response.status === 401 && this.getToken()) {
+      const refreshed = await this.refreshSession();
+      if (refreshed) response = await this.performRequest(endpoint, { method: 'GET' }, false);
+    }
+
+    if (response.status === 401) return this.failUnauthorized(response);
+    // Un error llega como JSON `{ success: false, error, code }`: `parse` lo lanza.
+    if (!response.ok) return this.parse<never>(response);
+    return response.blob();
+  }
+
   async post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
     const isFormData = data instanceof FormData;
     return this.request<T>(endpoint, {

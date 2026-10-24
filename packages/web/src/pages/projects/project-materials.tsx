@@ -5,8 +5,10 @@ import {
   ArrowRight,
   CalendarClock,
   Camera,
+  ChevronDown,
   Copy,
   FileDown,
+  FileSpreadsheet,
   ImageOff,
   Link2,
   MoreHorizontal,
@@ -68,18 +70,30 @@ import {
   useBulkUpdateMaterials,
   useDeleteMaterial,
   useDeleteMaterialInvoice,
+  useMaterialPhotoLoader,
   useMaterials,
   useRemoveMaterialPhoto,
   useUpdateMaterial,
   useUploadMaterialPhoto,
 } from '@/hooks/materials/use-material-queries';
 import { MATERIAL_PHOTO_ACCEPT } from '@/lib/material-photo';
+import {
+  loadRowPhotos,
+  MAX_SHARED_PHOTOS,
+  PDF_PHOTO,
+  photoFileName,
+  resizePhoto,
+  SHARE_PHOTO,
+  type ResizedPhoto,
+} from '@/lib/material-photo-export';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import {
   NEXT_MATERIAL_STATUS,
+  buildPurchaseCsv,
   buildPurchaseRows,
   buildPurchaseText,
   bulkActionsFor,
@@ -99,6 +113,19 @@ const MATERIAL_STATUSES: MaterialStatus[] = ['pendiente', 'solicitado', 'comprad
 
 /** Faltan hasta tantos días para que una actividad empiece y se marca como urgente. */
 const URGENT_WITHIN_DAYS = 7;
+
+/** Descarga un archivo generado en el navegador. */
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  // Revocar de inmediato cancela la descarga en algunos navegadores.
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
 
 function copyText(text: string) {
   if (typeof navigator.clipboard === 'object' && typeof navigator.clipboard.writeText === 'function') {
@@ -129,34 +156,50 @@ const EXPORT_COPY: Record<PurchaseListKind, { title: string; tag: string; filePr
   bought: { title: 'material.pdf.titleBought', tag: 'material.list.onSiteTag', filePrefix: 'comprados' },
 };
 
-/** Descargar PDF, Copiar y Compartir: los mismos tres en las dos pestañas. */
+/** Descargar (PDF o CSV), Copiar y Compartir: los mismos en las dos pestañas. */
 function ExportActions({
   generatingPdf,
   canShare,
   onDownloadPdf,
+  onDownloadCsv,
   onCopy,
   onShare,
 }: {
   generatingPdf: boolean;
   canShare: boolean;
   onDownloadPdf: () => void;
+  onDownloadCsv: () => void;
   onCopy: () => void;
   onShare: () => void;
 }) {
   const { t } = useTranslation();
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        className="max-sm:min-h-11"
-        onClick={onDownloadPdf}
-        disabled={generatingPdf}
-        aria-busy={generatingPdf}
-      >
-        {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
-        {generatingPdf ? t('material.list.generatingPdf') : t('material.list.downloadPdf')}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="max-sm:min-h-11"
+            disabled={generatingPdf}
+            aria-busy={generatingPdf}
+          >
+            {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+            {generatingPdf ? t('material.list.generatingPdf') : t('material.export.download')}
+            <ChevronDown aria-hidden className="size-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem className="max-sm:min-h-11" onSelect={onDownloadPdf}>
+            <FileDown className="size-4" />
+            <ExportFormat label={t('material.export.pdf')} hint={t('material.export.pdfHint')} />
+          </DropdownMenuItem>
+          <DropdownMenuItem className="max-sm:min-h-11" onSelect={onDownloadCsv}>
+            <FileSpreadsheet className="size-4" />
+            <ExportFormat label={t('material.export.csv')} hint={t('material.export.csvHint')} />
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={onCopy}>
         <Copy className="size-4" />
         {t('material.list.copyList')}
@@ -168,6 +211,16 @@ function ExportActions({
         </Button>
       )}
     </>
+  );
+}
+
+/** El nombre del formato y, abajo, para qué sirve: quien elige no tiene que adivinar qué es un CSV. */
+function ExportFormat({ label, hint }: { label: string; hint: string }) {
+  return (
+    <span className="flex flex-col">
+      <span>{label}</span>
+      <span className="text-xs text-muted-foreground">{hint}</span>
+    </span>
   );
 }
 
@@ -347,21 +400,30 @@ function MaterialRow({
         */}
         {material.invoices && material.invoices.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="gap-1 max-sm:min-h-11"
-                aria-label={t('material.invoice.openMenu', {
-                  count: material.invoices.length,
-                  name: material.name,
-                })}
-              >
-                <ReceiptText aria-hidden className="size-4" />
-                {material.invoices.length > 1 && <span className="tabular-nums">{material.invoices.length}</span>}
-              </Button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 max-sm:min-h-11"
+                    aria-label={t('material.invoice.openMenu', {
+                      count: material.invoices.length,
+                      name: material.name,
+                    })}
+                  >
+                    <ReceiptText aria-hidden className="size-4" />
+                    {material.invoices.length > 1 && (
+                      <span className="tabular-nums">{material.invoices.length}</span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                {t('material.invoice.tooltip', { count: material.invoices.length })}
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end">
               {material.invoices.map((invoice) => (
                 <div key={invoice.id}>
@@ -772,6 +834,7 @@ function SelectionBar({
   onAction,
   onInvoice,
   onDownloadPdf,
+  onDownloadCsv,
   onCopy,
   onShare,
   onClear,
@@ -783,6 +846,7 @@ function SelectionBar({
   /** Sin esto (sin permiso) no se ofrece. */
   onInvoice?: () => void;
   onDownloadPdf: () => void;
+  onDownloadCsv: () => void;
   onCopy: () => void;
   onShare: () => void;
   onClear: () => void;
@@ -870,7 +934,11 @@ function SelectionBar({
           <DropdownMenuSeparator />
           <DropdownMenuItem className="max-sm:min-h-11" disabled={generatingPdf} onSelect={onDownloadPdf}>
             <FileDown className="size-4" />
-            {t('material.list.downloadPdf')}
+            <ExportFormat label={t('material.export.pdf')} hint={t('material.export.pdfHint')} />
+          </DropdownMenuItem>
+          <DropdownMenuItem className="max-sm:min-h-11" onSelect={onDownloadCsv}>
+            <FileSpreadsheet className="size-4" />
+            <ExportFormat label={t('material.export.csv')} hint={t('material.export.csvHint')} />
           </DropdownMenuItem>
           <DropdownMenuItem className="max-sm:min-h-11" onSelect={onCopy}>
             <Copy className="size-4" />
@@ -1026,6 +1094,15 @@ export function ProjectMaterialsPage() {
     setBulkProviderId(null);
   }
 
+  // Las fotos de la lista, bajadas apenas se muestra: el PDF y el compartir las
+  // usan, y por el mismo motivo que el PDF (abajo) no pueden esperar al gesto.
+  const loadPhoto = useMaterialPhotoLoader(projectId!);
+  useEffect(() => {
+    for (const row of [...purchaseRows, ...boughtRows]) {
+      if (row.photoVersion) void loadPhoto(row.id, row.photoVersion).catch(() => undefined);
+    }
+  }, [purchaseRows, boughtRows, loadPhoto]);
+
   // El PDF y su librería pesan: se bajan apenas hay algo que descargar, no al
   // tocar el botón. En Safari, descargar o compartir tiene que ocurrir dentro
   // del gesto, y esperar un chunk grande lo deja afuera.
@@ -1050,7 +1127,17 @@ export function ProjectMaterialsPage() {
     try {
       const { buildPurchasePdf, purchaseFileName } = await import('@/lib/materials-pdf');
       const now = new Date();
+      // Casi siempre ya están bajadas: la pantalla las pide apenas se muestra.
+      const photos = new Map<string, ResizedPhoto>();
+      for (const [id, original] of await loadRowPhotos(rows, loadPhoto)) {
+        try {
+          photos.set(id, await resizePhoto(original, PDF_PHOTO));
+        } catch {
+          // Una foto que no se puede leer deja esa fila sin foto, no tira el PDF.
+        }
+      }
       const blob = await buildPurchasePdf({
+        photos,
         projectName: projectData?.project.name ?? '',
         date: now,
         dateLabel: format(now, 'P', { locale: dateLocale }),
@@ -1062,6 +1149,7 @@ export function ProjectMaterialsPage() {
             material: t('material.pdf.columnMaterial'),
             quantity: t('material.pdf.columnQuantity'),
             supplier: t('material.pdf.columnSupplier'),
+            photo: t('material.pdf.columnPhoto'),
           },
           noSupplier: t('material.list.noSupplier'),
           tag: t(EXPORT_COPY[kind].tag),
@@ -1091,15 +1179,7 @@ export function ProjectMaterialsPage() {
         return;
       }
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      // Revocar de inmediato cancela la descarga en algunos navegadores.
-      window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      downloadBlob(blob, fileName);
       toast.success(t('material.list.pdfDownloaded'));
     } catch {
       toast.error(t('material.errors.pdf'));
@@ -1117,13 +1197,73 @@ export function ProjectMaterialsPage() {
     }
   }
 
+  /**
+   * El CSV de la misma lista, para Excel o una planilla. Sin fotos ni
+   * costos, igual que el texto: son los mismos datos que el PDF.
+   */
+  async function handleDownloadCsv(rows: PurchaseRow[], kind: PurchaseListKind) {
+    const { purchaseFileName } = await import('@/lib/materials-pdf');
+    const now = new Date();
+    const numberFormat = new Intl.NumberFormat(i18n.language, {
+      useGrouping: false,
+      maximumFractionDigits: 4,
+    });
+    const csv = buildPurchaseCsv(rows, {
+      header: {
+        material: t('material.pdf.columnMaterial'),
+        quantity: t('material.pdf.columnQuantity'),
+        unit: t('material.export.columnUnit'),
+        supplier: t('material.pdf.columnSupplier'),
+        note: t('material.export.columnNote'),
+      },
+      unit: (unit) => t(`material.unit.${unit}`),
+      tag: t(EXPORT_COPY[kind].tag),
+      number: (value) => numberFormat.format(value),
+    });
+    downloadBlob(
+      new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+      purchaseFileName(projectData?.project.name ?? '', now, EXPORT_COPY[kind].filePrefix, 'csv'),
+    );
+    toast.success(t('material.export.csvDownloaded'));
+  }
+
+  /**
+   * Compartir el texto de la lista y, si el dispositivo lo permite, las fotos
+   * de los materiales: quien recibe ve de qué pieza se habla sin pedirla por
+   * WhatsApp. Cada foto lleva el nombre del material.
+   *
+   * Las fotos ya están bajadas (ver el efecto de arriba): en Safari compartir
+   * tiene que pasar dentro del gesto, y bajarlas acá lo dejaría afuera.
+   */
   async function handleShare(rows: PurchaseRow[], kind: PurchaseListKind) {
-    if (typeof navigator.share === 'function') {
-      try {
-        await navigator.share({ text: buildCopyText(rows, kind) });
-      } catch {
-        // El usuario canceló el share sheet — no es un error a mostrar.
+    if (typeof navigator.share !== 'function') return;
+    const data: ShareData = { text: buildCopyText(rows, kind) };
+
+    try {
+      const photos = await loadRowPhotos(rows, loadPhoto);
+      const taken = new Set<string>();
+      const files: File[] = [];
+      for (const row of rows) {
+        const original = photos.get(row.id);
+        if (!original || files.length >= MAX_SHARED_PHOTOS) continue;
+        const resized = await resizePhoto(original, SHARE_PHOTO);
+        files.push(new File([resized.blob], photoFileName(row.name, taken), { type: 'image/jpeg' }));
       }
+      if (
+        files.length > 0 &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files })
+      ) {
+        data.files = files;
+      }
+    } catch {
+      // Sin fotos se comparte el texto: es la lista de siempre.
+    }
+
+    try {
+      await navigator.share(data);
+    } catch {
+      // El usuario canceló el share sheet — no es un error a mostrar.
     }
   }
 
@@ -1145,6 +1285,7 @@ export function ProjectMaterialsPage() {
         onAction={setPendingBulk}
         onInvoice={canInvoice ? () => setInvoicing(selectedMaterials) : undefined}
         onDownloadPdf={() => void handleDownloadPdf(selectedRows, selectedKind)}
+        onDownloadCsv={() => void handleDownloadCsv(selectedRows, selectedKind)}
         onCopy={() => void handleCopy(selectedRows, selectedKind)}
         onShare={() => void handleShare(selectedRows, selectedKind)}
         onClear={clearSelection}
@@ -1224,6 +1365,7 @@ export function ProjectMaterialsPage() {
                 generatingPdf={generatingPdf}
                 canShare={canShare}
                 onDownloadPdf={() => void handleDownloadPdf(purchaseRows, 'toBuy')}
+                onDownloadCsv={() => void handleDownloadCsv(purchaseRows, 'toBuy')}
                 onCopy={() => void handleCopy(purchaseRows, 'toBuy')}
                 onShare={() => void handleShare(purchaseRows, 'toBuy')}
               />
@@ -1273,6 +1415,7 @@ export function ProjectMaterialsPage() {
                     generatingPdf={generatingPdf}
                     canShare={canShare}
                     onDownloadPdf={() => void handleDownloadPdf(boughtRows, 'bought')}
+                    onDownloadCsv={() => void handleDownloadCsv(boughtRows, 'bought')}
                     onCopy={() => void handleCopy(boughtRows, 'bought')}
                     onShare={() => void handleShare(boughtRows, 'bought')}
                   />

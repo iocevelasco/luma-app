@@ -17,6 +17,7 @@ import { MATERIAL_PHOTO_MIME_TO_EXTENSION } from '../middleware/material-photo-u
 import { visibleProviderFilter } from '../services/directory.service.js';
 import {
   deleteObject,
+  readObject,
   signObjectUrl,
   StorageNotConfiguredError,
   uploadMaterialPhoto as storeMaterialPhoto,
@@ -391,6 +392,40 @@ export const uploadMaterialPhoto = wrap(async (req, res) => {
     success: true,
     data: { material: toMaterialDTO(material, true, await signedPhotoUrl(material)) },
   });
+});
+
+/**
+ * Requiere `requireProjectAccess` + `requireCapability('material.read')`. Los
+ * bytes de la foto, servidos por la API: la lista de compras exportada (PDF y
+ * compartir) la dibuja en el navegador, y una URL firmada de otro dominio no
+ * se puede leer ahí. Pasa por el mismo permiso que la lista: quien ve el
+ * material ve su foto, y nadie más.
+ */
+export const getMaterialPhoto = wrap(async (req, res) => {
+  const project = req.project as IProject;
+  const material = await MaterialItem.findOne({
+    _id: req.params.materialId,
+    project: project._id,
+  });
+  if (!material?.photo) throw notFound('Ese material no tiene foto.');
+
+  let file;
+  try {
+    file = await readObject(material.photo.key);
+  } catch (error) {
+    if (error instanceof StorageNotConfiguredError) {
+      throw serviceUnavailable('La carga de fotos todavía no está configurada en este entorno.');
+    }
+    throw error;
+  }
+  if (!file) throw notFound('Ese material no tiene foto.');
+
+  // La foto cambia sólo si se reemplaza, y el navegador la pide con su
+  // `updatedAt` en la caché propia de la pantalla: acá alcanza con no
+  // compartirla entre usuarios.
+  res.set('Cache-Control', 'private, max-age=300');
+  res.type(material.photo.contentType);
+  return res.send(file.buffer);
 });
 
 /** Requiere `requireProjectAccess` + `requireCapability('material.write')`. Idempotente. */

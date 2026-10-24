@@ -17,6 +17,7 @@ import {
   deleteMaterial,
   deleteMaterialInvoice,
   deleteMaterialPhoto,
+  getMaterialPhoto,
   listMaterials,
   updateMaterial,
   uploadMaterialPhoto,
@@ -52,6 +53,7 @@ materialRouter.delete(
   deleteMaterialInvoice,
 );
 // La foto no pasa por `isMaterialEditable`: documentar no es corregir.
+materialRouter.get('/:materialId/photo', requireCapability('material.read'), getMaterialPhoto);
 materialRouter.post(
   '/:materialId/photo',
   requireCapability('material.write'),

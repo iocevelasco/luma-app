@@ -29,6 +29,7 @@ vi.mock('../../services/storage.service.js', () => ({
   signObjectUrl: vi.fn(),
   deleteObject: vi.fn(),
   uploadMaterialPhoto: vi.fn(),
+  readObject: vi.fn(),
   uploadProjectDocument: vi.fn(),
   StorageNotConfiguredError: class StorageNotConfiguredError extends Error {},
 }));
@@ -39,6 +40,7 @@ const {
   bulkDeleteMaterials,
   deleteMaterial,
   deleteMaterialPhoto,
+  getMaterialPhoto,
   listMaterials,
   uploadMaterialPhoto,
 } = await import('../../controllers/material.controller.js');
@@ -59,6 +61,9 @@ function mockRes(): Response {
   const res = {} as Response;
   res.status = vi.fn().mockReturnValue(res);
   res.json = vi.fn().mockReturnValue(res);
+  res.set = vi.fn().mockReturnValue(res);
+  res.type = vi.fn().mockReturnValue(res);
+  res.send = vi.fn().mockReturnValue(res);
   return res;
 }
 const body = (res: Response) =>
@@ -311,5 +316,51 @@ describe('borrar un material borra su foto', () => {
 
     expect(storage.deleteObject).toHaveBeenCalledTimes(1);
     expect(storage.deleteObject).toHaveBeenCalledWith('k1');
+  });
+});
+
+describe('getMaterialPhoto', () => {
+  it('sirve los bytes con el tipo de la foto y sin compartirla entre usuarios', async () => {
+    const bytes = Buffer.from('jpeg');
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(stored({ photo: PHOTO }) as never);
+    vi.mocked(storage.readObject).mockResolvedValue({ buffer: bytes, contentType: 'image/jpeg' });
+    const res = mockRes();
+
+    await getMaterialPhoto(req(), res, mockNext());
+
+    expect(MaterialItem.findOne).toHaveBeenCalledWith({ _id: 'm1', project: 'project-1' });
+    expect(storage.readObject).toHaveBeenCalledWith('old-key');
+    expect(res.type).toHaveBeenCalledWith('image/jpeg');
+    expect(res.set).toHaveBeenCalledWith('Cache-Control', 'private, max-age=300');
+    expect(res.send).toHaveBeenCalledWith(bytes);
+  });
+
+  it('un material sin foto es 404 y no va al storage', async () => {
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(stored() as never);
+    const next = mockNext();
+
+    await getMaterialPhoto(req(), mockRes(), next);
+
+    expect(thrownBy(next).status).toBe(404);
+    expect(storage.readObject).not.toHaveBeenCalled();
+  });
+
+  it('un material de otra obra es 404', async () => {
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(null as never);
+    const next = mockNext();
+
+    await getMaterialPhoto(req(), mockRes(), next);
+
+    expect(thrownBy(next).status).toBe(404);
+  });
+
+  it('si el archivo ya no está en el storage, es 404', async () => {
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(stored({ photo: PHOTO }) as never);
+    vi.mocked(storage.readObject).mockResolvedValue(null);
+    const next = mockNext();
+
+    await getMaterialPhoto(req(), mockRes(), next);
+
+    expect(thrownBy(next).status).toBe(404);
   });
 });

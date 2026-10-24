@@ -454,7 +454,9 @@
       "deleteTitle": "Excluir esta nota fiscal?",
       "deleteBody": "Exclui «{{name}}» e o gasto em Finanças. Os materiais continuam como comprados.",
       "openMenu_one": "Nota fiscal de {{name}}",
-      "openMenu_other": "{{count}} notas fiscais de {{name}}"
+      "openMenu_other": "{{count}} notas fiscais de {{name}}",
+      "tooltip_one": "Ver nota fiscal",
+      "tooltip_other": "Ver {{count}} notas fiscais"
     },
     "provider": {
       "placeholder": "Escolha ou digite um fornecedor",
@@ -533,6 +535,16 @@
       "open": "Ver a foto de {{name}}",
       "previewAlt": "Foto escolhida do material"
     },
+    "export": {
+      "download": "Baixar",
+      "pdf": "PDF",
+      "pdfHint": "Para imprimir ou enviar. Inclui as fotos.",
+      "csv": "CSV",
+      "csvHint": "Para abrir no Excel ou em uma planilha.",
+      "csvDownloaded": "CSV baixado",
+      "columnUnit": "Unidade",
+      "columnNote": "Observação"
+    },
     "bulk": {
       "toolbar": "Ações para os materiais selecionados",
       "select": "Selecionar {{name}}",
@@ -568,7 +580,8 @@
       "columnMaterial": "Material",
       "columnQuantity": "Quantidade",
       "columnSupplier": "Fornecedor",
-      "page": "Página {{page}} de {{total}}"
+      "page": "Página {{page}} de {{total}}",
+      "columnPhoto": "Foto"
     },
     "fields": {
       "name": "Nome",

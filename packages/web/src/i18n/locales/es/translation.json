@@ -454,7 +454,9 @@
       "deleteTitle": "¿Eliminar esta factura?",
       "deleteBody": "Se elimina «{{name}}» y su gasto en Finanzas. Los materiales siguen como comprados.",
       "openMenu_one": "Factura de {{name}}",
-      "openMenu_other": "{{count}} facturas de {{name}}"
+      "openMenu_other": "{{count}} facturas de {{name}}",
+      "tooltip_one": "Ver factura",
+      "tooltip_other": "Ver {{count}} facturas"
     },
     "provider": {
       "placeholder": "Elegí o escribí un proveedor",
@@ -533,6 +535,16 @@
       "open": "Ver la foto de {{name}}",
       "previewAlt": "Foto elegida del material"
     },
+    "export": {
+      "download": "Descargar",
+      "pdf": "PDF",
+      "pdfHint": "Para imprimir o mandar. Lleva las fotos.",
+      "csv": "CSV",
+      "csvHint": "Para abrir en Excel o en una planilla.",
+      "csvDownloaded": "CSV descargado",
+      "columnUnit": "Unidad",
+      "columnNote": "Nota"
+    },
     "bulk": {
       "toolbar": "Acciones para los materiales seleccionados",
       "select": "Seleccionar {{name}}",
@@ -568,7 +580,8 @@
       "columnMaterial": "Material",
       "columnQuantity": "Cantidad",
       "columnSupplier": "Proveedor",
-      "page": "Página {{page}} de {{total}}"
+      "page": "Página {{page}} de {{total}}",
+      "columnPhoto": "Foto"
     },
     "fields": {
       "name": "Nombre",

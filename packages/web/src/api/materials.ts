@@ -53,6 +53,10 @@ export const materialsApi = {
     );
   },
 
+  /** Los bytes de la foto, servidos por la API (la URL firmada es de otro dominio y no se puede dibujar). */
+  photo: (projectId: string, materialId: string) =>
+    apiClient.getBlob(`/api/projects/${projectId}/materials/${materialId}/photo`),
+
   removePhoto: (projectId: string, materialId: string) =>
     unwrap<MaterialResponse>(
       apiClient.delete(`/api/projects/${projectId}/materials/${materialId}/photo`),

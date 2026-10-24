@@ -15,6 +15,7 @@ export enum QueryKeys {
   organizationMembers = 'organization-members',
   activities = 'activities',
   materials = 'materials',
+  materialPhoto = 'material-photo',
   laborRecords = 'labor-records',
   budget = 'budget',
   providers = 'providers',
