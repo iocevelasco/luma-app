@@ -60,6 +60,12 @@ export interface Project {
    * por qué, pero rara vez es una decisión contacto por contacto.
    */
   providersVisibleToClient: boolean;
+  /**
+   * Si el cliente ve Compras: lo cargado, cuánto costó y las facturas. Para
+   * las obras que se cobran por porcentaje de ejecución, donde el cliente
+   * tiene derecho a ver en qué se gasta. Lo cambia sólo el gerente.
+   */
+  purchasesVisibleToClient: boolean;
   createdAt: string;
   updatedAt: string;
 }

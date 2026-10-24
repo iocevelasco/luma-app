@@ -27,6 +27,7 @@ export interface IProject extends Document {
    */
   archivedAt: Date | null;
   providersVisibleToClient: boolean;
+  purchasesVisibleToClient: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +54,8 @@ const projectSchema = new Schema<IProject>(
     // habilite — la regla 4 del documento (nada de información operativa
     // interna) es el default, y esto es la excepción explícita.
     providersVisibleToClient: { type: Boolean, default: false },
+    // Mismo criterio: cerrado por defecto, el gerente lo abre.
+    purchasesVisibleToClient: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

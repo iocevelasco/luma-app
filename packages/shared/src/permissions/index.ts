@@ -88,6 +88,9 @@ export type Capability =
   // Materiales y herramientas
   | 'material.read'
   | 'material.write'
+  // Cuánto costó cada compra. Va aparte de `material.read` porque ver qué
+  // falta comprar no es ver cuánto se pagó.
+  | 'material.cost.read'
   // Facturas de materiales: un gasto acotado. Quien las tiene carga y ve las
   // facturas de lo que compró, pero no Finanzas ni el total gastado.
   | 'material.invoice.read'
@@ -147,8 +150,9 @@ export type Capability =
  *
  * El cliente tiene `provider.read` en la grilla, pero esa capacidad además
  * pasa por el flag `providersVisibleToClient` de la obra — ver
- * `canInProject()`. Es el único permiso que depende de la obra y no sólo del
- * rol, y por eso es el único con una excepción escrita.
+ * `canInProject()`. Compras (`material.*` de lectura) funciona igual con
+ * `purchasesVisibleToClient`. Son los únicos permisos que dependen de la obra
+ * y no sólo del rol, y por eso los únicos con una excepción escrita.
  */
 export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = {
   gerente: [
@@ -170,6 +174,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'activity.evidence.write',
     'material.read',
     'material.write',
+    'material.cost.read',
     'material.invoice.read',
     'material.invoice.write',
     'milestone.read',
@@ -195,6 +200,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'activity.evidence.write',
     'material.read',
     'material.write',
+    'material.cost.read',
     // Carga la factura de lo que compró. Sin `expense.*`: no ve Finanzas, ni
     // cobros, así que tampoco puede calcular el margen.
     'material.invoice.read',
@@ -237,17 +243,30 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'milestone.read',
     'document.read',
     'provider.read',
+    // Compras, con sus costos y facturas: sólo si el gerente lo habilita en
+    // la obra (`purchasesVisibleToClient`). Se usa cuando el cliente paga
+    // por porcentaje de ejecución y tiene que poder ver en qué se gasta.
+    'material.read',
+    'material.cost.read',
+    'material.invoice.read',
   ],
 } as const;
 
 /** Capacidades que además dependen de un flag de la obra, no sólo del rol. */
-const CLIENT_GATED_BY_PROJECT_FLAG: Partial<Record<Capability, 'providersVisibleToClient'>> = {
+const CLIENT_GATED_BY_PROJECT_FLAG: Partial<
+  Record<Capability, 'providersVisibleToClient' | 'purchasesVisibleToClient'>
+> = {
   'provider.read': 'providersVisibleToClient',
+  'material.read': 'purchasesVisibleToClient',
+  'material.cost.read': 'purchasesVisibleToClient',
+  'material.invoice.read': 'purchasesVisibleToClient',
 };
 
 /** Lo que de la obra necesita saber `canInProject` para resolver las excepciones. */
 export interface ProjectCapabilityContext {
   providersVisibleToClient: boolean;
+  /** Ausente cuenta como `false`: negar por no saber. */
+  purchasesVisibleToClient?: boolean;
 }
 
 /**

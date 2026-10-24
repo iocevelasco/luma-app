@@ -284,3 +284,34 @@ describe('modo sólo lectura (suscripción vencida)', () => {
   });
 });
 
+
+describe('compras visibles para el cliente', () => {
+  const OPEN = { providersVisibleToClient: false, purchasesVisibleToClient: true };
+  const purchases: Capability[] = ['material.read', 'material.cost.read', 'material.invoice.read'];
+
+  it('cerradas por defecto: sin el flag el cliente no ve compras', () => {
+    for (const capability of purchases) {
+      expect(canInProject('cliente', capability)).toBe(false);
+      expect(canInProject('cliente', capability, VISIBLE)).toBe(false);
+      expect(canInProject('cliente', capability, HIDDEN)).toBe(false);
+    }
+  });
+
+  it('con el flag ve compras, costos y facturas, pero no las modifica', () => {
+    for (const capability of purchases) {
+      expect(canInProject('cliente', capability, OPEN)).toBe(true);
+    }
+    expect(canInProject('cliente', 'material.write', OPEN)).toBe(false);
+    expect(canInProject('cliente', 'material.invoice.write', OPEN)).toBe(false);
+  });
+
+  it('abrir compras no le da Finanzas: gastos y presupuesto siguen cerrados', () => {
+    expect(canInProject('cliente', 'expense.read', OPEN)).toBe(false);
+    expect(canInProject('cliente', 'budget.read', OPEN)).toBe(false);
+  });
+
+  it('el flag no cambia lo de los demás roles', () => {
+    expect(canInProject('supervisor', 'material.cost.read')).toBe(true);
+    expect(canInProject('contador', 'material.read', OPEN)).toBe(false);
+  });
+});

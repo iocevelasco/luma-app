@@ -105,10 +105,11 @@ export const createProjectSchema = z
 
 /**
  * Ajustes de una obra ya creada. Parcial a propósito: hoy sólo se toca la
- * visibilidad de proveedores, y el resto de la ficha se edita al crearla.
+ * visibilidad de proveedores y de compras, y el resto de la ficha se edita al crearla.
  */
 export const updateProjectSchema = z.object({
   providersVisibleToClient: z.boolean().optional(),
+  purchasesVisibleToClient: z.boolean().optional(),
 });
 
 export const inviteClientSchema = z.object({

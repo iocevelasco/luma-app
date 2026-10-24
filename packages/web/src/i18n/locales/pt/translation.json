@@ -117,6 +117,8 @@
       "gantt": "Cronograma de tarefas",
       "providersVisibleToClient": "O cliente vê os fornecedores",
       "providersVisibleToClientHint": "Se ativar, o cliente vê o diretório desta obra e quem está atribuído a cada tarefa.",
+      "purchasesVisibleToClient": "O cliente vê as compras",
+      "purchasesVisibleToClientHint": "Se ativar, o cliente vê em Compras o que foi lançado, quanto custou e as notas fiscais. Pensado para obras cobradas por percentual de execução.",
       "settingsSaved": "Ajuste salvo",
       "team": "Equipe da obra",
       "memberInvited": "Acesso concedido"

@@ -139,7 +139,7 @@ async function activityBelongsToProject(
 /** Requiere `requireProjectAccess` antes. */
 export const listMaterials = wrap(async (req, res) => {
   const project = req.project as IProject;
-  const viewerCanSeeDetail = Boolean(req.can?.('material.write'));
+  const viewerCanSeeDetail = Boolean(req.can?.('material.cost.read'));
   const materials = await MaterialItem.find({ project: project._id })
     .populate('provider', PROVIDER_FIELDS)
     .sort({ createdAt: -1 });
