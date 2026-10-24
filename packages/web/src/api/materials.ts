@@ -44,6 +44,20 @@ export const materialsApi = {
       apiClient.patch(`/api/projects/${projectId}/materials/bulk`, payload),
     ),
 
+  /** Multipart: la foto va en `photo`. Agrega o reemplaza. */
+  uploadPhoto: (projectId: string, materialId: string, photo: File) => {
+    const formData = new FormData();
+    formData.append('photo', photo);
+    return unwrap<MaterialResponse>(
+      apiClient.post(`/api/projects/${projectId}/materials/${materialId}/photo`, formData),
+    );
+  },
+
+  removePhoto: (projectId: string, materialId: string) =>
+    unwrap<MaterialResponse>(
+      apiClient.delete(`/api/projects/${projectId}/materials/${materialId}/photo`),
+    ),
+
   /** Multipart: el archivo de la factura va en `receipt`, como en el alta de gasto. */
   createInvoice: (projectId: string, payload: CreateMaterialInvoiceInput, receipt: File) => {
     const formData = new FormData();

@@ -172,6 +172,28 @@ export async function uploadEvidencePhoto(
 export const deleteEvidencePhoto = deleteObject;
 export const signEvidencePhotoUrl = signObjectUrl;
 
+// ── Foto de referencia de un material ──────────────────────────────────────
+
+export interface UploadMaterialPhotoParams {
+  projectId: string;
+  materialId: string;
+  buffer: Buffer;
+  contentType: string;
+  /** Con el punto incluido, ej. `.jpg`. */
+  extension: string;
+}
+
+/** Prefijo propio: se distingue de la evidencia de avance en el media-service. */
+export async function uploadMaterialPhoto(
+  params: UploadMaterialPhotoParams,
+): Promise<{ key: string }> {
+  return putObject({
+    fileName: `material-${params.projectId}-${params.materialId}-${randomUUID()}${params.extension}`,
+    buffer: params.buffer,
+    contentType: params.contentType,
+  });
+}
+
 // ── Documentación de obra: permisos, planos y renders ───────────────────────
 
 export interface UploadProjectDocumentParams {

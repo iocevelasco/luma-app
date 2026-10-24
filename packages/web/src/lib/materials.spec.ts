@@ -32,6 +32,7 @@ function material(
     statusChangedAt: changedAt,
     editable: false,
     providerId: null,
+    photoUrl: null,
     createdBy: 'u1',
     createdAt: changedAt,
     updatedAt: changedAt,

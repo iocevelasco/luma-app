@@ -518,6 +518,21 @@
       "onSiteTag": "ya en obra",
       "noSupplier": "Sin proveedor"
     },
+    "photo": {
+      "label": "Foto",
+      "hint": "Para que quien compra y el vendedor sepan cuál es la pieza, aunque la llamen distinto.",
+      "add": "Añadir foto",
+      "change": "Cambiar foto",
+      "remove": "Quitar foto",
+      "removeTitle": "¿Quitar la foto?",
+      "removeBody": "Se borra la foto de {{name}}. Puedes subir otra cuando quieras.",
+      "saved": "Foto guardada",
+      "removed": "Foto quitada",
+      "tooLarge": "La foto pesa más de 8 MB. Hazla de nuevo o elige una más ligera.",
+      "unsupported": "Formato no soportado. Usa una foto .jpg, .png o .webp.",
+      "open": "Ver la foto de {{name}}",
+      "previewAlt": "Foto elegida del material"
+    },
     "bulk": {
       "toolbar": "Acciones para los materiales seleccionados",
       "select": "Seleccionar {{name}}",

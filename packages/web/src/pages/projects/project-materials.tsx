@@ -4,8 +4,10 @@ import { differenceInCalendarDays, format } from 'date-fns';
 import {
   ArrowRight,
   CalendarClock,
+  Camera,
   Copy,
   FileDown,
+  ImageOff,
   Link2,
   MoreHorizontal,
   Package,
@@ -32,6 +34,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { fromDayKey } from '@/components/common/date-range-filter';
 import { MaterialDrawer } from '@/components/materials/material-drawer';
+import { MaterialPhotoThumb, useValidMaterialPhoto } from '@/components/materials/material-photo';
 import { MaterialInvoiceDialog } from '@/components/materials/material-invoice-dialog';
 import { ProviderCombobox } from '@/components/materials/provider-combobox';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
@@ -66,8 +69,11 @@ import {
   useDeleteMaterial,
   useDeleteMaterialInvoice,
   useMaterials,
+  useRemoveMaterialPhoto,
   useUpdateMaterial,
+  useUploadMaterialPhoto,
 } from '@/hooks/materials/use-material-queries';
+import { MATERIAL_PHOTO_ACCEPT } from '@/lib/material-photo';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
@@ -274,6 +280,12 @@ function MaterialRow({
   const { t } = useTranslation();
   const updateMaterial = useUpdateMaterial(projectId);
   const [pendingStatus, setPendingStatus] = useState<MaterialStatus | null>(null);
+  // La foto se agrega o saca en cualquier estado: no es corregir el material.
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const uploadPhoto = useUploadMaterialPhoto(projectId);
+  const removePhoto = useRemoveMaterialPhoto(projectId);
+  const validPhoto = useValidMaterialPhoto();
+  const [confirmingPhotoRemoval, setConfirmingPhotoRemoval] = useState(false);
   const next = NEXT_MATERIAL_STATUS[material.status];
   const rowRef = useRef<HTMLLIElement>(null);
   const supplier = supplierName(material);
@@ -295,6 +307,7 @@ function MaterialRow({
             onChange={(checked) => selection.onSetMany([material.id], checked)}
           />
         )}
+        {material.photoUrl && <MaterialPhotoThumb url={material.photoUrl} name={material.name} />}
         <div className="min-w-0">
           <p className="font-medium">{material.name}</p>
           <p className="text-xs text-muted-foreground">
@@ -445,6 +458,25 @@ function MaterialRow({
               )}
 
               <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="max-sm:min-h-11"
+                onSelect={() => photoInputRef.current?.click()}
+              >
+                <Camera className="size-4" />
+                {t(material.photoUrl ? 'material.photo.change' : 'material.photo.add')}
+              </DropdownMenuItem>
+              {material.photoUrl && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="max-sm:min-h-11"
+                  onSelect={() => setConfirmingPhotoRemoval(true)}
+                >
+                  <ImageOff className="size-4" />
+                  {t('material.photo.remove')}
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator />
               {material.editable ? (
                 <>
                   <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onEdit(material)}>
@@ -499,6 +531,41 @@ function MaterialRow({
               }}
             >
               {t('common.continue')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {canEdit && (
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept={MATERIAL_PHOTO_ACCEPT}
+          className="hidden"
+          onChange={(event) => {
+            const file = validPhoto(event.target.files?.[0]);
+            // Permite volver a elegir el mismo archivo después de un rechazo.
+            event.target.value = '';
+            if (file) uploadPhoto.mutate({ materialId: material.id, file });
+          }}
+        />
+      )}
+
+      <AlertDialog open={confirmingPhotoRemoval} onOpenChange={setConfirmingPhotoRemoval}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('material.photo.removeTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('material.photo.removeBody', { name: material.name })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => removePhoto.mutate(material.id)}
+            >
+              {t('material.photo.remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

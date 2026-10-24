@@ -4,6 +4,7 @@ import { editMaterialSchema, type EditMaterialInput, type MaterialItem } from '@
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { FormDrawer } from '@/components/common/form-drawer';
+import { MaterialPhotoField } from '@/components/materials/material-photo';
 import { ProviderCombobox } from '@/components/materials/provider-combobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,12 @@ import {
 } from '@/components/ui/select';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import { QuickProviderDialog } from '@/components/providers/quick-provider-dialog';
-import { useCreateMaterial, useEditMaterial } from '@/hooks/materials/use-material-queries';
+import {
+  useCreateMaterial,
+  useEditMaterial,
+  useRemoveMaterialPhoto,
+  useUploadMaterialPhoto,
+} from '@/hooks/materials/use-material-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { isApiError } from '@/lib/api-client';
@@ -64,6 +70,12 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
   const createMaterial = useCreateMaterial(projectId);
   const editMaterial = useEditMaterial(projectId);
   const mutation = isEdit ? editMaterial : createMaterial;
+  const uploadPhoto = useUploadMaterialPhoto(projectId);
+  const removePhoto = useRemoveMaterialPhoto(projectId);
+  // La foto elegida espera al guardado: el material es lo que tiene id donde colgarla.
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
+  const photoDirty = photoFile !== null || photoRemoved;
   const { data: activitiesData } = useAllActivities(projectId);
   const { data: providersData } = useProviders(projectId);
   const canCreateProvider = useProjectCapabilities(projectId).can('provider.create');
@@ -92,6 +104,8 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
     // Un error de este intento no tiene que reaparecer en la próxima apertura.
     createMaterial.reset();
     editMaterial.reset();
+    setPhotoFile(null);
+    setPhotoRemoved(false);
     onOpenChange(false);
     if (!isEdit) reset();
   }
@@ -104,12 +118,12 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
         else close();
       }}
       title={isEdit ? t('material.list.editTitle') : t('material.list.newTitle')}
-      fieldCount={6}
+      fieldCount={7}
       submitLabel={isEdit ? t('material.list.editSubmit') : t('material.list.newSubmit')}
       isSubmitting={mutation.isPending}
       // Al editar, guardar queda apagado hasta que haya algo que guardar — y
       // también después de un bloqueo: reintentar devolvería lo mismo.
-      isDirty={isEdit ? isDirty && !locked : undefined}
+      isDirty={isEdit ? (isDirty || photoDirty) && !locked : undefined}
       error={mutation.error}
       errorActions={
         locked ? (
@@ -119,7 +133,20 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
         ) : undefined
       }
       onSubmit={handleSubmit((values) => {
+        // Lo de la foto va después de guardar, y si falla avisa por su cuenta
+        // (toast): el material ya quedó guardado y repetirlo sería duplicarlo.
+        const savePhoto = (materialId: string) => {
+          if (photoFile) uploadPhoto.mutate({ materialId, file: photoFile });
+          else if (photoRemoved) removePhoto.mutate(materialId);
+        };
         if (material) {
+          // Sólo cambió la foto: no se reenvía el material, que además podría
+          // estar bloqueado por haber salido de Pendiente.
+          if (!isDirty) {
+            savePhoto(material.id);
+            close();
+            return;
+          }
           // El proveedor viaja sólo si cambió: reenviar el mismo haría que la
           // API lo valide otra vez, y uno dado de baja frenaría corregir la
           // cantidad. Con uno vinculado, el texto no viaja: lo borra la API.
@@ -133,7 +160,12 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
                 supplier: values.providerId ? undefined : values.supplier,
               },
             },
-            { onSuccess: close },
+            {
+              onSuccess: () => {
+                savePhoto(material.id);
+                close();
+              },
+            },
           );
           return;
         }
@@ -145,7 +177,12 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
             providerId: values.providerId || undefined,
             supplier: values.providerId ? undefined : values.supplier || undefined,
           },
-          { onSuccess: close },
+          {
+            onSuccess: ({ material: created }) => {
+              savePhoto(created.id);
+              close();
+            },
+          },
         );
       })}
     >
@@ -267,6 +304,20 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
           )}
         </div>
 
+        <MaterialPhotoField
+          currentUrl={material?.photoUrl}
+          file={photoFile}
+          removed={photoRemoved}
+          onPick={(file) => {
+            setPhotoFile(file);
+            setPhotoRemoved(false);
+          }}
+          onRemove={() => {
+            setPhotoFile(null);
+            // Sólo hay algo que sacar en el servidor si el material ya tenía foto.
+            setPhotoRemoved(Boolean(material?.photoUrl));
+          }}
+        />
       </div>
     </FormDrawer>
   );

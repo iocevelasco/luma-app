@@ -2,6 +2,10 @@ import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
 import {
+  handleMaterialPhotoUploadError,
+  materialPhotoUpload,
+} from '../middleware/material-photo-upload.middleware.js';
+import {
   handleReceiptUploadError,
   receiptUpload,
 } from '../middleware/receipt-upload.middleware.js';
@@ -12,16 +16,17 @@ import {
   createMaterialInvoice,
   deleteMaterial,
   deleteMaterialInvoice,
+  deleteMaterialPhoto,
   listMaterials,
   updateMaterial,
+  uploadMaterialPhoto,
 } from '../controllers/index.js';
 
 /**
  * Anidado bajo `/api/projects/:projectId/materials` — ver routes/project.ts.
  * `material.write`: el supervisor registra materiales y herramientas, es el
- * principal generador de datos del sistema. La lectura es interna — las
- * "fotos de compras" que la matriz le promete al cliente son otra superficie,
- * todavía sin construir, y no este inventario.
+ * principal generador de datos del sistema. La lectura es interna, salvo que
+ * el gerente se la abra al cliente (`purchasesVisibleToClient`).
  */
 export const materialRouter = Router({ mergeParams: true });
 
@@ -46,6 +51,15 @@ materialRouter.delete(
   requireCapability('material.invoice.write'),
   deleteMaterialInvoice,
 );
+// La foto no pasa por `isMaterialEditable`: documentar no es corregir.
+materialRouter.post(
+  '/:materialId/photo',
+  requireCapability('material.write'),
+  materialPhotoUpload.single('photo'),
+  handleMaterialPhotoUploadError,
+  uploadMaterialPhoto,
+);
+materialRouter.delete('/:materialId/photo', requireCapability('material.write'), deleteMaterialPhoto);
 materialRouter.patch('/:materialId', requireCapability('material.write'), updateMaterial);
 materialRouter.delete('/:materialId', requireCapability('material.write'), deleteMaterial);
 

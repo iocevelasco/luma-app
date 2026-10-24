@@ -97,6 +97,39 @@ export function useEditMaterial(projectId: string) {
   });
 }
 
+/**
+ * Subir o cambiar la foto. Sin formulario propio —sale del drawer una vez
+ * guardado el material, o del menú de la fila—, así que la falla va por toast.
+ */
+export function useUploadMaterialPhoto(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: ({ materialId, file }: { materialId: string; file: File }) =>
+      materialsApi.uploadPhoto(projectId, materialId, file),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      toast.success(t('material.photo.saved'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
+export function useRemoveMaterialPhoto(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (materialId: string) => materialsApi.removePhoto(projectId, materialId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      toast.success(t('material.photo.removed'));
+    },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
 export function useDeleteMaterial(projectId: string) {
   const queryClient = useQueryClient();
   const { t } = useTranslation();

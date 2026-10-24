@@ -13,12 +13,20 @@ import { invoicesByMaterial } from './material-invoice.controller.js';
 import { MaterialItem, type IMaterialItem } from '../models/MaterialItem.js';
 import type { IProject } from '../models/Project.js';
 import { Provider, type IProvider } from '../models/Provider.js';
+import { MATERIAL_PHOTO_MIME_TO_EXTENSION } from '../middleware/material-photo-upload.middleware.js';
 import { visibleProviderFilter } from '../services/directory.service.js';
+import {
+  deleteObject,
+  signObjectUrl,
+  StorageNotConfiguredError,
+  uploadMaterialPhoto as storeMaterialPhoto,
+} from '../services/storage.service.js';
 import {
   badRequest,
   materialLocked,
   materialsLocked,
   notFound,
+  serviceUnavailable,
   unauthenticated,
 } from '../utils/errors.js';
 
@@ -102,7 +110,11 @@ function formalizesSupplier(material: IMaterialItem, provider: IProvider): boole
  * quien lo carga. El resto del ítem sí es visible para todos: cantidad y
  * estado son lo que necesita el cliente para entender qué falta.
  */
-function toMaterialDTO(material: IMaterialItem, viewerCanSeeDetail: boolean): MaterialDTO {
+function toMaterialDTO(
+  material: IMaterialItem,
+  viewerCanSeeDetail: boolean,
+  photoUrl: string | null = null,
+): MaterialDTO {
   return {
     id: String(material._id),
     projectId: String(material.project),
@@ -115,12 +127,37 @@ function toMaterialDTO(material: IMaterialItem, viewerCanSeeDetail: boolean): Ma
     statusChangedAt: material.statusChangedAt ? material.statusChangedAt.toISOString() : undefined,
     editable: isMaterialEditable(material),
     estimatedCost: viewerCanSeeDetail ? material.estimatedCost : undefined,
+    photoUrl,
     ...providerFields(material),
     supplier: material.supplier,
     createdBy: String(material.createdBy),
     createdAt: material.createdAt.toISOString(),
     updatedAt: material.updatedAt.toISOString(),
   };
+}
+
+/**
+ * La URL firmada de la foto, o `null`. Un media-service caído o un archivo que
+ * ya no está no tienen que voltear la lista de Compras entera: la fila sale
+ * sin foto.
+ */
+async function signedPhotoUrl(material: IMaterialItem): Promise<string | null> {
+  if (!material.photo) return null;
+  try {
+    return await signObjectUrl(material.photo.key);
+  } catch (error) {
+    console.error('❌ [MATERIAL] no se pudo firmar la foto:', error);
+    return null;
+  }
+}
+
+/** Borrar el archivo es limpieza: si falla, el material ya quedó bien y sólo sobra un archivo. */
+async function discardPhotoFile(key: string): Promise<void> {
+  try {
+    await deleteObject(key);
+  } catch (error) {
+    console.error('❌ [MATERIAL] no se pudo borrar la foto:', error);
+  }
 }
 
 /**
@@ -151,11 +188,13 @@ export const listMaterials = wrap(async (req, res) => {
     ? await invoicesByMaterial(req, project._id, materials.map((material) => String(material._id)))
     : null;
 
+  const photoUrls = await Promise.all(materials.map(signedPhotoUrl));
+
   return res.json({
     success: true,
     data: {
-      materials: materials.map((material) => ({
-        ...toMaterialDTO(material, viewerCanSeeDetail),
+      materials: materials.map((material, index) => ({
+        ...toMaterialDTO(material, viewerCanSeeDetail, photoUrls[index]),
         ...(invoices ? { invoices: invoices.get(String(material._id)) ?? [] } : {}),
       })),
     },
@@ -282,6 +321,96 @@ export const updateMaterial = wrap(async (req, res) => {
 
   // Exige una capacidad de escritura — quien la llama siempre puede ver el
   // detalle completo de lo que acaba de actualizar.
+  return res.json({
+    success: true,
+    data: { material: toMaterialDTO(material, true, await signedPhotoUrl(material)) },
+  });
+});
+
+/**
+ * Requiere `requireProjectAccess` + `requireCapability('material.write')`.
+ * Multipart con la foto en `photo`. Agrega o reemplaza, en cualquier estado:
+ * la foto llega a veces cuando el material ya se pidió (alguien la manda por
+ * WhatsApp), y bloquearla acá sería frenar justo el caso para el que existe.
+ */
+export const uploadMaterialPhoto = wrap(async (req, res) => {
+  if (!req.user) throw unauthenticated();
+
+  const file = req.file;
+  if (!file) throw badRequest('Falta la foto.');
+  const extension = MATERIAL_PHOTO_MIME_TO_EXTENSION[file.mimetype];
+  if (!extension) throw badRequest('Formato no soportado. Subí una foto .jpg, .png o .webp.');
+
+  const project = req.project as IProject;
+  const existing = await MaterialItem.findOne({
+    _id: req.params.materialId,
+    project: project._id,
+  });
+  if (!existing) throw notFound('No encontramos ese material.');
+
+  let key: string;
+  try {
+    ({ key } = await storeMaterialPhoto({
+      projectId: String(project._id),
+      materialId: String(existing._id),
+      buffer: file.buffer,
+      contentType: file.mimetype,
+      extension,
+    }));
+  } catch (error) {
+    if (error instanceof StorageNotConfiguredError) {
+      throw serviceUnavailable('La carga de fotos todavía no está configurada en este entorno.');
+    }
+    throw error;
+  }
+
+  const material = await MaterialItem.findOneAndUpdate(
+    { _id: existing._id, project: project._id },
+    {
+      $set: {
+        photo: {
+          key,
+          contentType: file.mimetype,
+          uploadedBy: req.user.sub,
+          uploadedAt: new Date(),
+        },
+      },
+    },
+    { new: true },
+  ).populate('provider', PROVIDER_FIELDS);
+
+  // Lo borraron entre la lectura y la escritura: la foto quedó sin dueño.
+  if (!material) {
+    await discardPhotoFile(key);
+    throw notFound('No encontramos ese material.');
+  }
+
+  if (existing.photo) await discardPhotoFile(existing.photo.key);
+
+  return res.status(201).json({
+    success: true,
+    data: { material: toMaterialDTO(material, true, await signedPhotoUrl(material)) },
+  });
+});
+
+/** Requiere `requireProjectAccess` + `requireCapability('material.write')`. Idempotente. */
+export const deleteMaterialPhoto = wrap(async (req, res) => {
+  const project = req.project as IProject;
+  const existing = await MaterialItem.findOne({
+    _id: req.params.materialId,
+    project: project._id,
+  });
+  if (!existing) throw notFound('No encontramos ese material.');
+
+  const material = await MaterialItem.findOneAndUpdate(
+    { _id: existing._id, project: project._id },
+    { $unset: { photo: '' } },
+    { new: true },
+  ).populate('provider', PROVIDER_FIELDS);
+  if (!material) throw notFound('No encontramos ese material.');
+
+  if (existing.photo) await discardPhotoFile(existing.photo.key);
+
   return res.json({ success: true, data: { material: toMaterialDTO(material, true) } });
 });
 
@@ -299,6 +428,8 @@ export const deleteMaterial = wrap(async (req, res) => {
   });
 
   if (!material) throw await whyNotFound(req.params.materialId, project._id);
+
+  if (material.photo) await discardPhotoFile(material.photo.key);
 
   return res.json({ success: true, data: { materialId: String(material._id) } });
 });
@@ -395,6 +526,20 @@ export const bulkDeleteMaterials = wrap(async (req, res) => {
   }
 
   await MaterialItem.deleteMany({ _id: { $in: ids }, project: project._id, ...EDITABLE_FILTER });
+
+  // Las fotos de los que de verdad se borraron: uno que se salvó por la
+  // ventana de arriba conserva la suya.
+  const withPhoto = materials.filter((material) => material.photo);
+  if (withPhoto.length > 0) {
+    const survivors = new Set(
+      (await MaterialItem.find({ _id: { $in: ids }, project: project._id }).distinct('_id')).map(String),
+    );
+    await Promise.all(
+      withPhoto
+        .filter((material) => !survivors.has(String(material._id)))
+        .map((material) => discardPhotoFile(material.photo!.key)),
+    );
+  }
 
   return res.json({ success: true, data: { materialIds: ids } });
 });

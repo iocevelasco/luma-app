@@ -28,6 +28,18 @@ export interface IMaterialItem extends Document {
   statusChangedBy?: mongoose.Types.ObjectId;
   statusChangedAt?: Date;
   estimatedCost?: number;
+  /**
+   * Una foto de referencia, para que quien compra y el vendedor sepan de qué
+   * pieza se habla. Se agrega, se cambia y se saca en cualquier estado: no es
+   * corregir el material, es documentarlo, así que no pasa por
+   * `isMaterialEditable`.
+   */
+  photo?: {
+    key: string;
+    contentType: string;
+    uploadedBy: mongoose.Types.ObjectId;
+    uploadedAt: Date;
+  } | null;
   provider?: mongoose.Types.ObjectId | null;
   supplier?: string;
   createdBy: mongoose.Types.ObjectId;
@@ -60,6 +72,18 @@ const materialItemSchema = new Schema<IMaterialItem>(
     statusChangedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     statusChangedAt: { type: Date },
     estimatedCost: { type: Number, min: 0 },
+    photo: {
+      type: new Schema(
+        {
+          key: { type: String, required: true },
+          contentType: { type: String, required: true },
+          uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+          uploadedAt: { type: Date, required: true },
+        },
+        { _id: false },
+      ),
+      default: undefined,
+    },
     provider: { type: Schema.Types.ObjectId, ref: 'Provider', default: null, index: true },
     supplier: { type: String, trim: true },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
