@@ -42,10 +42,26 @@ export interface IUser extends Document {
    */
   claimedViaLinkBy?: mongoose.Types.ObjectId;
 
+  /**
+   * Última aceptación de los Términos y la Política de Privacidad. Es el
+   * hecho; si "está al día" lo decide `hasAcceptedCurrentTerms` en shared.
+   * IP y user agent son la prueba de que la aceptación ocurrió: dato personal,
+   * declarado en la Política, y `select: false` para que no salgan en un find.
+   */
+  termsVersion?: string;
+  termsAcceptedAt?: Date;
+  termsAcceptedIp?: string;
+  termsAcceptedUserAgent?: string;
+
   enabled: boolean;
   account_status: AccountStatus;
   deactivated_at?: Date;
   deactivated_by?: mongoose.Types.ObjectId;
+  /**
+   * Cuándo se borraron sus datos personales (ver `account-purge.service.ts`).
+   * El documento queda: las obras, cobros y gastos que firmó lo referencian.
+   */
+  purgedAt?: Date;
 
   createdAt: Date;
   updatedAt: Date;
@@ -83,6 +99,11 @@ const userSchema = new Schema<IUser>(
     activationLinkHeldBy: { type: Schema.Types.ObjectId, ref: 'User' },
     claimedViaLinkBy: { type: Schema.Types.ObjectId, ref: 'User' },
 
+    termsVersion: { type: String },
+    termsAcceptedAt: { type: Date },
+    termsAcceptedIp: { type: String, select: false },
+    termsAcceptedUserAgent: { type: String, select: false },
+
     enabled: { type: Boolean, default: true },
     account_status: {
       type: String,
@@ -91,6 +112,7 @@ const userSchema = new Schema<IUser>(
     },
     deactivated_at: { type: Date },
     deactivated_by: { type: Schema.Types.ObjectId, ref: 'User' },
+    purgedAt: { type: Date },
   },
   { timestamps: true },
 );

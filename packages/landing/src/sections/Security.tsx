@@ -18,6 +18,9 @@ export function Security() {
         <h2 className="mt-6 max-w-2xl text-4xl leading-[1.1] tracking-tight text-foreground sm:text-5xl">
           {t('security.title')}
         </h2>
+        <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          {t('security.lead')}
+        </p>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2">
           {items.map((item, index) => {

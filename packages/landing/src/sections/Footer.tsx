@@ -1,6 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { Logo } from '../components/Logo';
-import { LOGIN_URL } from '../lib/app-url';
+import { LEGAL_URL, LOGIN_URL } from '../lib/app-url';
 
 const STUDIO_URL = 'https://www.instagram.com/ido.arquitectura/';
 
@@ -31,6 +31,9 @@ export function Footer() {
         </div>
 
         <div className="flex items-center gap-6">
+          <a href={LEGAL_URL} className="nav-label text-sm text-muted-foreground hover:text-foreground">
+            {t('footer.legal')}
+          </a>
           <a href={LOGIN_URL} className="nav-label text-sm text-muted-foreground hover:text-foreground">
             {t('nav.login')}
           </a>

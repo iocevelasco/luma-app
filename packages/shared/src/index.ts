@@ -1,6 +1,7 @@
 export * from './types/index.js';
 export * from './permissions/index.js';
 export * from './billing/index.js';
+export * from './legal/index.js';
 export * from './schemas/index.js';
 export * from './utils/crew.js';
 export * from './utils/environment.js';

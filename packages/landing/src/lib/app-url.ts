@@ -7,3 +7,5 @@ export const APP_URL = (import.meta.env.VITE_APP_URL ?? 'http://localhost:6173')
 
 export const LOGIN_URL = `${APP_URL}/login`;
 export const REGISTER_URL = `${APP_URL}/register`;
+/** Términos y Política de Privacidad: viven en la SPA, una sola fuente del texto. */
+export const LEGAL_URL = `${APP_URL}/legal`;

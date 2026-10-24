@@ -8,6 +8,7 @@ import type {
   LoginCredentials,
   RegisterCredentials,
   ResetPasswordRequest,
+  SetPasswordRequest,
 } from '@luma/shared';
 import { apiClient } from '@/lib/api-client';
 
@@ -57,13 +58,16 @@ export const authApi = {
 
   me: () => unwrap<{ user: AuthUser }>(apiClient.get('/api/auth/me')),
 
+  acceptTerms: () =>
+    unwrap<{ user: AuthUser }>(apiClient.post('/api/auth/accept-terms', { acceptedTerms: true })),
+
   forgotPassword: (payload: ForgotPasswordRequest) =>
     unwrapMessage(apiClient.post('/api/auth/forgot-password', payload, { skipAuth: true })),
 
   resetPassword: (payload: ResetPasswordRequest) =>
     unwrapMessage(apiClient.post('/api/auth/reset-password', payload, { skipAuth: true })),
 
-  setPassword: (payload: ResetPasswordRequest) =>
+  setPassword: (payload: SetPasswordRequest) =>
     unwrap<AuthResponse>(
       apiClient.post('/api/auth/set-password', payload, { skipAuth: true }),
     ),

@@ -25,6 +25,7 @@
     "seed:subscription-demo": "tsx src/scripts/seed-subscription-demo.ts",
     "subscription:reminders": "tsx src/scripts/send-subscription-reminders.ts",
     "projects:purge": "tsx src/scripts/purge-deleted-projects.ts",
+    "accounts:purge": "tsx src/scripts/purge-deactivated-accounts.ts",
     "email:preview": "tsx src/scripts/email-preview.ts"
   },
   "dependencies": {

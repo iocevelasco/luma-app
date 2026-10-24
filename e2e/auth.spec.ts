@@ -56,3 +56,30 @@ test.describe('reset de contraseña', () => {
     await expect(page.locator('#confirm')).toBeVisible();
   });
 });
+
+test.describe('términos y privacidad', () => {
+  test('el registro pide aceptar los Términos antes de crear la cuenta', async ({ page }) => {
+    await page.goto(appUrl('/register'));
+    await page.locator('#name').fill('Persona de Prueba');
+    await page.locator('#email').fill('terminos@luma.test');
+    await page.locator('#password').fill('Clave-de-prueba-123');
+    await page.locator('#confirmPassword').fill('Clave-de-prueba-123');
+    await page.getByRole('button', { name: /^crear cuenta$/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    const confirm = dialog.getByRole('button', { name: /aceptar y crear cuenta/i });
+    await expect(dialog.getByRole('checkbox')).not.toBeChecked();
+    await expect(confirm).toBeDisabled();
+
+    await dialog.getByRole('checkbox').check();
+    await expect(confirm).toBeEnabled();
+  });
+
+  test('el texto legal se lee sin tener cuenta', async ({ page }) => {
+    await page.goto(appUrl('/legal'));
+
+    await expect(page).toHaveURL(/\/legal$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByText(/no vendemos ni alquilamos/i).first()).toBeVisible();
+  });
+});

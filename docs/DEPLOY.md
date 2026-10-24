@@ -198,6 +198,23 @@ Correrla más de una vez es inofensivo. Si el media-service falla con una obra,
 esa obra no se toca y se reintenta al otro día; el script sale con código 1
 para que se vea en el historial. A mano: `pnpm --filter @luma/api projects:purge`.
 
+### Purga de cuentas dadas de baja
+
+La Política de Privacidad promete borrar los datos personales de una cuenta
+90 días después de darla de baja. Esta tarea lo cumple: deja el documento (lo
+referencian obras, cobros y gastos) pero borra email, nombre, foto,
+contraseña, tokens y la IP y el user agent de la aceptación de los Términos.
+**Sin ella esa promesa del texto legal no se cumple.**
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/purge-deactivated-accounts.js` |
+| Container | `app` |
+| Frequency | `45 7 * * *` — todos los días a las 3:45 de Caracas |
+
+Idempotente: una cuenta ya purgada (`purgedAt`) no se toca. A mano:
+`pnpm --filter @luma/api accounts:purge`.
+
 
 ## Verificar
 

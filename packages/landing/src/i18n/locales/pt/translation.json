@@ -133,6 +133,7 @@
   "security": {
     "label": "Segurança",
     "title": "Suas informações estão protegidas.",
+    "lead": "A segurança da informação é prioridade para o nosso serviço. Não vendemos nem alugamos os seus dados, e os usamos apenas para que o Luma funcione.",
     "items": [
       {
         "title": "Confidencial",
@@ -193,6 +194,7 @@
   },
   "footer": {
     "tagline": "Gestão de obra com controle compartilhado.",
-    "credit": "Criado por <studio>Ido Arquitectura</studio> e Ioce Velasco."
+    "credit": "Criado por <studio>Ido Arquitectura</studio> e Ioce Velasco.",
+    "legal": "Termos e Privacidade"
   }
 }

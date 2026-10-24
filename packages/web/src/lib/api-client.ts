@@ -63,6 +63,7 @@ const PUBLIC_ROUTE_PREFIXES = [
   ROUTES.VERIFY_EMAIL,
   ROUTES.ACTIVATE,
   ROUTES.CONFIRM_EMAIL_CHANGE,
+  ROUTES.LEGAL,
 ].map((route) => route.split('/:')[0]);
 
 export function isPublicRoute(pathname: string): boolean {
