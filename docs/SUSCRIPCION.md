@@ -104,8 +104,8 @@ cargarla a mano:
 pnpm --filter @luma/api rates:refresh     # lee el BCV real
 ```
 
-o, con el admin: *menú de usuario → Pagos de la plataforma → Tasa BCV → Leer el
-BCV ahora* (o cargarla a mano si el BCV no responde).
+o, con el admin: *menú de usuario → Administración de la plataforma → Pagos → Tasa BCV →
+Leer el BCV ahora* (o cargarla a mano si el BCV no responde).
 
 ### 2.3 Cuentas
 
@@ -180,8 +180,8 @@ activá cambiar tarjeta, ver facturas y cancelar suscripción. Sin eso,
 
 4. **Enviar pago** → queda *En revisión*. Mientras tanto la cuenta sigue con
    acceso completo 72 h, y no se puede mandar otro pago.
-5. Entrá con el **admin** → *menú de usuario → Pagos de la plataforma →
-   Pendientes*. Cada pago muestra lo **cotizado** contra lo **declarado** (con
+5. Entrá con el **admin** → *menú de usuario → Administración de la plataforma →
+   Pagos → Pendientes*. Cada pago muestra lo **cotizado** contra lo **declarado** (con
    aviso si difieren más de 1%), banco, referencia, cédula, fecha y el
    comprobante.
 6. **Aprobar** → la cuenta pasa a **Pro**. **Rechazar** pide un motivo, que el
@@ -267,7 +267,7 @@ Con `seed:subscription-demo`, `demo-por-vencer` recibe el de 3 días y
 | Checkout dice "the product tax code is missing" | la cuenta tiene Managed Payments y el producto no tiene código de impuesto | volver a correr `stripe:setup` (lo completa) |
 | Pagué con tarjeta y sigue en Gratis | no llegó el webhook | `stripe listen` corriendo y `STRIPE_WEBHOOK_SECRET` igual al que imprime |
 | "Administrar tarjeta" da error | el portal de clientes no está configurado en Stripe | 2.4, último párrafo |
-| No aparece "Pagos de la plataforma" | la cuenta no es admin | entrar con la de `ADMIN_EMAIL` |
+| No aparece "Administración de la plataforma" | la cuenta no es admin | entrar con la de `ADMIN_EMAIL` |
 | Una cuenta vieja con obras decía que la prueba arranca con la primera obra | era anterior a la suscripción | ya no pasa: al abrir Suscripción recibe el mes gratis desde ese día (en producción lo hace `migrate-subscriptions`) |
 
 ## 7. Dónde está cada cosa

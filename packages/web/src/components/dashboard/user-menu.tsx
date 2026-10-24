@@ -64,9 +64,9 @@ export function UserMenu() {
 
         {isAdmin(user?.role) && (
           <DropdownMenuItem asChild>
-            <Link to={ROUTES.PLATFORM_BILLING}>
+            <Link to={ROUTES.PLATFORM}>
               <Landmark className="size-4" />
-              {t('userMenu.platformBilling')}
+              {t('userMenu.platform')}
             </Link>
           </DropdownMenuItem>
         )}

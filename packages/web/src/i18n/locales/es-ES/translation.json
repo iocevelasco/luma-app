@@ -49,7 +49,7 @@
     "settings": "Configuración",
     "logout": "Cerrar sesión",
     "subscription": "Suscripción",
-    "platformBilling": "Pagos de la plataforma"
+    "platform": "Administración de la plataforma"
   },
   "project": {
     "list": {
@@ -1463,7 +1463,6 @@
     }
   },
   "platform": {
-    "title": "Pagos de la plataforma",
     "tabs": {
       "pendiente": "Pendientes",
       "aprobado": "Aprobados",
@@ -1516,6 +1515,56 @@
       "savedImplausible": "Tasa guardada, pero salta más de un 20% contra la anterior. Revísala.",
       "history": "Últimas lecturas",
       "flagged": "Marcada"
+    },
+    "users": {
+      "searchPlaceholder": "Buscar por nombre o correo",
+      "filters": {
+        "all": "Todas",
+        "active": "Activas",
+        "unverified": "Sin confirmar",
+        "inactive": "Dadas de baja"
+      },
+      "stats": {
+        "total": "Cuentas",
+        "active": "Activas",
+        "verified": "Confirmadas",
+        "unverified": "Sin confirmar",
+        "inactive": "Dadas de baja"
+      },
+      "signups": {
+        "title": "Altas por semana",
+        "label": "Altas por semana, de la más antigua a la actual",
+        "total": "{{amount}} en las últimas {{weeks}} semanas",
+        "week": "Semana del {{date}}: {{amount}}"
+      },
+      "role": {
+        "admin": "Admin de plataforma",
+        "user": "Usuario"
+      },
+      "status": {
+        "active": "Activa",
+        "inactive": "Dada de baja"
+      },
+      "verified": "Confirmada",
+      "unverified": "Sin confirmar",
+      "joined": "Alta el {{date}}",
+      "empty": "No hay cuentas para mostrar.",
+      "emptyFiltered": "Prueba con otro filtro o con otra búsqueda.",
+      "pagination": {
+        "label": "Paginación",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "status": "Página {{page}} de {{pages}} · {{total}} cuentas"
+      }
+    },
+    "layout": {
+      "badge": "Plataforma",
+      "back": "Volver a la app",
+      "navLabel": "Secciones de la plataforma"
+    },
+    "nav": {
+      "users": "Cuentas",
+      "billing": "Pagos"
     }
   }
 }

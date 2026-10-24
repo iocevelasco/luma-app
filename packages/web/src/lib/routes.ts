@@ -20,8 +20,17 @@ export const ROUTES = {
   ACCOUNT_SETTINGS: '/admin/settings/account',
   /** La API arma las vueltas desde Stripe con este mismo path: ver `stripe.service.ts`. */
   SUBSCRIPTION: '/admin/settings/subscription',
-  /** Sólo admin de plataforma: la cola de pagos en Bs y la tasa BCV. */
-  PLATFORM_BILLING: '/admin/plataforma/pagos',
+  /**
+   * Administración global de Luma. Fuera de `/admin` a propósito: no es parte
+   * del panel de obras y no comparte su navegación. Sólo `role: 'admin'`.
+   */
+  PLATFORM: '/plataforma',
+  /** Las cuentas registradas, sólo lectura. */
+  PLATFORM_USERS: '/plataforma/cuentas',
+  /** La cola de pagos en Bs y la tasa BCV. */
+  PLATFORM_BILLING: '/plataforma/pagos',
+  /** Dónde vivía la cola de pagos antes de separar la administración: sigue redirigiendo. */
+  LEGACY_PLATFORM_BILLING: '/admin/plataforma/pagos',
   PROJECT_NEW: '/admin/proyectos/nuevo',
   PROJECT_DETAIL: '/admin/proyectos/:projectId',
   PROJECT_ACTIVITIES: '/admin/proyectos/:projectId/actividades',
