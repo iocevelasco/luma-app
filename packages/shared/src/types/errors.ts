@@ -44,6 +44,8 @@ export type ApiErrorCode =
    * activar el plan pago, y eso termina la prueba ese día.
    */
   | 'PAID_PLAN_REQUIRED'
+  /** Hay que aceptar los Términos y la Política de Privacidad para seguir. */
+  | 'TERMS_REQUIRED'
   /** Cualquier otra cosa. Nunca lleva el detalle interno hacia afuera. */
   | 'INTERNAL';
 
@@ -81,6 +83,8 @@ export const STATUS_BY_ERROR_CODE: Record<ApiErrorCode, number> = {
   // 402 Payment Required. `errorCodeForStatus(402)` devuelve el primero.
   SUBSCRIPTION_REQUIRED: 402,
   PAID_PLAN_REQUIRED: 402,
+  // 403 como FORBIDDEN: `errorCodeForStatus(403)` devuelve el primero.
+  TERMS_REQUIRED: 403,
   INTERNAL: 500,
 };
 

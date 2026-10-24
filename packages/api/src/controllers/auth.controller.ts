@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import {
   changeEmailRequestSchema,
   changePasswordRequestSchema,
@@ -10,6 +10,8 @@ import {
   resendVerificationSchema,
   resetPasswordRequestSchema,
   setPasswordRequestSchema,
+  acceptTermsRequestSchema,
+  hasAcceptedCurrentTerms,
   type AuthUser,
 } from '@luma/shared';
 import { isProduction, REQUIRE_EMAIL_VERIFICATION } from '../config/app.config.js';
@@ -17,6 +19,8 @@ import { User, type IUser } from '../models/User.js';
 import { generateTokens } from '../services/auth.service.js';
 import { EmailService } from '../services/email.service.js';
 import { JWTService } from '../services/jwt.service.js';
+import { termsAcceptanceFields } from '../services/terms.service.js';
+import { notFound, termsRequired } from '../utils/errors.js';
 import { createPersonalOrganization } from '../services/organization.service.js';
 import { startTrialFor } from '../services/subscription.service.js';
 import { verifyRecaptchaFromRequest } from '../services/recaptcha.service.js';
@@ -57,6 +61,7 @@ function toAuthUser(user: IUser): AuthUser {
     role: user.role,
     email_verified: user.email_verified,
     account_status: user.account_status,
+    terms_pending: !hasAcceptedCurrentTerms(user.termsVersion),
   };
 }
 
@@ -133,6 +138,7 @@ export async function register(req: Request, res: Response) {
       password: await bcrypt.hash(password, BCRYPT_ROUNDS),
       role: 'user',
       email_verified: !REQUIRE_EMAIL_VERIFICATION,
+      ...termsAcceptanceFields(req),
       ...(REQUIRE_EMAIL_VERIFICATION && {
         emailVerificationToken: verificationToken,
         emailVerificationTokenExpires: new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS),
@@ -205,6 +211,28 @@ export async function getCurrentUser(req: Request, res: Response) {
     return res.json({ success: true, data: { user: toAuthUser(user) } });
   } catch (error) {
     return res.status(500).json({ success: false, error: errMsg(error) });
+  }
+}
+
+/**
+ * Aceptación posterior al alta: cuentas anteriores a los Términos y cambios de
+ * versión. Siempre sobre la versión vigente — el cliente no elige cuál acepta.
+ */
+export async function acceptTerms(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!acceptTermsRequestSchema.safeParse(req.body).success) {
+      throw termsRequired();
+    }
+
+    const user = await User.findByIdAndUpdate(req.user?.sub, termsAcceptanceFields(req), {
+      new: true,
+    });
+    if (!user) {
+      throw notFound('No encontramos tu cuenta.');
+    }
+    return res.json({ success: true, data: { user: toAuthUser(user) } });
+  } catch (error) {
+    return next(error);
   }
 }
 
@@ -296,6 +324,7 @@ export async function setPassword(req: Request, res: Response) {
     // y sólo se verifica cuando la persona real recupere la contraseña por mail.
     const heldBy = user.activationLinkHeldBy;
     user.password = await bcrypt.hash(parsed.data.password, BCRYPT_ROUNDS);
+    Object.assign(user, termsAcceptanceFields(req));
     user.emailVerificationToken = undefined;
     user.emailVerificationTokenExpires = undefined;
     user.activationLinkHeldBy = undefined;

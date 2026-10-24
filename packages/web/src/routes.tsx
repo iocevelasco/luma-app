@@ -21,6 +21,7 @@ const ResetPasswordPage = lazy(() =>
 const ActivatePage = lazy(() =>
   import('./pages/activate').then((m) => ({ default: m.ActivatePage })),
 );
+const LegalPage = lazy(() => import('./pages/legal').then((m) => ({ default: m.LegalPage })));
 const CheckEmailPage = lazy(() =>
   import('./pages/check-email').then((m) => ({ default: m.CheckEmailPage })),
 );
@@ -135,6 +136,7 @@ export function AppRoutes() {
       {/* Públicas que valen con sesión o sin ella: las abre un enlace de un mail. */}
       <Route path={ROUTES.RESET_PASSWORD} element={<LazyRoute><ResetPasswordPage /></LazyRoute>} />
       <Route path={ROUTES.ACTIVATE} element={<LazyRoute><ActivatePage /></LazyRoute>} />
+      <Route path={ROUTES.LEGAL} element={<LazyRoute><LegalPage /></LazyRoute>} />
       <Route path={ROUTES.CHECK_EMAIL} element={<LazyRoute><CheckEmailPage /></LazyRoute>} />
       <Route path={ROUTES.VERIFY_EMAIL} element={<LazyRoute><VerifyEmailPage /></LazyRoute>} />
       <Route

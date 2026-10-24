@@ -3,6 +3,7 @@ import { Router, type NextFunction, type Request, type Response } from 'express'
 import rateLimit from 'express-rate-limit';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import {
+  acceptTerms,
   changeEmail,
   changePassword,
   confirmEmailChange,
@@ -43,6 +44,7 @@ authRouter.post('/register', authLimiter, register);
 authRouter.post('/refresh', authLimiter, refreshToken);
 authRouter.post('/logout', isAuthenticated, logout);
 authRouter.get('/me', isAuthenticated, getCurrentUser);
+authRouter.post('/accept-terms', isAuthenticated, acceptTerms);
 
 authRouter.post('/forgot-password', authLimiter, forgotPassword);
 authRouter.post('/reset-password', authLimiter, resetPassword);

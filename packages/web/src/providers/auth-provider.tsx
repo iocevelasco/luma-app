@@ -13,6 +13,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (token: string, user: AuthResponse['user']) => void;
+  /** Reemplaza el usuario de la sesión sin tocar el token (p. ej. tras aceptar los Términos). */
+  updateUser: (user: AuthResponse['user']) => void;
   logout: () => void;
   setToken: (token: string | null) => void;
 }
@@ -257,6 +259,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useUserStore.getState().setUser(newUser);
   };
 
+  const updateUser = (nextUser: AuthResponse['user']) => {
+    setUser(nextUser);
+    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+    useUserStore.getState().setUser(nextUser);
+  };
+
   const logout = () => {
     clearSession();
     navigate(ROUTES.LOGIN);
@@ -270,6 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!token && !!user,
         isLoading,
         login,
+        updateUser,
         logout,
         setToken,
       }}

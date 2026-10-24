@@ -42,7 +42,11 @@ export async function registerWith(page: Page, name: string, email: string, pass
   await page.locator('#email').fill(email);
   await page.locator('#password').fill(password);
   await page.locator('#confirmPassword').fill(password);
-  await page.getByRole('button', { name: /crear cuenta/i }).click();
+  await page.getByRole('button', { name: /^crear cuenta$/i }).click();
+  // Aceptar los Términos es parte del alta: el diálogo se abre al enviar.
+  const terms = page.getByRole('dialog');
+  await terms.getByRole('checkbox').check();
+  await terms.getByRole('button', { name: /aceptar y crear cuenta/i }).click();
   await page.waitForURL((url) => /\/(check-email|login)$/.test(url.pathname), {
     timeout: 15_000,
   });

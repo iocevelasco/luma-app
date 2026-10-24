@@ -29,6 +29,7 @@ const KEY_BY_CODE: Record<ApiErrorCode, string> = {
   SERVICE_UNAVAILABLE: 'errors.serviceUnavailable',
   SUBSCRIPTION_REQUIRED: 'errors.subscriptionRequired',
   PAID_PLAN_REQUIRED: 'errors.paidPlanRequired',
+  TERMS_REQUIRED: 'errors.termsRequired',
   INTERNAL: 'errors.internal',
 };
 

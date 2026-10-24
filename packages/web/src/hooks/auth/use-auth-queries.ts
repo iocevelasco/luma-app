@@ -8,6 +8,7 @@ import type {
   LoginCredentials,
   RegisterCredentials,
   ResetPasswordRequest,
+  SetPasswordRequest,
 } from '@luma/shared';
 import { authApi } from '@/api/auth';
 import { errorMessage } from '@/lib/error-message';
@@ -35,6 +36,24 @@ export function useCurrentUser() {
     // Obligatorio en toda query protegida: los providers corren también en las
     // pantallas públicas, y un 401 ahí patea a /login y rompe el flujo.
     enabled: isAuthenticated,
+  });
+}
+
+/**
+ * Aceptar los Términos vigentes desde dentro: cuentas anteriores a ellos y
+ * cambios de versión. Sin `onError`: lo muestra el banner del diálogo, pegado
+ * al botón que se acaba de apretar.
+ */
+export function useAcceptTerms() {
+  const { updateUser } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => authApi.acceptTerms(),
+    onSuccess: (data) => {
+      updateUser(data.user);
+      queryClient.setQueryData([QueryKeys.currentUser], data);
+    },
   });
 }
 
@@ -110,15 +129,15 @@ export function useResetPassword() {
 export function useSetPassword() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: (payload: ResetPasswordRequest) => authApi.setPassword(payload),
+    mutationFn: (payload: SetPasswordRequest) => authApi.setPassword(payload),
     onSuccess: (data) => {
       login(data.accessToken, data.user);
       navigate(ROUTES.ADMIN);
     },
-    onError: (error) => toast.error(errorMessage(error, t)),
+    // Sin `onError`: se envía desde el diálogo de Términos, que muestra la
+    // falla como banner pegado al botón.
   });
 }
 

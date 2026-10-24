@@ -32,10 +32,16 @@ export const loginCredentialsSchema = z.object({
   recaptchaToken: z.string().optional(),
 });
 
+/** Quien crea la cuenta tiene que aceptar los Términos: sin esto no hay alta. */
+export const acceptedTermsSchema = z.literal(true, {
+  errorMap: () => ({ message: 'Tenés que aceptar los Términos y la Política de Privacidad' }),
+});
+
 export const registerCredentialsSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   name: nameSchema,
+  acceptedTerms: acceptedTermsSchema,
   recaptchaToken: z.string().optional(),
 });
 
@@ -49,7 +55,14 @@ export const resetPasswordRequestSchema = z.object({
   password: passwordSchema,
 });
 
-export const setPasswordRequestSchema = resetPasswordRequestSchema;
+/** Activar una cuenta invitada también es un alta: acepta los Términos acá. */
+export const setPasswordRequestSchema = resetPasswordRequestSchema.extend({
+  acceptedTerms: acceptedTermsSchema,
+});
+
+export const acceptTermsRequestSchema = z.object({
+  acceptedTerms: acceptedTermsSchema,
+});
 
 export const resendVerificationSchema = z.object({
   email: emailSchema,

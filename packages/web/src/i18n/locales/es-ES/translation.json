@@ -1306,7 +1306,8 @@
     "paidPlanRequired": "En el mes gratis puedes tener hasta 3 obras activas. Activa el plan para crear la cuarta.",
     "internal": "Algo ha fallado por nuestra parte. Prueba de nuevo en un momento.",
     "network": "No hemos podido conectarnos. Revisa tu conexión.",
-    "title": "No se pudo guardar"
+    "title": "No se pudo guardar",
+    "termsRequired": "Para seguir tienes que aceptar los Términos y la Política de Privacidad."
   },
   "directory": {
     "providersEmpty": "Todavía no hay proveedores en tu Empresa.",
@@ -1654,6 +1655,124 @@
     "nav": {
       "users": "Cuentas",
       "billing": "Pagos"
+    }
+  },
+  "legal": {
+    "dialog": {
+      "title": "Antes de crear tu cuenta",
+      "description": "Tus datos importan. Esto es lo que te prometemos.",
+      "titleUpdated": "Actualizamos los Términos y la Política de Privacidad",
+      "descriptionUpdated": "Para seguir usando Luma, lee lo esencial y acepta la versión vigente.",
+      "points": [
+        "La seguridad de la información es primordial para nuestro servicio: aplicamos medidas razonables para protegerla.",
+        "No vendemos ni alquilamos tus datos, y no mostramos publicidad de terceros.",
+        "Los datos de tu obra se usan solo para prestarte Luma, y solo los ve quien has invitado, según su rol.",
+        "Si ocurre un incidente que afecte tus datos personales, te avisamos."
+      ],
+      "checkboxBefore": "He leído y acepto los",
+      "checkboxLink": "Términos y la Política de Privacidad",
+      "checkboxAfter": ".",
+      "confirmCreate": "Aceptar y crear cuenta",
+      "confirmActivate": "Aceptar y activar",
+      "confirmContinue": "Aceptar y continuar"
+    },
+    "notice": {
+      "title": "Tus datos, protegidos",
+      "body": "La seguridad de la información es primordial para nuestro servicio. No vendemos ni alquilamos tus datos y los usamos solo para prestarte Luma.",
+      "link": "Leer los Términos y la Política de Privacidad"
+    },
+    "page": {
+      "title": "Términos y Política de Privacidad",
+      "version": "Versión vigente: {{version}}",
+      "intro": "Este documento explica cómo usas Luma y cómo cuidamos tu información. Está escrito para que se entienda; si algo no queda claro, escríbenos.",
+      "back": "Volver",
+      "contact": "Para ejercer tus derechos o hacernos una consulta, escríbenos a {{email}}.",
+      "sections": [
+        {
+          "title": "1. Quiénes somos y qué cubre este documento",
+          "paragraphs": [
+            "Luma es una aplicación para gestionar obras de construcción: actividades, materiales, presupuesto, cobros, gastos, documentos y el equipo de cada obra. En este texto, «Luma» y «nosotros» somos quienes operamos el servicio.",
+            "Este documento reúne los Términos de uso y la Política de Privacidad. Al crear tu cuenta o activarla, y cada vez que cambia de fondo, te pedimos que lo aceptes de forma expresa."
+          ]
+        },
+        {
+          "title": "2. Qué datos tratamos",
+          "paragraphs": [
+            "Datos de tu cuenta: nombre, correo electrónico y contraseña (que guardamos cifrada, nunca en texto legible).",
+            "Datos de tu obra: actividades, materiales, presupuestos, cobros, gastos, justificantes, fotos, documentos y las personas que participan. Son tuyos: nosotros los guardamos para que puedas usarlos.",
+            "Datos de pagos de la suscripción: banco, referencia y documento de identidad de quien paga, cuando eliges pagar en bolívares. Si pagas con tarjeta, los datos de la tarjeta los procesa Stripe y no pasan por nuestros servidores.",
+            "Datos técnicos de la aceptación: cuando aceptas estos Términos guardamos la versión, la fecha y hora, tu dirección IP y el navegador que usaste. Sirven como constancia de que la aceptación ocurrió.",
+            "Datos de terceros que cargas: si añades a personal de la cuadrilla, proveedores o clientes, eres responsable de contar con su autorización para hacerlo."
+          ]
+        },
+        {
+          "title": "3. Para qué los usamos",
+          "paragraphs": [
+            "Usamos tus datos solo para prestarte el servicio: que puedas entrar, que tu obra funcione, que tu equipo vea lo que le corresponde, cobrar la suscripción, enviarte los avisos de la app por correo, darte soporte y proteger las cuentas contra abusos.",
+            "No usamos tus datos para publicidad ni para armar perfiles comerciales. Podemos calcular estadísticas agregadas y anonimizadas para mantener y mejorar Luma; no identifican a nadie y no se venden."
+          ]
+        },
+        {
+          "title": "4. Lo que nos comprometemos a no hacer",
+          "paragraphs": [
+            "No vendemos ni alquilamos tus datos personales ni los de tu obra.",
+            "No mostramos publicidad de terceros ni compartimos tus datos con anunciantes.",
+            "No usamos los datos de tu obra para fines comerciales propios ni ajenos: son para que tu obra funcione."
+          ]
+        },
+        {
+          "title": "5. Con quién los compartimos",
+          "paragraphs": [
+            "Con las personas de tu obra, según el rol de cada una (gerente, supervisor, cliente): cada quien ve solo lo que su rol permite, y una obra nunca es visible para quien no ha sido invitado.",
+            "Con proveedores que nos ayudan a operar el servicio, y solo lo necesario para su función: el alojamiento de los servidores, el envío de correos (Resend), el cobro con tarjeta (Stripe), la verificación contra abusos en el registro (Google reCAPTCHA), el almacenamiento de archivos y, si usas el Consultor IA, el proveedor del modelo de inteligencia artificial (Anthropic), al que enviamos lo necesario para responder tu consulta.",
+            "Con autoridades competentes, únicamente cuando nos lo exija una orden o una norma válida."
+          ]
+        },
+        {
+          "title": "6. Cómo protegemos tu información",
+          "paragraphs": [
+            "Aplicamos medidas razonables de seguridad: contraseñas guardadas cifradas, conexiones cifradas, sesiones con vencimiento, acceso a cada obra limitado por rol, aislamiento entre obras y copias de respaldo diarias.",
+            "Ningún sistema es invulnerable y por eso no prometemos seguridad absoluta, sino cuidar tu información con el mejor criterio y los medios a nuestro alcance, y corregir con rapidez lo que falle.",
+            "Si detectamos un incidente que afecte a tus datos personales, te avisamos por correo sin demora injustificada, con lo que sabemos, qué datos ha alcanzado y qué te recomendamos hacer.",
+            "Tú también cuidas la cuenta: no compartas tu contraseña y avísanos si sospechas que alguien más ha entrado."
+          ]
+        },
+        {
+          "title": "7. Cuánto tiempo los conservamos y qué pasa si te das de baja",
+          "paragraphs": [
+            "Conservamos tus datos mientras tu cuenta esté activa. Al darte de baja, guardamos la cuenta 90 días por si te arrepientes y después borramos tus datos personales: correo, nombre, foto, contraseña, teléfono, los datos de pago de la suscripción (banco, referencia, documento y justificante) y el registro técnico de tu aceptación. También cerramos tu cliente en el procesador de pagos con tarjeta y eliminamos tus notificaciones y tus accesos a las obras.",
+            "Las obras que eliminas pasan 90 días en la papelera y después se borran con todo lo que tenían. Si tu Empresa no tenía a nadie más, queda sin nombre ni contacto. Los importes y fechas de los pagos, y el historial de una obra compartida con otras personas, se conservan atados a una «Cuenta eliminada» y sin datos que te identifiquen. Lo que otras personas hayan escrito con texto libre en una obra compartida (por ejemplo, una nota) podría seguir mencionándote."
+          ]
+        },
+        {
+          "title": "8. Tus derechos",
+          "paragraphs": [
+            "Puedes pedirnos acceder a tus datos, corregirlos, eliminarlos, oponerte a un uso o retirar tu consentimiento. Respondemos dentro de los 30 días.",
+            "Estos derechos se apoyan en la Constitución de la República Bolivariana de Venezuela (arts. 28 y 60) y en el resto de la normativa aplicable."
+          ]
+        },
+        {
+          "title": "9. Reglas de uso",
+          "paragraphs": [
+            "Tu cuenta es personal. Eres responsable de lo que se haga con tus credenciales y de usar Luma de forma lícita.",
+            "Lo que cargas es tuyo y eres responsable de que tengas derecho a cargarlo. Nosotros no revisamos tu contenido salvo que sea necesario para dar soporte, cumplir la ley o proteger el servicio.",
+            "Los planes y precios se muestran en la app antes de contratar. Si la suscripción vence, tus obras quedan en sólo lectura y no se pierden."
+          ]
+        },
+        {
+          "title": "10. Alcance de nuestra responsabilidad",
+          "paragraphs": [
+            "Ponemos el mayor cuidado en que Luma funcione y en proteger tu información, pero el servicio se presta con medios razonables, no con resultados garantizados. En la medida en que la ley lo permita, no respondemos por interrupciones ajenas a nuestro control ni por daños indirectos.",
+            "Nada de esto limita los derechos que la ley te reconoce ni lo que nos comprometimos a no hacer con tus datos."
+          ]
+        },
+        {
+          "title": "11. Cambios en este documento",
+          "paragraphs": [
+            "Si cambiamos algo de fondo, publicamos una versión nueva con su fecha y te pedimos que la aceptes al volver a entrar. Los cambios de redacción que no afectan a tus derechos no requieren una nueva aceptación."
+          ]
+        }
+      ]
     }
   }
 }

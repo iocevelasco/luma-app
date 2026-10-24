@@ -18,6 +18,7 @@ antes de crearlo.
 | `packages/web` | Vite 6 + React 19 + Tailwind v4 + shadcn/ui |
 | `packages/landing` | Vite + React + i18next, estática, servida por nginx |
 | `packages/shared` | Tipos + schemas Zod que comparten API y web |
+| `shared/` (raíz) | Archivos que usan varios paquetes sin build ni dependencias — hoy los trazos del logo (`shared/brand/luma-logo.ts`). Alias `@shared/*` en web y landing; los dos Dockerfiles la copian. No es un paquete de pnpm ni se confunde con `packages/shared` |
 
 ```bash
 pnpm dev          # api + web
@@ -52,7 +53,25 @@ nombre de paquete contra su `dist`.
   Agregar un permiso = una celda en la grilla. Si estás escribiendo
   `role === 'supervisor'` en cualquier lado, estás en el camino equivocado.
 - **Baja lógica**: `account_status: 'inactive'` + `enabled: false`. Nunca se borra
-  el documento.
+  el documento. A los 90 días `purge-deactivated-accounts` (tarea diaria de
+  Coolify) le borra los datos personales y marca `purgedAt`; el documento queda
+  porque obras, cobros y gastos lo referencian. **Qué se borra y dónde vive
+  en `account-purge.service.ts`** (`USER_REFERENCES`, `PERSONAL_FIELDS`):
+  un test falla si agregás un modelo con una referencia a `User`, o un campo que
+  parezca un dato personal (email, teléfono, banco…), sin decir qué se hace con
+  él al purgar. La Política de Privacidad promete ese borrado.
+- **Términos y Privacidad**: un solo documento, versionado por `LEGAL_VERSION`
+  en `@luma/shared/legal`. La aceptación es un hecho en `User` (`termsVersion`,
+  `termsAcceptedAt`, y `termsAcceptedIp`/`termsAcceptedUserAgent` con
+  `select: false`); si está al día lo resuelve la API en `AuthUser.terms_pending`
+  y la UI no lo vuelve a derivar. Se acepta en el registro y la activación (el
+  body lleva `acceptedTerms: true`) y, para cuentas viejas o una versión nueva,
+  en `TermsGate` (`POST /api/auth/accept-terms`). El texto vive en i18n
+  (`legal.page.*`, página pública `/legal`). **Subir `LEGAL_VERSION` sólo cuando
+  el cambio toca derechos u obligaciones**: obliga a todas las cuentas a
+  aceptar de nuevo. Lo que el texto promete (no vender datos, backups diarios,
+  purga a los 90 días) tiene que seguir siendo cierto: si cambiás una de esas
+  cosas, cambiá el texto en el mismo PR.
 - **Eliminar una obra** es lógico: `Project.deletedAt` + `purgeAt` (90 días,
   `PROJECT_TRASH_RETENTION_DAYS`). El hook de `models/Project.ts` esconde las
   eliminadas de todo `find`/`count`/`update`; sólo la papelera y el restaurar

@@ -12,6 +12,8 @@ export const ROUTES = {
   VERIFY_EMAIL: '/verify-email',
   ACTIVATE: '/activate',
   CONFIRM_EMAIL_CHANGE: '/confirm-email-change',
+  /** Términos y Política de Privacidad. Pública: se lee antes de tener cuenta. */
+  LEGAL: '/legal',
 
   ADMIN: '/admin',
   COMPANY: '/admin/empresa',

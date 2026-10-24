@@ -25,6 +25,7 @@ import mongoose from 'mongoose';
 import {
   addMonths,
   INVITABLE_PROJECT_ROLES,
+  LEGAL_VERSION,
   type AccountStatus,
   type InvitableProjectRole,
   type ProjectRole,
@@ -94,6 +95,10 @@ async function upsertUser(fixture: E2EUserFixture): Promise<IUser> {
   user.password = await bcrypt.hash(fixture.password, BCRYPT_ROUNDS);
   user.role = fixture.platformRole;
   user.email_verified = true;
+  // Aceptación vigente: sin ella el modal de Términos tapa el panel y trabaría
+  // toda la suite con sesión. Es el único lugar donde fabricarla es legítimo.
+  user.termsVersion = LEGAL_VERSION;
+  user.termsAcceptedAt = user.termsAcceptedAt ?? new Date();
   user.enabled = active;
   user.account_status = active ? 'active' : 'inactive';
   user.deactivated_at = active ? undefined : (user.deactivated_at ?? new Date());

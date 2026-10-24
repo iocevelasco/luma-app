@@ -39,7 +39,9 @@ export function Hero() {
             {t('hero.title')}
           </h1>
 
-          <p className="mt-6 max-w-xl text-lg text-muted-foreground">{t('hero.subtitle')}</p>
+          <p className="mt-4 text-base font-medium text-primary">{t('hero.byline')}</p>
+
+          <p className="mt-4 max-w-xl text-lg text-muted-foreground">{t('hero.subtitle')}</p>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <a

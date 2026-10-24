@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { BranchLumaLogo } from '@/components/branch-luma-logo';
 import { cn } from '@/lib/utils';
 
 interface AppLogoProps {
@@ -5,28 +7,26 @@ interface AppLogoProps {
   className?: string;
 }
 
+/** Alto del logo; el ancho sale de su proporción. */
 const sizes = {
-  sm: 'text-base',
-  md: 'text-lg',
-  lg: 'text-2xl',
-  xl: 'text-3xl',
+  sm: 'h-5',
+  md: 'h-7',
+  lg: 'h-10',
+  xl: 'h-14',
 };
 
 /**
- * Marca de la aplicación. Placeholder tipográfico a propósito: cuando haya un
- * logo real, se reemplaza acá y cambia en toda la app — header, auth y landing
- * lo consumen desde este único lugar.
+ * Marca de la aplicación. Header, auth, plataforma y la página legal la
+ * consumen desde este único lugar. Hereda el color del texto de donde esté
+ * (`currentColor`), así sirve sobre el chrome oscuro y sobre superficies claras.
  */
 export function AppLogo({ size = 'md', className }: AppLogoProps) {
+  const { t } = useTranslation();
+
   return (
-    <span
-      className={cn(
-        'inline-flex select-none items-center font-semibold tracking-tight',
-        sizes[size],
-        className,
-      )}
-    >
-      Luma
-    </span>
+    <BranchLumaLogo
+      title={t('common.appName')}
+      className={cn('w-auto shrink-0 select-none', sizes[size], className)}
+    />
   );
 }

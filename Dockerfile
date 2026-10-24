@@ -19,6 +19,7 @@ COPY packages/landing/package.json ./packages/landing/
 # dice nada sobre la causa real.
 RUN pnpm install --frozen-lockfile --prod=false
 
+COPY shared ./shared
 COPY packages/shared ./packages/shared
 COPY packages/api ./packages/api
 COPY packages/web ./packages/web

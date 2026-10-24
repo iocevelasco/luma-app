@@ -39,6 +39,8 @@ export interface AuthUser {
   role: UserRole;
   email_verified: boolean;
   account_status: AccountStatus;
+  /** Falta aceptar los Términos vigentes. Lo resuelve la API, la UI no lo deriva. */
+  terms_pending: boolean;
 }
 
 export interface LoginCredentials {
@@ -51,6 +53,7 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   name: string;
+  acceptedTerms: true;
   recaptchaToken?: string;
 }
 
@@ -67,6 +70,7 @@ export interface ResetPasswordRequest {
 export interface SetPasswordRequest {
   token: string;
   password: string;
+  acceptedTerms: true;
 }
 
 export interface ChangePasswordRequest {
