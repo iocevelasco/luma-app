@@ -10,21 +10,9 @@ import type {
 import { activitiesApi } from '@/api/activities';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
-import type { WeekRange } from '@/lib/week';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
-
-
-export function useActivities(projectId: string | undefined, range: WeekRange) {
-  const { isAuthenticated } = useAuth();
-
-  return useQuery({
-    queryKey: [QueryKeys.activities, projectId, range.from, range.to],
-    queryFn: () => activitiesApi.list(projectId!, range),
-    enabled: isAuthenticated && !!projectId,
-  });
-}
 
 /** Todas las actividades de la obra, sin filtro de rango — para cruzar con materiales. */
 export function useAllActivities(projectId: string | undefined) {
