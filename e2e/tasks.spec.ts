@@ -624,6 +624,19 @@ test.describe('tareas', () => {
     await expect(cardIn(page, /^en curso$/i, name)).toHaveCount(0);
   });
 
+  test('el Tablero muestra el ícono y el nombre del estado en el encabezado de cada columna', async ({
+    page,
+  }) => {
+    // El ícono va en el `label` de la columna, que la librería tipa como texto pero dibuja
+    // tal cual: es lo que se rompería si una actualización cambiara cómo lo usa.
+    const projectUrl = await startProject(page, 'columnheads');
+    await openBoard(page, projectUrl);
+
+    const titles = page.locator('.wx-column-header .wx-title');
+    await expect(titles).toHaveText([/^pendiente$/i, /^en curso$/i, /^en revisión$/i, /^completada$/i]);
+    await expect(titles.locator('svg')).toHaveCount(4);
+  });
+
   test('la card avisa si hoy falta gente y lleva a la Jornada', async ({ page }) => {
     const worker = `Dani Falta ${RUN_ID}`;
     const task = `Encofrado ${RUN_ID}`;

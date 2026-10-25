@@ -282,7 +282,7 @@ importers:
         specifier: ^2.8.1
         version: 2.8.1(react-dom@19.2.0)(react@19.2.0)
       '@svar-ui/react-kanban':
-        specifier: ^2.6.0
+        specifier: 2.6.0
         version: 2.6.0(react-dom@19.2.0)(react@19.2.0)
       '@tanstack/react-query':
         specifier: ^5.90.10
