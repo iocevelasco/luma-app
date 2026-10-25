@@ -538,6 +538,47 @@ test.describe('tareas', () => {
     await expect(cardIn(page, /^completada$/i, name)).toBeVisible();
   });
 
+  test('si la API rechaza el movimiento, la tarjeta vuelve a su columna y se avisa', async ({
+    page,
+  }) => {
+    const name = `Tarjeta rechazada ${RUN_ID}`;
+    const projectUrl = await startProject(page, 'rollback');
+    await planTask(page, projectUrl, { name, start: dayKey(0), end: dayKey(2) });
+
+    await openBoard(page, projectUrl);
+    const card = cardIn(page, /^pendiente$/i, name);
+    await expect(card).toBeVisible();
+
+    // El PATCH de la actividad se corta. El Tablero deja pasar el soltar (la librería ya
+    // acomoda la tarjeta en la columna nueva), así que volver a la de origen depende de
+    // que la reversión de la caché llegue hasta la librería.
+    let attempts = 0;
+    await page.route(/\/api\/projects\/[a-f0-9]+\/activities\/[a-f0-9]+$/, (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback();
+      attempts += 1;
+      return route.abort('failed');
+    });
+
+    const from = (await card.boundingBox())!;
+    const to = (await boardColumn(page, /^en curso$/i).boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2 + 30, from.y + from.height / 2 + 20, { steps: 5 });
+    await page.mouse.move(to.x + to.width / 2, to.y + 80, { steps: 15 });
+    await page.mouse.up();
+
+    await expect.poll(() => attempts, 'no se llegó a pedir el cambio').toBeGreaterThan(0);
+    // Una falla sin formulario detrás va por toast, no por banner.
+    await expect(page.locator('[data-sonner-toast][data-type="error"]')).toBeVisible();
+    await expect(cardIn(page, /^pendiente$/i, name)).toBeVisible();
+    await expect(cardIn(page, /^en curso$/i, name)).toHaveCount(0);
+
+    // Y se queda ahí cuando llega la lista que se vuelve a pedir.
+    await page.waitForTimeout(1_000);
+    await expect(cardIn(page, /^pendiente$/i, name)).toBeVisible();
+    await expect(cardIn(page, /^en curso$/i, name)).toHaveCount(0);
+  });
+
   test('la card avisa si hoy falta gente y lleva a la Jornada', async ({ page }) => {
     const worker = `Dani Falta ${RUN_ID}`;
     const task = `Encofrado ${RUN_ID}`;
