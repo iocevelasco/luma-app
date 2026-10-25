@@ -59,16 +59,31 @@ case "$REL" in
     ARB=$(grep -nE 'rounded(-[a-z0-9]+)?-\[' "$FILE" || true)
     [ -n "$ARB" ] && add "Radio arbitrario — el redondeo sale de la escala: rounded-md (8px) en botones, rounded-sm (6px) en inputs, rounded-3xl (28px) en cards. Ver DESIGN.md:"$'\n'"$(lines "$ARB")"
 
-    # Los CTA son píldora con relieve. Un relleno verde con un radio de la
-    # escala chica es un CTA del sistema anterior que quedó a escuadra. Sólo
-    # cuenta la clase suelta: `data-[selected]:bg-primary` (un día del
-    # calendario) o `bg-primary/15` (un chip) no son un botón.
-    SQUARE=$(grep -nE '(^|[^:a-z-])bg-primary([^-/a-z]|$)' "$FILE" \
-      | grep -E '(^|[^:a-z-])rounded-(xs|sm|md|lg|xl|2xl|3xl)([^-a-z0-9]|$)' || true)
-    [ -n "$SQUARE" ] && add "CTA a escuadra — los botones son píldora con relieve. En el panel usá Button; en la landing, CTA_PRIMARY de src/lib/cta.ts. Ver DESIGN.md:"$'\n'"$(lines "$SQUARE")"
+    # En la landing los CTA siguen siendo píldora con relieve. Un relleno verde
+    # con un radio de la escala chica es un CTA del sistema anterior que quedó a
+    # escuadra. Sólo cuenta la clase suelta: `data-[selected]:bg-primary` (un día
+    # del calendario) o `bg-primary/15` (un chip) no son un botón. En el panel el
+    # criterio es el contrario (botón `rounded-md`, igual que los Tabs): ahí no
+    # aplica.
+    case "$REL" in
+      packages/landing/*)
+        SQUARE=$(grep -nE '(^|[^:a-z-])bg-primary([^-/a-z]|$)' "$FILE" \
+          | grep -E '(^|[^:a-z-])rounded-(xs|sm|md|lg|xl|2xl|3xl)([^-a-z0-9]|$)' || true)
+        [ -n "$SQUARE" ] && add "CTA a escuadra — en la landing los CTA son píldora con relieve: usá CTA_PRIMARY de src/lib/cta.ts. Ver DESIGN.md:"$'\n'"$(lines "$SQUARE")"
+        ;;
+    esac
+
+    # Un buscador es SearchField: misma superficie que los Tabs y los botones.
+    case "$REL" in
+      packages/web/src/components/common/search-field.tsx|packages/web/src/components/ui/*) ;;
+      packages/web/*)
+        SEARCH=$(grep -nE 'type=("|\{)search' "$FILE" || true)
+        [ -n "$SEARCH" ] && add "Buscador armado a mano — usá SearchField (components/common/search-field.tsx): rounded-md, fondo card, sin borde, con sombra. Ver DESIGN.md:"$'\n'"$(lines "$SEARCH")"
+        ;;
+    esac
 
     BTN=$(grep -nE '<Button[^>]*className="[^"]*(rounded|shadow)-' "$FILE" || true)
-    [ -n "$BTN" ] && add "Button con rounded-* o shadow-* propio — Button ya trae la píldora y el relieve; un override pisa el bisel (y un shadow-<color> lo pinta entero):"$'\n'"$(lines "$BTN")"
+    [ -n "$BTN" ] && add "Button con rounded-* o shadow-* propio — Button ya trae la forma (rounded-md, igual que los Tabs) y el relieve; un override rompe el criterio y pisa el bisel (y un shadow-<color> lo pinta entero):"$'\n'"$(lines "$BTN")"
     ;;
 esac
 

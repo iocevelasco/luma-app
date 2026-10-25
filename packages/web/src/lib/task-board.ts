@@ -1,4 +1,5 @@
 import { normalizePersonName, type Activity, type ActivityStatus, type Capability } from '@luma/shared';
+import { toDayKey } from '@/components/common/date-range-filter';
 import type { WeekRange } from '@/lib/week';
 
 /**
@@ -30,6 +31,13 @@ export function isOpenTask(status: ActivityStatus): boolean {
  * vencidas antes y todavía abiertas—: son lo primero que hay que resolver, y
  * si no aparecieran acá no aparecerían en ningún tablero.
  *
+ * Y las que se **cerraron o cancelaron en esa semana**, por más viejas que sean
+ * sus fechas. Sin esto, pasar una atrasada a Completada la sacaba del tablero en
+ * el mismo instante: ya no cae en la semana ni está abierta, así que la tarjeta
+ * se esfumaba al soltarla. Es por la fecha de modificación (`updatedAt`): cerrar
+ * es tocarla. Una tarea cerrada hace meses y editada hoy también vuelve a verse
+ * esta semana; es el precio de no guardar una fecha de cierre aparte.
+ *
  * Comparación de strings `YYYY-MM-DD`, válida por el formato fijo.
  */
 export function tasksForWeek(
@@ -41,7 +49,9 @@ export function tasksForWeek(
     const overlaps = activity.startDate <= week.to && activity.endDate >= week.from;
     const overdue =
       includeOverdue && activity.endDate < week.from && isOpenTask(activity.status);
-    return overlaps || overdue;
+    const touched = toDayKey(new Date(activity.updatedAt));
+    const closedInWeek = !isOpenTask(activity.status) && touched >= week.from && touched <= week.to;
+    return overlaps || overdue || closedInWeek;
   });
 }
 

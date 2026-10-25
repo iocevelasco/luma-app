@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
-import { addCrewMember, addTask, boardColumn, moveTask, taskCard } from './helpers/crew';
+import { addCrewMember, addTask, boardColumn, moveTask, openBoard, taskCard } from './helpers/crew';
 import { requiresApi } from './helpers/api';
 
 /**
@@ -118,19 +118,20 @@ test.describe('Supervisor de obra', () => {
 
     // --- Crea una tarea en el Tablero y la mueve hasta revisión ---
     const task = `Limpiar el obrador ${RUN_ID}`;
+    await openBoard(supervisorPage, projectUrl);
     await addTask(supervisorPage, worker, task);
 
     // --- En la Jornada toma asistencia, pero no arma la cuadrilla ---
     // Marcar presentes es suyo (`crew.attendance.write`); sumar o sacar gente
     // de una tarea es del gerente (`crew.manage`), y la API se lo rechaza.
-    await supervisorPage.getByRole('tab', { name: /^jornada$/i }).click();
+    await supervisorPage.goto(`${projectUrl}/personal`);
     const dayCard = supervisorPage.locator('section', { hasText: task });
     const workerRow = dayCard.getByRole('button', { name: new RegExp(worker, 'i') });
     await workerRow.click();
     await expect(workerRow).toHaveAttribute('aria-pressed', 'true');
     await expect(dayCard.getByRole('button', { name: /asignar personal/i })).toHaveCount(0);
     await expect(dayCard.getByRole('button', { name: /quitar de la cuadrilla/i })).toHaveCount(0);
-    await supervisorPage.getByRole('tab', { name: /^tablero$/i }).click();
+    await openBoard(supervisorPage, projectUrl);
 
     await moveTask(supervisorPage, task, /mover a en revisión/i);
     await expect(
@@ -150,7 +151,7 @@ test.describe('Supervisor de obra', () => {
     await expect(page.getByRole('gridcell', { name: task, exact: true })).toBeVisible();
 
     // --- El gerente la aprueba desde el Tablero ---
-    await page.goto(`${projectUrl}/personal`);
+    await openBoard(page, projectUrl);
     await moveTask(page, task, /^aprobar$/i);
     await expect(boardColumn(page, /^completada$/i).getByRole('article', { name: task })).toBeVisible();
 

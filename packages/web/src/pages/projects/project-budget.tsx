@@ -6,7 +6,7 @@ import {
   type BudgetLine as BudgetLineDTO,
   type CreateBudgetInput,
 } from '@luma/shared';
-import { Calculator, Plus, Trash2 } from 'lucide-react';
+import { Calculator, FileUp, PencilLine, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -279,8 +279,12 @@ export function ProjectBudgetPage() {
             la adopción" —, la carga manual queda como alternativa explícita. */}
         <Tabs defaultValue="import">
           <TabsList>
-            <TabsTrigger value="import">{t('budget.import.tab')}</TabsTrigger>
-            <TabsTrigger value="manual">{t('budget.form.tab')}</TabsTrigger>
+            <TabsTrigger value="import" icon={FileUp}>
+              {t('budget.import.tab')}
+            </TabsTrigger>
+            <TabsTrigger value="manual" icon={PencilLine}>
+              {t('budget.form.tab')}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="import">
             <Card>

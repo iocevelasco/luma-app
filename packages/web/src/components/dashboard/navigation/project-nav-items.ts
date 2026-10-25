@@ -63,7 +63,7 @@ export interface ProjectNavItem {
 
 export const PROJECT_NAV_ITEMS: ProjectNavItem[] = [
   { labelKey: 'detail', path: projectDetailPath, icon: LayoutDashboard },
-  { labelKey: 'gantt', path: projectActivitiesPath, icon: CalendarRange, capability: 'activity.read' },
+  { labelKey: 'activities', path: projectActivitiesPath, icon: CalendarRange, capability: 'activity.read' },
   { labelKey: 'materials', path: projectMaterialsPath, icon: Package, capability: 'material.read' },
   { labelKey: 'labor', path: projectLaborPath, icon: Users, capability: 'crew.read' },
   { labelKey: 'milestones', path: projectMilestonesPath, icon: Flag, capability: 'milestone.read' },

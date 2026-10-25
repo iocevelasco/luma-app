@@ -94,18 +94,26 @@ export function useMoveActivity(projectId: string) {
     mutationFn: ({ activityId, status }: { activityId: string; status: ActivityStatus }) =>
       activitiesApi.update(projectId, activityId, { status }),
     onMutate: async ({ activityId, status }) => {
-      await queryClient.cancelQueries({ queryKey: key });
+      // Se cancela sin esperar: el cambio optimista tiene que verse en el cuadro
+      // en que se suelta la tarjeta. Esperar la cancelación la dejaba un instante
+      // de vuelta en su columna de origen antes de saltar a la nueva.
+      const cancelling = queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueriesData<ActivityListResponse>({ queryKey: key });
+      // `updatedAt` también: el Tablero deja a la vista lo que se tocó esta semana
+      // (ver `tasksForWeek`), y una atrasada que se completa no puede esfumarse
+      // hasta que llegue la respuesta.
+      const now = new Date().toISOString();
       queryClient.setQueriesData<ActivityListResponse>({ queryKey: key }, (data) =>
         data
           ? {
               ...data,
               activities: data.activities.map((activity) =>
-                activity.id === activityId ? { ...activity, status } : activity,
+                activity.id === activityId ? { ...activity, status, updatedAt: now } : activity,
               ),
             }
           : data,
       );
+      await cancelling;
       return { previous };
     },
     onError: (error, _variables, context) => {
@@ -116,6 +124,64 @@ export function useMoveActivity(projectId: string) {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+/**
+ * Mover las fechas de una actividad arrastrando su barra en el Cronograma.
+ *
+ * Optimista, por la misma razón que `useMoveActivity`: la barra ya está en su
+ * lugar nuevo cuando se suelta, y si la API la rechaza tiene que volver. Sin
+ * volver a escribir la caché el diagrama se quedaría con la barra movida,
+ * porque la librería no se entera de que el servidor dijo que no.
+ *
+ * Distinta de `useUpdateActivity` a propósito: no hay formulario donde poner
+ * un banner de error, así que la falla va por toast.
+ */
+export function useRescheduleActivity(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const key = [QueryKeys.activities, projectId];
+
+  return useMutation({
+    mutationFn: ({
+      activityId,
+      startDate,
+      endDate,
+    }: {
+      activityId: string;
+      startDate: string;
+      endDate: string;
+    }) => activitiesApi.update(projectId, activityId, { startDate, endDate }),
+    onMutate: async ({ activityId, startDate, endDate }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueriesData<ActivityListResponse>({ queryKey: key });
+      queryClient.setQueriesData<ActivityListResponse>({ queryKey: key }, (data) =>
+        data
+          ? {
+              ...data,
+              activities: data.activities.map((activity) =>
+                activity.id === activityId ? { ...activity, startDate, endDate } : activity,
+              ),
+            }
+          : data,
+      );
+      return { previous };
+    },
+    onSuccess: () => {
+      toast.success(t('activity.gantt.rescheduled'));
+    },
+    onError: (error, _variables, context) => {
+      for (const [queryKey, data] of context?.previous ?? []) {
+        queryClient.setQueryData(queryKey, data);
+      }
+      toast.error(errorMessage(error, t));
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      // Un cambio de fechas mueve a quién se espera cada día en la Jornada.
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.activityCrew, projectId] });
     },
   });
 }

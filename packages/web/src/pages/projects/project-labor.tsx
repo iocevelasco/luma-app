@@ -2,13 +2,12 @@ import { useMemo, useState } from 'react';
 
 import { ChevronLeft, ChevronRight, UserPlus, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
-import { TaskBoard } from '@/components/activities/task-board';
 import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
+import { CrewRosterDialog } from '@/components/crew/crew-roster-dialog';
 import { ListSections } from '@/components/common/row-card-list';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActivityAttendance } from '@/components/labor/activity-attendance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +15,6 @@ import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import { useDayAttendance } from '@/hooks/labor/use-labor-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { activitiesOnDay, summarizeDayAttendance } from '@/lib/attendance';
-import type { ProjectLaborTab } from '@/lib/routes';
 
 function shiftDay(date: string, deltaDays: number): string {
   const d = fromDayKey(date);
@@ -24,21 +22,13 @@ function shiftDay(date: string, deltaDays: number): string {
   return toDayKey(d);
 }
 
-/** Un valor desconocido en `?tab=` cae en el Tablero: es la vista principal. */
-function tabFrom(value: string | null): ProjectLaborTab {
-  return value === 'day' ? 'day' : 'board';
-}
-
 export function ProjectLaborPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const { can } = useProjectCapabilities(projectId);
   const [date, setDate] = useState(() => toDayKey(new Date()));
-  const [searchParams, setSearchParams] = useSearchParams();
   const [addCrewOpen, setAddCrewOpen] = useState(false);
   const [rosterOpen, setRosterOpen] = useState(false);
-
-  const tab = tabFrom(searchParams.get('tab'));
 
   const { data: allActivitiesData, isLoading, isError } = useAllActivities(projectId);
   const { data: attendanceData } = useDayAttendance(projectId, date);
@@ -71,35 +61,14 @@ export function ProjectLaborPage() {
 
   return (
     /*
-      Dos preguntas distintas con su propio navegador de fecha: qué tiene que
-      lograr cada uno (el Tablero, por semana) y quién vino (la Jornada, por
-      día). El Tablero es la principal y va primero; la Jornada es la
-      consulta del día. Mezclarlas en una sola vista dejaría dos calendarios
-      compitiendo en la misma pantalla.
-
-      La pestaña va en la URL (`?tab=day`) para que el aviso de faltantes de
-      la card del detalle abra la Jornada directo. `replace`: cambiar de
-      pestaña no es navegar, y "atrás" tiene que volver a la pantalla
-      anterior.
-
-      Las pestañas van en la barra de arriba, a la izquierda; "Agregar
-      personal" es la acción principal y "Personal fijo" la de segundo orden,
-      a su izquierda. El Tablero necesita el ancho entero para sus columnas.
+      Personal: quién vino hoy. Las tareas —el Tablero, el Cronograma— viven en
+      Actividades; acá queda sólo la asistencia del día y la gestión de la
+      gente. "Agregar personal" es la acción principal y "Personal fijo" la de
+      segundo orden, a su izquierda.
     */
-    <Tabs
-      value={tab}
-      onValueChange={(value) =>
-        setSearchParams(value === 'day' ? { tab: 'day' } : {}, { replace: true })
-      }
-    >
+    <>
       <PageLayout
-        width="full"
-        toolbar={
-          <TabsList>
-            <TabsTrigger value="board">{t('labor.tabs.board')}</TabsTrigger>
-            <TabsTrigger value="day">{t('labor.tabs.day')}</TabsTrigger>
-          </TabsList>
-        }
+        width="default"
         secondaryActions={
           can('crew.create') ? (
             <Button variant="outline" onClick={() => setRosterOpen(true)}>
@@ -117,15 +86,7 @@ export function ProjectLaborPage() {
           ) : undefined
         }
       >
-        <TabsContent value="board">
-          <TaskBoard
-            projectId={projectId!}
-            rosterOpen={rosterOpen}
-            onRosterOpenChange={setRosterOpen}
-          />
-        </TabsContent>
-
-        <TabsContent value="day" className="flex w-full max-w-3xl flex-col gap-6">
+        <div className="flex w-full flex-col gap-6">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => setDate((d) => shiftDay(d, -1))} aria-label={t('labor.prevDay')}>
           <ChevronLeft className="size-4" />
@@ -194,11 +155,17 @@ export function ProjectLaborPage() {
         )}
         </ListSections>
       </div>
-        </TabsContent>
-
-        <AddCrewDrawer projectId={projectId!} open={addCrewOpen} onOpenChange={setAddCrewOpen} />
+        </div>
       </PageLayout>
-    </Tabs>
+
+      <AddCrewDrawer projectId={projectId!} open={addCrewOpen} onOpenChange={setAddCrewOpen} />
+      <CrewRosterDialog
+        projectId={projectId!}
+        canManage={can('crew.manage')}
+        open={rosterOpen}
+        onOpenChange={setRosterOpen}
+      />
+    </>
   );
 }
 

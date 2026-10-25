@@ -85,9 +85,9 @@
     },
     "nav": {
       "detail": "Detalle",
-      "gantt": "Cronograma",
+      "activities": "Actividades",
       "materials": "Compras",
-      "labor": "Tareas",
+      "labor": "Personal",
       "providers": "Proveedores",
       "budget": "Presupuesto",
       "advisor": "Consultor IA",
@@ -101,8 +101,8 @@
     "navHint": {
       "back": "Vuelve al listado de todas tus obras.",
       "detail": "La obra de un vistazo: avance, dinero, compras y pendientes.",
-      "gantt": "Planifica las tareas con sus fechas y responsables.",
-      "labor": "Asigna tareas a tu gente, sigue cómo van y registra la asistencia.",
+      "activities": "Planifica y sigue las tareas: cronograma, tablero y lista.",
+      "labor": "Registra la asistencia y suma gente a la obra.",
       "materials": "Pide materiales y herramientas y sigue cada compra hasta la obra.",
       "milestones": "Registra hitos y eventualidades, y elige cuáles ve el cliente.",
       "documents": "Planos, renders, permisos y condiciones del sitio, en un solo lugar.",
@@ -247,6 +247,17 @@
     "removed": {
       "title": "La obra «{{name}}» ha sido eliminada.",
       "contact": "Ponte en contacto con el arquitecto o el jefe de obra."
+    },
+    "card": {
+      "phase": {
+        "upcoming": "Por empezar",
+        "active": "En curso",
+        "done": "Finalizada"
+      },
+      "startsIn": "Empieza {{distance}}",
+      "endsIn": "Termina {{distance}}",
+      "endedAgo": "Terminó {{distance}}",
+      "open": "Abrir"
     }
   },
   "auth": {
@@ -358,7 +369,10 @@
       "nextWeek": "Semana siguiente",
       "currentWeek": "Semana actual",
       "overdue": "Atrasada",
-      "missingMaterials": "Le faltan materiales"
+      "missingMaterials": "Faltan materiales",
+      "endsOn": "Termina el {{date}}",
+      "overdueHint_one": "Atrasada: venció hace {{count}} día",
+      "overdueHint_other": "Atrasada: venció hace {{count}} días"
     },
     "new": {
       "title": "Nueva tarea"
@@ -409,7 +423,14 @@
     },
     "gantt": {
       "goToToday": "Ir a hoy",
-      "emptyState": "No hay tareas planificadas en este rango de fechas."
+      "zoomLabel": "Escala del cronograma",
+      "zoom": {
+        "days": "Días",
+        "weeks": "Semanas",
+        "months": "Meses",
+        "quarters": "Trimestres"
+      },
+      "rescheduled": "Fechas actualizadas."
     },
     "detail": {
       "title": "Detalle de la tarea",
@@ -431,6 +452,45 @@
       "removeEvidence": "Quitar foto",
       "removeEvidenceTitle": "¿Quitar esta foto?",
       "removeEvidenceBody": "La foto se borra de la evidencia de la tarea. No se puede deshacer."
+    },
+    "views": {
+      "aria": "Vista de actividades",
+      "gantt": "Cronograma",
+      "board": "Actividades",
+      "list": "Lista",
+      "emptyTitle": "Todavía no hay actividades",
+      "emptyBody": "Cuando se cargue la primera, aparecerá aquí."
+    },
+    "filters": {
+      "search": "Buscar actividad o responsable",
+      "people": "Filtrar por responsable",
+      "button": "Filtros",
+      "quick": "Rápidos",
+      "mine": "Solo mías",
+      "overdue": "Atrasadas",
+      "missingMaterials": "Faltan materiales",
+      "awaitingReview": "Esperando mi revisión",
+      "clear": "Limpiar filtros",
+      "clearAll": "Limpiar todo",
+      "notice_one": "{{count}} filtro activo",
+      "notice_other": "{{count}} filtros activos",
+      "remove": "Quitar el filtro {{filter}}",
+      "emptyTitle": "Nada coincide con los filtros",
+      "emptyBody_one": "Hay {{count}} filtro activo que lo oculta todo. Quítalo desde las etiquetas de arriba.",
+      "emptyBody_other": "Hay {{count}} filtros activos que lo ocultan todo. Quita alguno desde las etiquetas de arriba."
+    },
+    "dayPdf": {
+      "button": "Descargar actividades de hoy",
+      "generating": "Generando PDF…",
+      "title": "Actividades del día",
+      "summary_one": "{{count}} actividad",
+      "summary_other": "{{count}} actividades",
+      "filtered": "Con filtros aplicados: no es la lista completa del día.",
+      "columnDates": "Fechas",
+      "generated": "Generado el {{date}}",
+      "page": "Página {{page}} de {{total}}",
+      "downloaded": "PDF descargado.",
+      "error": "No hemos podido crear el PDF. Inténtalo de nuevo."
     }
   },
   "material": {
@@ -799,10 +859,6 @@
     }
   },
   "labor": {
-    "tabs": {
-      "day": "Jornada",
-      "board": "Tablero"
-    },
     "prevDay": "Día anterior",
     "nextDay": "Día siguiente",
     "today": "Hoy",
@@ -1355,13 +1411,7 @@
   },
   "task": {
     "board": {
-      "hint": {
-        "pendiente": "Nadie la arrancó todavía.",
-        "en_curso": "Alguien está en esto.",
-        "en_revision": "Reportada terminada, espera aprobación.",
-        "completada": "Aprobadas."
-      },
-      "newTask": "Nueva tarea",
+      "quickAdd": "Alta rápida",
       "namePlaceholder": "Ej: limpiar el obrador",
       "assignee": "¿Quién la hace?",
       "assigneePlaceholder": "Elige persona o equipo",
@@ -1373,8 +1423,6 @@
       "restore": "Restaurar",
       "delete": "Eliminar",
       "cardActions": "Acciones de la tarea",
-      "filterLabel": "Filtrar por persona",
-      "filterAll": "Todos",
       "emptyColumn": "Nada por aquí.",
       "showCancelled": "Ver canceladas ({{count}})",
       "hideCancelled": "Ocultar canceladas",
