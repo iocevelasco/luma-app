@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, formatDistanceStrict, startOfDay, type Locale } from 'date-fns';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 
 /** Dónde está una obra en el tiempo, según sus fechas estimadas. No se guarda: se calcula. */
 export type ProjectPhase = 'upcoming' | 'active' | 'done';

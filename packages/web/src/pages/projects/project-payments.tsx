@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Can } from '@/components/permissions/can';
 import { FormDrawer } from '@/components/common/form-drawer';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
 import {
   AlertDialog,

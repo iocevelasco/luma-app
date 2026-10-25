@@ -4,7 +4,7 @@ import type { Project } from '@luma/shared';
 import { ArrowRight, HardHat, MapPin, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey } from '@/lib/day-key';
 import { RemovedProjectsNotice } from '@/components/projects/removed-projects-notice';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';

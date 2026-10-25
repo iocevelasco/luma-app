@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Gantt, Willow, type IApi, type IColumnConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
 import type { Activity, ActivityStatus } from '@luma/shared';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { TruncatedText } from '@/components/common/truncated-text';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { useDateLocale } from '@/hooks/use-date-locale';

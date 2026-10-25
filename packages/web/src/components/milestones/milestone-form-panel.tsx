@@ -17,7 +17,7 @@ import {
   MilestoneAttachmentsField,
   type LocalAttachment,
 } from '@/components/milestones/milestone-attachments-field';
-import { toDayKey } from '@/components/common/date-range-filter';
+import { toDayKey } from '@/lib/day-key';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

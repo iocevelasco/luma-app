@@ -1,5 +1,5 @@
 import type { ActivityStatus } from '@luma/shared';
-import { toDayKey } from '@/components/common/date-range-filter';
+import { toDayKey } from '@/lib/day-key';
 
 /**
  * Semana ISO (arranca lunes) para la vista de planificación (RF-01). No hay

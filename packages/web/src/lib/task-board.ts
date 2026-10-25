@@ -1,5 +1,5 @@
 import { normalizePersonName, type Activity, type ActivityStatus, type Capability } from '@luma/shared';
-import { toDayKey } from '@/components/common/date-range-filter';
+import { toDayKey } from '@/lib/day-key';
 import type { WeekRange } from '@/lib/week';
 
 /**

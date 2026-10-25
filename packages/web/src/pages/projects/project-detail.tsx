@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { Can } from '@/components/permissions/can';
 import { PageLayout } from '@/components/layout/page-layout';
 import { DeleteProjectSection } from '@/components/projects/delete-project-dialog';

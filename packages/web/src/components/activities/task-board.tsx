@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import type { Activity, ActivityStatus } from '@luma/shared';
 import { CalendarRange, ChevronLeft, ChevronRight, Clock, MoreHorizontal, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { TaskKanban } from '@/components/activities/task-kanban';
 import {
   AlertDialog,

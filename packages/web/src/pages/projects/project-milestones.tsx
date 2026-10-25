@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { Flag, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, Outlet, useParams } from 'react-router-dom';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey } from '@/lib/day-key';
 import { ListSection, ListSections, RowCardList } from '@/components/common/row-card-list';
 import { PageLayout } from '@/components/layout/page-layout';
 import { MilestoneCard } from '@/components/milestones/milestone-card';

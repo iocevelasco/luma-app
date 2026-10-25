@@ -37,7 +37,7 @@ import { CrewRosterDialog } from '@/components/crew/crew-roster-dialog';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { ActivityStatusIcon } from '@/components/common/activity-status-icon';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { PageLayout } from '@/components/layout/page-layout';
 import {
