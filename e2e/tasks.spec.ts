@@ -53,13 +53,11 @@ async function startProject(
   return page.url();
 }
 
-/** Crea una tarea desde el Cronograma ("Nueva tarea"). */
-async function planTask(
+/** Crea una tarea desde la pantalla de Actividades en la que ya se está ("Nueva tarea"). */
+async function createTask(
   page: Page,
-  projectUrl: string,
   task: { name: string; start: string; end: string; responsible?: RegExp },
 ) {
-  await page.goto(`${projectUrl}/actividades`);
   await page.getByRole('button', { name: /nueva tarea/i }).click();
   await page.locator('#activity-name').fill(task.name);
   await pickActivitySpecialty(page);
@@ -68,6 +66,16 @@ async function planTask(
   await pickActivityResponsible(page, task.responsible);
   await page.getByRole('button', { name: /crear tarea/i }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
+}
+
+/** Abre Actividades y crea una tarea. */
+async function planTask(
+  page: Page,
+  projectUrl: string,
+  task: { name: string; start: string; end: string; responsible?: RegExp },
+) {
+  await page.goto(`${projectUrl}/actividades`);
+  await createTask(page, task);
 }
 
 /** La card de tareas del detalle de la obra. */
@@ -367,6 +375,92 @@ test.describe('tareas', () => {
     // El primer mes de la escala es julio entero (31 días de 32px), no sólo el 31.
     const width = (await firstMonth.boundingBox())?.width ?? 0;
     expect(width).toBeGreaterThanOrEqual(31 * 32 - 2);
+  });
+
+  test.describe('el Cronograma y el scroll a hoy', () => {
+    /** La columna de hoy, que sólo se dibuja en la escala de días y sólo si está a la vista. */
+    const todayColumn = (page: Page) => page.locator('.luma-gantt-today');
+
+    /** Desplaza el diagrama al origen: lo más lejos de hoy que se puede estar. */
+    async function scrollToStart(page: Page) {
+      await page.evaluate(() => {
+        const chart = document.querySelector('.wx-chart');
+        if (chart) chart.scrollLeft = 0;
+      });
+    }
+
+    const scrollLeft = (page: Page) =>
+      page.evaluate(() => document.querySelector('.wx-chart')?.scrollLeft ?? -1);
+
+    // La obra arranca dos meses atrás: hoy queda lejos del origen en cualquier zoom.
+    async function openGantt(page: Page, label: string) {
+      const projectUrl = await startProject(page, label, { start: dayKey(-60) });
+      await planTask(page, projectUrl, {
+        name: `Tarea ${label} ${RUN_ID}`,
+        start: dayKey(0),
+        end: dayKey(5),
+      });
+      await page.goto(`${projectUrl}/actividades`);
+      await page.getByRole('radio', { name: /^días$/i }).click();
+      await expect(todayColumn(page).first()).toBeVisible();
+      return projectUrl;
+    }
+
+    test('"Ir a hoy" vuelve a la fecha de hoy desde cualquier parte del diagrama', async ({
+      page,
+    }) => {
+      await openGantt(page, 'irhoy');
+
+      await scrollToStart(page);
+      await expect(todayColumn(page)).toHaveCount(0);
+
+      await page.getByRole('button', { name: /ir a hoy/i }).click();
+      await expect(todayColumn(page).first()).toBeVisible();
+    });
+
+    test('cambiar el zoom recentra en hoy: el scroll es en píxeles y cada escala los mide distinto', async ({
+      page,
+    }) => {
+      await openGantt(page, 'zoom');
+
+      // Meses y Trimestres no dibujan la columna de hoy: se mira que el scroll no haya
+      // quedado en el origen ni pegado al final, que era dónde terminaba.
+      const centred = () =>
+        page.evaluate(() => {
+          const chart = document.querySelector('.wx-chart');
+          if (!chart) return false;
+          const end = chart.scrollWidth - chart.clientWidth;
+          return chart.scrollLeft > 50 && chart.scrollLeft < end - 50;
+        });
+      for (const zoom of [/^meses$/i, /^trimestres$/i]) {
+        await page.getByRole('radio', { name: zoom }).click();
+        await expect.poll(centred).toBe(true);
+      }
+
+      await page.getByRole('radio', { name: /^semanas$/i }).click();
+      await page.getByRole('radio', { name: /^días$/i }).click();
+      await expect(todayColumn(page).first()).toBeVisible();
+    });
+
+    test('que crezca el rango no devuelve el diagrama a hoy mientras se mira otra parte', async ({
+      page,
+    }) => {
+      await openGantt(page, 'rango');
+      await scrollToStart(page);
+      await expect(todayColumn(page)).toHaveCount(0);
+
+      // Una tarea fuera de las fechas de la obra estira el rango del diagrama.
+      const far = `Tarea lejana ${RUN_ID}`;
+      await createTask(page, { name: far, start: '2028-02-01', end: '2028-02-10' });
+      await expect(page.getByRole('gridcell', { name: far, exact: true })).toBeVisible();
+
+      // Con el efecto anterior el salto a hoy corría a los dos cuadros de cambiar el
+      // rango; un segundo es un margen enorme, y es la única forma de afirmar
+      // que algo NO pasó.
+      await page.waitForTimeout(1_000);
+      expect(await scrollLeft(page)).toBe(0);
+      await expect(todayColumn(page)).toHaveCount(0);
+    });
   });
 
   test('la Lista descarga las actividades del día en un PDF tamaño carta', async ({ page }) => {

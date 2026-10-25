@@ -87,6 +87,9 @@ function StatusCell({ row }: { row: unknown }) {
 /** Días de contexto que se dejan antes de hoy al posicionar el diagrama. */
 const LEAD_DAYS = 3;
 
+/** Lo que tarda la librería en reacomodar la escala después de un cambio de zoom (medido: 250 ms alcanza en los cuatro). */
+const ZOOM_SETTLE_MS = 250;
+
 /**
  * Lo que la librería sabe hacer y Luma no: no hay jerarquía, no hay
  * dependencias y las filas no se crean ni se borran desde acá. Se cortan en el
@@ -135,25 +138,61 @@ export function ActivityGantt({
     [todayKey],
   );
 
+  // El salto a hoy es una orden, no un efecto de lo que cambie alrededor. Lo
+  // dispara el montaje, "Ir a hoy" (`focusRequest`) y un cambio de zoom, y nada
+  // más: que crezca el rango (una tarea arrastrada o creada fuera de las fechas
+  // de la obra) o que pase la medianoche no puede devolver el diagrama a hoy
+  // mientras la persona está mirando otra parte. Lo demás se lee por ref: si
+  // fuera dependencia del efecto, cambiarlo lo volvería a disparar.
+  const focusStateRef = useRef({ focusOnToday, todayInRange, todayKey });
   useEffect(() => {
-    if (!focusOnToday || !todayInRange) return;
-    const date = addDays(fromDayKey(todayKey), -LEAD_DAYS);
+    focusStateRef.current = { focusOnToday, todayInRange, todayKey };
+  });
+
+  /**
+   * Posiciona el diagrama en hoy, tras esperar `delayMs`. Devuelve cómo cancelar
+   * lo que quede pendiente.
+   */
+  const scrollToToday = useCallback((delayMs = 0) => {
+    const { focusOnToday: enabled, todayInRange: inRange, todayKey: today } = focusStateRef.current;
+    if (!enabled || !inRange) return undefined;
+    const date = addDays(fromDayKey(today), -LEAD_DAYS);
+    let first = 0;
     let second = 0;
-    // Un cuadro después: el diagrama mide su ancho recién al montarse.
-    const first = window.requestAnimationFrame(() => {
-      // La librería no se entera de lo que la persona desplazó con el scroll: si
-      // ya cree estar en esa fecha, "ir a hoy" no hace nada. Se la lleva primero
-      // al origen y, un cuadro después, a hoy: así el cambio es siempre real.
-      apiRef.current?.exec('scroll-chart', { left: 0 });
-      second = window.requestAnimationFrame(() => {
-        apiRef.current?.exec('scroll-chart', { date });
+    const timer = window.setTimeout(() => {
+      // Un cuadro después: el diagrama mide su ancho recién al montarse.
+      first = window.requestAnimationFrame(() => {
+        // La librería no se entera de lo que la persona desplazó con el scroll: si
+        // ya cree estar en esa fecha, "ir a hoy" no hace nada. Se la lleva primero
+        // al origen y, un cuadro después, a hoy: así el cambio es siempre real.
+        apiRef.current?.exec('scroll-chart', { left: 0 });
+        second = window.requestAnimationFrame(() => {
+          apiRef.current?.exec('scroll-chart', { date });
+        });
       });
-    });
+    }, delayMs);
     return () => {
+      window.clearTimeout(timer);
       window.cancelAnimationFrame(first);
       window.cancelAnimationFrame(second);
     };
-  }, [focusOnToday, todayInRange, todayKey, range.from, range.to, focusRequest, zoom]);
+  }, []);
+
+  // Al montar y con cada "Ir a hoy".
+  useEffect(() => scrollToToday(), [focusRequest, scrollToToday]);
+
+  // Al cambiar el zoom, a hoy **a propósito**: el scroll se guarda en píxeles y
+  // un píxel es otra fecha en cada escala. Sin recentrar, el diagrama quedaba
+  // mirando una fecha cualquiera. No corre en el primer render: de eso se ocupa
+  // el montaje. Con espera: pidiéndole la fecha antes de que la librería termine
+  // de acomodar la escala nueva, en Meses y Trimestres el scroll terminaba al
+  // final del diagrama (medido en Chromium; con ZOOM_SETTLE_MS cae en hoy).
+  const previousZoomRef = useRef(zoom);
+  useEffect(() => {
+    if (previousZoomRef.current === zoom) return undefined;
+    previousZoomRef.current = zoom;
+    return scrollToToday(ZOOM_SETTLE_MS);
+  }, [zoom, scrollToToday]);
 
   // La etiqueta del mes de la escala es un `span` pegajoso que se queda a la
   // izquierda mientras ese mes está a la vista, pero acotado a lo que queda
