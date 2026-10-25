@@ -26,8 +26,11 @@ const buttonVariants = cva(
         // `foreground` y no en verde — son los "Cancelar" y "Volver" del
         // panel, y el verde se reserva para la acción principal. En una
         // superficie oscura `card` es el oscuro del tema.
+        // Sobre una Card blanca el botón y su fondo son el mismo blanco y la
+        // sombra suave deja el borde en ~1,2:1. Ahí (y sólo ahí) suma un aro de
+        // 1px al 20%: ~1,6–1,8:1, sin llegar a ser un marco. Medido en Chromium.
         outline:
-          "bg-card text-foreground shadow-surface hover:bg-accent active:bg-accent",
+          "bg-card text-foreground shadow-surface in-data-[slot=card]:shadow-[0_0_0_1px_rgb(24_24_27/0.2),var(--shadow-surface)] hover:bg-accent active:bg-accent",
         secondary:
           "bg-secondary text-secondary-foreground shadow-raised hover:brightness-125 active:shadow-cta-pressed",
         ghost:

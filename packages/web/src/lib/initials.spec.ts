@@ -15,4 +15,10 @@ describe('initials', () => {
     expect(initials('  Luis   Benítez ')).toBe('LB');
     expect(initials('')).toBe('');
   });
+
+  it('con un nombre vacío da el valor de reserva, que por defecto es nada', () => {
+    expect(initials('', '?')).toBe('?');
+    expect(initials('   ', '?')).toBe('?');
+    expect(initials('Ana', '?')).toBe('A');
+  });
 });

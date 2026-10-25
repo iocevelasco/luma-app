@@ -16,7 +16,7 @@ import {
   useSaveManualRate,
 } from '@/hooks/platform/use-platform-billing-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey } from '@/lib/day-key';
 
 /**
  * La tasa BCV como la opera el admin: la vigente, leer el BCV ya, cargar una

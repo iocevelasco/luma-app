@@ -15,5 +15,11 @@ test-results/
 .claude/settings.local.json
 CLAUDE.local.md
 
+# media-gen: el skill es un symlink a una ruta de esta máquina, y los originales
+# sin comprimir, el log de costos y las previews no son un entregable. Sólo se
+# commitea lo que queda en public/ o en assets/.
+.claude/skills/media-gen
+media-output/
+
 # Vista previa de los mails (pnpm --filter @luma/api email:preview)
 email-previews/

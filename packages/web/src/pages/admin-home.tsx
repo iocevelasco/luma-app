@@ -1,24 +1,22 @@
 import { useId, useState } from 'react';
-import { format, formatDistanceStrict, formatDistanceToNowStrict } from 'date-fns';
+import { format, formatDistanceStrict } from 'date-fns';
 import type { Project } from '@luma/shared';
-import { ArrowRight, HardHat, MapPin, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, HardHat, MapPin, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey } from '@/lib/day-key';
 import { RemovedProjectsNotice } from '@/components/projects/removed-projects-notice';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { useDeletedProjects, useProjects } from '@/hooks/projects/use-project-queries';
+import { useProjects } from '@/hooks/projects/use-project-queries';
+import { projectCaption, type ProjectPhase } from '@/lib/project-timing';
 import { ROUTES, projectActivitiesPath } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { ActivatePlanDialog } from '@/components/subscription/activate-plan-dialog';
 import { BolivaresPaymentDrawer } from '@/components/subscription/bolivares-payment-drawer';
 import { useMySubscription } from '@/hooks/subscription/use-subscription-queries';
 import { nextProjectState } from '@/lib/subscription';
-
-/** Dónde está una obra en el tiempo, según sus fechas estimadas. No se guarda: se calcula. */
-type ProjectPhase = 'upcoming' | 'active' | 'done';
 
 const PHASE_DOT: Record<ProjectPhase, string> = {
   upcoming: 'bg-warning',
@@ -46,16 +44,8 @@ function ProjectCard({ project }: { project: Project }) {
 
   const start = fromDayKey(project.estimatedStartDate);
   const end = fromDayKey(project.estimatedEndDate);
-  const today = toDayKey(new Date());
-  const phase: ProjectPhase =
-    today < project.estimatedStartDate ? 'upcoming' : today > project.estimatedEndDate ? 'done' : 'active';
-  const distance = (date: Date) => formatDistanceToNowStrict(date, { addSuffix: true, locale: dateLocale });
-  const caption =
-    phase === 'upcoming'
-      ? t('project.card.startsIn', { distance: distance(start) })
-      : phase === 'active'
-        ? t('project.card.endsIn', { distance: distance(end) })
-        : t('project.card.endedAgo', { distance: distance(end) });
+  const { phase, key: captionKey, distance } = projectCaption(project, new Date(), dateLocale);
+  const caption = t(`project.card.${captionKey}`, { distance });
   const chipClass = 'inline-flex items-center rounded-md bg-foreground/10 px-2.5 py-1 text-xs text-foreground';
 
   return (
@@ -142,7 +132,6 @@ function ProjectCard({ project }: { project: Project }) {
 export function AdminHomePage() {
   const { t } = useTranslation();
   const { data, isLoading } = useProjects();
-  const { data: trash } = useDeletedProjects();
   const { data: subscription } = useMySubscription();
   const [activating, setActivating] = useState(false);
   const [payingInBolivares, setPayingInBolivares] = useState(false);
@@ -165,16 +154,6 @@ export function AdminHomePage() {
     <PageLayout
       width="full"
       isLoading={isLoading}
-      secondaryActions={
-        trash && trash.projects.length > 0 ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link to={ROUTES.PROJECTS_TRASH}>
-              <Trash2 className="size-4" />
-              {t('project.trash.link', { count: trash.projects.length })}
-            </Link>
-          </Button>
-        ) : undefined
-      }
       action={
         next === 'trialLimit' ? (
           <Button onClick={() => setActivating(true)}>{newProjectLabel}</Button>

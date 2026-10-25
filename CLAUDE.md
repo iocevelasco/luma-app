@@ -433,6 +433,34 @@ nada más que ahí. Para ejecutar E2E —o entrar a mano con un rol— se usan e
 - E2E se agrega por **flujo que una persona recorre**, no por endpoint. Un endpoint
   nuevo se cubre con unit en la API.
 
+## Multimedia — skill `media-gen`
+
+**Todo pedido de imagen, video o audio se resuelve con `media-gen`**
+(`.claude/skills/media-gen`, uso completo en su `SKILL.md`). No uses
+`claude-banana` ni otro generador, y no llames a la API a mano: `media-gen`
+entrega el archivo ya al tamaño, comprimido y con el costo estimado.
+`claude-banana` sólo escribe prompts; acá el prompt y el archivo salen de un
+solo paso.
+
+- El skill es un **symlink local** (no se commitea) y la key va en
+  `.claude/settings.local.json` → `env.GEMINI_API_KEY`, también ignorado.
+  Nunca la pidas por el chat ni la escribas en un archivo que se commitea.
+- **Salida dentro del paquete que la usa**: la SPA en `packages/web/public/<sección>/`
+  (se sirve con `import.meta.env.BASE_URL`), la landing en
+  `packages/landing/src/assets/images/` (Vite le pone hash). Siempre WebP, con
+  `--width/--height` de lo que la pantalla muestra y `--max-kb`; nunca la imagen
+  cruda del modelo. Para un nombre exacto: `--single --name <id> --out <carpeta>`.
+- **Costo**: el script estima antes de gastar y exige `--yes` si pasa de USD 0,50.
+  Mostrale el número al usuario y esperá su OK; nunca pases `--yes` por tu cuenta.
+- **Texto dentro de la imagen**: usá `--model gemini-3-pro-image`, mantené cada
+  frase corta (≤ 25 caracteres por línea) y **centrá todo el bloque en el 60%
+  central del ancho**. Un `object-cover` recorta los costados cuando el panel se
+  angosta; lo que está al borde se corta, lo que está al centro no. Una imagen con
+  texto horneado queda en un solo idioma: si el texto cambia por locale, va en HTML.
+- Una imagen para desktop y otra para mobile son dos generaciones con su propio
+  formato (4:5 y 16:9, por ejemplo), no un recorte de la misma.
+- `media-output/` (originales, costos, previews) está en `.gitignore`.
+
 ## Cómo está configurado Claude acá
 
 Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
@@ -444,6 +472,7 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 | `.claude/hooks/pre-push-check.sh` | Bloquea todo `git push` cuyo destino sea main o master. El flujo es rama de feature + PR, y una regla de permisos no puede expresar "salvo a main" |
 | `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e (chromium) |
 | `.claude/commands/feature.md` | `/feature <qué>` — implementa respetando el orden shared → api → capa 1 → capa 2 → UI → i18n |
+| `.claude/skills/media-gen/` | Symlink local al skill que genera imágenes, video y audio (sección Multimedia). No se commitea; la key va en `settings.local.json` |
 | `.claude/agents/criterio.md` | Agente de producto: afila un pedido vago en un encargo implementable y lo critica antes de que se escriba código |
 | `.mcp.json` | MongoDB en modo lectura (`MONGODB_URI`) y Coolify con lectura y escritura (`COOLIFY_URL`, `COOLIFY_TOKEN`) — 111 herramientas, 24 destructivas; ninguna en `allow`, así que todas piden aprobación. Ver `docs/DEPLOY.md` |
 

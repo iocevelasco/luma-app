@@ -1,4 +1,4 @@
-import { CreditCard, Landmark, LogOut, Settings, User } from 'lucide-react';
+import { CreditCard, Landmark, LogOut, Settings, Trash2, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLogout } from '@/hooks/auth/use-auth-queries';
+import { useDeletedProjects } from '@/hooks/projects/use-project-queries';
 import { isAdmin } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
@@ -20,6 +21,7 @@ export function UserMenu() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const logout = useLogout();
+  const { data: trash } = useDeletedProjects();
 
   const initials = (user?.name ?? user?.email ?? '?').slice(0, 2).toUpperCase();
 
@@ -61,6 +63,16 @@ export function UserMenu() {
             {t('userMenu.subscription')}
           </Link>
         </DropdownMenuItem>
+
+        {/* Sólo aparece si hay algo adentro: una papelera vacía no es un destino. */}
+        {trash && trash.projects.length > 0 && (
+          <DropdownMenuItem asChild>
+            <Link to={ROUTES.PROJECTS_TRASH} data-testid="user-menu-trash">
+              <Trash2 className="size-4" />
+              {t('project.trash.link', { count: trash.projects.length })}
+            </Link>
+          </DropdownMenuItem>
+        )}
 
         {isAdmin(user?.role) && (
           <DropdownMenuItem asChild>

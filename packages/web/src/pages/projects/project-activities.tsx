@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import {
@@ -32,14 +32,13 @@ import { toast } from 'sonner';
 import { ResponsibleField } from '@/components/activities/responsible-field';
 import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityFilterControls, ActiveFiltersNotice } from '@/components/activities/activity-filter-bar';
-import { ActivityGantt, GANTT_ZOOMS, type GanttZoom } from '@/components/activities/activity-gantt';
 import { ActivityList } from '@/components/activities/activity-list';
-import { TaskBoard } from '@/components/activities/task-board';
 import { CrewRosterDialog } from '@/components/crew/crew-roster-dialog';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { ActivityStatusIcon } from '@/components/common/activity-status-icon';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
+import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { PageLayout } from '@/components/layout/page-layout';
 import {
   AlertDialog,
@@ -94,10 +93,11 @@ import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilitie
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { useActivityFilters } from '@/hooks/activities/use-activity-filters';
 import { ACTIVITY_SPECIALTIES, ACTIVITY_STATUSES, MATERIAL_STATUSES_BLOCKING } from '@/lib/activity-catalog';
-import { activitiesOfDay } from '@/lib/activities-day-pdf';
+import { activitiesOfDay } from '@/lib/activities-day';
 import { scheduleRange } from '@/lib/activity-range';
 import { applyActivityFilters, countActiveFilters, pruneActivityFilters } from '@/lib/activity-filters';
 import { downloadBlob } from '@/lib/download-blob';
+import { GANTT_ZOOMS, type GanttZoom } from '@/lib/gantt-zoom';
 import { allowedMoves, taskPeople } from '@/lib/task-board';
 import { isWithinNextDays } from '@/lib/week';
 import { cn } from '@/lib/utils';
@@ -904,6 +904,13 @@ type ActivitiesView = 'gantt' | 'board' | 'list';
 
 const ACTIVITIES_VIEWS: readonly ActivitiesView[] = ['gantt', 'board', 'list'];
 
+// El Cronograma y el Tablero traen cada uno su librería (SVAR) y pesan más que el resto de la
+// pantalla junta: se bajan al abrir la vista, no con la página. La Lista es liviana y va con ella.
+const loadGantt = () => import('@/components/activities/activity-gantt');
+const loadBoard = () => import('@/components/activities/task-board');
+const ActivityGantt = lazy(loadGantt);
+const TaskBoard = lazy(loadBoard);
+
 /** La vista va en la URL (`?vista=`), en castellano como el resto de las rutas. */
 const VIEW_PARAM: Record<ActivitiesView, string | null> = {
   gantt: null,
@@ -947,6 +954,12 @@ export function ProjectActivitiesPage() {
   const views = ACTIVITIES_VIEWS.filter((name) => name !== 'board' || can('crew.read'));
   const requestedView = viewFrom(searchParams.get('vista'));
   const view = views.includes(requestedView) ? requestedView : 'gantt';
+  // Se empieza a bajar la vista apenas se sabe cuál es, no cuando llegan los datos: mientras la
+  // página muestra la carga, el chunk viaja en paralelo en vez de después.
+  useEffect(() => {
+    if (view === 'gantt') void loadGantt();
+    else if (view === 'board') void loadBoard();
+  }, [view]);
   const canReadProviders = can('provider.read');
   const canReadMaterials = can('material.read');
   // Sin permiso no se pide: un 403 acá se vería como "sin materiales".
@@ -1099,6 +1112,8 @@ export function ProjectActivitiesPage() {
           // del Tablero tienen que llegar hasta abajo, o soltar una tarea en la parte vacía
           // de una columna no cuenta. En el celular el Tablero es una lista y scrollea la página.
           fill={view === 'gantt' || (view === 'board' && !isMobile)}
+          // El aviso de filtros flota abajo: mientras haya filtros, el contenido le deja lugar.
+          reserveBottom={activeFilters > 0}
           toolbar={
             <>
               <TabsList aria-label={t('activity.views.aria')} className="h-10 p-1">
@@ -1192,29 +1207,31 @@ export function ProjectActivitiesPage() {
           // rápida) que se carga la primera tarea.
           empty={view === 'board' ? undefined : empty}
         >
-          {view === 'gantt' && (
-            <ActivityGantt
-              activities={visible}
-              range={range}
-              zoom={zoom}
-              onSelectActivity={setSelectedActivityId}
-              onReschedule={
-                can('activity.plan')
-                  ? (activityId, startDate, endDate) =>
-                      rescheduleActivity.mutate({ activityId, startDate, endDate })
-                  : undefined
-              }
-              focusOnToday
-              focusRequest={todayRequest}
-            />
-          )}
-          {view === 'board' && (
-            <TaskBoard
-              projectId={projectId!}
-              activities={visible}
-              onSelectActivity={setSelectedActivityId}
-            />
-          )}
+          <Suspense fallback={<LoadingIndicator />}>
+            {view === 'gantt' && (
+              <ActivityGantt
+                activities={visible}
+                range={range}
+                zoom={zoom}
+                onSelectActivity={setSelectedActivityId}
+                onReschedule={
+                  can('activity.plan')
+                    ? (activityId, startDate, endDate) =>
+                        rescheduleActivity.mutate({ activityId, startDate, endDate })
+                    : undefined
+                }
+                focusOnToday
+                focusRequest={todayRequest}
+              />
+            )}
+            {view === 'board' && (
+              <TaskBoard
+                projectId={projectId!}
+                activities={visible}
+                onSelectActivity={setSelectedActivityId}
+              />
+            )}
+          </Suspense>
           {view === 'list' && (
             <ActivityList
               activities={visible}

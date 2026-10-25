@@ -14,7 +14,7 @@ import { useReviewSubscriptionPayment } from '@/hooks/platform/use-platform-bill
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { errorMessage } from '@/lib/error-message';
 import { formatBolivares, formatMoney } from '@/lib/format-money';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey } from '@/lib/day-key';
 
 function Field({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (

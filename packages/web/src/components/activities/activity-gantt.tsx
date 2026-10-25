@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { Gantt, Willow, type IApi, type IColumnConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
 import type { Activity, ActivityStatus } from '@luma/shared';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { TruncatedText } from '@/components/common/truncated-text';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import type { GanttZoom } from '@/lib/gantt-zoom';
 import { cn } from '@/lib/utils';
 
 /**
@@ -24,11 +25,6 @@ const STATUS_PROGRESS: Record<ActivityStatus, number> = {
   completada: 100,
   cancelada: 0,
 };
-
-/** Cuánto se ve de la línea de tiempo: de cada día a cada trimestre. */
-export type GanttZoom = 'days' | 'weeks' | 'months' | 'quarters';
-
-export const GANTT_ZOOMS: readonly GanttZoom[] = ['days', 'weeks', 'months', 'quarters'];
 
 interface ActivityGanttProps {
   activities: Activity[];
@@ -87,6 +83,9 @@ function StatusCell({ row }: { row: unknown }) {
 /** Días de contexto que se dejan antes de hoy al posicionar el diagrama. */
 const LEAD_DAYS = 3;
 
+/** Lo que tarda la librería en reacomodar la escala después de un cambio de zoom (medido: 250 ms alcanza en los cuatro). */
+const ZOOM_SETTLE_MS = 250;
+
 /**
  * Lo que la librería sabe hacer y Luma no: no hay jerarquía, no hay
  * dependencias y las filas no se crean ni se borran desde acá. Se cortan en el
@@ -135,30 +134,80 @@ export function ActivityGantt({
     [todayKey],
   );
 
+  // El salto a hoy es una orden, no un efecto de lo que cambie alrededor. Lo
+  // dispara el montaje, "Ir a hoy" (`focusRequest`) y un cambio de zoom, y nada
+  // más: que crezca el rango (una tarea arrastrada o creada fuera de las fechas
+  // de la obra) o que pase la medianoche no puede devolver el diagrama a hoy
+  // mientras la persona está mirando otra parte. Lo demás se lee por ref: si
+  // fuera dependencia del efecto, cambiarlo lo volvería a disparar.
+  const focusStateRef = useRef({ focusOnToday, todayInRange, todayKey });
   useEffect(() => {
-    if (!focusOnToday || !todayInRange) return;
-    const date = addDays(fromDayKey(todayKey), -LEAD_DAYS);
+    focusStateRef.current = { focusOnToday, todayInRange, todayKey };
+  });
+
+  /**
+   * Posiciona el diagrama en hoy, tras esperar `delayMs`. Devuelve cómo cancelar
+   * lo que quede pendiente.
+   */
+  const scrollToToday = useCallback((delayMs = 0) => {
+    const { focusOnToday: enabled, todayInRange: inRange, todayKey: today } = focusStateRef.current;
+    if (!enabled || !inRange) return undefined;
+    const date = addDays(fromDayKey(today), -LEAD_DAYS);
+    let first = 0;
     let second = 0;
-    // Un cuadro después: el diagrama mide su ancho recién al montarse.
-    const first = window.requestAnimationFrame(() => {
-      // La librería no se entera de lo que la persona desplazó con el scroll: si
-      // ya cree estar en esa fecha, "ir a hoy" no hace nada. Se la lleva primero
-      // al origen y, un cuadro después, a hoy: así el cambio es siempre real.
-      apiRef.current?.exec('scroll-chart', { left: 0 });
-      second = window.requestAnimationFrame(() => {
-        apiRef.current?.exec('scroll-chart', { date });
+    const timer = window.setTimeout(() => {
+      // Un cuadro después: el diagrama mide su ancho recién al montarse.
+      first = window.requestAnimationFrame(() => {
+        // La librería no se entera de lo que la persona desplazó con el scroll: si
+        // ya cree estar en esa fecha, "ir a hoy" no hace nada. Se la lleva primero
+        // al origen y, un cuadro después, a hoy: así el cambio es siempre real.
+        apiRef.current?.exec('scroll-chart', { left: 0 });
+        second = window.requestAnimationFrame(() => {
+          apiRef.current?.exec('scroll-chart', { date });
+        });
       });
-    });
+    }, delayMs);
     return () => {
+      window.clearTimeout(timer);
       window.cancelAnimationFrame(first);
       window.cancelAnimationFrame(second);
     };
-  }, [focusOnToday, todayInRange, todayKey, range.from, range.to, focusRequest, zoom]);
+  }, []);
+
+  // Al montar y con cada "Ir a hoy".
+  useEffect(() => scrollToToday(), [focusRequest, scrollToToday]);
+
+  // Al cambiar el zoom, a hoy **a propósito**: el scroll se guarda en píxeles y
+  // un píxel es otra fecha en cada escala. Sin recentrar, el diagrama quedaba
+  // mirando una fecha cualquiera. No corre en el primer render: de eso se ocupa
+  // el montaje. Con espera: pidiéndole la fecha antes de que la librería termine
+  // de acomodar la escala nueva, en Meses y Trimestres el scroll terminaba al
+  // final del diagrama (medido en Chromium; con ZOOM_SETTLE_MS cae en hoy).
+  const previousZoomRef = useRef(zoom);
+  useEffect(() => {
+    if (previousZoomRef.current === zoom) return undefined;
+    previousZoomRef.current = zoom;
+    return scrollToToday(ZOOM_SETTLE_MS);
+  }, [zoom, scrollToToday]);
 
   // La etiqueta del mes de la escala es un `span` pegajoso que se queda a la
   // izquierda mientras ese mes está a la vista, pero acotado a lo que queda
   // visible de su celda. Con un solo día de un mes a la vista no entra y se veía
   // cortada ("ulio 2026"): se esconde mientras no entre, y vuelve al desplazar.
+  //
+  // No se resuelve con CSS: "cuánto de esta celda quedó dentro del área que
+  // desplaza" depende del scroll, y una hoja de estilos no lo puede preguntar
+  // (sólo las animaciones atadas al scroll, que Safari estable no tiene).
+  //
+  // Depende de cómo arma el DOM `@svar-ui/react-gantt` 2.8.1, y por eso la versión
+  // está fija en `package.json`:
+  //  - `.wx-chart`: el área que desplaza el diagrama.
+  //  - `.wx-scale .wx-row:first-child .wx-cell`: las celdas de la fila de arriba de
+  //    la escala (los meses). La librería sólo dibuja las que están a la vista.
+  //  - `.wx-cell-value`: la etiqueta pegajosa; la librería se la pone a la celda sólo
+  //    si mide más de 100 px, y es `position: sticky; left: 0`.
+  // Si una actualización renombra alguna, el selector no encuentra nada y la etiqueta
+  // vuelve a verse cortada: hay un E2E que lo avisa ("la etiqueta del mes se esconde").
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const root = rootRef.current;

@@ -1,5 +1,5 @@
 import { normalizePersonName, type Activity, type ActivityStatus, type Capability } from '@luma/shared';
-import { toDayKey } from '@/components/common/date-range-filter';
+import { toDayKey } from '@/lib/day-key';
 import type { WeekRange } from '@/lib/week';
 
 /**
@@ -31,27 +31,36 @@ export function isOpenTask(status: ActivityStatus): boolean {
  * vencidas antes y todavía abiertas—: son lo primero que hay que resolver, y
  * si no aparecieran acá no aparecerían en ningún tablero.
  *
- * Y las que se **cerraron o cancelaron en esa semana**, por más viejas que sean
- * sus fechas. Sin esto, pasar una atrasada a Completada la sacaba del tablero en
- * el mismo instante: ya no cae en la semana ni está abierta, así que la tarjeta
- * se esfumaba al soltarla. Es por la fecha de modificación (`updatedAt`): cerrar
- * es tocarla. Una tarea cerrada hace meses y editada hoy también vuelve a verse
- * esta semana; es el precio de no guardar una fecha de cierre aparte.
+ * Con `includeRecentlyClosed`, también las que se **cerraron o cancelaron en esa
+ * semana**, por más viejas que sean sus fechas. Es para el Tablero: sin esto,
+ * pasar una atrasada a Completada la sacaba del tablero en el mismo instante
+ * —ya no cae en la semana ni está abierta— y la tarjeta se esfumaba al soltarla.
+ * Se decide por la fecha de modificación (`updatedAt`): cerrar es tocarla. Una
+ * tarea cerrada hace meses y editada hoy también vuelve a verse esta semana; es
+ * el precio de no guardar una fecha de cierre aparte.
+ *
+ * Lo que **cuenta** (el avance de "Tareas de la semana" en el detalle de la
+ * obra) lo pide en `false`: ahí una tarea completada en marzo y editada hoy
+ * inflaría `hechas/total` con trabajo que no es de esta semana.
  *
  * Comparación de strings `YYYY-MM-DD`, válida por el formato fijo.
  */
 export function tasksForWeek(
   activities: Activity[],
   week: WeekRange,
-  { includeOverdue }: { includeOverdue: boolean },
+  {
+    includeOverdue,
+    includeRecentlyClosed,
+  }: { includeOverdue: boolean; includeRecentlyClosed: boolean },
 ): Activity[] {
   return activities.filter((activity) => {
     const overlaps = activity.startDate <= week.to && activity.endDate >= week.from;
     const overdue =
       includeOverdue && activity.endDate < week.from && isOpenTask(activity.status);
+    if (overlaps || overdue) return true;
+    if (!includeRecentlyClosed || isOpenTask(activity.status)) return false;
     const touched = toDayKey(new Date(activity.updatedAt));
-    const closedInWeek = !isOpenTask(activity.status) && touched >= week.from && touched <= week.to;
-    return overlaps || overdue || closedInWeek;
+    return touched >= week.from && touched <= week.to;
   });
 }
 

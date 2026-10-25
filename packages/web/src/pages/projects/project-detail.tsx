@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { Can } from '@/components/permissions/can';
 import { PageLayout } from '@/components/layout/page-layout';
 import { DeleteProjectSection } from '@/components/projects/delete-project-dialog';
@@ -283,6 +283,8 @@ function WeekTasksCard({
   const { done, total, overdue, open } = useMemo(() => {
     const tasks = tasksForWeek(activitiesData?.activities ?? [], week, {
       includeOverdue: true,
+      // Esto cuenta avance: una completada hace meses y editada hoy no es de esta semana.
+      includeRecentlyClosed: false,
     }).filter((task) => task.status !== 'cancelada');
     const isLate = (task: Activity) => isActivityOverdue(task.endDate, task.status, today);
     return {

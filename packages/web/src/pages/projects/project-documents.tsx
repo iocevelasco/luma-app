@@ -56,6 +56,7 @@ import {
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { ListSection, ListSections } from '@/components/common/row-card-list';
+import { initials } from '@/lib/initials';
 import { cn, formatFileSize } from '@/lib/utils';
 
 /**
@@ -310,17 +311,6 @@ type GroupBy = 'category' | 'uploader' | 'none';
 
 const ALL = 'all';
 
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join('') || '?'
-  );
-}
-
 /**
  * Miniatura. Las imágenes se muestran tal cual con la URL firmada; un PDF no
  * se puede rasterizar sin cargar un renderer en el navegador, así que lleva un
@@ -405,7 +395,7 @@ function DocumentCard({
       <div className="mt-auto flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <Avatar className="size-6">
-            <AvatarFallback className="text-2xs">{initials(doc.uploadedByName)}</AvatarFallback>
+            <AvatarFallback className="text-2xs">{initials(doc.uploadedByName, '?')}</AvatarFallback>
           </Avatar>
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-xs font-medium">{doc.uploadedByName || '—'}</span>

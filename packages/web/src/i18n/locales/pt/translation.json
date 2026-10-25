@@ -1,10 +1,4 @@
 {
-  "dateRange": {
-    "thisMonth": "Este mês",
-    "lastMonth": "Mês passado",
-    "last30": "Últimos 30 dias",
-    "thisYear": "Este ano"
-  },
   "common": {
     "appName": "Luma",
     "save": "Salvar",
@@ -255,6 +249,7 @@
         "done": "Concluída"
       },
       "startsIn": "Começa {{distance}}",
+      "endsToday": "Termina hoje",
       "endsIn": "Termina {{distance}}",
       "endedAgo": "Terminou {{distance}}",
       "open": "Abrir"
@@ -336,9 +331,7 @@
       "generic": "Algo deu errado. Tente de novo."
     },
     "hero": {
-      "title": "Construindo o amanhã",
-      "subtitle": "Cada passo conta. Cada obra importa.",
-      "imageAlt": "Equipe trabalhando sobre a estrutura de uma obra em construção"
+      "imageAlt": "Planta de uma casa sobre uma prancheta de desenho, com uma cota marcada em verde. Diz, em espanhol: «¿Cuánto te costó el error? Pensada y hecha por arquitectos.»"
     },
     "or": "ou",
     "cta": {

@@ -3,7 +3,7 @@ import { differenceInCalendarDays } from 'date-fns';
 import { Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ACTIVITY_STATUS_ICON } from '@/components/common/activity-status-icon';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';

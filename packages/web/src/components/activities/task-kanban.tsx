@@ -64,9 +64,15 @@ export function TaskKanban({ layout, canMoveTo, onMove, onSelect, renderCard }: 
     () =>
       TASK_COLUMNS.map((column) => ({
         id: column,
-        // La librería tipa `label` como texto pero lo dibuja tal cual dentro del
-        // título de la columna: el ícono del estado y el nombre. Sólo se usa para
-        // eso (con `addCard` apagado no entra en ningún `aria-label`).
+        // `@svar-ui/react-kanban` 2.6.0 no tiene un slot para el encabezado de la columna
+        // (sólo `cardContent`, `cardCss` y `columnCss`), y el ícono del estado va ahí.
+        // Se aprovecha que el título es `<h3 class="wx-title">{column.label}</h3>`: lo que
+        // se pasa como `label` se dibuja tal cual, así que un nodo de React funciona
+        // aunque el tipo diga `string`. Se asume entonces que (1) la librería no le hace
+        // nada al `label` y (2) sólo se usa para ese título: con `addCard` apagado no
+        // entra en ningún `aria-label`. Por eso la versión está fija en `package.json`:
+        // al subirla, revisar que el encabezado siga mostrando ícono y nombre (hay un
+        // E2E) y, si ya hay un slot, usarlo y sacar el cast.
         label: (
           <span className="inline-flex items-center gap-2">
             <ActivityStatusIcon status={column} />

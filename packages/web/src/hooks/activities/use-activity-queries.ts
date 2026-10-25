@@ -10,21 +10,9 @@ import type {
 import { activitiesApi } from '@/api/activities';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
-import type { WeekRange } from '@/lib/week';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
-
-
-export function useActivities(projectId: string | undefined, range: WeekRange) {
-  const { isAuthenticated } = useAuth();
-
-  return useQuery({
-    queryKey: [QueryKeys.activities, projectId, range.from, range.to],
-    queryFn: () => activitiesApi.list(projectId!, range),
-    enabled: isAuthenticated && !!projectId,
-  });
-}
 
 /** Todas las actividades de la obra, sin filtro de rango — para cruzar con materiales. */
 export function useAllActivities(projectId: string | undefined) {
@@ -155,7 +143,10 @@ export function useRescheduleActivity(projectId: string) {
       endDate: string;
     }) => activitiesApi.update(projectId, activityId, { startDate, endDate }),
     onMutate: async ({ activityId, startDate, endDate }) => {
-      await queryClient.cancelQueries({ queryKey: key });
+      // Se cancela sin esperar, como en `useMoveActivity`: la barra tiene que verse
+      // en su lugar nuevo en el cuadro en que se suelta, no cuando termine de
+      // cancelarse una consulta en vuelo.
+      const cancelling = queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueriesData<ActivityListResponse>({ queryKey: key });
       queryClient.setQueriesData<ActivityListResponse>({ queryKey: key }, (data) =>
         data
@@ -167,6 +158,7 @@ export function useRescheduleActivity(projectId: string) {
             }
           : data,
       );
+      await cancelling;
       return { previous };
     },
     onSuccess: () => {
