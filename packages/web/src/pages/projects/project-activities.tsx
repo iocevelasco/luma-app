@@ -1099,6 +1099,8 @@ export function ProjectActivitiesPage() {
           // del Tablero tienen que llegar hasta abajo, o soltar una tarea en la parte vacía
           // de una columna no cuenta. En el celular el Tablero es una lista y scrollea la página.
           fill={view === 'gantt' || (view === 'board' && !isMobile)}
+          // El aviso de filtros flota abajo: mientras haya filtros, el contenido le deja lugar.
+          reserveBottom={activeFilters > 0}
           toolbar={
             <>
               <TabsList aria-label={t('activity.views.aria')} className="h-10 p-1">

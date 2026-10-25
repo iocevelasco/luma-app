@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { addCrewMember, addTask, boardColumn, moveTask, openBoard, taskCard } from './helpers/crew';
@@ -307,6 +307,51 @@ test.describe('tareas', () => {
     await page.reload();
     await expect(page.getByTestId('activity-filters-notice')).toHaveCount(0);
     await expect(page.getByRole('button', { name: late, exact: true })).toBeVisible();
+  });
+
+  test('el aviso de filtros no tapa lo último del Cronograma ni del Tablero', async ({ page }) => {
+    // Arma una cuenta y una obra, y recorre dos vistas en dos tamaños de pantalla.
+    test.setTimeout(60_000);
+    const task = `Armar el encofrado ${RUN_ID}`;
+    const projectUrl = await startProject(page, 'noticegap');
+    await planTask(page, projectUrl, { name: task, start: dayKey(), end: dayKey(2) });
+
+    // Un filtro que deja la tarea a la vista y hace que aparezca el aviso, que flota abajo a
+    // la izquierda. El Cronograma y el Tablero ocupan el alto de la ventana: sin lugar
+    // reservado, el aviso queda encima de su última fila.
+    await page.goto(`${projectUrl}/actividades`);
+    await page.getByPlaceholder(/buscar/i).fill(task);
+    const pill = page.getByTestId('activity-filters-notice').locator('div').first();
+    await expect(pill).toBeVisible();
+
+    /** El aviso tiene que quedar por debajo del contenido, sin pisarlo ni un píxel. */
+    async function expectNoticeBelow(content: Locator) {
+      await expect(content).toBeVisible();
+      // En el celular la pantalla scrollea (dentro de un contenedor, no de la ventana):
+      // lo que importa es cómo queda el contenido al llegar al final.
+      await content.evaluate((element) => {
+        for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+          if (node.scrollHeight > node.clientHeight) node.scrollTop = node.scrollHeight;
+        }
+      });
+      const notice = (await pill.boundingBox())!;
+      const above = (await content.boundingBox())!;
+      expect(above.y + above.height, 'el aviso de filtros tapa el final del contenido').toBeLessThanOrEqual(
+        notice.y + 0.5,
+      );
+    }
+
+    await expectNoticeBelow(page.locator('.luma-gantt'));
+
+    await openBoard(page, projectUrl);
+    await expect(pill).toBeVisible();
+    await expectNoticeBelow(page.locator('.luma-kanban'));
+
+    // Celular: ahí sólo el Cronograma ocupa el alto de la ventana.
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(`${projectUrl}/actividades`);
+    await expect(pill).toBeVisible();
+    await expectNoticeBelow(page.locator('.luma-gantt'));
   });
 
   test('cambiar las fechas de una actividad se refleja en el Cronograma y en el Tablero', async ({
