@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { format, formatDistanceStrict } from 'date-fns';
 import type { Project } from '@luma/shared';
-import { ArrowRight, HardHat, MapPin, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, HardHat, MapPin, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { fromDayKey } from '@/lib/day-key';
@@ -9,7 +9,7 @@ import { RemovedProjectsNotice } from '@/components/projects/removed-projects-no
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { useDeletedProjects, useProjects } from '@/hooks/projects/use-project-queries';
+import { useProjects } from '@/hooks/projects/use-project-queries';
 import { projectCaption, type ProjectPhase } from '@/lib/project-timing';
 import { ROUTES, projectActivitiesPath } from '@/lib/routes';
 import { cn } from '@/lib/utils';
@@ -132,7 +132,6 @@ function ProjectCard({ project }: { project: Project }) {
 export function AdminHomePage() {
   const { t } = useTranslation();
   const { data, isLoading } = useProjects();
-  const { data: trash } = useDeletedProjects();
   const { data: subscription } = useMySubscription();
   const [activating, setActivating] = useState(false);
   const [payingInBolivares, setPayingInBolivares] = useState(false);
@@ -155,16 +154,6 @@ export function AdminHomePage() {
     <PageLayout
       width="full"
       isLoading={isLoading}
-      secondaryActions={
-        trash && trash.projects.length > 0 ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link to={ROUTES.PROJECTS_TRASH}>
-              <Trash2 className="size-4" />
-              {t('project.trash.link', { count: trash.projects.length })}
-            </Link>
-          </Button>
-        ) : undefined
-      }
       action={
         next === 'trialLimit' ? (
           <Button onClick={() => setActivating(true)}>{newProjectLabel}</Button>

@@ -110,7 +110,11 @@ test.describe('corregir materiales y descargar la lista de compras', () => {
     // --- PDF: la lista de lo que falta comprar, con proveedor.
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      toBuy.getByRole('button', { name: /descargar pdf/i }).click(),
+      (async () => {
+        // "Descargar" abre un menú con el formato: PDF o CSV.
+        await toBuy.getByRole('button', { name: /^descargar$/i }).click();
+        await page.getByRole('menuitem', { name: /pdf/i }).click();
+      })(),
     ]);
     expect(download.suggestedFilename()).toMatch(/^compras-.+-\d{4}-\d{2}-\d{2}\.pdf$/);
   });
