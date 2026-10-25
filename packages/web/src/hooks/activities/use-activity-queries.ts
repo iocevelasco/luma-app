@@ -155,7 +155,10 @@ export function useRescheduleActivity(projectId: string) {
       endDate: string;
     }) => activitiesApi.update(projectId, activityId, { startDate, endDate }),
     onMutate: async ({ activityId, startDate, endDate }) => {
-      await queryClient.cancelQueries({ queryKey: key });
+      // Se cancela sin esperar, como en `useMoveActivity`: la barra tiene que verse
+      // en su lugar nuevo en el cuadro en que se suelta, no cuando termine de
+      // cancelarse una consulta en vuelo.
+      const cancelling = queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueriesData<ActivityListResponse>({ queryKey: key });
       queryClient.setQueriesData<ActivityListResponse>({ queryKey: key }, (data) =>
         data
@@ -167,6 +170,7 @@ export function useRescheduleActivity(projectId: string) {
             }
           : data,
       );
+      await cancelling;
       return { previous };
     },
     onSuccess: () => {
