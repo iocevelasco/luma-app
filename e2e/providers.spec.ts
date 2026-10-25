@@ -85,7 +85,7 @@ test.describe('directorio de proveedores', () => {
     await expect(page.getByText(/^electricidad$/i).first()).toBeVisible();
 
     // Crea DOS actividades para asignarles el mismo proveedor.
-    await page.getByRole('link', { name: /^cronograma$/i }).click();
+    await page.getByRole('link', { name: /^actividades$/i }).click();
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
@@ -108,7 +108,8 @@ test.describe('directorio de proveedores', () => {
     let detailDialog = page.getByRole('dialog');
     await expect(detailDialog.getByText(ACTIVITY_NAME)).toBeVisible();
     await detailDialog.getByText(/todavía no asignaste proveedores/i).waitFor();
-    await detailDialog.getByRole('combobox').click();
+    // El detalle también tiene el selector de estado: se pide el de proveedores por su texto.
+    await detailDialog.getByRole('combobox').filter({ hasText: /elegí un proveedor/i }).click();
     await page.getByRole('option', { name: PROVIDER_NAME }).click();
     await detailDialog.getByRole('button', { name: /^asignar$/i }).click();
     await expect(detailDialog.getByText(PROVIDER_NAME)).toBeVisible();
@@ -121,7 +122,8 @@ test.describe('directorio de proveedores', () => {
     detailDialog = page.getByRole('dialog');
     await expect(detailDialog.getByText(ACTIVITY_NAME_2)).toBeVisible();
     await detailDialog.getByText(/todavía no asignaste proveedores/i).waitFor();
-    await detailDialog.getByRole('combobox').click();
+    // El detalle también tiene el selector de estado: se pide el de proveedores por su texto.
+    await detailDialog.getByRole('combobox').filter({ hasText: /elegí un proveedor/i }).click();
     await page.getByRole('option', { name: PROVIDER_NAME }).click();
     await detailDialog.getByRole('button', { name: /^asignar$/i }).click();
     await expect(detailDialog.getByText(PROVIDER_NAME)).toBeVisible();
@@ -191,7 +193,7 @@ test.describe('directorio de proveedores', () => {
 
     // Dos actividades: una se asigna al crear el proveedor (C), la otra desde
     // el diálogo del listado (B).
-    await page.getByRole('link', { name: /^cronograma$/i }).click();
+    await page.getByRole('link', { name: /^actividades$/i }).click();
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
@@ -224,7 +226,7 @@ test.describe('directorio de proveedores', () => {
     await expect(createDialog).toBeHidden();
 
     // Confirma desde el lado de la Actividad que C efectivamente asignó.
-    await page.getByRole('link', { name: /^cronograma$/i }).click();
+    await page.getByRole('link', { name: /^actividades$/i }).click();
     await expect(page).toHaveURL(/\/actividades$/);
     await page.getByRole('gridcell', { name: activityA, exact: true }).click();
     let activityDetail = page.getByRole('dialog');
@@ -260,7 +262,7 @@ test.describe('directorio de proveedores', () => {
     await activitiesDialog.getByRole('button', { name: /close/i }).click();
 
     // Confirma la simetría: Actividad A ya no lo tiene, Actividad B sí.
-    await page.getByRole('link', { name: /^cronograma$/i }).click();
+    await page.getByRole('link', { name: /^actividades$/i }).click();
     await expect(page).toHaveURL(/\/actividades$/);
     await page.getByRole('gridcell', { name: activityA, exact: true }).click();
     activityDetail = page.getByRole('dialog');

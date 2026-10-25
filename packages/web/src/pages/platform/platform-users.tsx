@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, Users } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  MailQuestion,
+  UserCheck,
+  Users,
+  UserX,
+  type LucideIcon,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PLATFORM_USERS_FILTERS, type PlatformUsersFilter } from '@luma/shared';
 import { EmptyState } from '@/components/common/empty-state';
@@ -8,7 +16,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { UserRowCard } from '@/components/platform/user-row-card';
 import { UsersOverview } from '@/components/platform/users-overview';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchField } from '@/components/common/search-field';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   usePlatformUsers,
@@ -23,6 +31,14 @@ const SEARCH_DELAY_MS = 300;
  * confirmaron el mail y quién se registró hace poco. Sólo lectura. La ruta va
  * detrás de `AdminLayout` y la API lo vuelve a exigir.
  */
+/** El ícono de cada subconjunto de cuentas de las pestañas. */
+const FILTER_ICON: Record<PlatformUsersFilter, LucideIcon> = {
+  all: Users,
+  active: UserCheck,
+  unverified: MailQuestion,
+  inactive: UserX,
+};
+
 export function PlatformUsersPage() {
   const { t, i18n } = useTranslation();
   const [filter, setFilter] = useState<PlatformUsersFilter>('all');
@@ -55,26 +71,19 @@ export function PlatformUsersPage() {
       >
         <TabsList>
           {PLATFORM_USERS_FILTERS.map((value) => (
-            <TabsTrigger key={value} value={value}>
+            <TabsTrigger key={value} value={value} icon={FILTER_ICON[value]}>
               {t(`platform.users.filters.${value}`)}
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
-      <div className="relative w-full sm:w-64">
-        <Search
-          aria-hidden
-          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t('platform.users.searchPlaceholder')}
-          aria-label={t('platform.users.searchPlaceholder')}
-          className="pl-9"
-        />
-      </div>
+      <SearchField
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder={t('platform.users.searchPlaceholder')}
+        aria-label={t('platform.users.searchPlaceholder')}
+        wrapperClassName="w-full sm:w-64"
+      />
     </>
   );
 

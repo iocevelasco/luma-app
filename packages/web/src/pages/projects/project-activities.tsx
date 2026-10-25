@@ -4,26 +4,42 @@ import { format } from 'date-fns';
 import {
   createActivitySchema,
   type Activity,
+  type ActivityStatus,
   type CreateActivityInput,
   type MaterialItem,
-  type ProviderSpecialty,
 } from '@luma/shared';
-import { ArrowLeft, CalendarRange, Camera, Check, PackageX, Pencil, Plus, Trash2, Undo2, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarRange,
+  Camera,
+  Check,
+  FileDown,
+  LayoutGrid,
+  List,
+  PackageX,
+  Pencil,
+  Plus,
+  Trash2,
+  Undo2,
+  Users,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { ResponsibleField } from '@/components/activities/responsible-field';
 import { SpecialtyLabel } from '@/components/activities/specialty-label';
-import { ActivityGantt } from '@/components/activities/activity-gantt';
+import { ActivityFilterControls, ActiveFiltersNotice } from '@/components/activities/activity-filter-bar';
+import { ActivityGantt, GANTT_ZOOMS, type GanttZoom } from '@/components/activities/activity-gantt';
+import { ActivityList } from '@/components/activities/activity-list';
+import { TaskBoard } from '@/components/activities/task-board';
+import { CrewRosterDialog } from '@/components/crew/crew-roster-dialog';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
+import { ActivityStatusIcon } from '@/components/common/activity-status-icon';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
-import {
-  DateRangeFilter,
-  fromDayKey,
-  presetRange,
-  toDayKey,
-} from '@/components/common/date-range-filter';
-import { LoadingIndicator } from '@/components/common/loading-indicator';
+import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { PageLayout } from '@/components/layout/page-layout';
 import {
   AlertDialog,
@@ -49,11 +65,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useIsMobile } from '@/components/ui/use-mobile';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   useAllActivities,
-  useActivities,
+  useMoveActivity,
+  useRescheduleActivity,
   useCreateActivity,
   useDeleteActivityEvidence,
   useRejectActivity,
@@ -71,39 +92,16 @@ import { useDateLocale } from '@/hooks/use-date-locale';
 import { useAssignableCrew } from '@/hooks/crew/use-crew-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useProject } from '@/hooks/projects/use-project-queries';
+import { useActivityFilters } from '@/hooks/activities/use-activity-filters';
+import { ACTIVITY_SPECIALTIES, ACTIVITY_STATUSES, MATERIAL_STATUSES_BLOCKING } from '@/lib/activity-catalog';
+import { activitiesOfDay } from '@/lib/activities-day-pdf';
 import { scheduleRange } from '@/lib/activity-range';
+import { applyActivityFilters, countActiveFilters, pruneActivityFilters } from '@/lib/activity-filters';
+import { downloadBlob } from '@/lib/download-blob';
+import { allowedMoves, taskPeople } from '@/lib/task-board';
 import { isWithinNextDays } from '@/lib/week';
-
-const ACTIVITY_STATUSES = [
-  'pendiente',
-  'en_curso',
-  'en_revision',
-  'completada',
-  'cancelada',
-] as const;
-
-/** Mismo catálogo que proveedores y personal (test de sincronía en `@luma/shared`). */
-const ACTIVITY_SPECIALTIES: ProviderSpecialty[] = [
-  'electricidad',
-  'plomeria',
-  'gas',
-  'carpinteria',
-  'cristaleria',
-  'albanileria',
-  'herreria',
-  'redes',
-  'mecanicas',
-  'estructura',
-  'acabados',
-  'pintura',
-  'climatizacion',
-  'techos',
-  'pisos_revestimientos',
-  'jardineria',
-  'demolicion',
-  'otra',
-];
-const MATERIAL_STATUSES_BLOCKING = new Set(['pendiente', 'solicitado']);
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 /**
  * Campos del formulario de actividad, compartidos entre "Nueva actividad" y
@@ -706,6 +704,7 @@ function ActivityDetailModal({
   canAssignProviders,
   canWriteEvidence,
   canEdit,
+  statusMoves,
   canReadProviders,
   canReadMaterials,
   onClose,
@@ -724,12 +723,18 @@ function ActivityDetailModal({
   canWriteEvidence: boolean;
   /** Modificar la tarea: `activity.plan`, sólo el gerente. */
   canEdit: boolean;
+  /**
+   * A qué estados puede llevar esta tarea quien mira (`allowedMoves`, la misma
+   * regla del Tablero y de la API). Vacío: el estado se lee y no se cambia.
+   */
+  statusMoves: ActivityStatus[];
   canReadProviders: boolean;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
   const [editing, setEditing] = useState(false);
+  const moveActivity = useMoveActivity(projectId);
 
   return (
     <Dialog open={Boolean(activity)} onOpenChange={(next) => !next && onClose()}>
@@ -796,7 +801,32 @@ function ActivityDetailModal({
                 </div>
                 <div>
                   <dt className="text-sm text-muted-foreground">{t('activity.fields.status')}</dt>
-                  <dd className="mt-1">{t(`activity.status.${activity.status}`)}</dd>
+                  <dd className="mt-1">
+                    {statusMoves.length > 0 ? (
+                      <Select
+                        value={activity.status}
+                        onValueChange={(next) =>
+                          moveActivity.mutate({ activityId: activity.id, status: next as ActivityStatus })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-48" aria-label={t('activity.fields.status')}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[activity.status, ...statusMoves].map((status) => (
+                            <SelectItem key={status} value={status}>
+                              <span className="flex items-center gap-2">
+                                <ActivityStatusIcon status={status} />
+                                {t(`activity.status.${status}`)}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      t(`activity.status.${activity.status}`)
+                    )}
+                  </dd>
                 </div>
               </dl>
 
@@ -850,43 +880,81 @@ function ActivityDetailModal({
   );
 }
 
+/**
+ * El alto de todo lo que va en la barra de arriba de Actividades: las vistas, el
+ * buscador, los filtros, la escala y los botones. Con alturas distintas (48, 36
+ * y 32 px) cada control quedaba a un nivel y la barra no leía como una línea.
+ * Los contenedores con un segmentado adentro (tabs y escala) llevan `p-1` y
+ * sus opciones `h-full`: 40 px en total, igual que el resto.
+ */
+const TOOLBAR_H = 'h-10';
+
+/** El selector de escala del Cronograma, con la misma superficie suave que los tabs (`ui/tabs.tsx`). */
+const SEGMENT_LIST = 'h-10 gap-1 rounded-lg bg-card p-1 shadow-surface';
+const SEGMENT_TOGGLE =
+  'h-full rounded-md px-4 text-muted-foreground transition-colors duration-300 hover:bg-transparent hover:text-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground';
+
+const VIEW_ICON: Record<'gantt' | 'board' | 'list', LucideIcon> = {
+  gantt: CalendarRange,
+  board: LayoutGrid,
+  list: List,
+};
+
+type ActivitiesView = 'gantt' | 'board' | 'list';
+
+const ACTIVITIES_VIEWS: readonly ActivitiesView[] = ['gantt', 'board', 'list'];
+
+/** La vista va en la URL (`?vista=`), en castellano como el resto de las rutas. */
+const VIEW_PARAM: Record<ActivitiesView, string | null> = {
+  gantt: null,
+  board: 'tablero',
+  list: 'lista',
+};
+
+/** Un valor desconocido en `?vista=` cae en el Cronograma: es la vista con la que siempre se abrió. */
+function viewFrom(value: string | null): ActivitiesView {
+  return ACTIVITIES_VIEWS.find((view) => VIEW_PARAM[view] === value) ?? 'gantt';
+}
+
+/**
+ * Actividades de la obra, en tres vistas de lo mismo: el Cronograma (qué y
+ * cuándo), el Tablero (quién está en qué, esta semana) y la Lista (todo, de
+ * arriba abajo). Una tarea ES una actividad: no hay tres listas que se
+ * desincronizan, hay una con tres formas de mirarla.
+ *
+ * Los filtros son **uno solo para las tres**, se recuerdan en el navegador y
+ * cuando hay alguno puesto se avisa arriba, con cada uno a un clic de
+ * quitarse. Las vistas pestañean sin perder el recorte.
+ */
 export function ProjectActivitiesPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
+  const dateLocale = useDateLocale();
   const { data: projectData } = useProject(projectId);
-  const [range, setRange] = useState<{ from: string; to: string }>(() => presetRange('thisMonth'));
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
-  // Abre ubicado en hoy y con la obra entera hasta que la persona elige un
-  // rango propio: ahí manda lo que pidió, no el default.
-  const [rangeTouched, setRangeTouched] = useState(false);
+  const [zoom, setZoom] = useState<GanttZoom>('weeks');
   const [todayRequest, setTodayRequest] = useState(0);
+  const [rosterOpen, setRosterOpen] = useState(false);
 
-  const allActivitiesQuery = useAllActivities(projectId);
-  const { data: allActivitiesData } = allActivitiesQuery;
-  const allActivitiesSettled = allActivitiesQuery.isSuccess || allActivitiesQuery.isError;
-
-  // Rango inicial: la obra completa, no "este mes" — una obra planifica meses a
-  // futuro y el default no puede empezar mostrando el gantt vacío — más
-  // cualquier tarea corrida fuera de las fechas estimadas (ver `scheduleRange`).
-  // Sigue a las tareas mientras la persona no tocó el filtro: una tarea nueva
-  // que cae después de la entrega tiene que aparecer, no esperar a un refresh.
-  useEffect(() => {
-    if (rangeTouched || !projectData || !allActivitiesSettled) return;
-    const next = scheduleRange(projectData.project, allActivitiesData?.activities ?? []);
-    setRange((current) =>
-      current.from === next.from && current.to === next.to ? current : next,
-    );
-  }, [rangeTouched, projectData, allActivitiesData, allActivitiesSettled]);
-
-  const todayKey = toDayKey(new Date());
-  const todayInRange = todayKey >= range.from && todayKey <= range.to;
-
-  const { data: activitiesData, isLoading, isError } = useActivities(projectId, range);
+  const { data: activitiesData, isLoading, isError } = useAllActivities(projectId);
   const { can } = useProjectCapabilities(projectId);
+  // El Tablero muestra quién trabaja en qué y es del personal (`crew.read`),
+  // no del cliente (regla 4): para quien no lo tiene la vista no existe, ni
+  // en las pestañas ni escribiendo `?vista=tablero` a mano.
+  const views = ACTIVITIES_VIEWS.filter((name) => name !== 'board' || can('crew.read'));
+  const requestedView = viewFrom(searchParams.get('vista'));
+  const view = views.includes(requestedView) ? requestedView : 'gantt';
   const canReadProviders = can('provider.read');
   const canReadMaterials = can('material.read');
   // Sin permiso no se pide: un 403 acá se vería como "sin materiales".
   const { data: materialsData } = useMaterials(canReadMaterials ? projectId : undefined);
+  const rescheduleActivity = useRescheduleActivity(projectId!);
+  const { filters, update: updateFilters, reset: resetFilters } = useActivityFilters(projectId);
+
+  const activities = useMemo(() => activitiesData?.activities ?? [], [activitiesData]);
 
   const missingByActivity = useMemo(() => {
     const map = new Set<string>();
@@ -901,87 +969,261 @@ export function ProjectActivitiesPage() {
   }, [materialsData]);
 
   const activitiesWithAlert = useMemo(() => {
-    if (!allActivitiesData) return new Set<string>();
     const result = new Set<string>();
-    for (const activity of allActivitiesData.activities) {
+    for (const activity of activities) {
       if (isWithinNextDays(activity.startDate, 7) && missingByActivity.has(activity.id)) {
         result.add(activity.id);
       }
     }
     return result;
-  }, [allActivitiesData, missingByActivity]);
+  }, [activities, missingByActivity]);
+
+  const people = useMemo(() => taskPeople(activities), [activities]);
+
+  // Lo guardado puede nombrar a alguien que ya no figura en la obra: se suelta
+  // acá, con los datos delante, y no al leer (ahí todavía no hay datos).
+  const effectiveFilters = useMemo(
+    () => pruneActivityFilters(filters, new Set(people.map((person) => person.key))),
+    [filters, people],
+  );
+  const activeFilters = countActiveFilters(effectiveFilters);
+
+  const visible = useMemo(
+    () =>
+      applyActivityFilters(activities, effectiveFilters, {
+        today: toDayKey(new Date()),
+        userId: user?.id,
+        missingMaterialIds: missingByActivity,
+      }),
+    [activities, effectiveFilters, user?.id, missingByActivity],
+  );
+
+  // El Cronograma abre con la obra entera —una obra planifica meses a futuro—
+  // más cualquier tarea corrida fuera de las fechas estimadas (ver
+  // `scheduleRange`). Sale de **todas** las actividades, no de las filtradas:
+  // filtrar no puede mover el diagrama de lugar.
+  const range = useMemo(
+    () => (projectData ? scheduleRange(projectData.project, activities) : null),
+    [projectData, activities],
+  );
+
+  // Las actividades de hoy, con los filtros puestos: quien filtra por
+  // responsable imprime la hoja de esa persona.
+  const todayKey = toDayKey(new Date());
+  const dayActivities = useMemo(() => activitiesOfDay(visible, todayKey), [visible, todayKey]);
+  const [generatingDayPdf, setGeneratingDayPdf] = useState(false);
+  const hasDayActivities = dayActivities.length > 0;
+
+  // `jspdf` pesa: se baja apenas la Lista muestra algo para descargar y no al
+  // tocar el botón. En Safari, descargar tiene que ocurrir dentro del gesto de
+  // la persona, y esperar un chunk grande lo deja afuera.
+  useEffect(() => {
+    if (view !== 'list' || !hasDayActivities) return;
+    void import('@/lib/activities-day-pdf');
+    void import('jspdf');
+    void import('jspdf-autotable');
+  }, [view, hasDayActivities]);
+
+  async function handleDownloadDayPdf() {
+    if (generatingDayPdf || !hasDayActivities) return;
+    setGeneratingDayPdf(true);
+    try {
+      const { activitiesDayFileName, buildActivitiesDayPdf } = await import('@/lib/activities-day-pdf');
+      const now = new Date();
+      const blob = await buildActivitiesDayPdf({
+        projectName: projectData?.project.name ?? '',
+        today: todayKey,
+        dateLabel: format(now, 'PPPP', { locale: dateLocale }),
+        activities: dayActivities,
+        labels: {
+          title: t('activity.dayPdf.title'),
+          summary: t('activity.dayPdf.summary', { count: dayActivities.length }),
+          filtered: activeFilters > 0 ? t('activity.dayPdf.filtered') : null,
+          columns: {
+            activity: t('activity.fields.name'),
+            specialty: t('activity.fields.specialty'),
+            responsible: t('activity.fields.responsible'),
+            dates: t('activity.dayPdf.columnDates'),
+            status: t('activity.fields.status'),
+          },
+          noSpecialty: t('activity.detail.noSpecialty'),
+          overdue: t('activity.list.overdue'),
+          generated: t('activity.dayPdf.generated', { date: format(now, 'Pp', { locale: dateLocale }) }),
+          page: (page, total) => t('activity.dayPdf.page', { page, total }),
+          specialty: (specialty) => t(`provider.specialty.${specialty}`),
+          status: (status) => t(`activity.status.${status}`),
+          day: (dayKey) => format(fromDayKey(dayKey), 'd MMM', { locale: dateLocale }),
+        },
+      });
+      downloadBlob(blob, activitiesDayFileName(projectData?.project.name ?? '', now));
+      toast.success(t('activity.dayPdf.downloaded'));
+    } catch {
+      toast.error(t('activity.dayPdf.error'));
+    } finally {
+      setGeneratingDayPdf(false);
+    }
+  }
 
   if (isError) return <PageLayout isError />;
+  if (isLoading || !projectData || !range) return <PageLayout isLoading />;
 
-  const activities = activitiesData?.activities ?? [];
   const selectedActivity = activities.find((a) => a.id === selectedActivityId);
   const selectedActivityMaterials = selectedActivity
     ? (materialsData?.materials ?? []).filter((m) => m.activityId === selectedActivity.id)
     : [];
 
+  const empty =
+    activities.length === 0
+      ? { icon: CalendarRange, title: t('activity.views.emptyTitle'), description: t('activity.views.emptyBody') }
+      : visible.length === 0
+        ? {
+            icon: CalendarRange,
+            title: t('activity.filters.emptyTitle'),
+            description: t('activity.filters.emptyBody', { count: activeFilters }),
+          }
+        : undefined;
+
   return (
-    <PageLayout
-      width="full"
-      fill
-      toolbar={
-        <>
-          <DateRangeFilter
-            value={range}
-            onChange={(next) => {
-              setRangeTouched(true);
-              setRange(next);
-            }}
-            disableFuture={false}
-          />
-          {(todayInRange || rangeTouched) && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Volver a hoy también vuelve al rango de la obra: es la vista
-                // con la que se abre.
-                setRangeTouched(false);
-                setTodayRequest((n) => n + 1);
-              }}
-            >
-              {t('activity.gantt.goToToday')}
-            </Button>
+    <>
+      <Tabs
+        value={view}
+        onValueChange={(next) => {
+          const param = VIEW_PARAM[next as ActivitiesView];
+          // `replace`: cambiar de vista no es navegar, y "atrás" vuelve a la pantalla anterior.
+          setSearchParams(param ? { vista: param } : {}, { replace: true });
+        }}
+      >
+        <PageLayout
+          width={view === 'list' ? 'default' : 'full'}
+          // El Cronograma y el Tablero ocupan el alto que queda de la ventana: las columnas
+          // del Tablero tienen que llegar hasta abajo, o soltar una tarea en la parte vacía
+          // de una columna no cuenta. En el celular el Tablero es una lista y scrollea la página.
+          fill={view === 'gantt' || (view === 'board' && !isMobile)}
+          toolbar={
+            <>
+              <TabsList aria-label={t('activity.views.aria')} className="h-10 p-1">
+                {views.map((name) => (
+                  <TabsTrigger key={name} value={name} icon={VIEW_ICON[name]} className="h-full">
+                    {t(`activity.views.${name}`)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <ActivityFilterControls
+                filters={effectiveFilters}
+                onChange={updateFilters}
+                onReset={resetFilters}
+                people={people}
+                canFilterMaterials={canReadMaterials}
+                canFilterReview={can('activity.review')}
+              />
+              <ActiveFiltersNotice
+                filters={effectiveFilters}
+                onChange={updateFilters}
+                onReset={resetFilters}
+                people={people}
+              />
+            </>
+          }
+          secondaryActions={
+            view === 'gantt' ? (
+              <>
+                {/* La misma superficie suave que las vistas: un segmentado con aire entre opciones. */}
+                <ToggleGroup
+                  type="single"
+                  size="sm"
+                  value={zoom}
+                  aria-label={t('activity.gantt.zoomLabel')}
+                  onValueChange={(next) => next && setZoom(next as GanttZoom)}
+                  className={SEGMENT_LIST}
+                >
+                  {GANTT_ZOOMS.map((level) => (
+                    <ToggleGroupItem
+                      key={level}
+                      value={level}
+                      className={cn('first:rounded-md last:rounded-md', SEGMENT_TOGGLE)}
+                    >
+                      {t(`activity.gantt.zoom.${level}`)}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={TOOLBAR_H}
+                  onClick={() => setTodayRequest((n) => n + 1)}
+                >
+                  {t('activity.gantt.goToToday')}
+                </Button>
+              </>
+            ) : view === 'list' ? (
+              // La hoja del día, en tamaño carta, para imprimir y llevar a la obra.
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(TOOLBAR_H, 'max-sm:min-h-11')}
+                disabled={generatingDayPdf || !hasDayActivities}
+                aria-busy={generatingDayPdf}
+                onClick={() => void handleDownloadDayPdf()}
+              >
+                {generatingDayPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+                {generatingDayPdf ? t('activity.dayPdf.generating') : t('activity.dayPdf.button')}
+                {!generatingDayPdf && (
+                  <span className="tabular-nums text-muted-foreground">{dayActivities.length}</span>
+                )}
+              </Button>
+            ) : view === 'board' && can('crew.create') ? (
+              <Button variant="outline" className={TOOLBAR_H} onClick={() => setRosterOpen(true)}>
+                <Users className="size-4" />
+                {t('crew.list.title')}
+              </Button>
+            ) : undefined
+          }
+          /* El supervisor crea tareas; modificarlas es del gerente. */
+          action={
+            can('activity.create') ? (
+              <NewActivityDialog
+                projectId={projectId!}
+                canReview={can('activity.review')}
+                canCancel={can('activity.plan')}
+              />
+            ) : undefined
+          }
+          // El Tablero nunca se reemplaza por el vacío: es desde sus columnas (el alta
+          // rápida) que se carga la primera tarea.
+          empty={view === 'board' ? undefined : empty}
+        >
+          {view === 'gantt' && (
+            <ActivityGantt
+              activities={visible}
+              range={range}
+              zoom={zoom}
+              onSelectActivity={setSelectedActivityId}
+              onReschedule={
+                can('activity.plan')
+                  ? (activityId, startDate, endDate) =>
+                      rescheduleActivity.mutate({ activityId, startDate, endDate })
+                  : undefined
+              }
+              focusOnToday
+              focusRequest={todayRequest}
+            />
           )}
-        </>
-      }
-      /* El supervisor crea tareas; modificarlas es del gerente. */
-      action={
-        can('activity.create') ? (
-          <NewActivityDialog
-            projectId={projectId!}
-            canReview={can('activity.review')}
-            canCancel={can('activity.plan')}
-          />
-        ) : undefined
-      }
-      empty={
-        !isLoading && activities.length === 0
-          ? { icon: CalendarRange, title: t('activity.gantt.emptyState') }
-          : undefined
-      }
-    >
-      {/*
-        La carga va adentro y no en lugar de la página: el filtro de fechas
-        tiene que seguir en pantalla mientras llegan las tareas del rango nuevo.
-      */}
-      {isLoading ? (
-        <LoadingIndicator />
-      ) : (
-        <ActivityGantt
-          activities={activities}
-          range={range}
-          onSelectActivity={setSelectedActivityId}
-          missingMaterialActivityIds={activitiesWithAlert}
-          focusOnToday={!rangeTouched}
-          focusRequest={todayRequest}
-        />
-      )}
+          {view === 'board' && (
+            <TaskBoard
+              projectId={projectId!}
+              activities={visible}
+              onSelectActivity={setSelectedActivityId}
+            />
+          )}
+          {view === 'list' && (
+            <ActivityList
+              activities={visible}
+              missingMaterialIds={missingByActivity}
+              onSelectActivity={setSelectedActivityId}
+            />
+          )}
+        </PageLayout>
+      </Tabs>
 
       <ActivityDetailModal
         projectId={projectId!}
@@ -992,11 +1234,19 @@ export function ProjectActivitiesPage() {
         canAssignProviders={can('provider.assign')}
         canWriteEvidence={can('activity.evidence.write')}
         canEdit={can('activity.plan')}
+        statusMoves={selectedActivity ? allowedMoves(selectedActivity.status, can) : []}
         canReadProviders={canReadProviders}
         canReadMaterials={canReadMaterials}
         onClose={() => setSelectedActivityId(null)}
       />
-    </PageLayout>
+
+      <CrewRosterDialog
+        projectId={projectId!}
+        canManage={can('crew.manage')}
+        open={rosterOpen}
+        onOpenChange={setRosterOpen}
+      />
+    </>
   );
 }
 

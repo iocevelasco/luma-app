@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Inbox } from 'lucide-react';
+import { BadgeCheck, CircleX, Clock, Inbox, Landmark, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { SubscriptionPaymentStatus } from '@luma/shared';
 import { EmptyState } from '@/components/common/empty-state';
@@ -12,6 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformPayments } from '@/hooks/platform/use-platform-billing-queries';
 
 const STATUSES: SubscriptionPaymentStatus[] = ['pendiente', 'aprobado', 'rechazado'];
+
+const STATUS_ICON: Record<SubscriptionPaymentStatus, LucideIcon> = {
+  pendiente: Clock,
+  aprobado: BadgeCheck,
+  rechazado: CircleX,
+};
 
 function PaymentList({ status }: { status: SubscriptionPaymentStatus }) {
   const { t } = useTranslation();
@@ -46,11 +52,13 @@ export function PlatformBillingPage() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           {STATUSES.map((status) => (
-            <TabsTrigger key={status} value={status}>
+            <TabsTrigger key={status} value={status} icon={STATUS_ICON[status]}>
               {t(`platform.tabs.${status}`)}
             </TabsTrigger>
           ))}
-          <TabsTrigger value="rates">{t('platform.tabs.rates')}</TabsTrigger>
+          <TabsTrigger value="rates" icon={Landmark}>
+            {t('platform.tabs.rates')}
+          </TabsTrigger>
         </TabsList>
         {STATUSES.map((status) => (
           <TabsContent key={status} value={status} className="pt-4">

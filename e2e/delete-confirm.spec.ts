@@ -100,7 +100,6 @@ test.describe('borrar pide confirmación', () => {
 
     await page.goto(`${projectUrl}/personal`);
     await addCrewMember(page, { name: worker });
-    await page.getByRole('tab', { name: /^tablero$/i }).click();
     await page.getByRole('button', { name: /^personal fijo$/i }).click();
     const roster = page.getByRole('dialog');
     await expect(roster.getByText(worker)).toBeVisible();

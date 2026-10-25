@@ -36,9 +36,32 @@ export async function addCrewMember(
   await expect(drawer).toBeHidden();
 }
 
-/** Una columna del Tablero de tareas, por su título ("Pendiente", "En curso", "En revisión", "Completada"). */
+/** Las columnas del Tablero: el id que usa la librería y el título que ve la persona. */
+const BOARD_COLUMNS = [
+  ['pendiente', 'Pendiente'],
+  ['en_curso', 'En curso'],
+  ['en_revision', 'En revisión'],
+  ['completada', 'Completada'],
+] as const;
+
+/**
+ * Abre el Tablero de tareas: la vista "Tablero" de Actividades. Las tareas ya
+ * no viven en Personal.
+ */
+export async function openBoard(page: Page, projectUrl: string) {
+  await page.goto(`${projectUrl}/actividades?vista=tablero`);
+}
+
+/**
+ * Una columna del Tablero de tareas, por su título ("Pendiente", "En curso",
+ * "En revisión", "Completada"). Es la de escritorio: en el celular las
+ * columnas son pestañas y se mira de a una.
+ */
 export function boardColumn(page: Page, title: RegExp) {
-  return page.getByRole('region', { name: title });
+  const column = BOARD_COLUMNS.find(([, label]) => title.test(label));
+  if (!column) throw new Error(`El Tablero no tiene una columna que coincida con ${title}`);
+  // La librería antepone `:` al id (guarda también el tipo del valor).
+  return page.locator(`[data-kanban-column-cards=":${column[0]}"]`);
 }
 
 /** La tarjeta de una tarea en el Tablero. */
@@ -47,15 +70,14 @@ export function taskCard(page: Page, name: string) {
 }
 
 /**
- * Crea una tarea desde el alta rápida de la columna Pendiente, para la semana
- * que muestra el Tablero. El alta queda abierta después de guardar: si ya lo
- * está, la reusa. `until` es la fecha de fin (`YYYY-MM-DD`); sin ella, dura un
+ * Crea una tarea desde el alta rápida del Tablero, para la semana que muestra.
+ * El alta queda abierta después de guardar: si ya lo está, la reusa. `until` es la fecha de fin (`YYYY-MM-DD`); sin ella, dura un
  * día.
  */
 export async function addTask(page: Page, assignee: string, name: string, until?: string) {
   const input = page.locator('#board-task-name');
   if (!(await input.isVisible())) {
-    await boardColumn(page, /^pendiente$/i).getByRole('button', { name: /nueva tarea/i }).click();
+    await page.getByRole('button', { name: /^alta rápida$/i }).click();
   }
   await input.fill(name);
   await page.locator('#board-task-assignee').click();

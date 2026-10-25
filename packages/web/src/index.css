@@ -490,3 +490,210 @@ select:-webkit-autofill {
 .animate-shimmer {
   animation: shimmer 2s infinite;
 }
+
+/*
+  Cronograma (SVAR Gantt): el color de las líneas de la grilla y los renglones
+  de la tabla.
+
+  - La grilla del diagrama es la que dibuja la librería (`cellBorders="full"`);
+    acá sólo se le da un color que se lea sobre el área clara.
+  - Los renglones de la tabla: la librería los declara como
+    `.wx-row:not(:last-child)`, pero cada fila virtualizada queda como último
+    hijo de su contenedor y la regla nunca aplica. Es una sombra interior y no
+    un borde para no sumar 1px de alto y desalinear las filas con las del
+    diagrama. Las columnas de la tabla también van separadas.
+
+  Va fuera de `@layer` a propósito: el CSS de la librería tampoco está en una
+  capa, y una regla sin capa le gana a cualquier utilidad de Tailwind, por
+  específica que sea. `.luma-gantt` es el contenedor de `ActivityGantt`.
+
+  El color es un hex plano, no `color-mix()` ni un token con alfa: la librería
+  lee `--wx-gantt-border` con JS para armar la imagen de la grilla y, si no lo
+  entiende, la pinta negra. Es un solo valor porque el Cronograma vive siempre
+  en el área clara (`.surface-light`).
+*/
+.luma-gantt {
+  --luma-gantt-line: #d4d4d8;
+}
+.luma-gantt .wx-theme {
+  /*
+    El tema no define `--wx-background` en esta versión y todo el diagrama queda
+    transparente sobre el lienzo gris —y la cabecera pegajosa deja ver las filas
+    que pasan por debajo—. Fondo blanco (`card`).
+  */
+  --wx-background: var(--card);
+  --wx-background-alt: var(--muted);
+  --wx-gantt-border-color: var(--luma-gantt-line);
+  --wx-gantt-border: 1px solid var(--luma-gantt-line);
+  --wx-grid-body-row-border: 1px solid var(--luma-gantt-line);
+  --wx-grid-body-cell-border: 1px solid var(--luma-gantt-line);
+}
+.luma-gantt .wx-table.wx-table {
+  --wx-table-cell-border: 1px solid var(--luma-gantt-line);
+}
+.luma-gantt .wx-table .wx-grid .wx-body .wx-row,
+.luma-gantt .wx-table .wx-grid .wx-header {
+  box-shadow: inset 0 -1px 0 var(--luma-gantt-line);
+}
+
+/*
+  Tablero (SVAR Kanban): los colores salen de los tokens del panel. Con los del
+  tema de la librería la tarjeta quedaba del mismo gris que la columna y no se
+  distinguía dónde empezaba. La tarjeta es blanca (`--card`) sobre la columna
+  gris (`--muted`), como las filas de las listas sobre el lienzo.
+
+  Fuera de `@layer` por lo mismo que `.luma-gantt`: el CSS de la librería no
+  está en una capa. `.luma-kanban` es el contenedor de `TaskKanban`.
+*/
+.luma-kanban .wx-theme {
+  --wx-kanban-bg: var(--background);
+  --wx-kanban-column-bg: var(--board-canvas);
+  --wx-kanban-card-bg: var(--board-card);
+  --wx-kanban-border-color: rgb(245 245 247 / 0.14);
+  --wx-kanban-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+/*
+  La tarjeta del Tablero es **el contenido**, no la caja de la librería: el
+  aspecto (fondo oscuro, radio, padding) lo lleva el `<article>` que dibuja
+  `TaskBoard` (`TASK_CARD`), y la caja `.wx-card` queda neutra. Importa por el
+  arrastre: la librería dibuja la tarjeta que se arrastra (`.wx-ghost`) **fuera
+  de `.wx-board`** y sin las clases que le pone `cardCss`, así que cualquier
+  regla que dependa de esos dos lugares se pierde al arrastrar. El contenido es
+  el mismo en los dos sitios, y se ve igual.
+
+  Los radios salen de la escala: la columna tiene la mitad del de una card
+  (`--radius-lg`, 14px) y la tarjeta, un escalón abajo del padre (`--radius-md`,
+  8px, el mismo de un botón). Los selectores llevan `.wx-kanban` y no `.wx-board` para alcanzar
+  también al fantasma, y ganan por especificidad: el CSS de la librería se carga
+  después y, con el mismo peso, le ganaría por orden.
+*/
+.luma-kanban .wx-board .wx-column {
+  border-radius: var(--radius-lg);
+}
+.luma-kanban .wx-kanban .wx-card,
+.luma-kanban .wx-kanban .wx-ghost {
+  border-radius: var(--radius-md);
+}
+/* Dónde va a caer la tarjeta: la misma forma que ella, y en el acento del Tablero. */
+.luma-kanban .wx-kanban .wx-drop-placeholder {
+  border-radius: var(--radius-md);
+  border-color: var(--board-accent);
+  background: rgb(255 61 2 / 0.14);
+}
+.luma-kanban .wx-column-header svg {
+  color: var(--board-ink-muted);
+}
+.luma-kanban .wx-kanban .wx-card {
+  padding: 0;
+  background: transparent;
+  border-top: 0;
+  --wx-kanban-card-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.22);
+}
+.luma-kanban .wx-column-header .wx-title {
+  color: var(--board-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* Colapsar una columna no es parte del Tablero: sólo dejaba un hueco a la izquierda del título. */
+.luma-kanban .wx-column-header .wx-toggle {
+  display: none;
+}
+
+/*
+  La etiqueta del mes de la escala no se parte en dos líneas: con el mes a medio
+  desplazar quedaba "septiembre / 2026" y `ActivityGantt` no podía medir cuánto
+  ocupa de verdad para decidir si entra o se esconde.
+*/
+.luma-gantt .wx-scale .wx-cell-value {
+  white-space: nowrap;
+}
+
+/*
+  Los headers del Cronograma —los de la tabla y los de la escala de tiempo— son
+  rótulos, no contenido: más chicos, en negrita y en mayúsculas, para que se
+  distingan de las filas que encabezan sin competir con ellas. El selector lleva
+  `.wx-theme` para ganarle por especificidad al CSS de la librería, que se carga
+  después.
+*/
+.luma-gantt .wx-theme .wx-header .wx-cell,
+.luma-gantt .wx-theme .wx-header .wx-text,
+.luma-gantt .wx-theme .wx-scale .wx-cell,
+.luma-gantt .wx-theme .wx-scale .wx-cell-value {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/*
+  La card de obra (la pantalla de inicio): el fondo sombreado de arriba hacia
+  abajo (un gris que se apaga hasta el negro) con una textura de puntos, como la
+  tarjeta de referencia. Los colores salen de los tokens del lienzo oscuro: la
+  clase va junto a `surface-dark` (ver `ProjectCard` en `admin-home.tsx`), que es
+  lo que les da su valor oscuro, así que `--foreground` y `--card` son los de ahí.
+  Los puntos van encima del sombreado: se ven más arriba, donde el fondo es más
+  claro, y se pierden en el negro. Son finos (~1px, en una retícula de 10px) y
+  tenues a propósito: una textura, no un patrón que compita con el texto.
+*/
+.luma-project-card {
+  /* Respaldo para un Safari que no entiende `color-mix()` (anterior al 16.2): sin él la
+     declaración de abajo se descarta entera y quedaría el texto claro sobre fondo claro. */
+  background: linear-gradient(to bottom, #3a3a3d 0%, #1f1f21 46%, #000 100%);
+  background:
+    radial-gradient(circle at center, color-mix(in oklab, var(--foreground) 14%, transparent) 0.5px, transparent 0.9px) 0 0 / 10px 10px,
+    linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 22%, var(--card)) 0%, var(--card) 46%, #000 100%);
+}
+
+/*
+  La paleta del Tablero (el Kanban de Actividades), tomada de una pieza de
+  referencia: un gris de fondo, tarjetas de carbón, texto en un blanco suave y
+  un único acento naranja rojizo. Valores medidos de la imagen, no estimados.
+
+  Es una paleta **propia del Tablero**, no del sistema: el panel sigue con un
+  solo verde de marca (ver DESIGN.md). El acento naranja se usa sólo para marcar
+  el destino de un arrastre: no es un estado ni el relleno de una acción, y los
+  estados (el atraso, una devolución) usan los tags y los colores del sistema.
+
+  Contraste (WCAG): el texto `--board-ink` sobre la tarjeta da ~15:1 y sobre el
+  gris ~9:1. El acento sobre la tarjeta da ~4.6:1: sirve de relleno o de trazo,
+  no como tinta de texto chico sobre el gris (ahí daría ~2.8:1).
+*/
+:root {
+  --board-canvas: #434343;
+  --board-card: #1f1f21;
+  --board-ink: #f5f5f7;
+  --board-ink-muted: #a8a8ab; /* el blanco al 62 % sobre la tarjeta; ver abajo */
+  --board-accent: #ff3d02;
+}
+@supports (color: color-mix(in oklab, red, blue)) {
+  :root {
+    --board-ink-muted: color-mix(in oklab, var(--board-ink) 62%, var(--board-card));
+  }
+}
+
+/*
+  La tarjeta del Tablero. Va junto a `surface-dark` (que invierte los tokens del
+  lienzo) y los pisa con la paleta del Tablero: el selector doble gana por
+  especificidad al `.surface-dark`. Así el texto, el gris de segundo orden y las
+  pastillas (`bg-foreground/10`) salen de la paleta sin repetirla en el JSX.
+  Vive en el contenido de la tarjeta y no en la caja de la librería: ver arriba,
+  en `.luma-kanban`, por qué.
+*/
+.luma-task-card.surface-dark {
+  background: var(--board-card);
+  color: var(--board-ink);
+  --foreground: var(--board-ink);
+  --muted-foreground: var(--board-ink-muted);
+  /*
+    Los tags (el "Atrasada") y el rojo de "peligro" (el motivo de una devolución)
+    NO se pisan: son los del sistema, los mismos que en el resto de la app. El
+    acento naranja no es un estado.
+  */
+}
+
+/* El fondo de la lista del celular y el de las canceladas: el mismo gris que las columnas. */
+.luma-board-canvas {
+  background: var(--board-canvas);
+}

@@ -25,7 +25,7 @@ async function createProject(page: Page, name: string) {
   await page.getByRole('option', { name: 'ARS' }).click();
   await page.getByRole('button', { name: /crear obra/i }).click();
   await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
-  await page.getByRole('link', { name: /^tareas$/i }).click();
+  await page.getByRole('link', { name: /^personal$/i }).click();
   await expect(page).toHaveURL(/\/personal$/);
 }
 
@@ -56,7 +56,6 @@ test.describe('empleados sin duplicar entre obras', () => {
     await suggestion.getByRole('button', { name: /sumar a esta obra/i }).click();
     await expect(drawer).toBeHidden();
 
-    await page.getByRole('tab', { name: /^tablero$/i }).click();
     await page.getByRole('button', { name: /^personal fijo$/i }).click();
     const roster = page.getByRole('dialog');
     await expect(roster.getByText(workerName)).toBeVisible();
@@ -113,7 +112,6 @@ test.describe('empleados sin duplicar entre obras', () => {
 
     // La obra B tiene a los dos Luis —el de la obra A, sumado; y el homónimo—
     // y ningún "Lucho".
-    await page.getByRole('tab', { name: /^tablero$/i }).click();
     await page.getByRole('button', { name: /^personal fijo$/i }).click();
     const roster = page.getByRole('dialog');
     await expect(roster.getByText(workerName)).toBeVisible();

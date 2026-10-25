@@ -85,9 +85,9 @@
     },
     "nav": {
       "detail": "Detalhe",
-      "gantt": "Cronograma",
+      "activities": "Atividades",
       "materials": "Compras",
-      "labor": "Tarefas",
+      "labor": "Pessoal",
       "providers": "Fornecedores",
       "budget": "Orçamento",
       "advisor": "Consultor IA",
@@ -101,8 +101,8 @@
     "navHint": {
       "back": "Volte para a lista de todas as suas obras.",
       "detail": "A obra num relance: avanço, dinheiro, compras e pendências.",
-      "gantt": "Planeje as tarefas com suas datas e responsáveis.",
-      "labor": "Atribua tarefas à sua equipe, acompanhe o andamento e registre a presença.",
+      "activities": "Planeje e acompanhe as tarefas: cronograma, quadro e lista.",
+      "labor": "Registre a presença e adicione pessoas à obra.",
       "materials": "Peça materiais e ferramentas e acompanhe cada compra até a obra.",
       "milestones": "Registre marcos e eventualidades, e escolha quais o cliente vê.",
       "documents": "Plantas, renders, licenças e condições do local, num só lugar.",
@@ -247,6 +247,17 @@
     "removed": {
       "title": "A obra «{{name}}» foi excluída.",
       "contact": "Entre em contato com o arquiteto ou o gerente de obra."
+    },
+    "card": {
+      "phase": {
+        "upcoming": "A iniciar",
+        "active": "Em andamento",
+        "done": "Concluída"
+      },
+      "startsIn": "Começa {{distance}}",
+      "endsIn": "Termina {{distance}}",
+      "endedAgo": "Terminou {{distance}}",
+      "open": "Abrir"
     }
   },
   "auth": {
@@ -358,7 +369,10 @@
       "nextWeek": "Próxima semana",
       "currentWeek": "Semana atual",
       "overdue": "Atrasada",
-      "missingMaterials": "Faltam materiais"
+      "missingMaterials": "Faltam materiais",
+      "endsOn": "Termina em {{date}}",
+      "overdueHint_one": "Atrasada: venceu há {{count}} dia",
+      "overdueHint_other": "Atrasada: venceu há {{count}} dias"
     },
     "new": {
       "title": "Nova tarefa"
@@ -409,7 +423,14 @@
     },
     "gantt": {
       "goToToday": "Ir para hoje",
-      "emptyState": "Não há tarefas planejadas neste período."
+      "zoomLabel": "Escala do cronograma",
+      "zoom": {
+        "days": "Dias",
+        "weeks": "Semanas",
+        "months": "Meses",
+        "quarters": "Trimestres"
+      },
+      "rescheduled": "Datas atualizadas."
     },
     "detail": {
       "title": "Detalhe da tarefa",
@@ -431,6 +452,45 @@
       "removeEvidence": "Remover foto",
       "removeEvidenceTitle": "Remover esta foto?",
       "removeEvidenceBody": "A foto é apagada da evidência da tarefa. Não é possível desfazer."
+    },
+    "views": {
+      "aria": "Visualização das atividades",
+      "gantt": "Cronograma",
+      "board": "Atividades",
+      "list": "Lista",
+      "emptyTitle": "Ainda não há atividades",
+      "emptyBody": "Quando a primeira for criada, ela aparece aqui."
+    },
+    "filters": {
+      "search": "Buscar atividade ou responsável",
+      "people": "Filtrar por responsável",
+      "button": "Filtros",
+      "quick": "Rápidos",
+      "mine": "Só minhas",
+      "overdue": "Atrasadas",
+      "missingMaterials": "Faltam materiais",
+      "awaitingReview": "Aguardando minha revisão",
+      "clear": "Limpar filtros",
+      "clearAll": "Limpar tudo",
+      "notice_one": "{{count}} filtro ativo",
+      "notice_other": "{{count}} filtros ativos",
+      "remove": "Remover o filtro {{filter}}",
+      "emptyTitle": "Nada corresponde aos filtros",
+      "emptyBody_one": "Há {{count}} filtro ativo que oculta tudo. Remova-o pelas etiquetas acima.",
+      "emptyBody_other": "Há {{count}} filtros ativos que ocultam tudo. Remova algum pelas etiquetas acima."
+    },
+    "dayPdf": {
+      "button": "Baixar atividades de hoje",
+      "generating": "Gerando PDF…",
+      "title": "Atividades do dia",
+      "summary_one": "{{count}} atividade",
+      "summary_other": "{{count}} atividades",
+      "filtered": "Com filtros aplicados: não é a lista completa do dia.",
+      "columnDates": "Datas",
+      "generated": "Gerado em {{date}}",
+      "page": "Página {{page}} de {{total}}",
+      "downloaded": "PDF baixado.",
+      "error": "Não foi possível gerar o PDF. Tente novamente."
     }
   },
   "material": {
@@ -799,10 +859,6 @@
     }
   },
   "labor": {
-    "tabs": {
-      "day": "Jornada",
-      "board": "Quadro"
-    },
     "prevDay": "Dia anterior",
     "nextDay": "Próximo dia",
     "today": "Hoje",
@@ -1355,13 +1411,7 @@
   },
   "task": {
     "board": {
-      "hint": {
-        "pendiente": "Ninguém começou ainda.",
-        "en_curso": "Alguém está cuidando disso.",
-        "en_revision": "Informada como concluída, aguardando aprovação.",
-        "completada": "Aprovadas."
-      },
-      "newTask": "Nova tarefa",
+      "quickAdd": "Criação rápida",
       "namePlaceholder": "Ex: limpar o canteiro",
       "assignee": "Quem faz?",
       "assigneePlaceholder": "Escolha pessoa ou equipe",
@@ -1373,8 +1423,6 @@
       "restore": "Restaurar",
       "delete": "Excluir",
       "cardActions": "Ações da tarefa",
-      "filterLabel": "Filtrar por pessoa",
-      "filterAll": "Todos",
       "emptyColumn": "Nada por aqui.",
       "showCancelled": "Ver canceladas ({{count}})",
       "hideCancelled": "Ocultar canceladas",

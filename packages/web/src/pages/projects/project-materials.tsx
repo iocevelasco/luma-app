@@ -13,10 +13,12 @@ import {
   Link2,
   MoreHorizontal,
   Package,
+  PackageCheck,
   Pencil,
   Plus,
   ReceiptText,
   Share2,
+  ShoppingCart,
   Trash2,
   Truck,
   X,
@@ -108,25 +110,13 @@ import {
   type PurchaseListKind,
   type PurchaseRow,
 } from '@/lib/materials';
+import { downloadBlob } from '@/lib/download-blob';
 import { cn } from '@/lib/utils';
 
 const MATERIAL_STATUSES: MaterialStatus[] = ['pendiente', 'solicitado', 'comprado', 'en_obra'];
 
 /** Faltan hasta tantos días para que una actividad empiece y se marca como urgente. */
 const URGENT_WITHIN_DAYS = 7;
-
-/** Descarga un archivo generado en el navegador. */
-function downloadBlob(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  // Revocar de inmediato cancela la descarga en algunos navegadores.
-  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
 
 /** Cancelar la hoja de compartir no es un error; lo demás (en Safari, el gesto vencido) sí. */
 function isAbortError(error: unknown): boolean {
@@ -1394,7 +1384,7 @@ export function ProjectMaterialsPage() {
         className="gap-4"
       >
         <TabsList>
-          <TabsTrigger value="toBuy">
+          <TabsTrigger value="toBuy" icon={ShoppingCart}>
             {t('material.list.toBuy')} ({toBuy.length})
             {/* El total de lo que nadie pidió, visible desde cualquier pestaña. */}
             {toBuyUnrequested > 0 && (
@@ -1407,7 +1397,7 @@ export function ProjectMaterialsPage() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="bought">
+          <TabsTrigger value="bought" icon={PackageCheck}>
             {t('material.list.bought')} ({bought.length})
           </TabsTrigger>
         </TabsList>

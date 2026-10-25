@@ -18,7 +18,7 @@ requiresApi();
 
 const SECTIONS = [
   'detail',
-  'gantt',
+  'activities',
   'materials',
   'labor',
   'milestones',
@@ -35,12 +35,12 @@ type Section = (typeof SECTIONS)[number];
 const VISIBLE_SECTIONS: Record<E2EProjectRoleKey, readonly Section[]> = {
   gerente: SECTIONS,
   // Reporta, no maneja plata ni accesos.
-  supervisor: ['detail', 'gantt', 'materials', 'labor', 'milestones', 'documents', 'providers'],
+  supervisor: ['detail', 'activities', 'materials', 'labor', 'milestones', 'documents', 'providers'],
   // Sólo plata: nada de obra.
   contador: ['detail', 'payments', 'expenses'],
   // Cobros sí, gastos nunca. Proveedores depende del flag de la obra, que el
   // seed deja apagado.
-  cliente: ['detail', 'gantt', 'milestones', 'documents', 'payments'],
+  cliente: ['detail', 'activities', 'milestones', 'documents', 'payments'],
 };
 
 for (const [role, visible] of Object.entries(VISIBLE_SECTIONS) as [

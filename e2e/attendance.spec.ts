@@ -46,7 +46,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
     // Una actividad vigente hoy, para que aparezca en la asistencia.
-    await page.getByRole('link', { name: /^cronograma$/i }).click();
+    await page.getByRole('link', { name: /^actividades$/i }).click();
     const today = new Date();
     await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(activityName);
@@ -59,7 +59,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     await page.getByRole('button', { name: /crear tarea/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
-    await page.getByRole('link', { name: /^tareas$/i }).click();
+    await page.getByRole('link', { name: /^personal$/i }).click();
     await expect(page).toHaveURL(/\/personal$/);
 
     // --- Roster: uno de ellos con teléfono, para poder llamarlo ---
@@ -68,8 +68,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     await addCrewMember(page, { name: coverName });
 
     // --- Se asignan dos a la actividad: la cuadrilla esperada ---
-    // La asistencia vive en la Jornada; la pestaña principal es el Tablero.
-    await page.getByRole('tab', { name: /^jornada$/i }).click();
+    // La asistencia vive en Personal.
     const card = page.locator('section', { hasText: activityName });
 
     for (const name of [presentName, absentName]) {

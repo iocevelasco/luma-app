@@ -61,9 +61,18 @@ export function projectDetailPath(projectId: string): string {
   return ROUTES.PROJECT_DETAIL.replace(':projectId', projectId);
 }
 
-/** `ROUTES.PROJECT_ACTIVITIES` con el `:projectId` resuelto, para armar links. */
-export function projectActivitiesPath(projectId: string): string {
-  return ROUTES.PROJECT_ACTIVITIES.replace(':projectId', projectId);
+/** Las vistas de Actividades que se abren por link: sin vista, el Cronograma. */
+export type ProjectActivitiesView = 'board' | 'list';
+
+/**
+ * `ROUTES.PROJECT_ACTIVITIES` con el `:projectId` resuelto, para armar links.
+ * Sin vista abre el Cronograma; con `view`, el Tablero o la Lista.
+ */
+export function projectActivitiesPath(projectId: string, view?: ProjectActivitiesView): string {
+  const path = ROUTES.PROJECT_ACTIVITIES.replace(':projectId', projectId);
+  if (view === 'board') return `${path}?vista=tablero`;
+  if (view === 'list') return `${path}?vista=lista`;
+  return path;
 }
 
 /** `ROUTES.PROJECT_MATERIALS` con el `:projectId` resuelto, para armar links. */
@@ -80,17 +89,13 @@ export function projectMaterialPath(projectId: string, materialId: string): stri
   return `${projectMaterialsPath(projectId)}?material=${encodeURIComponent(materialId)}`;
 }
 
-/** Las pestañas de Tareas que se abren por link: `board` es el Tablero, la principal. */
-export type ProjectLaborTab = 'board' | 'day';
-
 /**
- * `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. Sin
- * pestaña abre el Tablero de tareas; con `tab: 'day'`, la Jornada — es a donde
- * lleva el aviso de faltantes de la card del detalle.
+ * `ROUTES.PROJECT_LABOR` con el `:projectId` resuelto, para armar links. Es
+ * Personal: la Jornada del día. Las tareas viven en Actividades
+ * (`projectActivitiesPath`).
  */
-export function projectLaborPath(projectId: string, tab?: ProjectLaborTab): string {
-  const path = ROUTES.PROJECT_LABOR.replace(':projectId', projectId);
-  return tab === 'day' ? `${path}?tab=day` : path;
+export function projectLaborPath(projectId: string): string {
+  return ROUTES.PROJECT_LABOR.replace(':projectId', projectId);
 }
 
 /** `ROUTES.PROJECT_PAYMENTS` con el `:projectId` resuelto, para armar links. */

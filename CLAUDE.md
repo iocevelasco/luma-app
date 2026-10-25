@@ -264,25 +264,36 @@ naranja/crema que vino después ya no existen: si ves `bg-cream`, `brand-fill`,
 Usá `bg-primary text-primary-foreground`. El rojo (`destructive`) significa
 **peligro**, no marca.
 
+**Excepción: el Tablero.** El Kanban de Actividades tiene una paleta propia
+(`--board-*` en `index.css`: gris `#434343`, carbón `#1f1f21`, blanco suave
+`#f5f5f7` y un acento naranja `#ff3d02`), tomada de una pieza de referencia. El
+naranja vive sólo ahí y sólo marca el destino de un arrastre: no es un estado
+(esos usan los tags de siempre) ni el relleno de una acción. Detalle y contrastes
+en `DESIGN.md`.
+
 ### Radio — escala del panel
 
 | Clase | Valor | Se usa en |
 |---|---|---|
 | `rounded-sm` | 6px | Input, Select, Textarea, ítems de menú |
-| `rounded-md` | 8px | Code blocks, filas internas |
-| `rounded-lg` | 14px | Dialog, menú, dropdown, toast |
+| `rounded-md` | 8px | **Botones, buscador y pestaña de Tabs**; code blocks, filas internas |
+| `rounded-lg` | 14px | **Contenedor de Tabs**, Dialog, menú, dropdown, toast |
 | `rounded-xl` / `rounded-2xl` | 18 / 22px | Popover grande, panel destacado |
 | `rounded-3xl` | **28px** | **Card** — el dominante |
 | `rounded-xs` | 4px | Chips micro, indicadores |
-| `rounded-full` | píldora | **Botones** (todas las variantes), Badge, Avatar, Switch, Slider, Progress |
+| `rounded-full` | píldora | Badge, Avatar, Switch, Slider, Progress. **No** los botones |
 
 Dos reglas:
 
-1. **Los botones son píldora, y con relieve.** Al badge también lo es; lo que
-   separa uno de otro es el volumen: `shadow-cta` en los rellenos,
-   `shadow-raised` en el secundario, borde de 2px en el outline. El `Button`
-   ya lo trae — no le pases `rounded-*` ni `shadow-*`. En la landing los CTA
-   son links y usan `CTA_PRIMARY` / `CTA_OUTLINE` de `src/lib/cta.ts`.
+1. **Un solo criterio para tabs, botones y buscador: el de los Tabs.** Cuadrado
+   de esquinas suaves (`rounded-md`; el contenedor de un Tabs, `rounded-lg`),
+   fondo blanco (`bg-card`), **sin borde** y con `shadow-surface`. No hay
+   variante de contorno: el `outline` es blanco con sombra. El `Button` ya lo
+   trae — no le pases `rounded-*` ni `shadow-*`. Un buscador es
+   `SearchField` (`components/common/search-field.tsx`), no un `Input` con
+   una lupa. Todo `TabsTrigger` lleva ícono (es obligatorio en el tipo). La
+   landing no entra en este criterio: sus CTA son links con `CTA_PRIMARY` /
+   `CTA_OUTLINE` de `src/lib/cta.ts` y siguen en píldora.
 2. **El hijo va un escalón abajo del padre.** Un Input `rounded-sm` dentro de una
    Card `rounded-3xl`. Un radio interno mayor que el del contenedor deja una luz
    visible en la esquina.

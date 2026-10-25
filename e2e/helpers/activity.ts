@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 /**
  * Elige la especialidad en el formulario de "Nueva actividad".
@@ -10,6 +10,9 @@ import type { Page } from '@playwright/test';
 export async function pickActivitySpecialty(page: Page, name: RegExp = /albañilería/i) {
   await page.locator('#activity-specialty').click();
   await page.getByRole('option', { name }).click();
+  // El desplegable se cierra con una animación: seguir antes de que termine deja
+  // una opción debajo del siguiente clic, que el navegador le da a ella.
+  await expect(page.getByRole('listbox')).toBeHidden();
 }
 
 /**
@@ -23,4 +26,5 @@ export async function pickActivitySpecialty(page: Page, name: RegExp = /albañil
 export async function pickActivityResponsible(page: Page, name: RegExp = /\(vos\)$/i) {
   await page.locator('#activity-responsible').click();
   await page.getByRole('option', { name }).click();
+  await expect(page.getByRole('listbox')).toBeHidden();
 }

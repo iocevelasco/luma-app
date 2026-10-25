@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
-import { addCrewMember, addTask, boardColumn, moveTask, taskCard } from './helpers/crew';
+import { addCrewMember, addTask, boardColumn, moveTask, openBoard, taskCard } from './helpers/crew';
 import { requiresApi } from './helpers/api';
 
 /**
- * Personal fijo de obra y tareas: cargar el roster desde el drawer (persona,
- * equipo y encargado de especialidad), asignarle una tarea desde el Tablero,
- * completarla, y confirmar que vive en sus fechas y no se filtra a la semana
- * siguiente.
+ * Personal fijo de obra y tareas: cargar el roster desde el drawer de Personal
+ * (persona, equipo y encargado de especialidad), asignarle una tarea desde el
+ * Tablero de Actividades, completarla, y confirmar que vive en sus fechas y no
+ * se filtra a la semana siguiente.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -38,23 +38,17 @@ test.describe('personal fijo y tareas', () => {
     await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^tareas$/i }).click();
-    await expect(page).toHaveURL(/\/personal$/);
+    const projectUrl = page.url();
 
-    // El Tablero es la vista principal.
-    await expect(page.getByRole('tab', { name: /^tablero$/i })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    // Sin personal, el Tablero lo dice: no hay a quién asignarle tareas.
+    await openBoard(page, projectUrl);
     await expect(page.getByText(/sumá personal a la obra para asignarle tareas/i)).toBeVisible();
 
-    // La Jornada es la secundaria: arriba va el resumen de asistencia de la obra.
-    await page.getByRole('tab', { name: /^jornada$/i }).click();
-    await expect(page).toHaveURL(/\/personal\?tab=day$/);
+    // Personal es la asistencia del día: arriba va el resumen de la obra.
+    await page.getByRole('link', { name: /^personal$/i }).click();
+    await expect(page).toHaveURL(/\/personal$/);
     await expect(page.getByText(/^presentes$/i)).toBeVisible();
     await expect(page.getByText(/tareas hoy/i)).toBeVisible();
-    await page.getByRole('tab', { name: /^tablero$/i }).click();
-    await expect(page).toHaveURL(/\/personal$/);
 
     // --- Roster: un encargado de especialidad y un equipo, desde el drawer ---
     await addCrewMember(page, { name: leadName, specialty: /^electricidad$/i, isLead: true });
@@ -70,6 +64,7 @@ test.describe('personal fijo y tareas', () => {
     await expect(roster).toBeHidden();
 
     // --- Una tarea para el equipo, desde el alta rápida del Tablero ---
+    await openBoard(page, projectUrl);
     await addTask(page, teamName, goalText);
     await expect(boardColumn(page, /^pendiente$/i).getByRole('article', { name: goalText })).toBeVisible();
     await expect(taskCard(page, goalText)).toContainText(teamName);

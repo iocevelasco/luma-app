@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { OrganizationCrewMember } from '@luma/shared';
-import { Plus } from 'lucide-react';
+import { Briefcase, HardHat, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CrewDrawer } from '@/components/crew/crew-drawer';
 import { CrewList } from '@/components/crew/crew-list';
@@ -46,10 +46,10 @@ export function TeamDirectory() {
     <PageLayout
       toolbar={
         <TabsList>
-          <TabsTrigger value="crew">
+          <TabsTrigger value="crew" icon={HardHat}>
             {t('team.groupCrew')} ({crewCount})
           </TabsTrigger>
-          <TabsTrigger value="staff">
+          <TabsTrigger value="staff" icon={Briefcase}>
             {t('team.groupStaff')} ({staffCount})
           </TabsTrigger>
         </TabsList>
