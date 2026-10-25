@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormShell } from '@/components/common/form-shell';
 import { OrganizationProfile } from '@/components/organization/organization-panel';
+import { ChatPromptCard } from '@/components/platform/chat-prompt-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useChangeEmail, useChangePassword } from '@/hooks/auth/use-auth-queries';
+import { isAdmin } from '@/lib/roles';
 import { useAuth } from '@/providers/auth-provider';
 
 export function AccountSettingsPage() {
@@ -23,6 +25,8 @@ export function AccountSettingsPage() {
     <div className="flex w-full flex-col gap-4 p-3 md:p-4">
       {/* Nombre y contacto de la Empresa: se tocan una vez, no es una pantalla de uso diario. */}
       <OrganizationProfile />
+
+      {isAdmin(user?.role) && <ChatPromptCard />}
 
       <Card>
         <CardHeader>

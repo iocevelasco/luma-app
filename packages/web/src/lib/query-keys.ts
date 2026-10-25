@@ -43,4 +43,5 @@ export enum QueryKeys {
   exchangeRates = 'exchange-rates',
   platformUsersOverview = 'platform-users-overview',
   platformUsers = 'platform-users',
+  chatPrompt = 'chat-prompt',
 }

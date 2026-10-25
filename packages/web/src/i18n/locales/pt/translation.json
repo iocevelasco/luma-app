@@ -45,6 +45,16 @@
     "subscription": "Assinatura",
     "platform": "Administração da plataforma"
   },
+  "settings": {
+    "chat": {
+      "title": "Assistente",
+      "hint": "Este texto é o que o chat do Luma usa. Ao guardar, fica na nossa base e é enviado ao assistente.",
+      "label": "Prompt",
+      "save": "Guardar prompt",
+      "saved": "Prompt guardado e enviado ao assistente",
+      "loadError": "Não conseguimos carregar o prompt."
+    }
+  },
   "project": {
     "list": {
       "new": "Nova obra",

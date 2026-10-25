@@ -228,6 +228,8 @@ export const ANTHROPIC_CONFIG = {
 export const NEXUSBOT_CONFIG = {
   API_URL: process.env.NEXUSBOT_API_URL?.replace(/\/+$/, ''),
   API_KEY: process.env.NEXUSBOT_API_KEY,
+  /** Clave de administración de NexusBot (`X-Admin-Key`). No es la de las sesiones. */
+  ADMIN_KEY: process.env.NEXUSBOT_ADMIN_KEY,
   PROJECT_ID: process.env.NEXUSBOT_PROJECT_ID,
   ENABLED: Boolean(
     process.env.NEXUSBOT_API_URL && process.env.NEXUSBOT_API_KEY && process.env.NEXUSBOT_PROJECT_ID,

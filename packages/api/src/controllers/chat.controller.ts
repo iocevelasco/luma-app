@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
+import { chatSystemPromptSchema } from '@luma/shared';
 import { NEXUSBOT_CONFIG } from '../config/app.config.js';
-import { serviceUnavailable, unauthenticated } from '../utils/errors.js';
+import { currentChatPrompt, saveChatPrompt } from '../services/chat-prompt.service.js';
+import { badRequest, serviceUnavailable, unauthenticated } from '../utils/errors.js';
 
 /**
  * `POST /api/chat/session` — abre una sesión de Nexusbot para quien está
@@ -28,6 +30,30 @@ export async function createChatSession(req: Request, res: Response, next: NextF
 
     const data: unknown = await response.json();
     res.status(response.status).json(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** `GET /api/admin/chat-prompt` — el prompt guardado, o el texto por defecto. */
+export async function getChatPrompt(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const prompt = await currentChatPrompt();
+    return res.json({ success: true, data: prompt });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** `PUT /api/admin/chat-prompt` — lo guarda y lo manda a NexusBot. */
+export async function updateChatPrompt(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw unauthenticated();
+    const parsed = chatSystemPromptSchema.safeParse(req.body);
+    if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
+
+    const prompt = await saveChatPrompt(parsed.data.systemPrompt, req.user.sub);
+    return res.json({ success: true, data: prompt });
   } catch (error) {
     next(error);
   }
