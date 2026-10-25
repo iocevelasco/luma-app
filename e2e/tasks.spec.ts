@@ -422,7 +422,7 @@ test.describe('tareas', () => {
     expect(width).toBeGreaterThanOrEqual(31 * 32 - 2);
   });
 
-  test.describe('el Cronograma y el scroll a hoy', () => {
+  test.describe('el diagrama del Cronograma', () => {
     /** La columna de hoy, que sólo se dibuja en la escala de días y sólo si está a la vista. */
     const todayColumn = (page: Page) => page.locator('.luma-gantt-today');
 
@@ -485,6 +485,49 @@ test.describe('tareas', () => {
       await page.getByRole('radio', { name: /^semanas$/i }).click();
       await page.getByRole('radio', { name: /^días$/i }).click();
       await expect(todayColumn(page).first()).toBeVisible();
+    });
+
+    test('la etiqueta del mes se esconde mientras no entra en lo que queda a la vista, en vez de verse cortada', async ({
+      page,
+    }) => {
+      await openGantt(page, 'monthlabel');
+
+      // Por cada mes de la escala: ¿se ve la etiqueta?, ¿cuánto de su celda queda dentro del
+      // área que desplaza?, ¿cuánto mide el texto? Depende de clases internas de la librería.
+      const months = () =>
+        page.evaluate(() => {
+          const area = document.querySelector('.wx-chart')!.getBoundingClientRect();
+          return [...document.querySelectorAll<HTMLElement>('.wx-scale .wx-row:first-child .wx-cell')]
+            .map((cell) => {
+              const label = cell.querySelector<HTMLElement>('.wx-cell-value');
+              const box = cell.getBoundingClientRect();
+              return {
+                found: !!label,
+                hidden: label?.style.visibility === 'hidden',
+                visible: Math.min(box.right, area.right) - Math.max(box.left, area.left),
+                needed: label ? label.scrollWidth + 8 : 0,
+              };
+            })
+            .filter((month) => month.found);
+        });
+
+      // Se desplaza de a poco: en algún momento un mes queda con un cacho a la vista.
+      let cut = 0;
+      for (let step = 0; step < 40; step += 1) {
+        await page.evaluate(() => {
+          document.querySelector('.wx-chart')!.scrollLeft += 80;
+        });
+        await page.waitForTimeout(60);
+        const current = await months();
+        expect(current.length, 'no se encontró la etiqueta del mes: ¿cambió el DOM de la librería?')
+          .toBeGreaterThan(0);
+        for (const month of current) {
+          // Se esconde si y sólo si no entra.
+          expect(month.hidden).toBe(month.visible < month.needed);
+          if (month.visible > 0 && month.visible < month.needed) cut += 1;
+        }
+      }
+      expect(cut, 'nunca quedó un mes a medias: el recorrido no probó nada').toBeGreaterThan(0);
     });
 
     test('que crezca el rango no devuelve el diagrama a hoy mientras se mira otra parte', async ({

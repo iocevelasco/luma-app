@@ -194,6 +194,20 @@ export function ActivityGantt({
   // izquierda mientras ese mes está a la vista, pero acotado a lo que queda
   // visible de su celda. Con un solo día de un mes a la vista no entra y se veía
   // cortada ("ulio 2026"): se esconde mientras no entre, y vuelve al desplazar.
+  //
+  // No se resuelve con CSS: "cuánto de esta celda quedó dentro del área que
+  // desplaza" depende del scroll, y una hoja de estilos no lo puede preguntar
+  // (sólo las animaciones atadas al scroll, que Safari estable no tiene).
+  //
+  // Depende de cómo arma el DOM `@svar-ui/react-gantt` 2.8.1, y por eso la versión
+  // está fija en `package.json`:
+  //  - `.wx-chart`: el área que desplaza el diagrama.
+  //  - `.wx-scale .wx-row:first-child .wx-cell`: las celdas de la fila de arriba de
+  //    la escala (los meses). La librería sólo dibuja las que están a la vista.
+  //  - `.wx-cell-value`: la etiqueta pegajosa; la librería se la pone a la celda sólo
+  //    si mide más de 100 px, y es `position: sticky; left: 0`.
+  // Si una actualización renombra alguna, el selector no encuentra nada y la etiqueta
+  // vuelve a verse cortada: hay un E2E que lo avisa ("la etiqueta del mes se esconde").
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const root = rootRef.current;
