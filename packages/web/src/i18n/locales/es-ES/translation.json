@@ -255,6 +255,7 @@
         "done": "Finalizada"
       },
       "startsIn": "Empieza {{distance}}",
+      "endsToday": "Termina hoy",
       "endsIn": "Termina {{distance}}",
       "endedAgo": "Terminó {{distance}}",
       "open": "Abrir"
