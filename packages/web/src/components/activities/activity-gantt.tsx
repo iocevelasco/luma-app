@@ -8,6 +8,7 @@ import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
 import { TruncatedText } from '@/components/common/truncated-text';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import type { GanttZoom } from '@/lib/gantt-zoom';
 import { cn } from '@/lib/utils';
 
 /**
@@ -24,11 +25,6 @@ const STATUS_PROGRESS: Record<ActivityStatus, number> = {
   completada: 100,
   cancelada: 0,
 };
-
-/** Cuánto se ve de la línea de tiempo: de cada día a cada trimestre. */
-export type GanttZoom = 'days' | 'weeks' | 'months' | 'quarters';
-
-export const GANTT_ZOOMS: readonly GanttZoom[] = ['days', 'weeks', 'months', 'quarters'];
 
 interface ActivityGanttProps {
   activities: Activity[];
