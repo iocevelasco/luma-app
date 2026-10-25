@@ -1705,7 +1705,8 @@
     },
     "nav": {
       "users": "Cuentas",
-      "billing": "Pagos"
+      "billing": "Pagos",
+      "assistant": "Asistente"
     }
   },
   "legal": {

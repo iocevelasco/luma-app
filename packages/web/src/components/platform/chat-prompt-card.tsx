@@ -9,8 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useChatPrompt, useSaveChatPrompt } from '@/hooks/platform/use-chat-prompt';
 
 /**
- * El prompt del asistente, en Configuración. Sólo lo monta la página si quien
- * entra es admin de plataforma: es un texto para todos, no de una Empresa.
+ * El prompt del asistente. Lo monta la sección de plataforma: es un texto
+ * para todos, no de una Empresa.
  */
 export function ChatPromptCard() {
   const { t } = useTranslation();

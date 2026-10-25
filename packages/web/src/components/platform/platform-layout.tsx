@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ArrowLeft, Landmark, Users, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Bot, Landmark, Users, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AppLogo } from '@/components/app-logo';
@@ -10,9 +10,10 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { ROUTES } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 
-const SECTIONS: { to: string; key: 'users' | 'billing'; icon: LucideIcon }[] = [
+const SECTIONS: { to: string; key: 'users' | 'billing' | 'assistant'; icon: LucideIcon }[] = [
   { to: ROUTES.PLATFORM_USERS, key: 'users', icon: Users },
   { to: ROUTES.PLATFORM_BILLING, key: 'billing', icon: Landmark },
+  { to: ROUTES.PLATFORM_ASSISTANT, key: 'assistant', icon: Bot },
 ];
 
 /**
