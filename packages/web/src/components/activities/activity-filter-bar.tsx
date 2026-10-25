@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ActivityStatusIcon } from '@/components/common/activity-status-icon';
@@ -91,6 +91,9 @@ export function ActivityFilterControls({
 }: ActivityFilterControlsProps) {
   const { t } = useTranslation();
   const active = countActiveFilters(filters);
+  // Un `id` por persona sale del índice, no de su clave: la clave es `name:juan perez`,
+  // con dos puntos y espacios, y un `id` con espacios no es válido en HTML.
+  const personIdBase = useId();
 
   return (
     <>
@@ -188,10 +191,10 @@ export function ActivityFilterControls({
 
           {people.length > 0 && (
             <Group title={t('activity.fields.responsible')}>
-              {people.map((person) => (
+              {people.map((person, index) => (
                 <CheckRow
                   key={person.key}
-                  id={`af-person-${person.key}`}
+                  id={`${personIdBase}-person-${index}`}
                   label={person.name}
                   checked={filters.responsibles.includes(person.key)}
                   onChange={() => onChange({ responsibles: toggle(filters.responsibles, person.key) })}
