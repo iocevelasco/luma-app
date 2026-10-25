@@ -80,15 +80,26 @@ export async function buildActivitiesDayPdf(input: {
   const doc = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'portrait' });
   const margin = 15;
 
+  // Todo el encabezado entra en el ancho útil de la hoja y, si no cabe en una línea,
+  // pasa a la siguiente: `doc.text` solo no corta nada y un nombre de obra largo
+  // se salía de la página. `y` es la línea de base de lo último escrito.
+  const usableWidth = doc.internal.pageSize.getWidth() - margin * 2;
+  const lineHeight = (fontSize: number) => (fontSize * doc.getLineHeightFactor()) / doc.internal.scaleFactor;
+  const write = (text: string, y: number, fontSize: number): number => {
+    const lines: string[] = doc.splitTextToSize(sanitizeForPdf(text), usableWidth);
+    doc.text(lines, margin, y);
+    return y + (lines.length - 1) * lineHeight(fontSize);
+  };
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text(sanitizeForPdf(`${labels.title} - ${projectName}`), margin, 20);
+  let y = write(`${labels.title} - ${projectName}`, 20, 16);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(90);
-  doc.text(sanitizeForPdf(`${dateLabel} - ${labels.summary}`), margin, 27);
-  if (labels.filtered) doc.text(sanitizeForPdf(labels.filtered), margin, 32);
+  y = write(`${dateLabel} - ${labels.summary}`, y + 7, 10);
+  if (labels.filtered) y = write(labels.filtered, y + 5, 10);
   doc.setTextColor(0);
 
   // El casillero se dibuja, no se escribe: el carácter ☐ no existe en las
@@ -98,7 +109,7 @@ export async function buildActivitiesDayPdf(input: {
   const boxGutter = 8;
 
   autoTable(doc, {
-    startY: labels.filtered ? 36 : 32,
+    startY: y + (labels.filtered ? 4 : 5),
     margin: { left: margin, right: margin, bottom: 18 },
     head: [
       [
