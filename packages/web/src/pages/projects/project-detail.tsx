@@ -283,6 +283,8 @@ function WeekTasksCard({
   const { done, total, overdue, open } = useMemo(() => {
     const tasks = tasksForWeek(activitiesData?.activities ?? [], week, {
       includeOverdue: true,
+      // Esto cuenta avance: una completada hace meses y editada hoy no es de esta semana.
+      includeRecentlyClosed: false,
     }).filter((task) => task.status !== 'cancelada');
     const isLate = (task: Activity) => isActivityOverdue(task.endDate, task.status, today);
     return {

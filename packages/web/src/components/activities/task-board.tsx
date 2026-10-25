@@ -393,7 +393,10 @@ export function TaskBoard({
   const deleteActivity = useDeleteActivity(projectId);
 
   const tasks = useMemo(
-    () => tasksForWeek(activities, week, { includeOverdue: isCurrentWeek }),
+    () => tasksForWeek(activities, week, {
+      includeOverdue: isCurrentWeek,
+      includeRecentlyClosed: true,
+    }),
     [activities, week, isCurrentWeek],
   );
   const layout = useMemo(() => layoutTasks(tasks, null, today), [tasks, today]);

@@ -50,12 +50,16 @@ describe('tasksForWeek', () => {
   ];
 
   it('trae las que caen en la semana, aunque empiecen antes o terminen después', () => {
-    const ids = tasksForWeek(tasks, WEEK, { includeOverdue: false }).map((t) => t.id);
+    const ids = tasksForWeek(tasks, WEEK, { includeOverdue: false, includeRecentlyClosed: false }).map(
+      (t) => t.id,
+    );
     expect(ids).toEqual(['adentro', 'empieza-antes', 'termina-despues']);
   });
 
   it('en la semana en curso suma las atrasadas abiertas, no las cerradas', () => {
-    const ids = tasksForWeek(tasks, WEEK, { includeOverdue: true }).map((t) => t.id);
+    const ids = tasksForWeek(tasks, WEEK, { includeOverdue: true, includeRecentlyClosed: false }).map(
+      (t) => t.id,
+    );
     expect(ids).toContain('atrasada');
     expect(ids).not.toContain('semana-pasada-cerrada');
     expect(ids).not.toContain('cancelada-vieja');
@@ -68,27 +72,49 @@ describe('tasksForWeek', () => {
       ...task(id, '2026-10-05', '2026-10-09', status),
       updatedAt: `${day}T15:00:00`,
     });
+    const board = { includeOverdue: true, includeRecentlyClosed: true };
+    const counting = { includeOverdue: true, includeRecentlyClosed: false };
 
-    it('una atrasada que se completa esta semana sigue a la vista', () => {
+    it('una atrasada que se completa esta semana sigue a la vista en el tablero', () => {
       const completed = touchedOn('recien-completada', 'completada', '2026-10-14');
-      const ids = tasksForWeek([completed], WEEK, { includeOverdue: true }).map((t) => t.id);
+      const ids = tasksForWeek([completed], WEEK, board).map((t) => t.id);
       expect(ids).toEqual(['recien-completada']);
     });
 
     it('lo mismo con una cancelada', () => {
       const cancelled = touchedOn('recien-cancelada', 'cancelada', '2026-10-13');
-      expect(tasksForWeek([cancelled], WEEK, { includeOverdue: true })).toHaveLength(1);
+      expect(tasksForWeek([cancelled], WEEK, board)).toHaveLength(1);
     });
 
     it('una cerrada que se tocó en otra semana no aparece', () => {
       const old = touchedOn('cerrada-hace-rato', 'completada', '2026-10-02');
-      expect(tasksForWeek([old], WEEK, { includeOverdue: true })).toHaveLength(0);
+      expect(tasksForWeek([old], WEEK, board)).toHaveLength(0);
     });
 
     it('una abierta tocada esta semana no entra por esto: entra por sus fechas', () => {
       const open = { ...touchedOn('abierta-vieja', 'pendiente', '2026-10-14'), endDate: '2026-10-06' };
       // Atrasada: entra sólo en la semana en curso (`includeOverdue`), no por haberla tocado.
-      expect(tasksForWeek([open], WEEK, { includeOverdue: false })).toHaveLength(0);
+      expect(
+        tasksForWeek([open], WEEK, { includeOverdue: false, includeRecentlyClosed: true }),
+      ).toHaveLength(0);
+    });
+
+    // El panel "Tareas de la semana" cuenta hechas/total: una tarea terminada
+    // en marzo y editada hoy no es trabajo de esta semana.
+    it('sin `includeRecentlyClosed`, una completada vieja editada hoy no se cuenta', () => {
+      const edited = touchedOn('completada-en-marzo', 'completada', '2026-10-14');
+      expect(tasksForWeek([edited], WEEK, counting)).toHaveLength(0);
+    });
+
+    it('sin `includeRecentlyClosed`, lo que cae en la semana se cuenta igual, cerrado o no', () => {
+      const closedInside = {
+        ...touchedOn('cerrada-de-la-semana', 'completada', '2026-10-14'),
+        startDate: '2026-10-13',
+        endDate: '2026-10-14',
+      };
+      const overdue = task('atrasada-abierta', '2026-10-05', '2026-10-09', 'en_curso');
+      const ids = tasksForWeek([closedInside, overdue], WEEK, counting).map((t) => t.id);
+      expect(ids).toEqual(['cerrada-de-la-semana', 'atrasada-abierta']);
     });
   });
 });
