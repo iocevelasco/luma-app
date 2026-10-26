@@ -7,7 +7,10 @@ import 'react';
 declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
-      'nexus-chat': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
+      'nexus-chat': React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & { 'primary-color'?: string },
+        HTMLElement
+      >;
     }
   }
 }

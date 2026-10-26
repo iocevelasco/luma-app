@@ -697,3 +697,21 @@ select:-webkit-autofill {
 .luma-board-canvas {
   background: var(--board-canvas);
 }
+
+/*
+  El chat flota en la misma esquina que la acción principal (Nueva obra y el
+  resto de los FAB). Estas variables las lee el widget, dentro de su shadow:
+  el botón queda encima del FAB, alineado a su derecha. En mobile el FAB sube
+  para dejar la barra inferior; el chat sube con él.
+*/
+nexus-chat {
+  --nexus-inset-end: 1rem;
+  --nexus-inset-bottom: calc(5rem + 2.25rem + 0.75rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  nexus-chat {
+    --nexus-inset-end: 2rem;
+    --nexus-inset-bottom: calc(2rem + 2.25rem + 0.75rem);
+  }
+}
