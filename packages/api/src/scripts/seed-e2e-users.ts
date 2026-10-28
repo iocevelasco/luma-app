@@ -58,6 +58,8 @@ interface E2EUserFixture {
   name: string;
   platformRole: UserRole;
   projectRole?: ProjectRole;
+  /** Quien creó la obra compartida. Los demás gerentes entran por membresía. */
+  projectOwner?: boolean;
   accountStatus?: AccountStatus;
 }
 
@@ -186,9 +188,9 @@ async function main() {
   }
 
   // ── 2. La obra compartida, del gerente ────────────────────────────────────
-  const managerKey = Object.keys(fixture.users).find(
-    (key) => fixture.users[key].projectRole === 'gerente',
-  );
+  // Hay dos gerentes en el fixture y sólo uno creó la obra: el otro entra por
+  // membresía, como en producción.
+  const managerKey = Object.keys(fixture.users).find((key) => fixture.users[key].projectOwner);
   const manager = managerKey ? users.get(managerKey) : undefined;
   if (!manager) {
     console.log('ℹ️  Sin gerente en el fixture: no se siembra la obra.');
@@ -206,7 +208,10 @@ async function main() {
   // ── 3. Una membresía por rol invitable ────────────────────────────────────
   for (const [key, person] of Object.entries(fixture.users)) {
     const user = users.get(key);
-    if (!user || !isInvitable(person.projectRole)) continue;
+    // Quien creó la obra no lleva fila: su rol sale de `Project.createdBy`.
+    if (!user || String(user._id) === String(manager._id) || !isInvitable(person.projectRole)) {
+      continue;
+    }
     await ProjectMembership.updateOne(
       { project: project._id, user: user._id },
       { $set: { role: person.projectRole }, $setOnInsert: { invitedBy: manager._id } },

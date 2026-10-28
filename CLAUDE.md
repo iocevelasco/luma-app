@@ -43,9 +43,14 @@ nombre de paquete contra su `dist`.
   El admin tiene su propia área, **fuera del panel de obras**: `/plataforma`
   (cuentas y pagos), con su propio layout (`PlatformLayout`). Una pantalla de
   administración global no va dentro de `DashboardLayout`.
-- **Roles de obra**: `gerente` | `supervisor` | `cliente`, por obra y no por
-  Empresa. El gerente sale de `Project.createdBy`; los otros dos son filas de
-  `ProjectMembership`. **Quién puede qué vive en una sola grilla**:
+- **Roles de obra**: `gerente` | `supervisor` | `contador` | `cliente`, por obra
+  y no por Empresa. Quien creó la obra es el gerente por `Project.createdBy`
+  (el **dueño**, sin fila); los demás roles son filas de `ProjectMembership`,
+  y eso incluye a otros gerentes: **hasta 5 por obra, el dueño incluido**
+  (`MAX_PROJECT_MANAGERS`, `project-managers.service.ts`). Otro gerente hace
+  todo lo del gerente salvo lo que la grilla reserva al dueño (`OWNER_ONLY`:
+  eliminar la obra, sacar o degradar a otro gerente, la libreta de proveedores
+  de la Empresa). **Quién puede qué vive en una sola grilla**:
   `packages/shared/src/permissions/index.ts`. Los routers declaran la acción
   con `requireCapability('activity.plan')` y los controllers preguntan con
   `req.can(...)` — nunca por rol. La UI lee `project.capabilities`, que la API

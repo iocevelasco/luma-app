@@ -354,6 +354,40 @@ test.describe('tareas', () => {
     await expectNoticeBelow(page.locator('.luma-gantt'));
   });
 
+  test('«Nueva tarea» no tapa la última fila del Cronograma', async ({ page }) => {
+    test.setTimeout(60_000);
+    const task = `Colocar el contrapiso ${RUN_ID}`;
+    const projectUrl = await startProject(page, 'actiongap');
+    await planTask(page, projectUrl, { name: task, start: dayKey(), end: dayKey(2) });
+
+    /** El diagrama termina arriba del botón flotante: su última fila no queda detrás. */
+    async function expectGanttAboveAction() {
+      await page.goto(`${projectUrl}/actividades`);
+      const gantt = page.locator('.luma-gantt');
+      const action = page.getByTestId('primary-action');
+      await expect(gantt).toBeVisible();
+      await expect(action).toBeVisible();
+      // En el celular la pantalla scrollea (dentro de un contenedor, no de la ventana):
+      // lo que importa es cómo queda el diagrama al llegar al final.
+      await gantt.evaluate((element) => {
+        for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+          if (node.scrollHeight > node.clientHeight) node.scrollTop = node.scrollHeight;
+        }
+      });
+      const chart = (await gantt.boundingBox())!;
+      const button = (await action.boundingBox())!;
+      expect(chart.y + chart.height, 'el botón flotante tapa el final del Cronograma').toBeLessThanOrEqual(
+        button.y + 0.5,
+      );
+    }
+
+    await expectGanttAboveAction();
+
+    // Celular: el botón se apoya más cerca del borde, pero el diagrama también ocupa todo el alto.
+    await page.setViewportSize({ width: 375, height: 812 });
+    await expectGanttAboveAction();
+  });
+
   test('cambiar las fechas de una actividad se refleja en el Cronograma y en el Tablero', async ({
     page,
   }) => {

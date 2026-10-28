@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { invitableProjectRoleSchema } from '../schemas/project.js';
 import {
   canInProject,
   capabilitiesInProject,
+  capabilityToManageMember,
+  countsTowardManagerLimit,
+  INVITABLE_PROJECT_ROLES,
   isReadCapability,
+  MAX_PROJECT_MANAGERS,
   PROJECT_CAPABILITIES,
+  projectManagerSlots,
   type Capability,
   type ProjectRole,
 } from './index.js';
@@ -12,7 +18,7 @@ const VISIBLE = { providersVisibleToClient: true };
 const HIDDEN = { providersVisibleToClient: false };
 
 describe('grilla de capacidades por obra', () => {
-  it('el gerente puede todo lo que la grilla conoce', () => {
+  it('quien creó la obra puede todo lo que la grilla conoce', () => {
     const everything = new Set<Capability>(
       (Object.keys(PROJECT_CAPABILITIES) as ProjectRole[]).flatMap(
         (role) => PROJECT_CAPABILITIES[role],
@@ -20,7 +26,7 @@ describe('grilla de capacidades por obra', () => {
     );
 
     for (const capability of everything) {
-      expect(canInProject('gerente', capability, VISIBLE)).toBe(true);
+      expect(canInProject('gerente', capability, VISIBLE, { isOwner: true })).toBe(true);
     }
   });
 
@@ -285,17 +291,76 @@ describe('modo sólo lectura (suscripción vencida)', () => {
 });
 
 describe('project.delete', () => {
-  it('es sólo del gerente: ningún otro rol puede mandar la obra a la papelera', () => {
-    expect(canInProject('gerente', 'project.delete')).toBe(true);
+  it('es sólo de quien creó la obra: ni otro rol ni otro gerente la mandan a la papelera', () => {
+    expect(canInProject('gerente', 'project.delete', undefined, { isOwner: true })).toBe(true);
+    expect(canInProject('gerente', 'project.delete', undefined, { isOwner: false })).toBe(false);
     for (const role of ['supervisor', 'contador', 'cliente'] as const) {
-      expect(canInProject(role, 'project.delete', VISIBLE)).toBe(false);
+      expect(canInProject(role, 'project.delete', VISIBLE, { isOwner: true })).toBe(false);
     }
   });
 
   it('con la suscripción vencida tampoco se elimina: es una escritura', () => {
-    expect(capabilitiesInProject('gerente', VISIBLE, { readOnly: true })).not.toContain(
-      'project.delete',
+    expect(
+      capabilitiesInProject('gerente', VISIBLE, { readOnly: true, isOwner: true }),
+    ).not.toContain('project.delete');
+  });
+});
+
+describe('gerentes de una obra', () => {
+  const OWNER_ONLY_CAPABILITIES: Capability[] = [
+    'project.delete',
+    'project.manager.write',
+    'provider.manage',
+    'crew.directory.write',
+  ];
+
+  it('sin saber quién creó la obra se niega: el dueño pierde el botón, no otro gerente lo gana', () => {
+    for (const capability of OWNER_ONLY_CAPABILITIES) {
+      expect(canInProject('gerente', capability)).toBe(false);
+      expect(canInProject('gerente', capability, VISIBLE, {})).toBe(false);
+    }
+  });
+
+  it('otro gerente hace todo lo del gerente salvo lo que es del dueño', () => {
+    const owner = capabilitiesInProject('gerente', VISIBLE, { isOwner: true });
+    const other = capabilitiesInProject('gerente', VISIBLE, { isOwner: false });
+
+    expect(owner.filter((capability) => !other.includes(capability)).sort()).toEqual(
+      [...OWNER_ONLY_CAPABILITIES].sort(),
     );
+    // Lo que sí hace, para que un recorte accidental se note.
+    for (const capability of ['project.invite', 'expense.write', 'activity.review'] as const) {
+      expect(other).toContain(capability);
+    }
+  });
+
+  it('sumar gente es de cualquier gerente; tocar a otro gerente es del dueño', () => {
+    expect(capabilityToManageMember('supervisor')).toBe('project.invite');
+    expect(capabilityToManageMember('cliente')).toBe('project.invite');
+    expect(capabilityToManageMember('gerente')).toBe('project.manager.write');
+  });
+
+  it('el tope es de cinco, el dueño incluido', () => {
+    expect(MAX_PROJECT_MANAGERS).toBe(5);
+    expect(projectManagerSlots(1)).toEqual({ count: 1, max: 5, remaining: 4, isFull: false });
+    expect(projectManagerSlots(4).remaining).toBe(1);
+    expect(projectManagerSlots(5).isFull).toBe(true);
+    // Si la lista se pasara del tope por un dato viejo, los lugares no dan negativo.
+    expect(projectManagerSlots(7).remaining).toBe(0);
+  });
+
+  it('sólo el rol de gerente cuenta para el tope', () => {
+    expect(countsTowardManagerLimit('gerente')).toBe(true);
+    for (const role of ['supervisor', 'contador', 'cliente'] as const) {
+      expect(countsTowardManagerLimit(role)).toBe(false);
+    }
+  });
+
+  it('los cuatro roles se invitan, y el schema dice lo mismo que la lista', () => {
+    expect([...invitableProjectRoleSchema.options].sort()).toEqual(
+      [...INVITABLE_PROJECT_ROLES].sort(),
+    );
+    expect(INVITABLE_PROJECT_ROLES).toContain('gerente');
   });
 });
 describe('compras visibles para el cliente', () => {

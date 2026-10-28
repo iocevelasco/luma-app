@@ -9,7 +9,7 @@ import { CrewMember, type ICrewMember } from '../models/CrewMember.js';
 import type { IProject } from '../models/Project.js';
 import { assertNoCrewDuplicate } from '../services/crew-identity.service.js';
 import { visibleCrewFilter } from '../services/directory.service.js';
-import { badRequest } from '../utils/errors.js';
+import { badRequest, forbidden, isAppError } from '../utils/errors.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
@@ -97,8 +97,21 @@ export async function createCrewMember(req: Request, res: Response, next: NextFu
   }
 }
 
+/**
+ * El personal de la Empresa (no cargado sólo en esta obra) llega a esta obra por
+ * asignación, pero su jornal liquida todas las obras de la Empresa: tocarlo
+ * pide `crew.directory.write`, que otro gerente no tiene. El de esta obra, no.
+ */
+async function assertCanTouchCrew(req: Request, filter: Record<string, unknown>) {
+  if (req.can?.('crew.directory.write')) return;
+  const outsideThisProject = await CrewMember.exists({ ...filter, scope: { $ne: 'project' } });
+  if (outsideThisProject) {
+    throw forbidden('Sólo quien creó la obra puede cambiar al personal de la Empresa.');
+  }
+}
+
 /** Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. */
-export async function updateCrewMember(req: Request, res: Response) {
+export async function updateCrewMember(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = updateCrewMemberSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -108,11 +121,9 @@ export async function updateCrewMember(req: Request, res: Response) {
     }
 
     const project = req.project as IProject;
-    const crewMember = await CrewMember.findOneAndUpdate(
-      { _id: req.params.crewMemberId, ...(await visibleCrewFilter(project)) },
-      parsed.data,
-      { new: true },
-    );
+    const filter = { _id: req.params.crewMemberId, ...(await visibleCrewFilter(project)) };
+    await assertCanTouchCrew(req, filter);
+    const crewMember = await CrewMember.findOneAndUpdate(filter, parsed.data, { new: true });
 
     if (!crewMember) {
       return res.status(404).json({ success: false, error: 'Personal no encontrado' });
@@ -120,6 +131,7 @@ export async function updateCrewMember(req: Request, res: Response) {
 
     return res.json({ success: true, data: { crewMember: toCrewMemberDTO(crewMember) } });
   } catch (error) {
+    if (isAppError(error)) return next(error);
     console.error('❌ [CREW] updateCrewMember:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }
@@ -129,14 +141,12 @@ export async function updateCrewMember(req: Request, res: Response) {
  * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes. Baja lógica:
  * quien ya no está sigue siendo el dueño de las metas de semanas pasadas.
  */
-export async function deactivateCrewMember(req: Request, res: Response) {
+export async function deactivateCrewMember(req: Request, res: Response, next: NextFunction) {
   try {
     const project = req.project as IProject;
-    const crewMember = await CrewMember.findOneAndUpdate(
-      { _id: req.params.crewMemberId, ...(await visibleCrewFilter(project)) },
-      { active: false },
-      { new: true },
-    );
+    const filter = { _id: req.params.crewMemberId, ...(await visibleCrewFilter(project)) };
+    await assertCanTouchCrew(req, filter);
+    const crewMember = await CrewMember.findOneAndUpdate(filter, { active: false }, { new: true });
 
     if (!crewMember) {
       return res.status(404).json({ success: false, error: 'Personal no encontrado' });
@@ -144,6 +154,7 @@ export async function deactivateCrewMember(req: Request, res: Response) {
 
     return res.json({ success: true, data: { crewMember: toCrewMemberDTO(crewMember) } });
   } catch (error) {
+    if (isAppError(error)) return next(error);
     console.error('❌ [CREW] deactivateCrewMember:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }

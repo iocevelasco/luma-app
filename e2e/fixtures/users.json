@@ -26,6 +26,14 @@
       "password": "E2eRoles1234!",
       "name": "Gabriela Gerente E2E",
       "platformRole": "user",
+      "projectRole": "gerente",
+      "projectOwner": true
+    },
+    "cogerente": {
+      "email": "e2e-cogerente@luma.test",
+      "password": "E2eRoles1234!",
+      "name": "Cora Cogerente E2E",
+      "platformRole": "user",
       "projectRole": "gerente"
     },
     "supervisor": {

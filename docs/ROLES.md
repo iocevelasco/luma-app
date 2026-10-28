@@ -11,9 +11,13 @@ falta todavía.
 
 ## El modelo en tres líneas
 
-1. El rol es **por obra**, no por Empresa. `gerente` sale de
-   `Project.createdBy`; `supervisor`, `contador` y `cliente` son filas de
-   `ProjectMembership`.
+1. El rol es **por obra**, no por Empresa. Quien creó la obra es `gerente`
+   por `Project.createdBy` (el **dueño**, sin fila); todos los demás roles son
+   filas de `ProjectMembership`, y eso incluye a otros gerentes: **hasta 5 por
+   obra, el dueño incluido** (`MAX_PROJECT_MANAGERS`). Otro gerente hace todo lo
+   del gerente salvo lo que la grilla reserva al dueño (`OWNER_ONLY`): eliminar
+   la obra, sacar o degradar a otro gerente y administrar la libreta de
+   proveedores de la Empresa.
 2. Nada pregunta por el rol. Todo pregunta por **capacidad**:
    `requireCapability('activity.plan')` en los routers, `req.can(...)` en los
    controllers, `project.capabilities` en la UI.

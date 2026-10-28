@@ -103,6 +103,7 @@ const activitySchema = new Schema<IActivity>(
         'acabados',
         'pintura',
         'climatizacion',
+        'fire_protection',
         'techos',
         'pisos_revestimientos',
         'jardineria',

@@ -89,9 +89,16 @@ export function useInviteProjectMember(projectId: string) {
       // con el enlace; un toast verde diría que todo salió bien.
       if (data.emailSent !== false) toast.success(t('project.detail.memberInvited'));
     },
-      // Sin `onError`: esta mutación se envía desde un formulario y el banner
-      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
-      // mensaje dos veces, en dos lugares distintos de la pantalla.
+    // Sin toast en `onError`: esta mutación se envía desde un formulario y el
+    // banner de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+    // mensaje dos veces, en dos lugares distintos de la pantalla.
+    //
+    // Sí se recarga la lista: un 409 por el tope de gerentes quiere decir que el
+    // equipo cambió desde que se abrió la pantalla, y el contador tiene que
+    // mostrar lo que hay ahora.
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
+    },
   });
 }
 

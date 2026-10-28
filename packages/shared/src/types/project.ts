@@ -96,8 +96,9 @@ export interface ProjectDetail extends Project {
  * relación invitable cuando entró el supervisor, y dos tablas con la misma
  * forma y distinto nombre terminan con dos flujos de invitación distintos.
  *
- * El gerente no tiene fila: se deriva de `Project.createdBy`. Una obra sin
- * dueño no existe, y tenerlo en dos lugares abre la puerta a que discrepen.
+ * Quien creó la obra no tiene fila: se deriva de `Project.createdBy`. Una obra
+ * sin dueño no existe, y tenerlo en dos lugares abre la puerta a que
+ * discrepen. Los demás gerentes sí la tienen.
  */
 export interface ProjectMembership {
   id: string;
@@ -115,6 +116,17 @@ export interface ProjectMemberSummary {
   email: string;
   name: string;
   role: ProjectRole;
+  /**
+   * Quien pide la lista puede cambiarle el rol o sacarlo de la obra. Lo
+   * resuelve el servidor contra la grilla y no la UI: el dueño nunca (no tiene
+   * fila de membresía), y a un gerente sólo lo toca quien tiene
+   * `project.manager.write`.
+   */
+  manageable: boolean;
+  /** Todavía no activó la cuenta. Ocupa su lugar igual: cuenta para el tope de gerentes. */
+  pending: boolean;
+  /** La cuenta está dada de baja y todavía no se purgó. También ocupa su lugar. */
+  inactive: boolean;
   createdAt: string;
 }
 

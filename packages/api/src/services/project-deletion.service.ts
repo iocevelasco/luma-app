@@ -150,7 +150,8 @@ export async function summarizeDeletion(project: IProject): Promise<ProjectDelet
       crewMembers: crewLinks.filter((l) => !ownCrewIds.has(String(l.crewMember))).length,
       providers: providerLinks.filter((l) => !ownProviderIds.has(String(l.provider))).length,
     },
-    // El gerente no tiene fila de membresía: todas las filas son otras personas.
+    // Quien la creó no tiene fila de membresía: todas las filas son otras personas
+    // (los demás gerentes incluidos, que también pierden la obra).
     affectedPeople: members,
     freesSubscriptionSlot: project.status === 'active',
   };
