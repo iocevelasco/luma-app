@@ -1,8 +1,9 @@
 # Luma
 
-Base de aplicación: monorepo pnpm con API, SPA y landing. Sesión de usuario,
-sistema de diseño, i18n y despliegue resueltos. Sin producto todavía — la home del
-panel está deliberadamente vacía.
+Plataforma de gestión de obras de construcción: monorepo pnpm con API, SPA y
+landing. Cada obra tiene presupuesto, actividades (Tablero y Cronograma),
+proveedores, cobros y gastos, documentos y un Consultor IA; la Empresa paga una
+suscripción. Sesión de usuario, sistema de diseño, i18n y despliegue resueltos.
 
 ## Paquetes
 
@@ -40,11 +41,12 @@ pnpm test:e2e:ci  # E2E chromium
   ante un 401, con reintento de la request original), logout, `/me`.
 - **Recuperar y cambiar contraseña**, verificación de email, activación de cuenta y
   cambio de email con confirmación.
-- **Roles** `admin` y `user`, con guards de ruta en el front y middlewares en la API.
+- **Roles**: `admin` y `user` de plataforma, y `gerente`, `supervisor`, `contador` y
+  `cliente` por obra, con una sola grilla de permisos en `packages/shared`.
 - **Sistema de diseño**: tokens de Tailwind v4, escala única de radio, dark mode,
   60 componentes de shadcn/ui.
-- **i18n** en español y portugués, en la app y en la landing, con test de paridad
-  de claves.
+- **i18n**: la app en `es`, `es-ES` y `pt`; la landing en `es` y `pt`. Test de
+  paridad de claves en la app.
 - **Despliegue** en Coolify: dos Dockerfiles y la guía en `docs/DEPLOY.md`.
 
 ## Documentación

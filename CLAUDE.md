@@ -2,13 +2,13 @@
 
 ## Qué es esto
 
-Base de aplicación: monorepo pnpm con API, SPA y landing. Tiene sesión de usuario
-completa, sistema de diseño y despliegue resueltos, y **no tiene producto**. La
-home del panel está vacía a propósito: ahí va la primera pantalla real cuando el
-dominio esté definido.
+Plataforma de gestión de obras de construcción: monorepo pnpm con API, SPA y
+landing. Qué hay hoy lo dicen los modelos de `packages/api/src/models` y `docs/`,
+no este archivo.
 
-No inventes entidades de negocio. Si una tarea necesita un modelo nuevo, preguntá
-antes de crearlo.
+**No inventes entidades de negocio.** Si una tarea necesita un modelo nuevo,
+preguntá antes de crearlo — y antes de decir que algo no existe, buscalo: lo que
+parece nuevo suele ser un campo o un estado de un modelo que ya está.
 
 ## Paquetes
 
@@ -18,116 +18,79 @@ antes de crearlo.
 | `packages/web` | Vite 6 + React 19 + Tailwind v4 + shadcn/ui |
 | `packages/landing` | Vite + React + i18next, estática, servida por nginx |
 | `packages/shared` | Tipos + schemas Zod que comparten API y web |
-| `shared/` (raíz) | Archivos que usan varios paquetes sin build ni dependencias — hoy los trazos del logo (`shared/brand/luma-logo.ts`). Alias `@shared/*` en web y landing; los dos Dockerfiles la copian. No es un paquete de pnpm ni se confunde con `packages/shared` |
+| `shared/` (raíz) | Archivos que usan varios paquetes sin build ni dependencias (hoy los trazos del logo). Alias `@shared/*` en web y landing; los dos Dockerfiles la copian. No es un paquete de pnpm ni se confunde con `packages/shared` |
 
-```bash
-pnpm dev          # api + web
-pnpm dev:landing  # landing (5174)
-pnpm build        # shared → api → web
-pnpm typecheck    # los cuatro paquetes
-pnpm lint
-pnpm test         # unit (vitest)
-pnpm test:e2e:ci  # E2E chromium
-pnpm seed:admin   # primer usuario admin
-```
-
-`shared` se buildea **primero** en todos los scripts: `api` y `web` lo importan por
-nombre de paquete contra su `dist`.
+Los scripts están en el `package.json` raíz. `packages/shared` se buildea
+**primero** en todos: `api` y `web` lo importan por nombre contra su `dist`.
 
 ## Backend
 
 - **Auth**: access token en `Authorization: Bearer`, refresh en cookie httpOnly
   `refresh_token` (90 días). HS256 si hay `JWT_SECRET`, si no RS256 con el par PEM.
 - **Roles de plataforma**: `admin` y `user`. Middlewares: `isAuthenticated` →
-  `requireAdmin` | `requireRole`. No gatean ninguna pantalla del producto.
-  El admin tiene su propia área, **fuera del panel de obras**: `/plataforma`
-  (cuentas y pagos), con su propio layout (`PlatformLayout`). Una pantalla de
-  administración global no va dentro de `DashboardLayout`.
-- **Roles de obra**: `gerente` | `supervisor` | `cliente`, por obra y no por
-  Empresa. El gerente sale de `Project.createdBy`; los otros dos son filas de
-  `ProjectMembership`. **Quién puede qué vive en una sola grilla**:
-  `packages/shared/src/permissions/index.ts`. Los routers declaran la acción
-  con `requireCapability('activity.plan')` y los controllers preguntan con
-  `req.can(...)` — nunca por rol. La UI lee `project.capabilities`, que la API
-  ya resolvió; no la vuelve a derivar.
-  Agregar un permiso = una celda en la grilla. Si estás escribiendo
+  `requireAdmin` | `requireRole`. No gatean ninguna pantalla del panel de obras:
+  el admin tiene su propia área, `/plataforma` (cuentas y pagos), con
+  `PlatformLayout`. Una pantalla de administración global no va en `DashboardLayout`.
+- **Roles de obra**: `gerente` | `supervisor` | `contador` | `cliente`, por obra y
+  no por Empresa. El gerente sale de `Project.createdBy`; los otros tres son filas
+  de `ProjectMembership`. **Quién puede qué vive en una sola grilla**:
+  `packages/shared/src/permissions/index.ts`. Los routers declaran la acción con
+  `requireCapability('activity.plan')` y los controllers preguntan con
+  `req.can(...)` — nunca por rol. La UI lee `project.capabilities`, que la API ya
+  resolvió. Agregar un permiso = una celda en la grilla. Si escribís
   `role === 'supervisor'` en cualquier lado, estás en el camino equivocado.
 - **Baja lógica**: `account_status: 'inactive'` + `enabled: false`. Nunca se borra
   el documento. A los 90 días `purge-deactivated-accounts` (tarea diaria de
-  Coolify) le borra los datos personales y marca `purgedAt`; el documento queda
-  porque obras, cobros y gastos lo referencian. **Qué se borra y dónde vive
-  en `account-purge.service.ts`** (`USER_REFERENCES`, `PERSONAL_FIELDS`):
-  un test falla si agregás un modelo con una referencia a `User`, o un campo que
-  parezca un dato personal (email, teléfono, banco…), sin decir qué se hace con
-  él al purgar. La Política de Privacidad promete ese borrado.
-- **Términos y Privacidad**: un solo documento, versionado por `LEGAL_VERSION`
-  en `@luma/shared/legal`. La aceptación es un hecho en `User` (`termsVersion`,
-  `termsAcceptedAt`, y `termsAcceptedIp`/`termsAcceptedUserAgent` con
-  `select: false`); si está al día lo resuelve la API en `AuthUser.terms_pending`
-  y la UI no lo vuelve a derivar. Se acepta en el registro y la activación (el
-  body lleva `acceptedTerms: true`) y, para cuentas viejas o una versión nueva,
-  en `TermsGate` (`POST /api/auth/accept-terms`). El texto vive en i18n
-  (`legal.page.*`, página pública `/legal`). **Subir `LEGAL_VERSION` sólo cuando
-  el cambio toca derechos u obligaciones**: obliga a todas las cuentas a
-  aceptar de nuevo. Lo que el texto promete (no vender datos, backups diarios,
-  purga a los 90 días) tiene que seguir siendo cierto: si cambiás una de esas
-  cosas, cambiá el texto en el mismo PR.
-- **Eliminar una obra** es lógico: `Project.deletedAt` + `purgeAt` (90 días,
-  `PROJECT_TRASH_RETENTION_DAYS`). El hook de `models/Project.ts` esconde las
-  eliminadas de todo `find`/`count`/`update`; sólo la papelera y el restaurar
-  las piden **nombrando `deletedAt` en el filtro**. Lo que cuelga de la obra no
-  se toca; lo borra `purge-deleted-projects` (tarea diaria de Coolify) con
-  `PROJECT_OWNED` en `project-deletion.service.ts`. **Un modelo nuevo con campo
-  `project` se suma a esa lista** — un test falla si no. Sólo el gerente
+  Coolify) borra los datos personales y marca `purgedAt`; el documento queda porque
+  obras, cobros y gastos lo referencian. Qué se borra vive en
+  `account-purge.service.ts` (`USER_REFERENCES`, `PERSONAL_FIELDS`): un test falla
+  si agregás un modelo con referencia a `User`, o un campo que parezca un dato
+  personal, sin decir qué se hace con él al purgar. La Política de Privacidad
+  promete ese borrado.
+- **Eliminar una obra** es lógico: `Project.deletedAt` + `purgeAt` (90 días). El
+  hook de `models/Project.ts` esconde las eliminadas de todo `find`/`count`/
+  `update`; sólo la papelera y el restaurar las piden **nombrando `deletedAt` en
+  el filtro**. Lo que cuelga de la obra lo borra `purge-deleted-projects` con
+  `PROJECT_OWNED` en `project-deletion.service.ts`: **un modelo nuevo con campo
+  `project` se suma a esa lista** (un test falla si no). Sólo el gerente
   (`project.delete`).
-- **Errores**: toda respuesta de error tiene la forma
-  `{ success: false, error, code, details? }`. Las exitosas son
-  `{ success: true, data }`.
-  - `code` es un `ApiErrorCode` de `@luma/shared` — estable, para la máquina.
-    **El frontend ramifica por `code`, nunca comparando el texto**: el texto
-    cambia cuando alguien edita un mensaje.
-  - En código nuevo, **lanzá** el error: `throw notFound('No encontramos esa
-    obra.')` desde `utils/errors.ts`. El `errorHandler` lo formatea. Un
-    `return res.status(...)` arma la respuesta a mano y cada lugar elige su
-    propio criterio — así llegamos a 221 de esas.
-  - Los que quedan escritos a mano los cubre `normalizeErrors`, que completa
-    el `code` a partir del status. Es una red, no una excusa.
-  - **Un 500 nunca cuenta qué pasó adentro.** El mensaje real se loguea; hacia
-    afuera va uno genérico. Un error de Mongoose trae la consulta y la
-    colección.
-  - Los mensajes van **en castellano** y describen lo que pasó desde el lado
-    de quien lo lee.
-- **Config**: todo lo del entorno pasa por `config/app.config.ts` y `validateConfig()`
-  corre **antes** de crear la app. No leas `process.env` desde un controller.
-- **El orden del pipeline en `src/index.ts` no es arbitrario.** `trust proxy` antes
-  del rate limit, el handler manual de `OPTIONS *` antes de `cors()`, y el
-  `errorHandler` al final. Si movés algo de lugar, entendé por qué está ahí.
-
-## Errores en la UI
-
-Un solo canal por tipo de aviso, y un solo lugar que arma el texto.
-
-- **Falla al guardar → banner** en el formulario, nunca un toast. `FormShell`
-  lo muestra pegado al botón que la persona acaba de apretar; un toast sale en
-  la esquina opuesta de la pantalla.
-- **Éxito → toast.** Verde, y nada más.
-- **Falla sin formulario detrás** —un borrar, un cambio inline— sí va por
-  toast: no hay dónde poner un banner.
-
-El texto lo resuelve `lib/error-message.ts` y nadie más. Gana el mensaje del
-servidor, porque sabe cosas que el cliente no puede saber ("esa cuota ya tiene
-cobros registrados"); el mapa por `code` es el fallback. Si ves un
-`errorMessage` local en un hook, es de antes — hay uno solo.
+- **Términos y Privacidad**: un solo documento, versionado por `LEGAL_VERSION` en
+  `@luma/shared/legal`. La aceptación es un hecho en `User`; si está al día lo
+  resuelve la API en `AuthUser.terms_pending` y la UI no lo deriva. Se acepta en
+  registro y activación (`acceptedTerms: true`) y, para cuentas viejas o una
+  versión nueva, en `TermsGate`. El texto vive en i18n (`legal.page.*`, página
+  `/legal`). **Subí `LEGAL_VERSION` sólo cuando el cambio toca derechos u
+  obligaciones**: obliga a todas las cuentas a aceptar de nuevo. Lo que el texto
+  promete (no vender datos, backups diarios, purga a los 90 días) tiene que seguir
+  siendo cierto: si cambiás una de esas cosas, cambiá el texto en el mismo PR.
+- **Errores**: toda respuesta de error es `{ success: false, error, code, details? }`;
+  las exitosas, `{ success: true, data }`.
+  - `code` es un `ApiErrorCode` de `@luma/shared`, estable. **El frontend ramifica
+    por `code`, nunca comparando el texto.**
+  - En código nuevo **lanzá** el error: `throw notFound('No encontramos esa
+    obra.')` de `utils/errors.ts`; el `errorHandler` lo formatea. Un
+    `return res.status(...)` arma la respuesta a mano. `normalizeErrors` cubre los
+    que quedan: es una red, no una excusa.
+  - **Un 500 nunca cuenta qué pasó adentro**: el mensaje real se loguea, hacia
+    afuera va uno genérico (un error de Mongoose trae la consulta y la colección).
+  - Los mensajes van en castellano y describen lo que pasó desde el lado de quien
+    lee.
+- **Config**: todo lo del entorno pasa por `config/app.config.ts` y
+  `validateConfig()` corre **antes** de crear la app. No leas `process.env` desde
+  un controller.
+- **Consultor IA** (`services/project-advisor.service.ts`, `@anthropic-ai/sdk`):
+  chat sobre los datos de **una** obra. Cada herramienta lleva el `projectId`
+  cerrado en su closure —el modelo no lo elige— y la autorización ya la resolvieron
+  `requireProjectAccess` y la capacidad `advisor.use`. Las cifras de plata que
+  recibe siguen la sección Plata. Sin `ANTHROPIC_API_KEY` queda deshabilitado.
+- **El orden del pipeline en `src/index.ts` no es arbitrario**: `trust proxy`
+  antes del rate limit, el handler manual de `OPTIONS *` antes de `cors()`, y el
+  `errorHandler` al final. Si movés algo, entendé por qué está ahí.
 
 ## Plata
 
-La regla 8 del documento funcional decía que la app no registraba pagos. **Eso
-ya no vale**: desde el módulo de cobros y gastos sí se registran, con moneda,
-cotización y comprobante. Si encontrás un comentario que diga lo contrario,
-está viejo — arreglalo.
-
-Lo que la regla protegía sigue en pie, y ahora importa más porque hay cuatro
-cifras parecidas conviviendo. No son lo mismo y **no se suman entre sí**:
+Cobros y gastos se registran, con moneda, cotización y comprobante. Hay cuatro
+cifras parecidas y **no se suman entre sí**:
 
 | Cifra | Qué es | Dónde |
 |---|---|---|
@@ -136,67 +99,52 @@ cifras parecidas conviviendo. No son lo mismo y **no se suman entre sí**:
 | Gastado | Lo que salió, con fecha y comprobante | `Expense` |
 | Cobrado | Lo que entró del cliente | `Payment` |
 
-Un adelanto a un proveedor está en "comprometido" y en "gastado": sumarlas
-cuenta la misma plata dos veces.
-
-Tres reglas que no se negocian:
+Un adelanto a un proveedor está en "comprometido" y en "gastado": sumarlas cuenta
+la misma plata dos veces. Tres reglas que no se negocian:
 
 1. **Nada derivado se guarda.** Saldos, estado de cada cuota y margen se
-   recalculan siempre en `finance.service.ts`. Un saldo guardado es la garantía
-   de que algún día no va a coincidir con la suma de sus movimientos, y cuando
-   eso pase ninguno de los dos números sirve.
+   recalculan siempre en `finance.service.ts`.
 2. **Cada movimiento lleva su moneda y su cotización, congeladas.** Un gasto de
-   agosto vale lo que valía en agosto. Reconvertir con la cotización de hoy
-   haría que el total de una obra cerrada cambie solo.
+   agosto vale lo que valía en agosto; reconvertir con la cotización de hoy haría
+   cambiar solo el total de una obra cerrada.
 3. **Cobros y gastos van por rutas separadas.** `payment.*` lo ve el cliente,
-   `expense.*` no. Con los dos totales, la utilidad del ejecutante sale de una
-   resta — la regla 13, que esa sí sigue vigente. Si una ruta de gastos queda
-   con `payment.read`, el cliente puede calcular tu margen con un `curl`.
+   `expense.*` no. Con los dos totales, el margen del ejecutante sale de una
+   resta: si una ruta de gastos queda con `payment.read`, el cliente lo calcula
+   con un `curl`.
 
-Los cobros **no se editan**, sólo se crean o se borran: un cobro es un hecho
-con fecha, y corregirle el monto in situ deja el saldo cuadrando con una
-historia que nadie vivió.
+Los cobros **no se editan**, sólo se crean o se borran: un cobro es un hecho con
+fecha.
 
 ## Correos
 
-Todos salen de `EmailService` con la plantilla única de `email-layout.ts`
-(guía: `docs/CORREOS.md`). Un correo nunca lanza ni voltea la acción que lo
-dispara; si quien llama no necesita saber si salió, no lo espera (`void`).
-Texto de la base siempre con `escapeHtml()`. Un correo nuevo se suma a
-`src/scripts/email-preview.ts`. Los avisos de obra que van por mail y a quién:
-`EMAIL_AUDIENCE` en `notification-email.service.ts`.
+Todos salen de `EmailService` con la plantilla única de `email-layout.ts` (guía:
+`docs/CORREOS.md`). Un correo nunca lanza ni voltea la acción que lo dispara; si
+quien llama no necesita saber si salió, no lo espera (`void`). Texto de la base
+siempre con `escapeHtml()`. Un correo nuevo se suma a `src/scripts/email-preview.ts`.
 
 ## Suscripción
 
-Lo que paga el dueño de una Empresa por usar Luma. **No confundir con los
-cobros de una obra** (`Payment`, sección anterior): esto es plata que entra a
-Luma y no se cruza nunca con la de las obras. Guía completa, datos de prueba y
-cómo probar en local: `docs/SUSCRIPCION.md`.
+Lo que paga el dueño de una Empresa por usar Luma. **No se cruza nunca con los
+cobros de una obra.** Planes y cómo probar en local: `docs/SUSCRIPCION.md`.
 
-- **Planes**: *Gratis* (30 días, hasta 3 obras activas) y *Pro* ($39/mes con 3
-  obras, $8/mes cada extra). Los números viven en `PLAN`
-  (`packages/shared/src/billing/index.ts`); la landing los repite en
-  `pricing.*` y se cambian juntos.
-- **Las reglas viven en `@luma/shared/billing`, puras y con tests**: estado,
-  límite de obras, cuánto se cobra, prorrateo, recordatorios. La API lee hechos
-  de la base y le pregunta a shared; la UI muestra lo que la API ya resolvió.
-  Si estás escribiendo un `if` sobre días de prueba o cantidad de obras fuera
-  de shared, va en shared.
-- **Mismo criterio que la plata de obra**: nada derivado se guarda (el estado
-  se calcula de los hechos), y cada pago congela su desglose y su tasa BCV.
-- **Vencida = sólo lectura**, y se resuelve en un solo lugar:
-  `requireProjectAccess` recorta las capacidades a las `.read` según la Empresa
-  **dueña de la obra**. No agregues chequeos de suscripción en los controllers:
-  si una ruta escribe, ya declara una capacidad que no es `.read`.
-- **Pagos**: tarjeta por Stripe Checkout embebido en un modal
-  (`card-checkout-dialog.tsx`; Stripe.js se carga a mano desde
-  `lib/stripe-js.ts`, sin paquetes npm; el webhook es la fuente de verdad) o
-  bolívares a la tasa BCV, con aprobación manual de un admin de plataforma.
-  La tasa la lee una tarea programada, nunca un request de usuario.
-- **Avisos por mail** (`subscription-notify.service.ts`): nunca hacen fallar la
+- Los números de los planes viven en `PLAN` (`packages/shared/src/billing/index.ts`);
+  la landing los repite en `pricing.*` y se cambian juntos.
+- **Las reglas viven en `@luma/shared/billing`**, puras y con tests. La API lee
+  hechos de la base y le pregunta a shared; la UI muestra lo que la API resolvió.
+  Un `if` sobre días de prueba o cantidad de obras fuera de shared va en shared.
+- Mismo criterio que la plata de obra: nada derivado se guarda, y cada pago
+  congela su desglose y su tasa BCV.
+- **Vencida = sólo lectura**, resuelto en un solo lugar: `requireProjectAccess`
+  recorta las capacidades a las `.read` según la Empresa **dueña de la obra**. No
+  agregues chequeos de suscripción en los controllers.
+- **Pagos**: tarjeta por Stripe Checkout embebido o bolívares a la tasa BCV con
+  aprobación manual de un admin de plataforma. El webhook es la fuente de verdad;
+  Stripe.js se carga a mano desde `lib/stripe-js.ts`, sin paquetes npm. La tasa la
+  lee una tarea programada, nunca un request de usuario.
+- Los avisos por mail (`subscription-notify.service.ts`) nunca hacen fallar la
   acción que los dispara.
 
-
+## Frontend — llamadas a la API
 
 **Ningún componente importa `apiClient`.** Dos capas, siempre:
 
@@ -215,308 +163,201 @@ export function useCurrentUser() {
 }
 ```
 
-- `useQuery` para lecturas y efectos manejados por la URL; `useMutation` para
-  escrituras y acciones que dispara la persona.
+- `useQuery` para lecturas; `useMutation` para escrituras y acciones de la persona.
 - Toda clave nueva va al enum `QueryKeys` en `src/lib/query-keys.ts`.
-- **`enabled: isAuthenticated` es obligatorio** en cualquier query contra un endpoint
-  protegido: los providers corren también en las pantallas públicas, y un 401 ahí
-  dispara `handleUnauthorized` y patea a `/login` rompiendo el flujo.
-- Las llamadas de pantallas públicas van con `skipAuth: true`.
+- **`enabled: isAuthenticated` es obligatorio** en toda query contra un endpoint
+  protegido: los providers corren también en pantallas públicas, y un 401 ahí
+  patea a `/login` rompiendo el flujo. Las llamadas públicas van con `skipAuth: true`.
+- Rutas públicas que nunca reciben un redirect por 401: `/login`, `/register`,
+  `/forgot-password`, `/reset-password`, `/check-email`, `/verify-email`,
+  `/activate`, `/confirm-email-change`.
 
-Rutas públicas que nunca deben recibir un redirect por 401: `/login`, `/register`,
-`/forgot-password`, `/reset-password`, `/check-email`, `/verify-email`,
-`/activate`, `/confirm-email-change`.
+## Errores en la UI
+
+Un solo canal por tipo de aviso, y un solo lugar que arma el texto.
+
+- **Falla al guardar → banner** en el formulario (`FormShell`), nunca un toast.
+- **Éxito → toast.** Verde, y nada más.
+- **Falla sin formulario detrás** (un borrar, un cambio inline) → toast.
+
+El texto lo resuelve `lib/error-message.ts` y nadie más. Gana el mensaje del
+servidor, porque sabe cosas que el cliente no; el mapa por `code` es el fallback.
+Si ves un `errorMessage` local en un hook, es de antes.
 
 ## Estilos
 
-**La fuente de verdad es `DESIGN.md` en la raíz.** Este bloque es el resumen
-operativo; ante cualquier duda o contradicción, manda `DESIGN.md`.
+**La fuente de verdad es `DESIGN.md`** (tokens, radios, tipografía, componentes,
+la paleta propia del Tablero). Ante cualquier contradicción, manda `DESIGN.md`. Hay
+un solo sistema, **VoltAgent**: canvas `#101010` y un único verde `#00d992`; el
+chrome del panel es oscuro y el área de contenido, clara (`.surface-light`). Si ves
+`bg-cream`, `brand-fill`, `sunshine-*` o `#fa520f`, es un resto.
 
-Hay **un solo** sistema de diseño, **VoltAgent**: lienzo casi negro `#101010`,
-un único verde `#00d992` como marca y como relleno de CTA. Landing, login y
-chrome del panel son oscuros; el **área de contenido del panel es clara**
-(`.surface-light`, ver `DESIGN.md`). Rige los dos paquetes con el mismo vocabulario de tokens y los mismos
-valores. El rojo del panel, el "lenguaje de cero" de la landing y el sistema
-naranja/crema que vino después ya no existen: si ves `bg-cream`, `brand-fill`,
-`sunshine-*` o `#fa520f`, es un resto.
-
-- **Tailwind v4**: no hay `tailwind.config.js`. Los tokens viven en
-  `packages/web/src/index.css` (`:root` + `@theme inline`) y
-  `packages/landing/src/index.css` (`@theme`).
-- **Composición de clases**: siempre `cn()` de `@/lib/utils`.
-- **shadcn/ui**: los componentes de `components/ui/` no se editan. Se extienden
-  por `className` o se envuelven. La única excepción es un cambio del sistema que
-  *tiene* que vivir en el componente — el radio o el color del `Button`.
+- **Tailwind v4**: no hay `tailwind.config.js`; los tokens viven en
+  `packages/web/src/index.css` y `packages/landing/src/index.css`.
+- Clases siempre con `cn()` de `@/lib/utils`.
+- **shadcn/ui**: `components/ui/` no se edita; se extiende por `className` o se
+  envuelve. Excepción: un cambio del sistema que tiene que vivir en el componente.
 - **Tokens semánticos, no colores crudos**: `bg-background`, `bg-card`,
-  `text-muted-foreground`, `bg-primary`. Un `bg-[#00d992]` saltea el tema.
-
-### Un solo verde
-
-`#00d992` con texto `#101010` da ~10.3:1: pasa AA en cualquier tamaño, así que
-**no hay que partir la marca en dos tokens** como pasaba con el naranja.
-
-| Token | Para qué |
-|---|---|
-| `brand` / `primary` | Marca, relleno de CTA, foco, estado activo. El hex es el mismo; son dos nombres por rol |
-| `primary-foreground` | Texto sobre el relleno: `#101010`, **nunca blanco** |
-| `primary-pressed` | Hover y estado presionado |
-
-Usá `bg-primary text-primary-foreground`. El rojo (`destructive`) significa
-**peligro**, no marca.
-
-**Excepción: el Tablero.** El Kanban de Actividades tiene una paleta propia
-(`--board-*` en `index.css`: gris `#434343`, carbón `#1f1f21`, blanco suave
-`#f5f5f7` y un acento naranja `#ff3d02`), tomada de una pieza de referencia. El
-naranja vive sólo ahí y sólo marca el destino de un arrastre: no es un estado
-(esos usan los tags de siempre) ni el relleno de una acción. Detalle y contrastes
-en `DESIGN.md`.
-
-### Radio — escala del panel
-
-| Clase | Valor | Se usa en |
-|---|---|---|
-| `rounded-sm` | 6px | Input, Select, Textarea, ítems de menú |
-| `rounded-md` | 8px | **Botones, buscador y pestaña de Tabs**; code blocks, filas internas |
-| `rounded-lg` | 14px | **Contenedor de Tabs**, Dialog, menú, dropdown, toast |
-| `rounded-xl` / `rounded-2xl` | 18 / 22px | Popover grande, panel destacado |
-| `rounded-3xl` | **28px** | **Card** — el dominante |
-| `rounded-xs` | 4px | Chips micro, indicadores |
-| `rounded-full` | píldora | Badge, Avatar, Switch, Slider, Progress. **No** los botones |
-
-Dos reglas:
-
-1. **Un solo criterio para tabs, botones y buscador: el de los Tabs.** Cuadrado
-   de esquinas suaves (`rounded-md`; el contenedor de un Tabs, `rounded-lg`),
-   fondo blanco (`bg-card`), **sin borde** y con `shadow-surface`. No hay
-   variante de contorno: el `outline` es blanco con sombra. El `Button` ya lo
-   trae — no le pases `rounded-*` ni `shadow-*`. Un buscador es
-   `SearchField` (`components/common/search-field.tsx`), no un `Input` con
-   una lupa. Todo `TabsTrigger` lleva ícono (es obligatorio en el tipo). La
-   landing no entra en este criterio: sus CTA son links con `CTA_PRIMARY` /
-   `CTA_OUTLINE` de `src/lib/cta.ts` y siguen en píldora.
-2. **El hijo va un escalón abajo del padre.** Un Input `rounded-sm` dentro de una
-   Card `rounded-3xl`. Un radio interno mayor que el del contenedor deja una luz
-   visible en la esquina.
-
-### Tipografía
-
-`Inter` para todo lo narrativo y de interfaz, `JetBrains Mono` para código y
-contadores. **`Instrument Serif` es el único serif y tiene un uso acotado**:
-
-- **Panel**: sólo el título de cada pantalla (`PageHeader`, `font-serif`).
-- **Landing**: `h1` y `h2`, el display. De `h3` para abajo es Inter. Ya se aplica
-  en `@layer base`, no hace falta repetirlo en el JSX.
-
-Peso 400, sin negrita. Las fuentes de la landing son self-hosted (woff2 latino,
-salen con hash en `/home/assets`); no se piden a Google Fonts.
-
-Piso de tamaño: 11px (`text-2xs`), y siempre en `rem`. Un `text-[10px]` en px no
-responde al tamaño de texto del sistema operativo.
+  `text-muted-foreground`, `bg-primary text-primary-foreground` (texto sobre el
+  verde: `#101010`, nunca blanco). `destructive` es peligro, no marca.
+- **Radio**: botones, buscador y pestañas `rounded-md`; Card `rounded-3xl`;
+  `rounded-full` sólo para Badge, Avatar, Switch, Slider y Progress. El `Button` ya
+  trae su radio y su sombra: no le pases `rounded-*` ni `shadow-*`. **El hijo va un
+  escalón abajo del padre.** Un buscador es `SearchField`, no un `Input` con lupa.
+  Todo `TabsTrigger` lleva ícono. La landing usa `CTA_PRIMARY` / `CTA_OUTLINE`
+  (`src/lib/cta.ts`) en píldora. Tabla completa en `DESIGN.md`.
+- **Tipografía**: `Inter` + `JetBrains Mono`; `Instrument Serif` sólo en el título
+  de cada pantalla (`PageHeader`) y en `h1`/`h2` de la landing. Peso 400, sin
+  negrita. Piso de 11px (`text-2xs`), siempre en `rem`.
 
 ## Arquitectura de la información
 
-**Qué va dónde** en una pantalla del panel vive en
-`docs/design/arquitectura-de-informacion.md` y manda junto con `DESIGN.md`
-(ése dice cómo se ve; éste, ubicación, orden y jerarquía). Las que más se rompen:
+Qué va dónde en una pantalla del panel vive en
+`docs/design/arquitectura-de-informacion.md` y manda junto con `DESIGN.md`. Lo que
+más se rompe:
 
-- **Pantalla**: sin título propio; una primaria flotante (`PageLayout action`); segundo orden y exportar en `secondaryActions`, agrupado; pestañas y filtros en `toolbar`.
-- **Lista**: cada fila es su tarjeta (`RowCard`, `components/common/row-card-list.tsx`), sobre el lienzo; los grupos, `ListSection` (rótulo + divisor), nunca otra caja. Nada de `divide-y`.
-- **Fila**: línea 1 = qué es; línea 2 = `text-xs` muted, datos separados por `" · "` en orden fijo; estado como badge en columna fija.
-- **Acciones por fila**: una visible (el paso siguiente) y el resto en "…"; todo destructivo va en el menú y con `AlertDialog`.
-- **Textos y grupos**: nada repite lo que la UI ya dice; el rótulo de grupo no se parece a una fila, y la fila no repite el grupo.
+- **Pantalla**: sin título propio; una primaria flotante (`PageLayout action`);
+  segundo orden y exportar en `secondaryActions`; pestañas y filtros en `toolbar`.
+- **Lista**: cada fila es su tarjeta (`RowCard`) sobre el lienzo; los grupos,
+  `ListSection` (rótulo + divisor), nunca otra caja. Nada de `divide-y`.
+- **Fila**: línea 1 = qué es; línea 2 = `text-xs` muted, datos separados por
+  `" · "` en orden fijo; estado como badge en columna fija.
+- **Acciones por fila**: una visible (el paso siguiente) y el resto en "…"; todo
+  destructivo va en el menú y con `AlertDialog`.
+- **Textos y grupos**: nada repite lo que la UI ya dice.
 
 ## i18n — obligatorio
 
-Ningún string visible se escribe inline en el JSX.
+Ningún string visible se escribe inline en el JSX: `t('layout.emptyHomeTitle')`.
 
-```tsx
-const { t } = useTranslation();
-<p>{t('layout.emptyHomeTitle')}</p>
-```
-
-- `packages/web`: `src/i18n/locales/{es,es-ES,pt}/translation.json` (`es-AR` default;
-  `es` es el español de Argentina, `es-ES` el de España: tuteo y vocabulario
-  peninsular — "jefe de obra", "contable", "añadir", "justificante").
+- `packages/web`: `src/i18n/locales/{es,es-ES,pt}/translation.json` (`es-AR`
+  default; `es-ES` es el español de España: tuteo y vocabulario peninsular —
+  "jefe de obra", "contable", "añadir", "justificante").
 - `packages/landing`: `src/i18n/locales/{es,pt}/translation.json` (`es` default).
-- **Toda clave nueva se agrega a TODOS los archivos de su paquete al mismo tiempo**
-  (en `web`, los tres). Hay un test de paridad que lo verifica en CI.
-- Para arrays (listas, pasos): `t('key', { returnObjects: true }) as string[]`.
+- **Toda clave nueva va a TODOS los archivos de su paquete al mismo tiempo.** Hay
+  un test de paridad en CI.
+- Para arrays: `t('key', { returnObjects: true }) as string[]`.
 
 ## Cross-browsing — obligatorio
 
-Toda feature se escribe pensando en Chrome y en Safari. Chrome es donde
-escribimos el código, no donde vive el usuario: en un iPhone *todo* browser es
-Safari por dentro, y una API que falta ahí no degrada la pantalla, la voltea entera.
+Escribimos en Chrome, pero en un iPhone *todo* browser es Safari por dentro, y una
+API que falta ahí no degrada la pantalla: la voltea entera. Las reglas se cumplen
+**al escribir el código**; los E2E corren sólo en Chromium (no se instalan otros
+motores).
 
-Las reglas de abajo se cumplen **al escribir el código**. Los E2E corren sólo en
-Chromium: no se testea en Safari ni en Firefox, y no se instalan otros motores.
-
-### La regla que más rompe: nunca leas un global del browser como identificador suelto
+**Nunca leas un global del browser como identificador suelto.** `?.` protege contra
+`null`, no contra un binding que no existe: tira `ReferenceError`.
 
 ```ts
-// ❌ Rompe en Safari con ReferenceError
+// ❌ Rompe en Safari
 const id = requestIdleCallback?.(load) ?? window.setTimeout(load, 1500);
-
-// ✅ Property access sobre `window` — devuelve undefined, no tira
+// ✅ Property access sobre `window`
 const idle = typeof window.requestIdleCallback === 'function';
 const id = idle ? window.requestIdleCallback(load) : window.setTimeout(load, 1500);
 ```
 
-`?.` protege contra `null`/`undefined`, **no contra un binding que no existe en el
-scope**: `foo?.()` sobre un global ausente tira `ReferenceError` antes de evaluar el
-optional chaining. TypeScript no avisa — sus tipos de `lib.dom` declaran la API como
-si siempre estuviera.
+Antes de usar una API del browser verificá su soporte en Safari/iOS y escribí el
+fallback **en el mismo commit**, detectando con `typeof window.X === 'function'`,
+nunca con user-agent.
 
-Antes de usar una API del browser: verificá el soporte en Safari (incluido iOS), y
-si falta escribí el fallback **en el mismo commit**. Detectá con
-`typeof window.X === 'function'`, nunca con user-agent sniffing.
-
-**Fechas**: Safari es estricto parseando. `new Date('2026-08-13 10:00')` da
-`Invalid Date` en Safari y funciona en Chrome. Usá siempre ISO 8601 con `T`.
-
-**CSS**: `100vh` en iOS incluye la barra del browser; usá `100dvh`.
-
-### Verificación
-
-```bash
-pnpm test:e2e:ci   # chromium — lo que corre CI
-```
-
-Una feature nueva no está terminada hasta que carga sin errores de consola en
-chromium.
+- **Fechas**: `new Date('2026-08-13 10:00')` da `Invalid Date` en Safari. Siempre
+  ISO 8601 con `T`; un día suelto es `YYYY-MM-DD` como string, no `Date`.
+- **CSS**: `100vh` en iOS incluye la barra; usá `100dvh`.
+- Una feature nueva no está terminada hasta que carga sin errores de consola en
+  Chromium.
 
 ## Tests
 
-| Tipo | Dónde | Corre con |
-|---|---|---|
-| Unit | Al lado del archivo: `src/lib/utils.spec.ts` | `pnpm test` (vitest) |
-| Paridad i18n | `packages/web/src/i18n/i18n-parity.spec.ts` | `pnpm test` |
-| E2E | `/e2e` en la raíz, no dentro de los paquetes | `pnpm test:e2e:ci` |
-
-- `e2e/global-setup.ts` levanta la sesión y **detecta si no hay backend**: sin API
-  corren igual los specs que no necesitan sesión, no revienta la suite.
-- **Un spec que necesita la API llama a `requiresApi()`** (`e2e/helpers/api.ts`)
-  arriba del `test.describe`. CI corre sin backend: sin esa llamada el spec no se
-  saltea, falla esperando el login y tapa con rojo las fallas reales.
-- Los helpers de login viven en `e2e/helpers/auth.ts`. No escribas un login a mano
-  en un spec nuevo.
+- **Unit** al lado del archivo (`src/lib/utils.spec.ts`), con `pnpm test`. El test
+  de paridad i18n corre ahí.
+- **E2E** en `/e2e` (raíz), con `pnpm test:e2e:ci`, **por flujo que una persona
+  recorre**, no por endpoint; un endpoint nuevo se cubre con unit en la API.
+- `e2e/global-setup.ts` detecta si no hay backend. **Un spec que necesita la API
+  llama a `requiresApi()`** (`e2e/helpers/api.ts`) arriba del `test.describe`: CI
+  corre sin backend y sin esa llamada el spec falla esperando el login.
+- Login: helpers de `e2e/helpers/auth.ts`, nunca a mano.
+- **`landing` no tiene script de `test`**: `pnpm -r test` lo saltea en silencio.
 
 ### Cuentas fijas de E2E
 
-Hay una cuenta por tipo de usuario, definidas en **`e2e/fixtures/users.json`** y
-nada más que ahí. Para ejecutar E2E —o entrar a mano con un rol— se usan esas:
+Una por tipo de usuario, definidas **sólo** en `e2e/fixtures/users.json`
+(`admin`, `user`, `gerente`, `supervisor`, `contador`, `cliente`, `inactive`). Para
+ejecutar E2E —o entrar a mano con un rol— se usan esas.
 
-| Clave | Email | Qué es |
-|---|---|---|
-| `admin` | `e2e-admin@luma.test` | Admin de plataforma. Sesión por defecto de la suite |
-| `user` | `e2e-user@luma.test` | Usuario sin obras: estado vacío |
-| `gerente` | `e2e-gerente@luma.test` | Dueño de la obra compartida `Obra E2E — roles` |
-| `supervisor` · `contador` · `cliente` | `e2e-<rol>@luma.test` | Su rol en esa obra |
-| `inactive` | `e2e-inactive@luma.test` | Dada de baja: el login la rechaza |
-
-- **Las siembra el `globalSetup` solo** antes de cada tanda local (`pnpm seed:e2e`
-  por dentro, idempotente) y guarda una sesión por cuenta en `.auth/<clave>.json`.
-  No hace falta correr nada antes de `pnpm test:e2e:ci`; sólo que la API esté
-  arriba. `E2E_SKIP_SEED=1` lo saltea. Contra un entorno remoto no siembra.
-- En un spec: `test.use({ storageState: authFile('supervisor') })` para arrancar
-  logueado, o `loginAs(page, 'cliente')`. **Nunca** escribas email y contraseña
-  de una cuenta fija en el spec: se piden por clave (`helpers/users.ts`).
-- La obra compartida es para **mirar**: la ven todas las tandas. Un spec que
-  crea, mueve o borra arma su propia obra.
-- Un tipo de usuario nuevo = una entrada en el JSON (y la clave en
-  `E2EUserKey`). El seed y los specs leen el mismo archivo.
-- Para otro entorno, cada cuenta se pisa con `E2E_<CLAVE>_EMAIL` /
-  `E2E_<CLAVE>_PASSWORD`. El seed sólo toca cuentas `.test` y sólo en una base
-  local.
-- **`landing` no tiene script de `test`.** `pnpm -r test` lo saltea en silencio: un
-  cambio en la landing no está cubierto por unit tests, sólo por E2E.
-- E2E se agrega por **flujo que una persona recorre**, no por endpoint. Un endpoint
-  nuevo se cubre con unit en la API.
+- El `globalSetup` las siembra solo (`pnpm seed:e2e`, idempotente) y guarda una
+  sesión por cuenta en `.auth/<clave>.json`. `E2E_SKIP_SEED=1` lo saltea.
+- En un spec: `test.use({ storageState: authFile('supervisor') })` o
+  `loginAs(page, 'cliente')`. **Nunca** escribas email y contraseña de una cuenta
+  fija: se piden por clave (`helpers/users.ts`).
+- La obra compartida (`Obra E2E — roles`) es para **mirar**. Un spec que crea,
+  mueve o borra arma su propia obra.
+- Un tipo de usuario nuevo = una entrada en el JSON y la clave en `E2EUserKey`.
+- Otro entorno: `E2E_<CLAVE>_EMAIL` / `E2E_<CLAVE>_PASSWORD`. El seed sólo toca
+  cuentas `.test` y sólo en una base local.
 
 ## Multimedia — skill `media-gen`
 
 **Todo pedido de imagen, video o audio se resuelve con `media-gen`**
-(`.claude/skills/media-gen`, uso completo en su `SKILL.md`). No uses
-`claude-banana` ni otro generador, y no llames a la API a mano: `media-gen`
-entrega el archivo ya al tamaño, comprimido y con el costo estimado.
-`claude-banana` sólo escribe prompts; acá el prompt y el archivo salen de un
-solo paso.
+(`.claude/skills/media-gen`, uso en su `SKILL.md`). No uses `claude-banana` ni
+otro generador, y no llames a la API a mano.
 
 - El skill es un **symlink local** (no se commitea) y la key va en
-  `.claude/settings.local.json` → `env.GEMINI_API_KEY`, también ignorado.
-  Nunca la pidas por el chat ni la escribas en un archivo que se commitea.
-- **Salida dentro del paquete que la usa**: la SPA en `packages/web/public/<sección>/`
-  (se sirve con `import.meta.env.BASE_URL`), la landing en
-  `packages/landing/src/assets/images/` (Vite le pone hash). Siempre WebP, con
-  `--width/--height` de lo que la pantalla muestra y `--max-kb`; nunca la imagen
-  cruda del modelo. Para un nombre exacto: `--single --name <id> --out <carpeta>`.
+  `.claude/settings.local.json` → `env.GEMINI_API_KEY`. Nunca la pidas por el
+  chat ni la escribas en un archivo que se commitea.
+- **Salida dentro del paquete que la usa**: SPA en `packages/web/public/<sección>/`,
+  landing en `packages/landing/src/assets/images/`. Siempre WebP, con
+  `--width/--height` de lo que la pantalla muestra y `--max-kb`.
 - **Costo**: el script estima antes de gastar y exige `--yes` si pasa de USD 0,50.
   Mostrale el número al usuario y esperá su OK; nunca pases `--yes` por tu cuenta.
-- **Texto dentro de la imagen**: usá `--model gemini-3-pro-image`, mantené cada
-  frase corta (≤ 25 caracteres por línea) y **centrá todo el bloque en el 60%
-  central del ancho**. Un `object-cover` recorta los costados cuando el panel se
-  angosta; lo que está al borde se corta, lo que está al centro no. Una imagen con
-  texto horneado queda en un solo idioma: si el texto cambia por locale, va en HTML.
-- Una imagen para desktop y otra para mobile son dos generaciones con su propio
-  formato (4:5 y 16:9, por ejemplo), no un recorte de la misma.
-- `media-output/` (originales, costos, previews) está en `.gitignore`.
+- **Texto dentro de la imagen**: `--model gemini-3-pro-image`, frases de ≤ 25
+  caracteres y todo el bloque en el 60% central del ancho. Queda en un solo
+  idioma: si el texto cambia por locale, va en HTML.
+- Desktop y mobile son dos generaciones con su propio formato, no un recorte.
 
 ## Cómo está configurado Claude acá
 
 Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 
-| Pieza | Qué hace |
-|---|---|
-| `.claude/settings.json` | Permisos (los scripts del repo y los comandos de lectura no piden aprobación; deploy, `git push` y el seed están denegados) y el hook de post-edición |
-| `.claude/hooks/post-edit-check.sh` | Corre después de cada Edit/Write: paridad i18n, colores crudos, radios fuera de escala, CTA a escuadra, strings inline, `components/ui/` editado, `shared` sin rebuildear, credenciales de E2E escritas a mano |
-| `.claude/hooks/pre-push-check.sh` | Bloquea todo `git push` cuyo destino sea main o master. El flujo es rama de feature + PR, y una regla de permisos no puede expresar "salvo a main" |
-| `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e (chromium) |
-| `.claude/commands/feature.md` | `/feature <qué>` — implementa respetando el orden shared → api → capa 1 → capa 2 → UI → i18n |
-| `.claude/skills/media-gen/` | Symlink local al skill que genera imágenes, video y audio (sección Multimedia). No se commitea; la key va en `settings.local.json` |
-| `.claude/agents/criterio.md` | Agente de producto: afila un pedido vago en un encargo implementable y lo critica antes de que se escriba código |
-| `.mcp.json` | MongoDB en modo lectura (`MONGODB_URI`) y Coolify con lectura y escritura (`COOLIFY_URL`, `COOLIFY_TOKEN`) — 111 herramientas, 24 destructivas; ninguna en `allow`, así que todas piden aprobación. Ver `docs/DEPLOY.md` |
+- **`settings.json`**: los scripts del repo y los comandos de lectura no piden
+  aprobación; deploy y el seed están denegados; `git push` está permitido y
+  `pre-push-check.sh` lo frena hacia main o master. **Flujo: rama de feature + PR.**
+- **Hooks**: `post-edit-check.sh` corre tras cada Edit/Write (paridad i18n, colores
+  crudos, radios fuera de escala, CTA a escuadra, strings inline, `components/ui/`
+  editado, `shared` sin rebuildear, credenciales de E2E a mano).
+- **Comandos y agentes**: `/feature <qué>` implementa en el orden shared → api →
+  capa 1 → capa 2 → UI → i18n. `criterio` es el agente de producto (sólo lectura):
+  afila un pedido vago antes de codear; para revisar algo hecho, el diff va en el
+  prompt.
+- **Skills**: `verify` es la secuencia de cierre (typecheck → lint → unit → e2e).
+  `verification-before-completion`: no digas "listo", "arreglado" ni "pasa" sin haber
+  corrido el comando que lo prueba y leído su salida. `systematic-debugging`: ante
+  un bug, primero la causa raíz; nada de parches sueltos, y tras 3 arreglos fallidos
+  se discute la arquitectura. `media-gen` es local (ver Multimedia).
+- **`.mcp.json`**: MongoDB en lectura y Coolify con lectura y escritura
+  (`COOLIFY_URL`, `COOLIFY_TOKEN`); ninguna de sus herramientas está en `allow`.
 
 Si agregás una regla nueva a este archivo y se puede verificar con un grep,
-agregala también al hook. Una regla que sólo vive en prosa se cumple al principio
-de la sesión y se afloja después.
+agregala también al hook: una regla que sólo vive en prosa se afloja con la sesión.
 
 ## Deploy
 
-Coolify sobre VPS: `app` (API + SPA) + `landing` (nginx interno) + `mongo`. Todo
-en `docs/DEPLOY.md`, incluidas las dos trampas operativas (el network alias de la
+Coolify sobre VPS: `app` (API + SPA) + `landing` (nginx interno) + `mongo`. Todo en
+`docs/DEPLOY.md`, incluidas las dos trampas operativas (el network alias de la
 landing y el redeploy obligatorio al cambiar env vars).
 
-### Versión de la SPA
-
-**Todo cambio en `packages/web` sube la versión** con `pnpm bump:web
-<patch|minor|major>` — semver.org, sólo `packages/web/package.json`. Es lo que
-le avisa a una pestaña abierta que hay un deploy nuevo (`/app/version.json` +
-`UpdateNotification`). `buildTime` es la red si se olvida, no un reemplazo.
-Detalle en `docs/DEPLOY.md`.
-
-### Cambios de configuración: primero el skill de Coolify
-
-Cuando se pida un cambio relacionado con la **configuración del proyecto** —
-env vars, scopes, deploys, métricas, analytics, dominios del server, storages,
-backups, tareas programadas, servicios, bases de datos, o cualquier otra cosa
-que Coolify ofrezca— **usá siempre primero el skill `~/.claude/skills/coolify-deploy`
-y el MCP de Coolify** (`.mcp.json`), con todas sus capabilities, **antes de
-ejecutar el cambio**.
-
-- Leé `~/.claude/skills/coolify-deploy/SKILL.md` (y `REFERENCE.md` si hace
-  falta) para saber qué operación corresponde, y recién después actuá.
-- Inspeccioná el estado actual (list/get) antes de modificar.
-- El MCP sólo conecta si `COOLIFY_URL` y `COOLIFY_TOKEN` están en el entorno
-  desde el que se abre Claude (si no, responde `Invalid URL`). El CLI del skill
-  (`python3 ~/.claude/skills/coolify-deploy/scripts/coolify.py …`) lee su
-  propio token y funciona igual: es el camino que no depende del entorno.
-- No edites la configuración de deploy a mano ni por fuera de Coolify: si el
-  cambio se puede hacer por el skill o el MCP, se hace por ahí.
-- Las herramientas destructivas del MCP siguen pidiendo aprobación; el skill no
-  la saltea.
+- **Todo cambio en `packages/web` sube la versión** con `pnpm bump:web
+  <patch|minor|major>` (semver, sólo `packages/web/package.json`). Es lo que avisa a
+  una pestaña abierta que hay un deploy nuevo.
+- **Cambios de configuración (env vars, dominios, backups, tareas programadas,
+  servicios, bases de datos…): usá primero el skill `~/.claude/skills/coolify-deploy`
+  y el MCP de Coolify**, e inspeccioná el estado (list/get) antes de modificar. El
+  MCP sólo conecta con `COOLIFY_URL` y `COOLIFY_TOKEN` en el entorno desde el que
+  se abre Claude (si no, `Invalid URL`); el CLI del skill
+  (`python3 ~/.claude/skills/coolify-deploy/scripts/coolify.py …`) lee su propio
+  token y funciona igual. No edites la configuración de deploy por fuera de
+  Coolify. Las herramientas destructivas siguen pidiendo aprobación.
 
 ## Notas
 
 - **pnpm siempre.** Nunca `npm` ni `yarn`.
-- Tipos compartidos desde `@luma/shared`.
-- Íconos: Lucide React, no emojis ni otra librería.
+- Tipos compartidos desde `@luma/shared`. Íconos: Lucide React, no emojis.
