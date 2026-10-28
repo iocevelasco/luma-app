@@ -2,6 +2,7 @@ export * from './auth.controller.js';
 export * from './organization.controller.js';
 export * from './directory.controller.js';
 export * from './project.controller.js';
+export * from './project-deletion.controller.js';
 export * from './activity.controller.js';
 export * from './material.controller.js';
 export { createMaterialInvoice, deleteMaterialInvoice } from './material-invoice.controller.js';

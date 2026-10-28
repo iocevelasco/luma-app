@@ -58,6 +58,21 @@ interface PageLayoutProps {
    * Para lo que no es una página que se lee de corrido: un diagrama, un tablero.
    */
   fill?: boolean;
+  /**
+   * Deja lugar abajo para algo que flota sobre el contenido y no es la acción
+   * principal: el aviso de filtros de Actividades. Va aparte de `action` porque
+   * ése no se reserva en `fill` (el botón de una esquina no tapa lo que importa
+   * de un diagrama), y porque el aviso depende del estado, no de la pantalla.
+   */
+  reserveBottom?: boolean;
+  /**
+   * En `fill`, el contenido termina arriba de la acción principal en vez de
+   * llegar al borde de la ventana. Es para el diagrama que se lee hasta la
+   * última fila: el Cronograma, donde el botón flotante quedaba encima de la
+   * última tarea. El Tablero no lo pide: sus columnas tienen que llegar hasta
+   * abajo, y ahí lo que queda bajo el botón es el hueco de una columna.
+   */
+  clearAction?: boolean;
   className?: string;
   children?: ReactNode;
 }
@@ -85,6 +100,8 @@ export function PageLayout({
   empty,
   width = 'default',
   fill = false,
+  reserveBottom = false,
+  clearAction = false,
   className,
   children,
 }: PageLayoutProps) {
@@ -121,12 +138,20 @@ export function PageLayout({
 
       {/* Sólo el contenido se angosta; la barra de arriba no. */}
       <div
+        data-testid="page-content"
         className={cn(
           'mx-auto flex w-full min-w-0 flex-col gap-6',
           WIDTH_CLASS[width],
           fill && 'min-h-0 flex-1',
           // Lugar para que el botón flotante no tape lo último de la lista.
           action && !fill && 'pb-16',
+          // Lo que flota abajo a la izquierda (a 2rem del borde y ~2.75rem de alto) tapaba la
+          // última fila: en `fill` el contenido llega hasta el borde de la ventana.
+          reserveBottom && 'pb-[calc(4.5rem+env(safe-area-inset-bottom))]',
+          // El botón flotante (un `Button` de 2.25rem) va a 2rem del borde en escritorio: ocupa
+          // hasta 4.25rem. El `<main>` ya deja 1rem; 4rem de relleno lo despejan con aire. Un
+          // `action` más alto (el `FloatingActionButton`, de 3.5rem) necesitaría más.
+          action && clearAction && 'pb-[calc(4rem+env(safe-area-inset-bottom))]',
         )}
       >
         {empty ? (

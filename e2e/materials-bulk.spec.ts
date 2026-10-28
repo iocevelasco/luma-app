@@ -112,7 +112,11 @@ test.describe('selección múltiple de materiales', () => {
     await expect(bought.getByRole('button', { name: /copiar lista/i })).toBeVisible();
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      bought.getByRole('button', { name: /descargar pdf/i }).click(),
+      (async () => {
+        // "Descargar" abre un menú con el formato: PDF o CSV.
+        await bought.getByRole('button', { name: /^descargar$/i }).click();
+        await page.getByRole('menuitem', { name: /pdf/i }).click();
+      })(),
     ]);
     expect(download.suggestedFilename()).toMatch(/^comprados-.+-\d{4}-\d{2}-\d{2}\.pdf$/);
   });

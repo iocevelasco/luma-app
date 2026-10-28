@@ -42,10 +42,26 @@ export interface IUser extends Document {
    */
   claimedViaLinkBy?: mongoose.Types.ObjectId;
 
+  /**
+   * Última aceptación de los Términos y la Política de Privacidad. Es el
+   * hecho; si "está al día" lo decide `hasAcceptedCurrentTerms` en shared.
+   * IP y user agent son la prueba de que la aceptación ocurrió: dato personal,
+   * declarado en la Política, y `select: false` para que no salgan en un find.
+   */
+  termsVersion?: string;
+  termsAcceptedAt?: Date;
+  termsAcceptedIp?: string;
+  termsAcceptedUserAgent?: string;
+
   enabled: boolean;
   account_status: AccountStatus;
   deactivated_at?: Date;
   deactivated_by?: mongoose.Types.ObjectId;
+  /**
+   * Cuándo se borraron sus datos personales (ver `account-purge.service.ts`).
+   * El documento queda: las obras, cobros y gastos que firmó lo referencian.
+   */
+  purgedAt?: Date;
 
   createdAt: Date;
   updatedAt: Date;
@@ -83,6 +99,11 @@ const userSchema = new Schema<IUser>(
     activationLinkHeldBy: { type: Schema.Types.ObjectId, ref: 'User' },
     claimedViaLinkBy: { type: Schema.Types.ObjectId, ref: 'User' },
 
+    termsVersion: { type: String },
+    termsAcceptedAt: { type: Date },
+    termsAcceptedIp: { type: String, select: false },
+    termsAcceptedUserAgent: { type: String, select: false },
+
     enabled: { type: Boolean, default: true },
     account_status: {
       type: String,
@@ -91,9 +112,36 @@ const userSchema = new Schema<IUser>(
     },
     deactivated_at: { type: Date },
     deactivated_by: { type: Schema.Types.ObjectId, ref: 'User' },
+    purgedAt: { type: Date },
   },
   { timestamps: true },
 );
+
+/**
+ * Toda baja deja fecha. La purga de datos personales cuenta sus 90 días desde
+ * `deactivated_at`: una cuenta que quedara `inactive` sin ella dependería de un
+ * respaldo (`updatedAt`) en vez de una fecha dicha. Se completa acá, en el
+ * modelo, y no en cada lugar que da de baja — hoy hay más de uno (la
+ * plataforma, scripts) y mañana habrá otro.
+ */
+userSchema.pre('save', function stampDeactivation(next) {
+  if (this.isModified('account_status') && this.account_status === 'inactive') {
+    this.deactivated_at ??= new Date();
+  }
+  next();
+});
+
+userSchema.pre(['updateOne', 'updateMany', 'findOneAndUpdate'], function stampDeactivation(next) {
+  const update = this.getUpdate() as {
+    $set?: Record<string, unknown>;
+    account_status?: string;
+  } | null;
+  const status = update?.$set?.account_status ?? update?.account_status;
+  if (status === 'inactive' && update?.$set?.deactivated_at === undefined) {
+    this.set({ deactivated_at: new Date() });
+  }
+  next();
+});
 
 export const User: Model<IUser> =
   (mongoose.models.User as Model<IUser>) ?? mongoose.model<IUser>('User', userSchema);

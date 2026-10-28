@@ -62,6 +62,7 @@ const crewMemberSchema = new Schema<ICrewMember>(
         'acabados',
         'pintura',
         'climatizacion',
+        'fire_protection',
         'techos',
         'pisos_revestimientos',
         'jardineria',

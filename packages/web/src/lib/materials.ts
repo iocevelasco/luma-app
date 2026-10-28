@@ -153,6 +153,12 @@ export interface PurchaseRow {
    * último dentro de cada proveedor: arriba queda lo que todavía pide algo.
    */
   tagged: boolean;
+  /**
+   * Cuándo se subió la foto si la hay, `null` si no. Es su versión: cambia sólo
+   * cuando se reemplaza (no con cualquier edición del material), y con eso se
+   * sabe si la copia que se bajó para el PDF o el compartir sigue valiendo.
+   */
+  photoVersion: string | null;
 }
 
 /** Las dos listas que se exportan: la de compras y la de lo ya comprado. */
@@ -230,6 +236,7 @@ export function buildPurchaseRows(
       unit: material.unit,
       supplier: labelFor(supplierKey(supplierName(material))),
       tagged: material.status === TAGGED_STATUS[kind],
+      photoVersion: material.photoUrl ? material.photoUploadedAt : null,
     }))
     .sort((a, b) => {
       if (!a.supplier !== !b.supplier) return a.supplier ? -1 : 1;
@@ -257,4 +264,55 @@ export function buildPurchaseText(
       return `- ${row.name}: ${row.quantity} ${labels.unit(row.unit)}${supplier}${tag}`;
     })
     .join('\n');
+}
+
+/**
+ * Una celda de CSV. Se entrecomilla lo que trae el separador, comillas o
+ * saltos de línea. Y lo que empieza con `=`, `+`, `-` o `@` se antepone con un
+ * apóstrofe: Excel lo tomaría por una fórmula, y el nombre de un material lo
+ * escribe cualquiera con acceso a Compras.
+ */
+export function csvCell(value: string, separator: string): string {
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return /["\r\n]/.test(safe) || safe.includes(separator) ? `"${safe.replace(/"/g, '""')}"` : safe;
+}
+
+/**
+ * La misma lista del PDF y de copiar, para abrir en Excel o en una planilla.
+ *
+ * Separador `;` y decimales con coma: es lo que Excel espera en español y en
+ * portugués (con `,` la lista entera cae en una sola columna). Sheets y
+ * Numbers detectan el `;` solos. Empieza con BOM porque, sin él, Excel lee el
+ * archivo como Windows-1252 y los acentos y la ñ salen rotos.
+ */
+export function buildPurchaseCsv(
+  rows: PurchaseRow[],
+  labels: {
+    header: { material: string; quantity: string; unit: string; supplier: string; note: string };
+    unit: (unit: PurchaseRow['unit']) => string;
+    tag: string;
+    /** Número con el separador decimal del idioma. */
+    number: (value: number) => string;
+  },
+  separator = ';',
+): string {
+  const line = (cells: string[]) => cells.map((cell) => csvCell(cell, separator)).join(separator);
+  const { header } = labels;
+
+  return (
+    '\uFEFF' +
+    [
+      line([header.material, header.quantity, header.unit, header.supplier, header.note]),
+      ...rows.map((row) =>
+        line([
+          row.name,
+          labels.number(row.quantity),
+          labels.unit(row.unit),
+          row.supplier ?? '',
+          row.tagged ? labels.tag : '',
+        ]),
+      ),
+    ].join('\r\n') +
+    '\r\n'
+  );
 }

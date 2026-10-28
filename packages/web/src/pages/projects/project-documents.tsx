@@ -56,6 +56,7 @@ import {
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { ListSection, ListSections } from '@/components/common/row-card-list';
+import { initials } from '@/lib/initials';
 import { cn, formatFileSize } from '@/lib/utils';
 
 /**
@@ -168,7 +169,7 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
           );
         })}
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="document-file">{t('document.fields.file')}</Label>
           {/*
             El input nativo de archivo no se puede estilar, así que se esconde
@@ -187,10 +188,10 @@ function NewDocumentDrawer({ projectId }: { projectId: string }) {
             type="button"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            className="justify-start font-normal"
+            className="w-full min-w-0 justify-start font-normal"
           >
             <Upload className="size-4" />
-            {file ? file.name : t('document.fields.filePlaceholder')}
+            <span className="min-w-0 truncate">{file ? file.name : t('document.fields.filePlaceholder')}</span>
           </Button>
           {file && (
             <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
@@ -310,17 +311,6 @@ type GroupBy = 'category' | 'uploader' | 'none';
 
 const ALL = 'all';
 
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join('') || '?'
-  );
-}
-
 /**
  * Miniatura. Las imágenes se muestran tal cual con la URL firmada; un PDF no
  * se puede rasterizar sin cargar un renderer en el navegador, así que lleva un
@@ -337,6 +327,7 @@ function DocumentThumbnail({ doc }: { doc: ProjectDocument }) {
         src={doc.url}
         alt={doc.title}
         loading="lazy"
+        decoding="async"
         onError={() => setFailed(true)}
         className="size-full object-cover"
       />
@@ -404,7 +395,7 @@ function DocumentCard({
       <div className="mt-auto flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <Avatar className="size-6">
-            <AvatarFallback className="text-2xs">{initials(doc.uploadedByName)}</AvatarFallback>
+            <AvatarFallback className="text-2xs">{initials(doc.uploadedByName, '?')}</AvatarFallback>
           </Avatar>
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-xs font-medium">{doc.uploadedByName || '—'}</span>
@@ -447,7 +438,9 @@ function DocumentGrid({
   canWrite: boolean;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    // Tarjetas de ancho acotado: con el ancho entero, columnas fluidas
+    // estirarían cada preview hasta ocupar media pantalla.
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(10rem,12rem))] gap-3 max-sm:grid-cols-2">
       {docs.map((doc) => (
         <DocumentCard key={doc.id} projectId={projectId} doc={doc} canWrite={canWrite} />
       ))}
@@ -617,6 +610,8 @@ export function ProjectDocumentsPage() {
 
   return (
     <PageLayout
+      // Ancho entero: la lista arranca en el mismo borde que los filtros.
+      width="full"
       toolbar={documents.length > 0 ? filters : undefined}
       action={canWrite ? <NewDocumentDrawer projectId={projectId!} /> : undefined}
       empty={

@@ -1,8 +1,8 @@
-import { DatabaseBackup, ShieldCheck } from 'lucide-react';
+import { DatabaseBackup, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-/** Mismo orden que `security.items` en i18n: confidencialidad, backups. */
-const ICONS = [ShieldCheck, DatabaseBackup] as const;
+/** Mismo orden que `security.items` en i18n: confidencialidad, datos no vendidos, backups. */
+const ICONS = [ShieldCheck, LockKeyhole, DatabaseBackup] as const;
 
 export function Security() {
   const { t } = useTranslation();
@@ -18,8 +18,11 @@ export function Security() {
         <h2 className="mt-6 max-w-2xl text-4xl leading-[1.1] tracking-tight text-foreground sm:text-5xl">
           {t('security.title')}
         </h2>
+        <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          {t('security.lead')}
+        </p>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2">
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
           {items.map((item, index) => {
             const Icon = ICONS[index] ?? ShieldCheck;
             return (

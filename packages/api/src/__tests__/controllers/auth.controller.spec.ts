@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Response } from 'express';
+import { LEGAL_VERSION } from '@luma/shared';
 
 /**
  * Reenviar la verificación. Una cuenta creada por invitación no tiene
@@ -138,8 +139,34 @@ describe('cuentas activadas con un enlace que pasó por manos de quien invitó',
   }
 
   describe('setPassword', () => {
-    const activate = () =>
-      setPassword({ body: { token: 'tok', password: 'Una-clave-123' } } as never, mockRes());
+    const activate = (body: object = { acceptedTerms: true }) =>
+      setPassword(
+        {
+          body: { token: 'tok', password: 'Una-clave-123', ...body },
+          ip: '203.0.113.7',
+          get: () => 'Mozilla/5.0',
+        } as never,
+        mockRes(),
+      );
+
+    it('al activar deja asentada la aceptación de los Términos', async () => {
+      const user = tokenOwner({});
+
+      await activate();
+
+      expect(user.termsVersion).toBe(LEGAL_VERSION);
+      expect(user.termsAcceptedAt).toBeInstanceOf(Date);
+      expect(user.termsAcceptedIp).toBe('203.0.113.7');
+    });
+
+    it('sin aceptar los Términos no activa nada', async () => {
+      const user = tokenOwner({});
+
+      await activate({ acceptedTerms: false });
+
+      expect(user.password).toBeUndefined();
+      expect(user.save).not.toHaveBeenCalled();
+    });
 
     it('con un enlace entregado a mano la cuenta anda, pero no queda verificada y queda atada a quien lo tenía', async () => {
       const user = tokenOwner({ activationLinkHeldBy: 'owner-1' });

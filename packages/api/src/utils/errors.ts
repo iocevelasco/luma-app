@@ -56,7 +56,13 @@ export const notFound = (message = 'No encontramos lo que buscabas.') =>
 export const conflict = (message: string, details?: unknown) =>
   new AppError('CONFLICT', message, details);
 
-export const serviceUnavailable = (message: string) =>
+export const termsRequired = () =>
+  new AppError(
+    'TERMS_REQUIRED',
+    'Para seguir tenés que aceptar los Términos y la Política de Privacidad.',
+  );
+
+export const serviceUnavailable =(message: string) =>
   new AppError('SERVICE_UNAVAILABLE', message);
 
 /**

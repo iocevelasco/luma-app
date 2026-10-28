@@ -16,8 +16,8 @@ import { useGrantProjectAccess, useProjects } from '@/hooks/projects/use-project
 
 /**
  * Los roles que se dan acá. `cliente` queda afuera: quien paga no integra la
- * Empresa y se invita desde la obra. `gerente` tampoco existe como rol de
- * obra — se deriva de quién la creó.
+ * Empresa y se invita desde la obra. `gerente` tampoco se da acá: se suma
+ * desde Equipo, en cada obra, que es donde se ve el tope de gerentes.
  */
 const GRANTABLE_ROLES: InvitableProjectRole[] = ['supervisor', 'contador'];
 
@@ -25,8 +25,8 @@ const GRANTABLE_ROLES: InvitableProjectRole[] = ['supervisor', 'contador'];
  * Dar acceso a una persona del equipo a una o varias obras.
  *
  * La función que tiene en la Empresa es una etiqueta (ver `CompanyStaffRole`):
- * sólo precarga el rol, no lo decide. Si es "gerente" no se precarga nada,
- * porque en una obra no se puede ser gerente por invitación.
+ * sólo precarga el rol, no lo decide. Si es "gerente" no se precarga nada:
+ * ese rol se da desde Equipo, obra por obra.
  */
 export function GrantAccessDialog({
   member,

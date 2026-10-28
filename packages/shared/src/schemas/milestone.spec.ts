@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MILESTONE_DESCRIPTION_MAX } from '../types/milestone.js';
-import { createMilestoneSchema, updateMilestoneSchema } from './milestone.js';
+import { MILESTONE_DESCRIPTION_MAX, MILESTONE_TYPES } from '../types/milestone.js';
+import { createMilestoneSchema, milestoneTypeSchema, updateMilestoneSchema } from './milestone.js';
 
 const BASE = {
   type: 'reunion',
@@ -8,6 +8,19 @@ const BASE = {
   title: 'Visita con el cliente',
   occurredOn: '2026-10-15',
 };
+
+describe('milestoneTypeSchema', () => {
+  // La lista vive dos veces (el tipo y el schema): si una gana un valor y la otra
+  // no, el formulario ofrece un tipo que la API rechaza.
+  it('acepta exactamente los tipos de MILESTONE_TYPES', () => {
+    expect([...milestoneTypeSchema.options].sort()).toEqual([...MILESTONE_TYPES].sort());
+  });
+
+  it.each(['decision_made', 'process_started'])('acepta el tipo %s', (type) => {
+    const parsed = createMilestoneSchema.safeParse({ ...BASE, type });
+    expect(parsed.success).toBe(true);
+  });
+});
 
 describe('createMilestoneSchema', () => {
   it('acepta una reunión con asistentes', () => {

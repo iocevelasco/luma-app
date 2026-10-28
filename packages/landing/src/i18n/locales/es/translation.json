@@ -14,6 +14,7 @@
   "hero": {
     "label": "Gestión de obra compartida",
     "title": "¿Cuánto te costó el error?",
+    "byline": "Pensada y hecha por arquitectos.",
     "subtitle": "Cronograma, presupuesto, cobros y gastos en un solo lugar, para que te enteres a tiempo y no cuando ya salió caro.",
     "cta": "Probar gratis",
     "secondary": "Ver cómo funciona",
@@ -133,10 +134,15 @@
   "security": {
     "label": "Seguridad",
     "title": "Tu información está cuidada.",
+    "lead": "La seguridad de la información es primordial para nuestro servicio.",
     "items": [
       {
         "title": "Confidencial",
         "body": "Tus obras y todo lo que cargás son privados. Nadie entra si no lo invitás."
+      },
+      {
+        "title": "Tus datos no se venden",
+        "body": "No vendemos ni alquilamos tus datos, ni mostramos publicidad de terceros. Los usamos sólo para que Luma funcione."
       },
       {
         "title": "Backups todos los días",
@@ -193,6 +199,7 @@
   },
   "footer": {
     "tagline": "Gestión de obra con control compartido.",
-    "credit": "Creada por <studio>Ido Arquitectura</studio> e Ioce Velasco."
+    "credit": "Creada por <studio>Ido Arquitectura</studio> e Ioce Velasco.",
+    "legal": "Términos y Privacidad"
   }
 }

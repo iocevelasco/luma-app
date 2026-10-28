@@ -20,6 +20,8 @@ export const milestoneTypeSchema = z.enum(
     'vicio_oculto',
     'retraso',
     'cambio_proyecto',
+    'decision_made',
+    'process_started',
     'reunion',
     'otro',
   ],

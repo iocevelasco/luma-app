@@ -13,10 +13,12 @@ import {
   FileText,
   FileWarning,
   Flag,
+  Gavel,
   ListChecks,
   MoreHorizontal,
   Package,
   Pencil,
+  CirclePlay,
   Shuffle,
   Clock,
   Trash2,
@@ -26,7 +28,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey } from '@/lib/day-key';
 import { MarkdownView } from '@/components/markdown/markdown-view';
 import {
   AlertDialog,
@@ -62,6 +64,8 @@ const TYPE_ICON: Record<MilestoneType, LucideIcon> = {
   vicio_oculto: TriangleAlert,
   retraso: Clock,
   cambio_proyecto: Shuffle,
+  decision_made: Gavel,
+  process_started: CirclePlay,
   reunion: Users,
   otro: Flag,
 };

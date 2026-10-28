@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   capabilitiesInProject,
+  countsTowardManagerLimit,
   INVITABLE_PROJECT_ROLES,
   inviteProjectMemberSchema,
+  projectManagerSlots,
   type InvitableProjectRole,
   type InviteProjectMemberInput,
   type ProjectMemberSummary,
@@ -48,8 +50,46 @@ import {
   useRemoveProjectMember,
   useUpdateProjectMemberRole,
 } from '@/hooks/projects/use-project-queries';
-import { RowCard, RowCardBody, RowCardEnd, RowCardLead, RowCardList } from '@/components/common/row-card-list';
+import {
+  ListSection,
+  ListSections,
+  RowCard,
+  RowCardBody,
+  RowCardEnd,
+  RowCardLead,
+  RowCardList,
+} from '@/components/common/row-card-list';
 import { cn } from '@/lib/utils';
+
+type ManagerSlots = ReturnType<typeof projectManagerSlots>;
+
+/**
+ * "3 de 5" con cinco puntos: cuántos gerentes hay y cuántos caben. El tope
+ * (`MAX_PROJECT_MANAGERS`) se ve antes de chocar con él, y al llegar se dice
+ * "máximo" con todas las palabras: un punto lleno no es el único aviso.
+ */
+function ManagerSlotsMeter({ slots }: { slots: ManagerSlots }) {
+  const { t } = useTranslation();
+
+  return (
+    <span className="flex items-center gap-2" data-testid="manager-slots">
+      <span aria-hidden className="flex gap-1">
+        {Array.from({ length: slots.max }, (_, index) => (
+          <span
+            key={index}
+            className={cn('size-1.5 rounded-full', index < slots.count ? 'bg-primary' : 'bg-border')}
+          />
+        ))}
+      </span>
+      <span className={cn(slots.isFull && 'font-medium text-foreground')}>
+        {t(slots.isFull ? 'project.team.managersAtMax' : 'project.team.managersCount', {
+          count: slots.count,
+          max: slots.max,
+        })}
+      </span>
+    </span>
+  );
+}
 
 /** Un ícono por rol: la fila se escanea por forma antes que por texto. */
 const ROLE_ICON: Record<ProjectRole, ComponentType<{ className?: string }>> = {
@@ -69,14 +109,17 @@ const ROLE_ICON: Record<ProjectRole, ComponentType<{ className?: string }>> = {
  */
 function RoleCapabilityCount({ role }: { role: ProjectRole }) {
   const { t } = useTranslation();
-  // `providersVisibleToClient: true` para contar el techo de lo que ese rol
-  // puede llegar a hacer, no lo que puede en esta obra puntual.
-  const count = capabilitiesInProject(role, { providersVisibleToClient: true }).length;
+  // Los flags en `true` para contar el techo de lo que ese rol puede llegar a
+  // hacer, no lo que puede en esta obra puntual.
+  const count = capabilitiesInProject(role, {
+    providersVisibleToClient: true,
+    purchasesVisibleToClient: true,
+  }).length;
 
   return <span className="text-2xs text-muted-foreground">{t('project.team.capabilityCount', { count })}</span>;
 }
 
-function InviteMemberDrawer({ projectId }: { projectId: string }) {
+function InviteMemberDrawer({ projectId, slots }: { projectId: string; slots: ManagerSlots }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const inviteMember = useInviteProjectMember(projectId);
@@ -143,10 +186,15 @@ function InviteMemberDrawer({ projectId }: { projectId: string }) {
               <div className="flex flex-col gap-2">
                 {INVITABLE_PROJECT_ROLES.map((option) => {
                   const Icon = ROLE_ICON[option];
+                  // Un gerente más cuenta para el tope: sin lugar, la tarjeta se
+                  // apaga y dice por qué. El servidor lo vuelve a chequear.
+                  const counts = countsTowardManagerLimit(option);
+                  const locked = counts && slots.isFull;
                   return (
                     <button
                       key={option}
                       type="button"
+                      disabled={locked}
                       onClick={() => field.onChange(option)}
                       aria-pressed={field.value === option}
                       /*
@@ -160,9 +208,11 @@ function InviteMemberDrawer({ projectId }: { projectId: string }) {
                       aria-describedby={`role-${option}-hint`}
                       className={cn(
                         'flex items-start gap-3 rounded-md border p-3 text-left transition-colors',
+                        locked && 'cursor-not-allowed opacity-60',
                         field.value === option
                           ? 'border-primary bg-primary/5'
                           : 'border-border hover:bg-accent',
+                        locked && 'hover:bg-transparent',
                       )}
                     >
                       <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -177,6 +227,22 @@ function InviteMemberDrawer({ projectId }: { projectId: string }) {
                           {t(`project.roleHint.${option}`)}
                         </span>
                         <RoleCapabilityCount role={option} />
+                        {counts && (
+                          <span
+                            className={cn(
+                              'text-2xs',
+                              locked ? 'font-medium text-foreground' : 'text-muted-foreground',
+                            )}
+                            data-testid="manager-slots-hint"
+                          >
+                            {locked
+                              ? t('project.team.managersFull', { max: slots.max })
+                              : t('project.team.managerSlotsLeft', {
+                                  count: slots.remaining,
+                                  max: slots.max,
+                                })}
+                          </span>
+                        )}
                       </span>
                     </button>
                   );
@@ -235,15 +301,34 @@ function RemoveMemberButton({
   );
 }
 
-function MemberRow({ projectId, member }: { projectId: string; member: ProjectMemberSummary }) {
+function MemberRow({
+  projectId,
+  member,
+  createdBy,
+  slots,
+}: {
+  projectId: string;
+  member: ProjectMemberSummary;
+  /** Quién creó la obra: el único gerente sin fila de membresía. */
+  createdBy: string;
+  slots: ManagerSlots;
+}) {
   const { t } = useTranslation();
   const updateRole = useUpdateProjectMemberRole(projectId);
   const Icon = ROLE_ICON[member.role];
+  const isManager = countsTowardManagerLimit(member.role);
 
-  // El gerente sale de `Project.createdBy` y no tiene fila de membresía: no
-  // hay rol que cambiarle ni acceso que revocarle. Una obra sin dueño no
-  // existe.
-  const isManager = member.role === 'gerente';
+  // Línea 2: los datos en orden fijo. Quien ocupa un lugar sin poder usarlo
+  // (invitación sin activar, cuenta dada de baja) lo dice acá: si no, "5 de 5"
+  // con tres personas activas es un ticket de soporte.
+  const meta = [
+    member.email,
+    member.userId === createdBy ? t('project.team.creatorNote') : null,
+    member.pending ? t('project.team.pendingNote') : null,
+    member.inactive ? t('project.team.inactiveNote') : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <RowCard>
@@ -252,13 +337,13 @@ function MemberRow({ projectId, member }: { projectId: string; member: ProjectMe
       </RowCardLead>
       <RowCardBody
         title={<p className="truncate">{member.name}</p>}
-        meta={<p className="truncate">{member.email}</p>}
+        meta={<p className="truncate">{meta}</p>}
       />
 
       <RowCardEnd>
-        {isManager ? (
-          <Badge variant="solid">{t('project.role.gerente')}</Badge>
-        ) : (
+        {/* `manageable` lo resuelve el servidor: a quien creó la obra nadie lo toca,
+            y a otro gerente sólo lo toca quien la creó. */}
+        {member.manageable ? (
           <>
             <Select
               value={member.role}
@@ -272,7 +357,12 @@ function MemberRow({ projectId, member }: { projectId: string; member: ProjectMe
               </SelectTrigger>
               <SelectContent>
                 {INVITABLE_PROJECT_ROLES.map((option) => (
-                  <SelectItem key={option} value={option}>
+                  <SelectItem
+                    key={option}
+                    value={option}
+                    // Subir a alguien a gerente sin lugar no es una opción.
+                    disabled={countsTowardManagerLimit(option) && !isManager && slots.isFull}
+                  >
                     {t(`project.role.${option}`)}
                   </SelectItem>
                 ))}
@@ -280,6 +370,8 @@ function MemberRow({ projectId, member }: { projectId: string; member: ProjectMe
             </Select>
             <RemoveMemberButton projectId={projectId} member={member} />
           </>
+        ) : (
+          <Badge variant={isManager ? 'solid' : 'neutral'}>{t(`project.role.${member.role}`)}</Badge>
         )}
       </RowCardEnd>
     </RowCard>
@@ -301,6 +393,10 @@ export function ProjectTeamPage() {
   if (isError) return <PageLayout isError />;
   if (isLoading || !data) return <PageLayout isLoading />;
 
+  const slots = projectManagerSlots(
+    data.members.filter((member) => countsTowardManagerLimit(member.role)).length,
+  );
+
   return (
     <PageLayout
       /*
@@ -310,17 +406,38 @@ export function ProjectTeamPage() {
       */
       action={
         <Can I="project.invite">
-          <InviteMemberDrawer projectId={projectId!} />
+          <InviteMemberDrawer projectId={projectId!} slots={slots} />
         </Can>
       }
     >
 
-      {/* Nunca está vacía: el gerente siempre viene en la lista. */}
-      <RowCardList>
-        {data.members.map((member) => (
-          <MemberRow key={member.id} projectId={projectId!} member={member} />
-        ))}
-      </RowCardList>
+      {/* Nunca está vacía: quien creó la obra siempre viene en la lista. Un
+          grupo por rol; el de gerentes lleva el tope a la derecha. */}
+      <ListSections>
+        {INVITABLE_PROJECT_ROLES.map((role) => {
+          const group = data.members.filter((member) => member.role === role);
+          if (group.length === 0) return null;
+          return (
+            <ListSection
+              key={role}
+              label={t(`project.team.groups.${role}`)}
+              meta={countsTowardManagerLimit(role) ? <ManagerSlotsMeter slots={slots} /> : group.length}
+            >
+              <RowCardList>
+                {group.map((member) => (
+                  <MemberRow
+                    key={member.id}
+                    projectId={projectId!}
+                    member={member}
+                    createdBy={data.project.createdBy}
+                    slots={slots}
+                  />
+                ))}
+              </RowCardList>
+            </ListSection>
+          );
+        })}
+      </ListSections>
 
       <p className="text-xs text-muted-foreground">{t('project.team.activationHint')}</p>
     </PageLayout>

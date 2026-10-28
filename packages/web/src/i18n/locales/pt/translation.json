@@ -1,10 +1,4 @@
 {
-  "dateRange": {
-    "thisMonth": "Este mês",
-    "lastMonth": "Mês passado",
-    "last30": "Últimos 30 dias",
-    "thisYear": "Este ano"
-  },
   "common": {
     "appName": "Luma",
     "save": "Salvar",
@@ -85,9 +79,9 @@
     },
     "nav": {
       "detail": "Detalhe",
-      "gantt": "Cronograma",
+      "activities": "Atividades",
       "materials": "Compras",
-      "labor": "Tarefas",
+      "labor": "Pessoal",
       "providers": "Fornecedores",
       "budget": "Orçamento",
       "advisor": "Consultor IA",
@@ -101,8 +95,8 @@
     "navHint": {
       "back": "Volte para a lista de todas as suas obras.",
       "detail": "A obra num relance: avanço, dinheiro, compras e pendências.",
-      "gantt": "Planeje as tarefas com suas datas e responsáveis.",
-      "labor": "Atribua tarefas à sua equipe, acompanhe o andamento e registre a presença.",
+      "activities": "Planeje e acompanhe as tarefas: cronograma, quadro e lista.",
+      "labor": "Registre a presença e adicione pessoas à obra.",
       "materials": "Peça materiais e ferramentas e acompanhe cada compra até a obra.",
       "milestones": "Registre marcos e eventualidades, e escolha quais o cliente vê.",
       "documents": "Plantas, renders, licenças e condições do local, num só lugar.",
@@ -117,6 +111,8 @@
       "gantt": "Cronograma de tarefas",
       "providersVisibleToClient": "O cliente vê os fornecedores",
       "providersVisibleToClientHint": "Se ativar, o cliente vê o diretório desta obra e quem está atribuído a cada tarefa.",
+      "purchasesVisibleToClient": "O cliente vê as compras",
+      "purchasesVisibleToClientHint": "Se ativar, o cliente vê em Compras os materiais lançados, o status, o fornecedor de cada um e as notas fiscais. Pensado para obras cobradas por percentual de execução.",
       "settingsSaved": "Ajuste salvo",
       "team": "Equipe da obra",
       "memberInvited": "Acesso concedido"
@@ -159,6 +155,7 @@
       "cliente": "Cliente"
     },
     "roleHint": {
+      "gerente": "Faz tudo o que você faz na obra, dinheiro e equipe incluídos. Não pode excluí-la, remover outro gerente nem usar a lista de fornecedores e o pessoal da Empresa.",
       "supervisor": "Reporta avanço, presença e materiais do canteiro. Não vê dinheiro.",
       "contador": "Apenas recebimentos e despesas. Não vê tarefas, pessoal nem fornecedores.",
       "cliente": "Acompanha o avanço da obra e seu cronograma de pagamentos. Somente leitura."
@@ -179,7 +176,98 @@
       "removeConfirm": "Remover",
       "removed": "Acesso removido",
       "capabilityCount": "{{count}} permissões",
+      "groups": {
+        "gerente": "Gerentes",
+        "supervisor": "Supervisores",
+        "contador": "Contadores",
+        "cliente": "Clientes"
+      },
+      "managersCount": "{{count}} de {{max}}",
+      "managersAtMax": "{{count}} de {{max}} · máximo",
+      "managerSlotsLeft_one": "Conta como um dos {{max}} gerentes. Resta {{count}} vaga.",
+      "managerSlotsLeft_other": "Conta como um dos {{max}} gerentes. Restam {{count}} vagas.",
+      "managersFull": "A obra já tem {{max}} gerentes, que é o máximo. Remova um para adicionar outro.",
+      "creatorNote": "Criou a obra",
+      "pendingNote": "Convite pendente",
+      "inactiveNote": "Conta desativada",
       "activationHint": "Quem ainda não tem conta recebe um e-mail para ativá-la e escolher a senha. Até lá, aparece na lista mesmo assim."
+    },
+    "delete": {
+      "sectionTitle": "Excluir esta obra",
+      "sectionHint": "Ela fica oculta para toda a equipe e permanece 90 dias na lixeira, onde você pode restaurá-la.",
+      "action": "Excluir obra",
+      "dialogTitle": "Excluir «{{name}}»?",
+      "summaryIntro": "Vai embora com a obra:",
+      "nothingLoaded": "Esta obra ainda não tem nada cadastrado.",
+      "counts": {
+        "activities_one": "{{count}} tarefa",
+        "activities_other": "{{count}} tarefas",
+        "materials_one": "{{count}} material",
+        "materials_other": "{{count}} materiais",
+        "laborRecords_one": "{{count}} registro de jornada",
+        "laborRecords_other": "{{count}} registros de jornada",
+        "crewMembers_one": "{{count}} pessoa de pessoal cadastrada só nesta obra",
+        "crewMembers_other": "{{count}} pessoas de pessoal cadastradas só nesta obra",
+        "providers_one": "{{count}} fornecedor cadastrado só nesta obra",
+        "providers_other": "{{count}} fornecedores cadastrados só nesta obra",
+        "documents_one": "{{count}} documento",
+        "documents_other": "{{count}} documentos",
+        "milestones_one": "{{count}} marco",
+        "milestones_other": "{{count}} marcos",
+        "payments_one": "{{count}} recebimento",
+        "payments_other": "{{count}} recebimentos",
+        "expenses_one": "{{count}} despesa",
+        "expenses_other": "{{count}} despesas"
+      },
+      "affectedPeople_one": "{{count}} pessoa com acesso deixará de ver a obra.",
+      "affectedPeople_other": "{{count}} pessoas com acesso deixarão de ver a obra.",
+      "freesSlot": "Libera uma vaga no seu limite de obras ativas. Se você a restaurar e a vaga já estiver ocupada, ela é cobrada como obra extra.",
+      "retention": "Fica {{days}} dias na lixeira. Nesse prazo você pode restaurá-la com tudo o que tinha; depois é apagada definitivamente, arquivos incluídos.",
+      "confirmLabel": "Para confirmar, digite o nome da obra",
+      "submit": "Excluir obra",
+      "deleting": "Excluindo…",
+      "done": "Obra enviada para a lixeira",
+      "copyName": "Copiar nome",
+      "nameCopied": "Nome copiado",
+      "sharedProviders_one": "{{count}} fornecedor da sua Empresa estava atribuído à obra: continua no seu diretório e apenas é desatribuído.",
+      "sharedProviders_other": "{{count}} fornecedores da sua Empresa estavam atribuídos à obra: continuam no seu diretório e apenas são desatribuídos.",
+      "sharedCrew_one": "{{count}} pessoa do pessoal da sua Empresa estava atribuída à obra: continua na Empresa e apenas é desatribuída.",
+      "sharedCrew_other": "{{count}} pessoas do pessoal da sua Empresa estavam atribuídas à obra: continuam na Empresa e apenas são desatribuídas."
+    },
+    "trash": {
+      "title": "Lixeira de obras",
+      "link_one": "Lixeira ({{count}})",
+      "link_other": "Lixeira ({{count}})",
+      "emptyTitle": "A lixeira está vazia",
+      "emptyBody": "As obras que você excluir ficam aqui 90 dias antes de serem apagadas definitivamente.",
+      "deletedOn": "Excluída em {{date}}",
+      "daysLeft_one": "Resta {{count}} dia",
+      "daysLeft_other": "Restam {{count}} dias",
+      "restore": "Restaurar",
+      "restored": "Obra restaurada",
+      "restoreExtraTitle": "Entra como obra extra",
+      "restoreExtraBody": "Seu plano inclui {{included}} obras ativas e você já as tem. Restaurar «{{name}}» a conta como obra extra: USD {{price}}/mês, proporcional desde hoje até a próxima renovação.",
+      "restoreConfirm": "Restaurar",
+      "blocked": {
+        "PAID_PLAN_REQUIRED": "Você já tem {{included}} obras ativas. Ative o plano para restaurá-la.",
+        "SUBSCRIPTION_REQUIRED": "Sua assinatura venceu. Renove o plano para restaurá-la."
+      }
+    },
+    "removed": {
+      "title": "A obra «{{name}}» foi excluída.",
+      "contact": "Entre em contato com o arquiteto ou o gerente de obra."
+    },
+    "card": {
+      "phase": {
+        "upcoming": "A iniciar",
+        "active": "Em andamento",
+        "done": "Concluída"
+      },
+      "startsIn": "Começa {{distance}}",
+      "endsToday": "Termina hoje",
+      "endsIn": "Termina {{distance}}",
+      "endedAgo": "Terminou {{distance}}",
+      "open": "Abrir"
     }
   },
   "auth": {
@@ -258,9 +346,7 @@
       "generic": "Algo deu errado. Tente de novo."
     },
     "hero": {
-      "title": "Construindo o amanhã",
-      "subtitle": "Cada passo conta. Cada obra importa.",
-      "imageAlt": "Equipe trabalhando sobre a estrutura de uma obra em construção"
+      "imageAlt": "Planta de uma casa sobre uma prancheta de desenho, com uma cota marcada em verde. Diz, em espanhol: «¿Cuánto te costó el error? Pensada y hecha por arquitectos.»"
     },
     "or": "ou",
     "cta": {
@@ -291,7 +377,10 @@
       "nextWeek": "Próxima semana",
       "currentWeek": "Semana atual",
       "overdue": "Atrasada",
-      "missingMaterials": "Faltam materiais"
+      "missingMaterials": "Faltam materiais",
+      "endsOn": "Termina em {{date}}",
+      "overdueHint_one": "Atrasada: venceu há {{count}} dia",
+      "overdueHint_other": "Atrasada: venceu há {{count}} dias"
     },
     "new": {
       "title": "Nova tarefa"
@@ -342,7 +431,14 @@
     },
     "gantt": {
       "goToToday": "Ir para hoje",
-      "emptyState": "Não há tarefas planejadas neste período."
+      "zoomLabel": "Escala do cronograma",
+      "zoom": {
+        "days": "Dias",
+        "weeks": "Semanas",
+        "months": "Meses",
+        "quarters": "Trimestres"
+      },
+      "rescheduled": "Datas atualizadas."
     },
     "detail": {
       "title": "Detalhe da tarefa",
@@ -364,6 +460,45 @@
       "removeEvidence": "Remover foto",
       "removeEvidenceTitle": "Remover esta foto?",
       "removeEvidenceBody": "A foto é apagada da evidência da tarefa. Não é possível desfazer."
+    },
+    "views": {
+      "aria": "Visualização das atividades",
+      "gantt": "Cronograma",
+      "board": "Atividades",
+      "list": "Lista",
+      "emptyTitle": "Ainda não há atividades",
+      "emptyBody": "Quando a primeira for criada, ela aparece aqui."
+    },
+    "filters": {
+      "search": "Buscar atividade ou responsável",
+      "people": "Filtrar por responsável",
+      "button": "Filtros",
+      "quick": "Rápidos",
+      "mine": "Só minhas",
+      "overdue": "Atrasadas",
+      "missingMaterials": "Faltam materiais",
+      "awaitingReview": "Aguardando minha revisão",
+      "clear": "Limpar filtros",
+      "clearAll": "Limpar tudo",
+      "notice_one": "{{count}} filtro ativo",
+      "notice_other": "{{count}} filtros ativos",
+      "remove": "Remover o filtro {{filter}}",
+      "emptyTitle": "Nada corresponde aos filtros",
+      "emptyBody_one": "Há {{count}} filtro ativo que oculta tudo. Remova-o pelas etiquetas acima.",
+      "emptyBody_other": "Há {{count}} filtros ativos que ocultam tudo. Remova algum pelas etiquetas acima."
+    },
+    "dayPdf": {
+      "button": "Baixar atividades de hoje",
+      "generating": "Gerando PDF…",
+      "title": "Atividades do dia",
+      "summary_one": "{{count}} atividade",
+      "summary_other": "{{count}} atividades",
+      "filtered": "Com filtros aplicados: não é a lista completa do dia.",
+      "columnDates": "Datas",
+      "generated": "Gerado em {{date}}",
+      "page": "Página {{page}} de {{total}}",
+      "downloaded": "PDF baixado.",
+      "error": "Não foi possível gerar o PDF. Tente novamente."
     }
   },
   "material": {
@@ -387,7 +522,9 @@
       "deleteTitle": "Excluir esta nota fiscal?",
       "deleteBody": "Exclui «{{name}}» e o gasto em Finanças. Os materiais continuam como comprados.",
       "openMenu_one": "Nota fiscal de {{name}}",
-      "openMenu_other": "{{count}} notas fiscais de {{name}}"
+      "openMenu_other": "{{count}} notas fiscais de {{name}}",
+      "tooltip_one": "Ver nota fiscal",
+      "tooltip_other": "Ver {{count}} notas fiscais"
     },
     "provider": {
       "placeholder": "Escolha ou digite um fornecedor",
@@ -401,7 +538,7 @@
       "link": "Vincular",
       "linkAria": "Vincular a {{name}} de Fornecedores",
       "create": "Adicionar fornecedor",
-      "createHint": "Fica disponível só nesta obra. Para incluí-lo em todas, peça ao gerente."
+      "createHint": "Fica disponível só nesta obra. Para incluí-lo em todas, peça a quem criou a obra."
     },
     "list": {
       "unrequested_one": "{{count}} não pedido",
@@ -426,6 +563,7 @@
       "updated": "Material atualizado",
       "deleted": "Material excluído",
       "empty": "Você ainda não adicionou materiais.",
+      "emptyReadOnly": "Ainda não há compras lançadas.",
       "withoutActivity": "Sem tarefa associada",
       "copyList": "Copiar lista",
       "share": "Compartilhar",
@@ -449,6 +587,31 @@
       "requestedTag": "já solicitado",
       "onSiteTag": "já na obra",
       "noSupplier": "Sem fornecedor"
+    },
+    "photo": {
+      "label": "Foto",
+      "hint": "Para quem compra e o vendedor saberem qual é a peça, mesmo que a chamem de outro nome.",
+      "add": "Adicionar foto",
+      "change": "Trocar foto",
+      "remove": "Remover foto",
+      "removeTitle": "Remover a foto?",
+      "removeBody": "A foto de {{name}} será apagada. Você pode enviar outra quando quiser.",
+      "saved": "Foto salva",
+      "removed": "Foto removida",
+      "tooLarge": "A foto tem mais de 30 MB. Tire de novo ou escolha uma mais leve.",
+      "unsupported": "Formato não suportado. Use uma foto .jpg, .png ou .webp.",
+      "open": "Ver a foto de {{name}}",
+      "previewAlt": "Foto escolhida do material"
+    },
+    "export": {
+      "download": "Baixar",
+      "pdf": "PDF",
+      "pdfHint": "Para imprimir ou enviar. Inclui as fotos.",
+      "csv": "CSV",
+      "csvHint": "Para abrir no Excel ou em uma planilha.",
+      "csvDownloaded": "CSV baixado",
+      "columnUnit": "Unidade",
+      "columnNote": "Observação"
     },
     "bulk": {
       "toolbar": "Ações para os materiais selecionados",
@@ -485,7 +648,8 @@
       "columnMaterial": "Material",
       "columnQuantity": "Quantidade",
       "columnSupplier": "Fornecedor",
-      "page": "Página {{page}} de {{total}}"
+      "page": "Página {{page}} de {{total}}",
+      "columnPhoto": "Foto"
     },
     "fields": {
       "name": "Nome",
@@ -524,7 +688,8 @@
       "update": "Não conseguimos atualizar o material.",
       "delete": "Não conseguimos excluir o material.",
       "copy": "Não conseguimos copiar a lista.",
-      "pdf": "Não conseguimos gerar o PDF. Tente de novo."
+      "pdf": "Não conseguimos gerar o PDF. Tente de novo.",
+      "share": "Não foi possível compartilhar a lista. Tente copiá-la ou baixar o PDF."
     }
   },
   "provider": {
@@ -584,6 +749,7 @@
       "acabados": "Acabamentos",
       "pintura": "Pintura",
       "climatizacion": "Climatização",
+      "fire_protection": "Sistema contra incêndio",
       "techos": "Telhados e impermeabilização",
       "pisos_revestimientos": "Pisos e revestimentos",
       "jardineria": "Jardinagem",
@@ -702,10 +868,6 @@
     }
   },
   "labor": {
-    "tabs": {
-      "day": "Jornada",
-      "board": "Quadro"
-    },
     "prevDay": "Dia anterior",
     "nextDay": "Próximo dia",
     "today": "Hoje",
@@ -956,6 +1118,8 @@
       "vicio_oculto": "Vício oculto",
       "retraso": "Atraso",
       "cambio_proyecto": "Mudança no projeto",
+      "decision_made": "Decisão tomada",
+      "process_started": "Início de processo",
       "reunion": "Reunião",
       "otro": "Outro"
     },
@@ -1051,6 +1215,43 @@
         "tooLarge": "Tem mais de 20MB.",
         "tooMany": "Um marco aceita até {{max}} anexos.",
         "upload": "Não conseguimos enviar o arquivo."
+      }
+    }
+  },
+  "releaseNotes": {
+    "title": "Novidades",
+    "tabsAria": "Avisos e novidades",
+    "ariaWithNews": "Há novidades",
+    "heading": "Novidades no Luma",
+    "changesOf": "Mudanças de {{date}}",
+    "open": "Ver novidades",
+    "fresh": "Novo para você",
+    "kind": {
+      "new": "Novo",
+      "fix": "Corrigido"
+    },
+    "entries": {
+      "2026-10-28": {
+        "managers": {
+          "title": "Até 5 gerentes por obra",
+          "description": "Adicione gerentes em Equipe, em «Dar acesso». O medidor mostra quantas vagas restam; só quem criou a obra pode excluí-la ou remover outro gerente."
+        },
+        "milestoneTypes": {
+          "title": "Dois tipos novos de marco",
+          "description": "Em Marcos você já pode reportar «Decisão tomada» e «Início de processo»."
+        },
+        "fireProtection": {
+          "title": "Nova especialidade",
+          "description": "«Sistema contra incêndio» está disponível ao cadastrar tarefas, pessoal e fornecedores."
+        },
+        "whatsNew": {
+          "title": "Novidades no sino",
+          "description": "No sino, na aba Novidades, você vê o que há de novo e o que corrigimos."
+        },
+        "lastTask": {
+          "title": "«Nova tarefa» não cobre mais a última tarefa",
+          "description": "No Cronograma, a última tarefa fica visível acima do botão."
+        }
       }
     }
   },
@@ -1209,7 +1410,8 @@
     "paidPlanRequired": "No mês grátis você pode ter até 3 obras ativas. Ative o plano para criar a quarta.",
     "internal": "Algo falhou do nosso lado. Tente de novo em instantes.",
     "network": "Não conseguimos conectar. Verifique sua conexão.",
-    "title": "Não foi possível salvar"
+    "title": "Não foi possível salvar",
+    "termsRequired": "Para continuar, você precisa aceitar os Termos e a Política de Privacidade."
   },
   "directory": {
     "providersEmpty": "Ainda não há fornecedores na sua Empresa.",
@@ -1257,13 +1459,7 @@
   },
   "task": {
     "board": {
-      "hint": {
-        "pendiente": "Ninguém começou ainda.",
-        "en_curso": "Alguém está cuidando disso.",
-        "en_revision": "Informada como concluída, aguardando aprovação.",
-        "completada": "Aprovadas."
-      },
-      "newTask": "Nova tarefa",
+      "quickAdd": "Criação rápida",
       "namePlaceholder": "Ex: limpar o canteiro",
       "assignee": "Quem faz?",
       "assigneePlaceholder": "Escolha pessoa ou equipe",
@@ -1275,8 +1471,6 @@
       "restore": "Restaurar",
       "delete": "Excluir",
       "cardActions": "Ações da tarefa",
-      "filterLabel": "Filtrar por pessoa",
-      "filterAll": "Todos",
       "emptyColumn": "Nada por aqui.",
       "showCancelled": "Ver canceladas ({{count}})",
       "hideCancelled": "Ocultar canceladas",
@@ -1390,7 +1584,7 @@
       "inReview": "Seu pagamento está em análise. Enquanto isso, você continua com acesso completo.",
       "paymentFailed": "Não conseguimos cobrar seu cartão. Atualize-o para não perder o acesso.",
       "expired": "Sua assinatura venceu: suas obras estão somente para leitura.",
-      "readOnlyProject": "Esta obra está somente para leitura: a assinatura de quem a gerencia venceu.",
+      "readOnlyProject": "Esta obra está somente para leitura: a assinatura de quem a criou venceu.",
       "action": "Ver assinatura"
     },
     "bolivares": {
@@ -1601,6 +1795,124 @@
         "expenseRegistered": "Despesas registradas",
         "paymentRegistered": "Recebimentos registrados"
       }
+    }
+  },
+  "legal": {
+    "dialog": {
+      "title": "Antes de criar a sua conta",
+      "description": "Os seus dados importam. Isto é o que prometemos.",
+      "titleUpdated": "Atualizamos os Termos e a Política de Privacidade",
+      "descriptionUpdated": "Para continuar usando o Luma, leia o essencial e aceite a versão vigente.",
+      "points": [
+        "A segurança da informação é prioridade para o nosso serviço: aplicamos medidas razoáveis para protegê-la.",
+        "Não vendemos nem alugamos os seus dados, e não exibimos publicidade de terceiros.",
+        "Os dados da sua obra são usados apenas para prestar o Luma, e só quem você convidou os vê, conforme o papel.",
+        "Se ocorrer um incidente que afete os seus dados pessoais, avisamos você."
+      ],
+      "checkboxBefore": "Li e aceito os",
+      "checkboxLink": "Termos e a Política de Privacidade",
+      "checkboxAfter": ".",
+      "confirmCreate": "Aceitar e criar conta",
+      "confirmActivate": "Aceitar e ativar",
+      "confirmContinue": "Aceitar e continuar"
+    },
+    "notice": {
+      "title": "Os seus dados, protegidos",
+      "body": "A segurança da informação é prioridade para o nosso serviço. Não vendemos nem alugamos os seus dados e os usamos apenas para prestar o Luma.",
+      "link": "Ler os Termos e a Política de Privacidade"
+    },
+    "page": {
+      "title": "Termos e Política de Privacidade",
+      "version": "Versão vigente: {{version}}",
+      "intro": "Este documento explica como você usa o Luma e como cuidamos das suas informações. Foi escrito para ser entendido; se algo não ficar claro, escreva para nós.",
+      "back": "Voltar",
+      "contact": "Para exercer os seus direitos ou tirar uma dúvida, escreva para {{email}}.",
+      "sections": [
+        {
+          "title": "1. Quem somos e o que este documento cobre",
+          "paragraphs": [
+            "O Luma é um aplicativo para gerenciar obras de construção: atividades, materiais, orçamento, recebimentos, gastos, documentos e a equipe de cada obra. Neste texto, «Luma» e «nós» somos quem opera o serviço.",
+            "Este documento reúne os Termos de uso e a Política de Privacidade. Ao criar ou ativar a sua conta, e sempre que ele mudar de forma relevante, pedimos que você o aceite de forma expressa."
+          ]
+        },
+        {
+          "title": "2. Que dados tratamos",
+          "paragraphs": [
+            "Dados da sua conta: nome, e-mail e senha (que guardamos criptografada, nunca em texto legível).",
+            "Dados da sua obra: atividades, materiais, orçamentos, recebimentos, gastos, comprovantes, fotos, documentos e as pessoas que participam. São seus: nós os guardamos para que você possa usá-los.",
+            "Dados de pagamento da assinatura: banco, referência e documento de quem paga, quando você escolhe pagar em bolívares. Se pagar com cartão, os dados do cartão são processados pela Stripe e não passam pelos nossos servidores.",
+            "Dados técnicos da aceitação: quando você aceita estes Termos, guardamos a versão, a data e a hora, o seu endereço IP e o navegador usado. Servem como comprovante de que a aceitação ocorreu.",
+            "Dados de terceiros que você carrega: se adicionar pessoal da equipe, fornecedores ou clientes, você é responsável por ter a autorização deles para isso."
+          ]
+        },
+        {
+          "title": "3. Para que os usamos",
+          "paragraphs": [
+            "Usamos os seus dados apenas para prestar o serviço: para você entrar, a sua obra funcionar, a sua equipe ver o que lhe cabe, cobrar a assinatura, enviar os avisos do aplicativo por e-mail, dar suporte e proteger as contas contra abusos.",
+            "Não usamos os seus dados para publicidade nem para montar perfis comerciais. Podemos calcular estatísticas agregadas e anonimizadas para manter e melhorar o Luma; elas não identificam ninguém e não são vendidas."
+          ]
+        },
+        {
+          "title": "4. O que nos comprometemos a não fazer",
+          "paragraphs": [
+            "Não vendemos nem alugamos os seus dados pessoais nem os da sua obra.",
+            "Não exibimos publicidade de terceiros nem compartilhamos os seus dados com anunciantes.",
+            "Não usamos os dados da sua obra para fins comerciais próprios nem alheios: são para que a sua obra funcione."
+          ]
+        },
+        {
+          "title": "5. Com quem os compartilhamos",
+          "paragraphs": [
+            "Com as pessoas da sua obra, conforme o papel de cada uma (gerente, supervisor, cliente): cada pessoa vê apenas o que o seu papel permite, e uma obra nunca fica visível para quem não foi convidado.",
+            "Com fornecedores que nos ajudam a operar o serviço, e apenas o necessário para a função deles: a hospedagem dos servidores, o envio de e-mails (Resend), a cobrança com cartão (Stripe), a verificação contra abusos no cadastro (Google reCAPTCHA), o armazenamento de arquivos e, se você usar o Consultor IA, o fornecedor do modelo de inteligência artificial (Anthropic), para quem enviamos o necessário para responder à sua consulta.",
+            "Com autoridades competentes, somente quando uma ordem ou norma válida nos exigir."
+          ]
+        },
+        {
+          "title": "6. Como protegemos as suas informações",
+          "paragraphs": [
+            "Aplicamos medidas razoáveis de segurança: senhas guardadas criptografadas, conexões criptografadas, sessões com validade, acesso a cada obra limitado por papel, isolamento entre obras e backups diários.",
+            "Nenhum sistema é invulnerável e por isso não prometemos segurança absoluta, e sim cuidar das suas informações com o melhor critério e os meios ao nosso alcance, e corrigir rapidamente o que falhar.",
+            "Se detectarmos um incidente que afete os seus dados pessoais, avisamos você por e-mail sem demora injustificada, com o que sabemos, quais dados foram atingidos e o que recomendamos fazer.",
+            "Você também cuida da conta: não compartilhe a sua senha e avise-nos se suspeitar que outra pessoa entrou."
+          ]
+        },
+        {
+          "title": "7. Por quanto tempo os guardamos e o que acontece se você sair",
+          "paragraphs": [
+            "Guardamos os seus dados enquanto a sua conta estiver ativa. Ao sair, mantemos a conta por 90 dias, caso você se arrependa, e depois apagamos os seus dados pessoais: e-mail, nome, foto, senha, telefone, os dados de pagamento da assinatura (banco, referência, documento e comprovante) e o registro técnico da sua aceitação. Também encerramos o seu cadastro no processador de pagamentos com cartão e eliminamos as suas notificações e os seus acessos às obras.",
+            "As obras que você exclui ficam 90 dias na lixeira e depois são apagadas com tudo o que tinham. Se a sua Empresa não tinha mais ninguém, ela fica sem nome nem contato. Os valores e datas dos pagamentos, e o histórico de uma obra compartilhada com outras pessoas, são mantidos ligados a uma «Conta eliminada» e sem dados que identifiquem você. O que outras pessoas tenham escrito em texto livre numa obra compartilhada (por exemplo, uma nota) pode continuar mencionando você."
+          ]
+        },
+        {
+          "title": "8. Os seus direitos",
+          "paragraphs": [
+            "Você pode pedir para acessar os seus dados, corrigi-los, eliminá-los, opor-se a um uso ou retirar o seu consentimento. Respondemos em até 30 dias.",
+            "Estes direitos se apoiam na Constituição da República Bolivariana da Venezuela (arts. 28 e 60) e nas demais normas aplicáveis."
+          ]
+        },
+        {
+          "title": "9. Regras de uso",
+          "paragraphs": [
+            "A sua conta é pessoal. Você é responsável pelo que for feito com as suas credenciais e por usar o Luma de forma lícita.",
+            "O que você carrega é seu e você é responsável por ter o direito de carregá-lo. Nós não revisamos o seu conteúdo, exceto se for necessário para dar suporte, cumprir a lei ou proteger o serviço.",
+            "Os planos e preços são exibidos no aplicativo antes da contratação. Se a assinatura vencer, as suas obras ficam somente para leitura e não se perdem."
+          ]
+        },
+        {
+          "title": "10. Alcance da nossa responsabilidade",
+          "paragraphs": [
+            "Temos o maior cuidado para que o Luma funcione e para proteger as suas informações, mas o serviço é prestado com meios razoáveis, não com resultados garantidos. Na medida em que a lei permitir, não respondemos por interrupções alheias ao nosso controle nem por danos indiretos.",
+            "Nada disto limita os direitos que a lei lhe reconhece nem o que nos comprometemos a não fazer com os seus dados."
+          ]
+        },
+        {
+          "title": "11. Mudanças neste documento",
+          "paragraphs": [
+            "Se mudarmos algo de forma relevante, publicamos uma nova versão com a sua data e pedimos que você a aceite ao voltar a entrar. Mudanças de redação que não afetam os seus direitos não exigem nova aceitação."
+          ]
+        }
+      ]
     }
   }
 }

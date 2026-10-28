@@ -6,7 +6,9 @@ import {
   Gauge,
   Image,
   Package,
+  PackageCheck,
   Ruler,
+  ShoppingCart,
   Target,
   UserPlus,
   Users,
@@ -18,9 +20,10 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { AddCrewDrawer } from '@/components/crew/add-crew-drawer';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { Can } from '@/components/permissions/can';
 import { PageLayout } from '@/components/layout/page-layout';
+import { DeleteProjectSection } from '@/components/projects/delete-project-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,6 +111,26 @@ function ProvidersVisibilitySwitch({
   );
 }
 
+function PurchasesVisibilitySwitch({
+  projectId,
+  checked,
+}: {
+  projectId: string;
+  checked: boolean;
+}) {
+  const { t } = useTranslation();
+  const updateProject = useUpdateProject(projectId);
+
+  return (
+    <Switch
+      checked={checked}
+      disabled={updateProject.isPending}
+      onCheckedChange={(next) => updateProject.mutate({ purchasesVisibleToClient: next })}
+      aria-label={t('project.detail.purchasesVisibleToClient')}
+    />
+  );
+}
+
 /**
  * % de avance (RF-04): días de tareas completadas sobre días de tareas no
  * canceladas.
@@ -167,8 +190,8 @@ function MaterialsCard({ projectId }: { projectId: string }) {
   }, [data, activitiesData]);
 
   const tabs = [
-    { value: 'toBuy', label: t('material.list.toBuy'), items: toBuy, empty: t('material.list.toBuyEmpty') },
-    { value: 'bought', label: t('material.list.bought'), items: bought, empty: t('project.dashboard.noPurchases') },
+    { value: 'toBuy', icon: ShoppingCart, label: t('material.list.toBuy'), items: toBuy, empty: t('material.list.toBuyEmpty') },
+    { value: 'bought', icon: PackageCheck, label: t('material.list.bought'), items: bought, empty: t('project.dashboard.noPurchases') },
   ] as const;
 
   return (
@@ -190,7 +213,12 @@ function MaterialsCard({ projectId }: { projectId: string }) {
               los dos rótulos con su conteo a `text-sm` no entran.
             */}
             {tabs.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="px-1.5 text-xs">
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                icon={tab.icon}
+                className="gap-1.5 px-2 text-xs [&_svg:not([class*='size-'])]:size-4"
+              >
                 {tab.label} ({tab.items.length})
               </TabsTrigger>
             ))}
@@ -255,6 +283,8 @@ function WeekTasksCard({
   const { done, total, overdue, open } = useMemo(() => {
     const tasks = tasksForWeek(activitiesData?.activities ?? [], week, {
       includeOverdue: true,
+      // Esto cuenta avance: una completada hace meses y editada hoy no es de esta semana.
+      includeRecentlyClosed: false,
     }).filter((task) => task.status !== 'cancelada');
     const isLate = (task: Activity) => isActivityOverdue(task.endDate, task.status, today);
     return {
@@ -294,7 +324,7 @@ function WeekTasksCard({
         </div>
         <Button variant="ghost" size="sm" asChild>
           {/* El Tablero es del que ve el personal; el resto, al Cronograma. */}
-          <Link to={canSeeCrew ? projectLaborPath(projectId) : projectActivitiesPath(projectId)}>
+          <Link to={projectActivitiesPath(projectId, canSeeCrew ? 'board' : undefined)}>
             {t('project.dashboard.viewAll')}
           </Link>
         </Button>
@@ -355,7 +385,7 @@ function WeekTasksCard({
 
         {canSeeCrew && missing > 0 && (
           <Link
-            to={projectLaborPath(projectId, 'day')}
+            to={projectLaborPath(projectId)}
             className="text-sm text-destructive underline-offset-4 hover:underline"
           >
             {t('project.dashboard.missingToday', { count: missing })}
@@ -619,7 +649,7 @@ export function ProjectDetailPage() {
         <WeekTasksCard projectId={project.id} canSeeCrew={can('crew.read')} />
       )}
       {can('budget.read') && <BudgetSummaryCard projectId={project.id} currency={project.currency} />}
-      <MaterialsCard projectId={project.id} />
+      {can('material.read') && <MaterialsCard projectId={project.id} />}
 
       {/* Con quién se trabaja. */}
       {can('provider.read') && <ProvidersCard projectId={project.id} />}
@@ -673,6 +703,23 @@ export function ProjectDetailPage() {
               </div>
             )}
 
+            {can('project.update') && (
+              <div className="flex items-start justify-between gap-4 border-t border-border pt-4">
+                <div>
+                  <h3 className="text-sm font-medium">
+                    {t('project.detail.purchasesVisibleToClient')}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t('project.detail.purchasesVisibleToClientHint')}
+                  </p>
+                </div>
+                <PurchasesVisibilitySwitch
+                  projectId={project.id}
+                  checked={project.purchasesVisibleToClient}
+                />
+              </div>
+            )}
+
           </CardContent>
         </Card>
 
@@ -708,6 +755,10 @@ export function ProjectDetailPage() {
           </ul>
         </CardContent>
       </Card>
+
+      <Can I="project.delete">
+        <DeleteProjectSection projectId={project.id} projectName={project.name} />
+      </Can>
     </div>
     </PageLayout>
   );

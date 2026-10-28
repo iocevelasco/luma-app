@@ -25,6 +25,7 @@ import mongoose from 'mongoose';
 import {
   addMonths,
   INVITABLE_PROJECT_ROLES,
+  LEGAL_VERSION,
   type AccountStatus,
   type InvitableProjectRole,
   type ProjectRole,
@@ -57,6 +58,8 @@ interface E2EUserFixture {
   name: string;
   platformRole: UserRole;
   projectRole?: ProjectRole;
+  /** Quien creó la obra compartida. Los demás gerentes entran por membresía. */
+  projectOwner?: boolean;
   accountStatus?: AccountStatus;
 }
 
@@ -94,6 +97,10 @@ async function upsertUser(fixture: E2EUserFixture): Promise<IUser> {
   user.password = await bcrypt.hash(fixture.password, BCRYPT_ROUNDS);
   user.role = fixture.platformRole;
   user.email_verified = true;
+  // Aceptación vigente: sin ella el modal de Términos tapa el panel y trabaría
+  // toda la suite con sesión. Es el único lugar donde fabricarla es legítimo.
+  user.termsVersion = LEGAL_VERSION;
+  user.termsAcceptedAt = user.termsAcceptedAt ?? new Date();
   user.enabled = active;
   user.account_status = active ? 'active' : 'inactive';
   user.deactivated_at = active ? undefined : (user.deactivated_at ?? new Date());
@@ -181,9 +188,9 @@ async function main() {
   }
 
   // ── 2. La obra compartida, del gerente ────────────────────────────────────
-  const managerKey = Object.keys(fixture.users).find(
-    (key) => fixture.users[key].projectRole === 'gerente',
-  );
+  // Hay dos gerentes en el fixture y sólo uno creó la obra: el otro entra por
+  // membresía, como en producción.
+  const managerKey = Object.keys(fixture.users).find((key) => fixture.users[key].projectOwner);
   const manager = managerKey ? users.get(managerKey) : undefined;
   if (!manager) {
     console.log('ℹ️  Sin gerente en el fixture: no se siembra la obra.');
@@ -201,7 +208,10 @@ async function main() {
   // ── 3. Una membresía por rol invitable ────────────────────────────────────
   for (const [key, person] of Object.entries(fixture.users)) {
     const user = users.get(key);
-    if (!user || !isInvitable(person.projectRole)) continue;
+    // Quien creó la obra no lleva fila: su rol sale de `Project.createdBy`.
+    if (!user || String(user._id) === String(manager._id) || !isInvitable(person.projectRole)) {
+      continue;
+    }
     await ProjectMembership.updateOne(
       { project: project._id, user: user._id },
       { $set: { role: person.projectRole }, $setOnInsert: { invitedBy: manager._id } },

@@ -1,18 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type MaterialInvoiceRef, type MaterialItem, type MaterialStatus } from '@luma/shared';
 import { differenceInCalendarDays, format } from 'date-fns';
 import {
   ArrowRight,
   CalendarClock,
+  Camera,
+  ChevronDown,
   Copy,
   FileDown,
+  FileSpreadsheet,
+  ImageOff,
   Link2,
   MoreHorizontal,
   Package,
+  PackageCheck,
   Pencil,
   Plus,
   ReceiptText,
   Share2,
+  ShoppingCart,
   Trash2,
   Truck,
   X,
@@ -30,8 +36,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey } from '@/lib/day-key';
 import { MaterialDrawer } from '@/components/materials/material-drawer';
+import { MaterialPhotoThumb, useValidMaterialPhoto } from '@/components/materials/material-photo';
 import { MaterialInvoiceDialog } from '@/components/materials/material-invoice-dialog';
 import { ProviderCombobox } from '@/components/materials/provider-combobox';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
@@ -65,15 +72,31 @@ import {
   useBulkUpdateMaterials,
   useDeleteMaterial,
   useDeleteMaterialInvoice,
+  useMaterialPhotoLoader,
   useMaterials,
+  useRemoveMaterialPhoto,
   useUpdateMaterial,
+  useUploadMaterialPhoto,
 } from '@/hooks/materials/use-material-queries';
+import { MATERIAL_PHOTO_ACCEPT } from '@/lib/material-photo';
+import {
+  loadRowPhotos,
+  MAX_SHARED_PHOTOS,
+  PDF_PHOTO,
+  PHOTO_PREFETCH_CONCURRENCY,
+  photoFileName,
+  resizePhoto,
+  runPool,
+  type ResizedPhoto,
+} from '@/lib/material-photo-export';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import {
   NEXT_MATERIAL_STATUS,
+  buildPurchaseCsv,
   buildPurchaseRows,
   buildPurchaseText,
   bulkActionsFor,
@@ -87,12 +110,18 @@ import {
   type PurchaseListKind,
   type PurchaseRow,
 } from '@/lib/materials';
+import { downloadBlob } from '@/lib/download-blob';
 import { cn } from '@/lib/utils';
 
 const MATERIAL_STATUSES: MaterialStatus[] = ['pendiente', 'solicitado', 'comprado', 'en_obra'];
 
 /** Faltan hasta tantos días para que una actividad empiece y se marca como urgente. */
 const URGENT_WITHIN_DAYS = 7;
+
+/** Cancelar la hoja de compartir no es un error; lo demás (en Safari, el gesto vencido) sí. */
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
+}
 
 function copyText(text: string) {
   if (typeof navigator.clipboard === 'object' && typeof navigator.clipboard.writeText === 'function') {
@@ -123,45 +152,91 @@ const EXPORT_COPY: Record<PurchaseListKind, { title: string; tag: string; filePr
   bought: { title: 'material.pdf.titleBought', tag: 'material.list.onSiteTag', filePrefix: 'comprados' },
 };
 
-/** Descargar PDF, Copiar y Compartir: los mismos tres en las dos pestañas. */
+/** Descargar (PDF o CSV), Copiar y Compartir: los mismos en las dos pestañas. */
 function ExportActions({
   generatingPdf,
   canShare,
   onDownloadPdf,
+  onDownloadCsv,
   onCopy,
   onShare,
+  onWarm,
 }: {
   generatingPdf: boolean;
   canShare: boolean;
   onDownloadPdf: () => void;
+  onDownloadCsv: () => void;
   onCopy: () => void;
   onShare: () => void;
+  /** Hay señal de que se va a exportar: que se vayan bajando las fotos. */
+  onWarm: () => void;
 }) {
   const { t } = useTranslation();
   return (
     <>
+      <DropdownMenu onOpenChange={(open) => open && onWarm()}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="max-sm:min-h-11"
+            disabled={generatingPdf}
+            aria-busy={generatingPdf}
+          >
+            {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+            {generatingPdf ? t('material.list.generatingPdf') : t('material.export.download')}
+            <ChevronDown aria-hidden className="size-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem className="max-sm:min-h-11" onSelect={onDownloadPdf}>
+            <FileDown className="size-4" />
+            <ExportFormat label={t('material.export.pdf')} hint={t('material.export.pdfHint')} />
+          </DropdownMenuItem>
+          <DropdownMenuItem className="max-sm:min-h-11" onSelect={onDownloadCsv}>
+            <FileSpreadsheet className="size-4" />
+            <ExportFormat label={t('material.export.csv')} hint={t('material.export.csvHint')} />
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Button
         variant="outline"
         size="sm"
         className="max-sm:min-h-11"
-        onClick={onDownloadPdf}
-        disabled={generatingPdf}
-        aria-busy={generatingPdf}
+        onClick={onCopy}
+        onPointerEnter={onWarm}
+        onFocus={onWarm}
       >
-        {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
-        {generatingPdf ? t('material.list.generatingPdf') : t('material.list.downloadPdf')}
-      </Button>
-      <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={onCopy}>
         <Copy className="size-4" />
         {t('material.list.copyList')}
       </Button>
       {canShare && (
-        <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={onShare}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="max-sm:min-h-11"
+          onClick={onShare}
+          // `pointerdown` y no sólo `enter`: en el celular no hay hover, y es lo
+          // más temprano que se sabe que viene el toque.
+          onPointerEnter={onWarm}
+          onPointerDown={onWarm}
+          onFocus={onWarm}
+        >
           <Share2 className="size-4" />
           {t('material.list.share')}
         </Button>
       )}
     </>
+  );
+}
+
+/** El nombre del formato y, abajo, para qué sirve: quien elige no tiene que adivinar qué es un CSV. */
+function ExportFormat({ label, hint }: { label: string; hint: string }) {
+  return (
+    <span className="flex flex-col">
+      <span>{label}</span>
+      <span className="text-xs text-muted-foreground">{hint}</span>
+    </span>
   );
 }
 
@@ -274,6 +349,12 @@ function MaterialRow({
   const { t } = useTranslation();
   const updateMaterial = useUpdateMaterial(projectId);
   const [pendingStatus, setPendingStatus] = useState<MaterialStatus | null>(null);
+  // La foto se agrega o saca en cualquier estado: no es corregir el material.
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const uploadPhoto = useUploadMaterialPhoto(projectId);
+  const removePhoto = useRemoveMaterialPhoto(projectId);
+  const validPhoto = useValidMaterialPhoto();
+  const [confirmingPhotoRemoval, setConfirmingPhotoRemoval] = useState(false);
   const next = NEXT_MATERIAL_STATUS[material.status];
   const rowRef = useRef<HTMLLIElement>(null);
   const supplier = supplierName(material);
@@ -295,6 +376,7 @@ function MaterialRow({
             onChange={(checked) => selection.onSetMany([material.id], checked)}
           />
         )}
+        {material.photoUrl && <MaterialPhotoThumb url={material.photoUrl} name={material.name} />}
         <div className="min-w-0">
           <p className="font-medium">{material.name}</p>
           <p className="text-xs text-muted-foreground">
@@ -334,21 +416,30 @@ function MaterialRow({
         */}
         {material.invoices && material.invoices.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="gap-1 max-sm:min-h-11"
-                aria-label={t('material.invoice.openMenu', {
-                  count: material.invoices.length,
-                  name: material.name,
-                })}
-              >
-                <ReceiptText aria-hidden className="size-4" />
-                {material.invoices.length > 1 && <span className="tabular-nums">{material.invoices.length}</span>}
-              </Button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 max-sm:min-h-11"
+                    aria-label={t('material.invoice.openMenu', {
+                      count: material.invoices.length,
+                      name: material.name,
+                    })}
+                  >
+                    <ReceiptText aria-hidden className="size-4" />
+                    {material.invoices.length > 1 && (
+                      <span className="tabular-nums">{material.invoices.length}</span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                {t('material.invoice.tooltip', { count: material.invoices.length })}
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end">
               {material.invoices.map((invoice) => (
                 <div key={invoice.id}>
@@ -445,6 +536,25 @@ function MaterialRow({
               )}
 
               <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="max-sm:min-h-11"
+                onSelect={() => photoInputRef.current?.click()}
+              >
+                <Camera className="size-4" />
+                {t(material.photoUrl ? 'material.photo.change' : 'material.photo.add')}
+              </DropdownMenuItem>
+              {material.photoUrl && (
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="max-sm:min-h-11"
+                  onSelect={() => setConfirmingPhotoRemoval(true)}
+                >
+                  <ImageOff className="size-4" />
+                  {t('material.photo.remove')}
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator />
               {material.editable ? (
                 <>
                   <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onEdit(material)}>
@@ -499,6 +609,41 @@ function MaterialRow({
               }}
             >
               {t('common.continue')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {canEdit && (
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept={MATERIAL_PHOTO_ACCEPT}
+          className="hidden"
+          onChange={(event) => {
+            const file = validPhoto(event.target.files?.[0]);
+            // Permite volver a elegir el mismo archivo después de un rechazo.
+            event.target.value = '';
+            if (file) uploadPhoto.mutate({ materialId: material.id, file });
+          }}
+        />
+      )}
+
+      <AlertDialog open={confirmingPhotoRemoval} onOpenChange={setConfirmingPhotoRemoval}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('material.photo.removeTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('material.photo.removeBody', { name: material.name })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={() => removePhoto.mutate(material.id)}
+            >
+              {t('material.photo.remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -705,6 +850,7 @@ function SelectionBar({
   onAction,
   onInvoice,
   onDownloadPdf,
+  onDownloadCsv,
   onCopy,
   onShare,
   onClear,
@@ -716,6 +862,7 @@ function SelectionBar({
   /** Sin esto (sin permiso) no se ofrece. */
   onInvoice?: () => void;
   onDownloadPdf: () => void;
+  onDownloadCsv: () => void;
   onCopy: () => void;
   onShare: () => void;
   onClear: () => void;
@@ -803,7 +950,11 @@ function SelectionBar({
           <DropdownMenuSeparator />
           <DropdownMenuItem className="max-sm:min-h-11" disabled={generatingPdf} onSelect={onDownloadPdf}>
             <FileDown className="size-4" />
-            {t('material.list.downloadPdf')}
+            <ExportFormat label={t('material.export.pdf')} hint={t('material.export.pdfHint')} />
+          </DropdownMenuItem>
+          <DropdownMenuItem className="max-sm:min-h-11" onSelect={onDownloadCsv}>
+            <FileSpreadsheet className="size-4" />
+            <ExportFormat label={t('material.export.csv')} hint={t('material.export.csvHint')} />
           </DropdownMenuItem>
           <DropdownMenuItem className="max-sm:min-h-11" onSelect={onCopy}>
             <Copy className="size-4" />
@@ -959,6 +1110,46 @@ export function ProjectMaterialsPage() {
     setBulkProviderId(null);
   }
 
+  // Las fotos para exportar se bajan de forma perezosa: no al abrir la pantalla
+  // (casi nadie exporta, y son archivos, no miniaturas) sino cuando hay señal de
+  // que se va a exportar: abrir "Descargar", acercarse a Compartir o Copiar, o
+  // tildar materiales. En Safari PDF y Compartir tienen que ocurrir dentro del
+  // gesto, y bajar imágenes ahí lo deja afuera: por eso se adelanta con la
+  // señal en vez de esperar al toque. Se piden de a pocas y ya vienen
+  // reducidas desde que se suben.
+  const loadPhoto = useMaterialPhotoLoader(projectId!);
+  const pdfPhotoCache = useRef(new Map<string, Promise<ResizedPhoto | null>>());
+  const pdfPhoto = useCallback(
+    (row: PurchaseRow): Promise<ResizedPhoto | null> => {
+      if (!row.photoVersion) return Promise.resolve(null);
+      const key = `${row.id}:${row.photoVersion}`;
+      let hit = pdfPhotoCache.current.get(key);
+      if (!hit) {
+        hit = loadPhoto(row.id, row.photoVersion)
+          .then((original) => resizePhoto(original, PDF_PHOTO))
+          .catch(() => {
+            // No se guarda el fallo: la próxima vez que se pida, se reintenta.
+            pdfPhotoCache.current.delete(key);
+            return null;
+          });
+        pdfPhotoCache.current.set(key, hit);
+      }
+      return hit;
+    },
+    [loadPhoto],
+  );
+  /** Pide las fotos de esas filas. Las que ya están (o van en camino) no se piden de nuevo. */
+  const warmPhotos = useCallback(
+    (rows: PurchaseRow[]) => {
+      const withPhoto = rows.filter((row) => row.photoVersion);
+      if (withPhoto.length > 0) void runPool(withPhoto, PHOTO_PREFETCH_CONCURRENCY, pdfPhoto);
+    },
+    [pdfPhoto],
+  );
+  useEffect(() => {
+    if (hasSelection) warmPhotos(selectedRows);
+  }, [hasSelection, selectedRows, warmPhotos]);
+
   // El PDF y su librería pesan: se bajan apenas hay algo que descargar, no al
   // tocar el botón. En Safari, descargar o compartir tiene que ocurrir dentro
   // del gesto, y esperar un chunk grande lo deja afuera.
@@ -983,7 +1174,17 @@ export function ProjectMaterialsPage() {
     try {
       const { buildPurchasePdf, purchaseFileName } = await import('@/lib/materials-pdf');
       const now = new Date();
+      // Casi siempre ya están listas: la pantalla las prepara apenas se muestra.
+      // Una que no se pudo leer deja esa fila sin foto, no tira el PDF.
+      const photos = new Map<string, ResizedPhoto>();
+      await Promise.all(
+        rows.map(async (row) => {
+          const photo = await pdfPhoto(row);
+          if (photo) photos.set(row.id, photo);
+        }),
+      );
       const blob = await buildPurchasePdf({
+        photos,
         projectName: projectData?.project.name ?? '',
         date: now,
         dateLabel: format(now, 'P', { locale: dateLocale }),
@@ -995,6 +1196,7 @@ export function ProjectMaterialsPage() {
             material: t('material.pdf.columnMaterial'),
             quantity: t('material.pdf.columnQuantity'),
             supplier: t('material.pdf.columnSupplier'),
+            photo: t('material.pdf.columnPhoto'),
           },
           noSupplier: t('material.list.noSupplier'),
           tag: t(EXPORT_COPY[kind].tag),
@@ -1017,22 +1219,15 @@ export function ProjectMaterialsPage() {
       ) {
         try {
           await navigator.share({ files: [file], title: fileName });
+          return;
         } catch (error) {
-          // Cancelar la hoja no es un error. Cualquier otra cosa sí.
-          if (!(error instanceof DOMException && error.name === 'AbortError')) throw error;
+          if (isAbortError(error)) return;
+          // Cualquier otro motivo (en Safari, que el gesto ya venció) no es
+          // razón para quedarse sin el PDF: se baja directo.
         }
-        return;
       }
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      // Revocar de inmediato cancela la descarga en algunos navegadores.
-      window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      downloadBlob(blob, fileName);
       toast.success(t('material.list.pdfDownloaded'));
     } catch {
       toast.error(t('material.errors.pdf'));
@@ -1050,14 +1245,77 @@ export function ProjectMaterialsPage() {
     }
   }
 
+  /**
+   * El CSV de la misma lista, para Excel o una planilla. Sin fotos ni
+   * costos, igual que el texto: son los mismos datos que el PDF.
+   */
+  async function handleDownloadCsv(rows: PurchaseRow[], kind: PurchaseListKind) {
+    const { purchaseFileName } = await import('@/lib/materials-pdf');
+    const now = new Date();
+    const numberFormat = new Intl.NumberFormat(i18n.language, {
+      useGrouping: false,
+      maximumFractionDigits: 4,
+    });
+    const csv = buildPurchaseCsv(rows, {
+      header: {
+        material: t('material.pdf.columnMaterial'),
+        quantity: t('material.pdf.columnQuantity'),
+        unit: t('material.export.columnUnit'),
+        supplier: t('material.pdf.columnSupplier'),
+        note: t('material.export.columnNote'),
+      },
+      unit: (unit) => t(`material.unit.${unit}`),
+      tag: t(EXPORT_COPY[kind].tag),
+      number: (value) => numberFormat.format(value),
+    });
+    downloadBlob(
+      new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+      purchaseFileName(projectData?.project.name ?? '', now, EXPORT_COPY[kind].filePrefix, 'csv'),
+    );
+    toast.success(t('material.export.csvDownloaded'));
+  }
+
+  /**
+   * Compartir el texto de la lista y, si el dispositivo lo permite, las fotos
+   * de los materiales: quien recibe ve de qué pieza se habla sin pedirla por
+   * WhatsApp. Cada foto lleva el nombre del material.
+   *
+   * Las fotos ya están bajadas (ver el efecto de arriba) y ya vienen reducidas
+   * desde que se subieron: acá no se procesa nada. En Safari compartir tiene
+   * que pasar dentro del gesto, y cualquier trabajo largo antes lo deja afuera.
+   */
   async function handleShare(rows: PurchaseRow[], kind: PurchaseListKind) {
-    if (typeof navigator.share === 'function') {
+    if (typeof navigator.share !== 'function') return;
+    const text = buildCopyText(rows, kind);
+
+    const photos = await loadRowPhotos(rows, loadPhoto);
+    const taken = new Set<string>();
+    const files = rows
+      .filter((row) => photos.has(row.id))
+      .slice(0, MAX_SHARED_PHOTOS)
+      .map((row) => {
+        const photo = photos.get(row.id) as Blob;
+        return new File([photo], photoFileName(row.name, taken, photo.type), {
+          type: photo.type || 'image/jpeg',
+        });
+      });
+    const withPhotos =
+      files.length > 0 && typeof navigator.canShare === 'function' && navigator.canShare({ files });
+
+    /** `cancelled` si la persona cerró la hoja; `failed` si el sistema la rechazó. */
+    const attempt = async (data: ShareData): Promise<'shared' | 'cancelled' | 'failed'> => {
       try {
-        await navigator.share({ text: buildCopyText(rows, kind) });
-      } catch {
-        // El usuario canceló el share sheet — no es un error a mostrar.
+        await navigator.share(data);
+        return 'shared';
+      } catch (error) {
+        return isAbortError(error) ? 'cancelled' : 'failed';
       }
-    }
+    };
+
+    let result = await attempt(withPhotos ? { text, files } : { text });
+    // Con las fotos no pudo: que no se quede sin la lista.
+    if (result === 'failed' && withPhotos) result = await attempt({ text });
+    if (result === 'failed') toast.error(t('material.errors.share'));
   }
 
   if (isError) return <PageLayout isError />;
@@ -1078,6 +1336,7 @@ export function ProjectMaterialsPage() {
         onAction={setPendingBulk}
         onInvoice={canInvoice ? () => setInvoicing(selectedMaterials) : undefined}
         onDownloadPdf={() => void handleDownloadPdf(selectedRows, selectedKind)}
+        onDownloadCsv={() => void handleDownloadCsv(selectedRows, selectedKind)}
         onCopy={() => void handleCopy(selectedRows, selectedKind)}
         onShare={() => void handleShare(selectedRows, selectedKind)}
         onClear={clearSelection}
@@ -1111,7 +1370,7 @@ export function ProjectMaterialsPage() {
     <PageLayout
       // Mientras hay selección, la barra ocupa el lugar del botón flotante.
       action={canWrite && !hasSelection ? <NewMaterialButton projectId={projectId!} /> : undefined}
-      empty={total === 0 ? { icon: Package, title: t('material.list.empty') } : undefined}
+      empty={total === 0 ? { icon: Package, title: t(canWrite ? 'material.list.empty' : 'material.list.emptyReadOnly') } : undefined}
     >
       {/*
         `defaultValue` y no controlado: la pestaña del material pedido se
@@ -1125,7 +1384,7 @@ export function ProjectMaterialsPage() {
         className="gap-4"
       >
         <TabsList>
-          <TabsTrigger value="toBuy">
+          <TabsTrigger value="toBuy" icon={ShoppingCart}>
             {t('material.list.toBuy')} ({toBuy.length})
             {/* El total de lo que nadie pidió, visible desde cualquier pestaña. */}
             {toBuyUnrequested > 0 && (
@@ -1138,7 +1397,7 @@ export function ProjectMaterialsPage() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="bought">
+          <TabsTrigger value="bought" icon={PackageCheck}>
             {t('material.list.bought')} ({bought.length})
           </TabsTrigger>
         </TabsList>
@@ -1157,8 +1416,10 @@ export function ProjectMaterialsPage() {
                 generatingPdf={generatingPdf}
                 canShare={canShare}
                 onDownloadPdf={() => void handleDownloadPdf(purchaseRows, 'toBuy')}
+                onDownloadCsv={() => void handleDownloadCsv(purchaseRows, 'toBuy')}
                 onCopy={() => void handleCopy(purchaseRows, 'toBuy')}
                 onShare={() => void handleShare(purchaseRows, 'toBuy')}
+                onWarm={() => warmPhotos(purchaseRows)}
               />
             </div>
           )}
@@ -1206,8 +1467,10 @@ export function ProjectMaterialsPage() {
                     generatingPdf={generatingPdf}
                     canShare={canShare}
                     onDownloadPdf={() => void handleDownloadPdf(boughtRows, 'bought')}
+                    onDownloadCsv={() => void handleDownloadCsv(boughtRows, 'bought')}
                     onCopy={() => void handleCopy(boughtRows, 'bought')}
                     onShare={() => void handleShare(boughtRows, 'bought')}
+                    onWarm={() => warmPhotos(boughtRows)}
                   />
                 </div>
               )}

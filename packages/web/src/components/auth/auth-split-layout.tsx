@@ -19,41 +19,54 @@ const widths: Record<AuthWidth, string> = {
 };
 
 /**
- * Marco de todas las pantallas de sesión: foto a la izquierda (sólo ≥ lg) y
+ * Marco de todas las pantallas de sesión: imagen a la izquierda (sólo ≥ lg) y
  * formulario a la derecha, sobre la grilla de fondo. Usa los tokens del tema vigente — no fuerza ningún
  * tema propio — y el panel derecho es el que scrollea, no la página.
+ *
+ * Son dos imágenes, no una recortada: `hero-desktop` (4:5) llena el panel y
+ * `hero-mobile` (16:9) es el banner que va sobre la tarjeta por debajo de `lg`.
+ * Las dos llevan el texto horneado en el 60% central del ancho: el `object-cover`
+ * recorta los costados cuando el panel se angosta, y el centro no se toca. Si
+ * regenerás una, mantené esa zona segura.
  */
 export function AuthSplitLayout({ children, width = 'sm' }: AuthSplitLayoutProps) {
   const { t } = useTranslation();
+  const baseUrl = import.meta.env.BASE_URL;
 
   return (
     <div className="relative h-screen bg-background p-3 text-foreground supports-[height:100dvh]:h-dvh sm:p-4">
-      <GridBackground opacity={0.06} />
+      <GridBackground size={4} opacity={0.02} />
       <div className="relative grid h-full overflow-hidden rounded-3xl text-card-foreground shadow-[var(--shadow-surface)] lg:grid-cols-2">
         <aside className="relative hidden bg-card p-3 lg:block">
           <div className="relative h-full overflow-hidden rounded-2xl bg-muted">
+            {/* `lazy`: bajo `lg` el panel está oculto y así el navegador no la descarga. */}
             <img
-              src={`${import.meta.env.BASE_URL}auth/hero.jpg`}
+              src={`${baseUrl}auth/hero-desktop.webp`}
               alt={t('auth.hero.imageAlt')}
               className="absolute inset-0 size-full object-cover object-center"
-              fetchPriority="high"
+              loading="lazy"
             />
-            <div
-              className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"
-              aria-hidden="true"
-            />
-            <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-8">
-              <p className="font-heading text-3xl font-semibold tracking-tight text-foreground">
-                {t('auth.hero.title')}
-              </p>
-              <p className="text-sm text-muted-foreground">{t('auth.hero.subtitle')}</p>
-            </div>
           </div>
         </aside>
 
         <main className="overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center px-6 py-10 sm:px-10">
-            <div className={cn('flex w-full flex-col gap-6', widths[width])}>{children}</div>
+          <div className="flex min-h-full flex-col items-center justify-center gap-4 px-6 py-10 sm:px-10">
+            <img
+              src={`${baseUrl}auth/hero-mobile.webp`}
+              alt={t('auth.hero.imageAlt')}
+              width={1200}
+              height={675}
+              className={cn('aspect-video w-full rounded-2xl object-cover object-center lg:hidden', widths[width])}
+            />
+            {/* Card translúcida: deja asomar la textura sin que compita con el texto. */}
+            <div
+              className={cn(
+                'flex w-full flex-col gap-6 rounded-3xl border border-border bg-card/70 p-6 sm:p-8',
+                widths[width],
+              )}
+            >
+              {children}
+            </div>
           </div>
         </main>
       </div>

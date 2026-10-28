@@ -105,10 +105,11 @@ export const createProjectSchema = z
 
 /**
  * Ajustes de una obra ya creada. Parcial a propósito: hoy sólo se toca la
- * visibilidad de proveedores, y el resto de la ficha se edita al crearla.
+ * visibilidad de proveedores y de compras, y el resto de la ficha se edita al crearla.
  */
 export const updateProjectSchema = z.object({
   providersVisibleToClient: z.boolean().optional(),
+  purchasesVisibleToClient: z.boolean().optional(),
 });
 
 export const inviteClientSchema = z.object({
@@ -135,8 +136,13 @@ export const inviteMemberSchema = inviteClientSchema.extend({
   phone: contactPhoneSchema,
 });
 
-/** Los roles que se invitan a una obra. El gerente no: se deriva de quién la creó. */
-export const invitableProjectRoleSchema = z.enum(['supervisor', 'contador', 'cliente']);
+/**
+ * Los roles que se invitan a una obra: los cuatro. El dueño es el único
+ * gerente sin invitación, pero otro gerente se invita como cualquiera —con
+ * el tope de `MAX_PROJECT_MANAGERS`, que se valida contra la base y no acá.
+ * Un test lo mantiene igual a `INVITABLE_PROJECT_ROLES`.
+ */
+export const invitableProjectRoleSchema = z.enum(['gerente', 'supervisor', 'contador', 'cliente']);
 
 /**
  * Invitar a alguien a una obra. A diferencia de `inviteClientSchema`, acá el
@@ -156,3 +162,19 @@ export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type InviteClientInput = z.infer<typeof inviteClientSchema>;
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 export type InviteProjectMemberInput = z.infer<typeof inviteProjectMemberSchema>;
+
+/**
+ * Cuántos días una obra eliminada se queda en la papelera antes de borrarse
+ * de verdad. Mientras tanto se puede restaurar con todo lo que tenía.
+ */
+export const PROJECT_TRASH_RETENTION_DAYS = 90;
+
+/**
+ * Eliminar una obra exige escribir su nombre. No es burocracia: es lo que
+ * separa "toqué el botón sin querer" de "sé qué estoy mandando a la papelera".
+ */
+export const deleteProjectSchema = z.object({
+  confirmName: z.string().trim().min(1, 'Escribí el nombre de la obra para confirmar'),
+});
+
+export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;

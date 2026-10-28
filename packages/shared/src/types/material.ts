@@ -3,6 +3,12 @@
  * asociarse opcionalmente a una `Activity` de la misma obra.
  */
 
+/** Tope de la foto de un material. Una foto de celular entra de sobra. */
+export const MATERIAL_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+
+/** Formatos de la foto de un material. Es lo que acepta el selector y lo que valida la API. */
+export const MATERIAL_PHOTO_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
 export type MaterialUnit = 'un' | 'm' | 'm2' | 'm3' | 'kg' | 'l' | 'bolsa' | 'rollo' | 'global';
 
 export type MaterialStatus = 'pendiente' | 'solicitado' | 'comprado' | 'en_obra';
@@ -36,6 +42,19 @@ export interface MaterialItem {
    * (`material.invoice.read` o `expense.read`); para el resto, ausente.
    */
   invoices?: MaterialInvoiceRef[];
+  /**
+   * Cómo es el material, para mostrárselo al vendedor: el mismo material tiene
+   * varios nombres comerciales y quien compra puede no conocerlo. URL firmada
+   * y con vencimiento, resuelta por la API; `null` si no hay foto.
+   */
+  photoUrl: string | null;
+  /**
+   * Cuándo se subió la foto actual, `null` si no hay. Es su versión: cambia
+   * sólo cuando se reemplaza (a diferencia de `updatedAt`, que cambia con
+   * cualquier edición del material), y con eso el navegador sabe si la copia
+   * que ya bajó sigue valiendo.
+   */
+  photoUploadedAt: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

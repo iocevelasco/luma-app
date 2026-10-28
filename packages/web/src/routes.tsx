@@ -21,6 +21,7 @@ const ResetPasswordPage = lazy(() =>
 const ActivatePage = lazy(() =>
   import('./pages/activate').then((m) => ({ default: m.ActivatePage })),
 );
+const LegalPage = lazy(() => import('./pages/legal').then((m) => ({ default: m.LegalPage })));
 const CheckEmailPage = lazy(() =>
   import('./pages/check-email').then((m) => ({ default: m.CheckEmailPage })),
 );
@@ -41,6 +42,9 @@ const EmployeesPage = lazy(() =>
 );
 const ProvidersDirectoryPage = lazy(() =>
   import('./pages/providers-directory').then((m) => ({ default: m.ProvidersDirectoryPage })),
+);
+const ProjectsTrashPage = lazy(() =>
+  import('./pages/projects/projects-trash').then((m) => ({ default: m.ProjectsTrashPage })),
 );
 const ProjectNewPage = lazy(() =>
   import('./pages/projects/project-new').then((m) => ({ default: m.ProjectNewPage })),
@@ -135,6 +139,7 @@ export function AppRoutes() {
       {/* Públicas que valen con sesión o sin ella: las abre un enlace de un mail. */}
       <Route path={ROUTES.RESET_PASSWORD} element={<LazyRoute><ResetPasswordPage /></LazyRoute>} />
       <Route path={ROUTES.ACTIVATE} element={<LazyRoute><ActivatePage /></LazyRoute>} />
+      <Route path={ROUTES.LEGAL} element={<LazyRoute><LegalPage /></LazyRoute>} />
       <Route path={ROUTES.CHECK_EMAIL} element={<LazyRoute><CheckEmailPage /></LazyRoute>} />
       <Route path={ROUTES.VERIFY_EMAIL} element={<LazyRoute><VerifyEmailPage /></LazyRoute>} />
       <Route
@@ -172,6 +177,10 @@ export function AppRoutes() {
             element={<Navigate to={ROUTES.PLATFORM_BILLING} replace />}
           />
           <Route path={ROUTES.PROJECT_NEW} element={<LazyRoute><ProjectNewPage /></LazyRoute>} />
+          <Route
+            path={ROUTES.PROJECTS_TRASH}
+            element={<LazyRoute><ProjectsTrashPage /></LazyRoute>}
+          />
           <Route
             path={ROUTES.PROJECT_DETAIL}
             element={<LazyRoute><ProjectDetailPage /></LazyRoute>}

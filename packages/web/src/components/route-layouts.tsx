@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { TermsGate } from '@/components/legal/terms-gate';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { isAdmin } from '@/lib/roles';
 import { buildLoginPathWithReturn, readReturnTo } from '@/lib/return-to';
@@ -43,7 +44,12 @@ export function AuthenticatedLayout() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <TermsGate />
+    </>
+  );
 }
 
 /** Sólo admin. Va anidado dentro de AuthenticatedLayout. */

@@ -102,8 +102,12 @@ test.describe('empresa, obra e invitación del cliente', () => {
 
     // Ve las tareas de la semana —las mismas del cronograma que ya ve—, pero
     // no el Tablero ni la Jornada: quién trabaja y quién vino es interno
-    // (regla 4).
-    await expect(clientPage.getByRole('link', { name: /^tareas$/i })).toHaveCount(0);
+    // (regla 4). Personal no está en su menú y Actividades no le ofrece la
+    // vista Tablero.
+    await expect(clientPage.getByRole('link', { name: /^personal$/i })).toHaveCount(0);
+    await clientPage.getByRole('link', { name: /^actividades$/i }).click();
+    await expect(clientPage.getByRole('tab', { name: /^cronograma$/i })).toBeVisible();
+    await expect(clientPage.getByRole('tab', { name: /^actividades$/i })).toHaveCount(0);
     await clientPage.getByRole('link', { name: /^detalle$/i }).click();
     await expect(clientPage.getByText(/avance general/i)).toBeVisible();
     await expect(clientPage.getByText(/tareas de la semana/i)).toBeVisible();

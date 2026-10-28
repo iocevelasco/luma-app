@@ -17,7 +17,7 @@ import { Can } from '@/components/permissions/can';
 import { EmptyState } from '@/components/common/empty-state';
 import { ExpenseMaterials } from '@/components/finance/expense-materials';
 import { FormDrawer } from '@/components/common/form-drawer';
-import { fromDayKey, toDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
 import {
   AlertDialog,
@@ -287,7 +287,7 @@ function NewExpenseDrawer({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="expense-receipt">{t('finance.fields.receipt')}</Label>
           <input
             ref={fileInputRef}
@@ -301,10 +301,10 @@ function NewExpenseDrawer({
             type="button"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            className="justify-start font-normal"
+            className="w-full min-w-0 justify-start font-normal"
           >
             <Upload className="size-4" />
-            {receipt ? receipt.name : t('finance.fields.receiptPlaceholder')}
+            <span className="min-w-0 truncate">{receipt ? receipt.name : t('finance.fields.receiptPlaceholder')}</span>
           </Button>
           {receipt && <p className="text-xs text-muted-foreground">{formatFileSize(receipt.size)}</p>}
           {fileError && <p className="text-sm text-destructive">{fileError}</p>}

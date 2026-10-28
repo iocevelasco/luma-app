@@ -242,6 +242,10 @@ pnpm --filter @luma/api subscription:reminders
 Con `seed:subscription-demo`, `demo-por-vencer` recibe el de 3 días y
 `demo-vencida` el de vencida (si el mail sale, no se repite en la siguiente corrida).
 
+**Eliminar y restaurar obras**: eliminar cuenta como archivar (lo usado se cobra,
+el lugar sigue pago hasta la renovación); restaurar cuenta como crear una obra
+ese día (prorrateo si ya hay 3 activas). Detalle en `docs/adr/001-eliminar-obra.md`.
+
 ## 5. Escenarios para recorrer
 
 - [ ] Registrarse → *Gratis, 30 días*. Crear una obra y que la pantalla lo refleje al instante.

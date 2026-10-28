@@ -3,7 +3,11 @@ import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
 import {
   createProject,
+  deleteProject,
   getProject,
+  getProjectDeletionSummary,
+  listDeletedProjects,
+  restoreProject,
   inviteProjectMember,
   removeProjectMember,
   updateProjectMemberRole,
@@ -27,8 +31,23 @@ projectRouter.use(isAuthenticated);
 
 projectRouter.post('/', createProject);
 projectRouter.get('/', listProjects);
+// La papelera va antes de `/:projectId`, o "papelera" se leería como un id.
+projectRouter.get('/papelera', listDeletedProjects);
+projectRouter.post('/papelera/:projectId/restaurar', restoreProject);
 projectRouter.get('/:projectId', requireProjectAccess, getProject);
 projectRouter.patch('/:projectId', requireProjectAccess, requireCapability('project.update'), updateProject);
+projectRouter.get(
+  '/:projectId/deletion-summary',
+  requireProjectAccess,
+  requireCapability('project.delete'),
+  getProjectDeletionSummary,
+);
+projectRouter.delete(
+  '/:projectId',
+  requireProjectAccess,
+  requireCapability('project.delete'),
+  deleteProject,
+);
 projectRouter.post(
   '/:projectId/members',
   requireProjectAccess,

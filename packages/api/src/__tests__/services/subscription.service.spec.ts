@@ -35,6 +35,14 @@ function projects(count: number) {
   }));
 }
 
+/** `billableProjects` pide las vivas y, aparte, las de la papelera (nombrando `deletedAt`). */
+function findProjects(count: number) {
+  return (filter: Record<string, unknown>) =>
+    ({
+      select: vi.fn().mockResolvedValue('deletedAt' in filter ? [] : projects(count)),
+    }) as never;
+}
+
 function given(opts: {
   subscription?: Record<string, unknown> | null;
   payments?: Record<string, unknown>[];
@@ -44,9 +52,7 @@ function given(opts: {
   vi.mocked(SubscriptionPayment.find).mockReturnValue({
     select: vi.fn().mockResolvedValue(opts.payments ?? []),
   } as never);
-  vi.mocked(Project.find).mockReturnValue({
-    select: vi.fn().mockResolvedValue(projects(opts.projectCount ?? 0)),
-  } as never);
+  vi.mocked(Project.find).mockImplementation(findProjects(opts.projectCount ?? 0));
 }
 
 const inTrial = {
@@ -170,9 +176,7 @@ describe('summaryFor: Empresas de antes del sistema de suscripción', () => {
     vi.mocked(SubscriptionPayment.find).mockReturnValue({
       select: vi.fn().mockResolvedValue([]),
     } as never);
-    vi.mocked(Project.find).mockReturnValue({
-      select: vi.fn().mockResolvedValue(projects(2)),
-    } as never);
+    vi.mocked(Project.find).mockImplementation(findProjects(2));
 
     const summary = await summaryFor('org-1', NOW);
 
@@ -186,3 +190,35 @@ describe('summaryFor: Empresas de antes del sistema de suscripción', () => {
   });
 });
 
+
+describe('billableProjects: la papelera sigue contando lo usado', () => {
+  it('una obra en la papelera llega con el tramo cerrado y una restaurada, con dos', async () => {
+    const { billableProjects } = await import('../../services/subscription.service.js');
+    const created = new Date('2026-08-01T00:00:00.000Z');
+    const deletedAt = new Date('2026-10-05T00:00:00.000Z');
+    const restoredAt = new Date('2026-10-16T00:00:00.000Z');
+    vi.mocked(Project.find).mockImplementation(((filter: Record<string, unknown>) => ({
+      select: vi.fn().mockResolvedValue(
+        'deletedAt' in filter
+          ? [{ _id: 'trashed', createdAt: created, archivedAt: null, deletedAt, trashedPeriods: [] }]
+          : [
+              {
+                _id: 'restored',
+                createdAt: created,
+                archivedAt: null,
+                deletedAt: null,
+                trashedPeriods: [{ from: deletedAt, to: restoredAt }],
+              },
+            ],
+      ),
+    })) as never);
+
+    const result = await billableProjects('org-1');
+
+    expect(result).toEqual([
+      { id: 'restored', createdAt: created, archivedAt: deletedAt },
+      { id: 'restored#2', createdAt: restoredAt, archivedAt: null },
+      { id: 'trashed', createdAt: created, archivedAt: deletedAt },
+    ]);
+  });
+});

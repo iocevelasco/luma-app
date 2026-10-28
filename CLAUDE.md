@@ -18,6 +18,7 @@ antes de crearlo.
 | `packages/web` | Vite 6 + React 19 + Tailwind v4 + shadcn/ui |
 | `packages/landing` | Vite + React + i18next, estática, servida por nginx |
 | `packages/shared` | Tipos + schemas Zod que comparten API y web |
+| `shared/` (raíz) | Archivos que usan varios paquetes sin build ni dependencias — hoy los trazos del logo (`shared/brand/luma-logo.ts`). Alias `@shared/*` en web y landing; los dos Dockerfiles la copian. No es un paquete de pnpm ni se confunde con `packages/shared` |
 
 ```bash
 pnpm dev          # api + web
@@ -42,9 +43,14 @@ nombre de paquete contra su `dist`.
   El admin tiene su propia área, **fuera del panel de obras**: `/plataforma`
   (cuentas y pagos), con su propio layout (`PlatformLayout`). Una pantalla de
   administración global no va dentro de `DashboardLayout`.
-- **Roles de obra**: `gerente` | `supervisor` | `cliente`, por obra y no por
-  Empresa. El gerente sale de `Project.createdBy`; los otros dos son filas de
-  `ProjectMembership`. **Quién puede qué vive en una sola grilla**:
+- **Roles de obra**: `gerente` | `supervisor` | `contador` | `cliente`, por obra
+  y no por Empresa. Quien creó la obra es el gerente por `Project.createdBy`
+  (el **dueño**, sin fila); los demás roles son filas de `ProjectMembership`,
+  y eso incluye a otros gerentes: **hasta 5 por obra, el dueño incluido**
+  (`MAX_PROJECT_MANAGERS`, `project-managers.service.ts`). Otro gerente hace
+  todo lo del gerente salvo lo que la grilla reserva al dueño (`OWNER_ONLY`:
+  eliminar la obra, sacar o degradar a otro gerente, la libreta de proveedores
+  de la Empresa). **Quién puede qué vive en una sola grilla**:
   `packages/shared/src/permissions/index.ts`. Los routers declaran la acción
   con `requireCapability('activity.plan')` y los controllers preguntan con
   `req.can(...)` — nunca por rol. La UI lee `project.capabilities`, que la API
@@ -59,7 +65,33 @@ nombre de paquete contra su `dist`.
   sale con las cifras en `null`. Las cuentas `@luma.test` no cuentan. Varias de
   esas colecciones se borran de verdad, así que el histórico puede bajar.
 - **Baja lógica**: `account_status: 'inactive'` + `enabled: false`. Nunca se borra
-  el documento.
+  el documento. A los 90 días `purge-deactivated-accounts` (tarea diaria de
+  Coolify) le borra los datos personales y marca `purgedAt`; el documento queda
+  porque obras, cobros y gastos lo referencian. **Qué se borra y dónde vive
+  en `account-purge.service.ts`** (`USER_REFERENCES`, `PERSONAL_FIELDS`):
+  un test falla si agregás un modelo con una referencia a `User`, o un campo que
+  parezca un dato personal (email, teléfono, banco…), sin decir qué se hace con
+  él al purgar. La Política de Privacidad promete ese borrado.
+- **Términos y Privacidad**: un solo documento, versionado por `LEGAL_VERSION`
+  en `@luma/shared/legal`. La aceptación es un hecho en `User` (`termsVersion`,
+  `termsAcceptedAt`, y `termsAcceptedIp`/`termsAcceptedUserAgent` con
+  `select: false`); si está al día lo resuelve la API en `AuthUser.terms_pending`
+  y la UI no lo vuelve a derivar. Se acepta en el registro y la activación (el
+  body lleva `acceptedTerms: true`) y, para cuentas viejas o una versión nueva,
+  en `TermsGate` (`POST /api/auth/accept-terms`). El texto vive en i18n
+  (`legal.page.*`, página pública `/legal`). **Subir `LEGAL_VERSION` sólo cuando
+  el cambio toca derechos u obligaciones**: obliga a todas las cuentas a
+  aceptar de nuevo. Lo que el texto promete (no vender datos, backups diarios,
+  purga a los 90 días) tiene que seguir siendo cierto: si cambiás una de esas
+  cosas, cambiá el texto en el mismo PR.
+- **Eliminar una obra** es lógico: `Project.deletedAt` + `purgeAt` (90 días,
+  `PROJECT_TRASH_RETENTION_DAYS`). El hook de `models/Project.ts` esconde las
+  eliminadas de todo `find`/`count`/`update`; sólo la papelera y el restaurar
+  las piden **nombrando `deletedAt` en el filtro**. Lo que cuelga de la obra no
+  se toca; lo borra `purge-deleted-projects` (tarea diaria de Coolify) con
+  `PROJECT_OWNED` en `project-deletion.service.ts`. **Un modelo nuevo con campo
+  `project` se suma a esa lista** — un test falla si no. Sólo el gerente
+  (`project.delete`).
 - **Errores**: toda respuesta de error tiene la forma
   `{ success: false, error, code, details? }`. Las exitosas son
   `{ success: true, data }`.
@@ -244,25 +276,36 @@ naranja/crema que vino después ya no existen: si ves `bg-cream`, `brand-fill`,
 Usá `bg-primary text-primary-foreground`. El rojo (`destructive`) significa
 **peligro**, no marca.
 
+**Excepción: el Tablero.** El Kanban de Actividades tiene una paleta propia
+(`--board-*` en `index.css`: gris `#434343`, carbón `#1f1f21`, blanco suave
+`#f5f5f7` y un acento naranja `#ff3d02`), tomada de una pieza de referencia. El
+naranja vive sólo ahí y sólo marca el destino de un arrastre: no es un estado
+(esos usan los tags de siempre) ni el relleno de una acción. Detalle y contrastes
+en `DESIGN.md`.
+
 ### Radio — escala del panel
 
 | Clase | Valor | Se usa en |
 |---|---|---|
 | `rounded-sm` | 6px | Input, Select, Textarea, ítems de menú |
-| `rounded-md` | 8px | Code blocks, filas internas |
-| `rounded-lg` | 14px | Dialog, menú, dropdown, toast |
+| `rounded-md` | 8px | **Botones, buscador y pestaña de Tabs**; code blocks, filas internas |
+| `rounded-lg` | 14px | **Contenedor de Tabs**, Dialog, menú, dropdown, toast |
 | `rounded-xl` / `rounded-2xl` | 18 / 22px | Popover grande, panel destacado |
 | `rounded-3xl` | **28px** | **Card** — el dominante |
 | `rounded-xs` | 4px | Chips micro, indicadores |
-| `rounded-full` | píldora | **Botones** (todas las variantes), Badge, Avatar, Switch, Slider, Progress |
+| `rounded-full` | píldora | Badge, Avatar, Switch, Slider, Progress. **No** los botones |
 
 Dos reglas:
 
-1. **Los botones son píldora, y con relieve.** Al badge también lo es; lo que
-   separa uno de otro es el volumen: `shadow-cta` en los rellenos,
-   `shadow-raised` en el secundario, borde de 2px en el outline. El `Button`
-   ya lo trae — no le pases `rounded-*` ni `shadow-*`. En la landing los CTA
-   son links y usan `CTA_PRIMARY` / `CTA_OUTLINE` de `src/lib/cta.ts`.
+1. **Un solo criterio para tabs, botones y buscador: el de los Tabs.** Cuadrado
+   de esquinas suaves (`rounded-md`; el contenedor de un Tabs, `rounded-lg`),
+   fondo blanco (`bg-card`), **sin borde** y con `shadow-surface`. No hay
+   variante de contorno: el `outline` es blanco con sombra. El `Button` ya lo
+   trae — no le pases `rounded-*` ni `shadow-*`. Un buscador es
+   `SearchField` (`components/common/search-field.tsx`), no un `Input` con
+   una lupa. Todo `TabsTrigger` lleva ícono (es obligatorio en el tipo). La
+   landing no entra en este criterio: sus CTA son links con `CTA_PRIMARY` /
+   `CTA_OUTLINE` de `src/lib/cta.ts` y siguen en píldora.
 2. **El hijo va un escalón abajo del padre.** Un Input `rounded-sm` dentro de una
    Card `rounded-3xl`. Un radio interno mayor que el del contenedor deja una luz
    visible en la esquina.
@@ -402,6 +445,34 @@ nada más que ahí. Para ejecutar E2E —o entrar a mano con un rol— se usan e
 - E2E se agrega por **flujo que una persona recorre**, no por endpoint. Un endpoint
   nuevo se cubre con unit en la API.
 
+## Multimedia — skill `media-gen`
+
+**Todo pedido de imagen, video o audio se resuelve con `media-gen`**
+(`.claude/skills/media-gen`, uso completo en su `SKILL.md`). No uses
+`claude-banana` ni otro generador, y no llames a la API a mano: `media-gen`
+entrega el archivo ya al tamaño, comprimido y con el costo estimado.
+`claude-banana` sólo escribe prompts; acá el prompt y el archivo salen de un
+solo paso.
+
+- El skill es un **symlink local** (no se commitea) y la key va en
+  `.claude/settings.local.json` → `env.GEMINI_API_KEY`, también ignorado.
+  Nunca la pidas por el chat ni la escribas en un archivo que se commitea.
+- **Salida dentro del paquete que la usa**: la SPA en `packages/web/public/<sección>/`
+  (se sirve con `import.meta.env.BASE_URL`), la landing en
+  `packages/landing/src/assets/images/` (Vite le pone hash). Siempre WebP, con
+  `--width/--height` de lo que la pantalla muestra y `--max-kb`; nunca la imagen
+  cruda del modelo. Para un nombre exacto: `--single --name <id> --out <carpeta>`.
+- **Costo**: el script estima antes de gastar y exige `--yes` si pasa de USD 0,50.
+  Mostrale el número al usuario y esperá su OK; nunca pases `--yes` por tu cuenta.
+- **Texto dentro de la imagen**: usá `--model gemini-3-pro-image`, mantené cada
+  frase corta (≤ 25 caracteres por línea) y **centrá todo el bloque en el 60%
+  central del ancho**. Un `object-cover` recorta los costados cuando el panel se
+  angosta; lo que está al borde se corta, lo que está al centro no. Una imagen con
+  texto horneado queda en un solo idioma: si el texto cambia por locale, va en HTML.
+- Una imagen para desktop y otra para mobile son dos generaciones con su propio
+  formato (4:5 y 16:9, por ejemplo), no un recorte de la misma.
+- `media-output/` (originales, costos, previews) está en `.gitignore`.
+
 ## Cómo está configurado Claude acá
 
 Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
@@ -413,6 +484,7 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 | `.claude/hooks/pre-push-check.sh` | Bloquea todo `git push` cuyo destino sea main o master. El flujo es rama de feature + PR, y una regla de permisos no puede expresar "salvo a main" |
 | `.claude/skills/verify/` | La secuencia de cierre: typecheck → lint → unit → e2e (chromium) |
 | `.claude/commands/feature.md` | `/feature <qué>` — implementa respetando el orden shared → api → capa 1 → capa 2 → UI → i18n |
+| `.claude/skills/media-gen/` | Symlink local al skill que genera imágenes, video y audio (sección Multimedia). No se commitea; la key va en `settings.local.json` |
 | `.claude/agents/criterio.md` | Agente de producto: afila un pedido vago en un encargo implementable y lo critica antes de que se escriba código |
 | `.mcp.json` | MongoDB en modo lectura (`MONGODB_URI`) y Coolify con lectura y escritura (`COOLIFY_URL`, `COOLIFY_TOKEN`) — 111 herramientas, 24 destructivas; ninguna en `allow`, así que todas piden aprobación. Ver `docs/DEPLOY.md` |
 
@@ -439,13 +511,17 @@ Detalle en `docs/DEPLOY.md`.
 Cuando se pida un cambio relacionado con la **configuración del proyecto** —
 env vars, scopes, deploys, métricas, analytics, dominios del server, storages,
 backups, tareas programadas, servicios, bases de datos, o cualquier otra cosa
-que Coolify ofrezca— **usá siempre primero el skill `~/Documents/Claude/coolify-deploy`
+que Coolify ofrezca— **usá siempre primero el skill `~/.claude/skills/coolify-deploy`
 y el MCP de Coolify** (`.mcp.json`), con todas sus capabilities, **antes de
 ejecutar el cambio**.
 
-- Leé `~/Documents/Claude/coolify-deploy/SKILL.md` (y `REFERENCE.md` si hace
+- Leé `~/.claude/skills/coolify-deploy/SKILL.md` (y `REFERENCE.md` si hace
   falta) para saber qué operación corresponde, y recién después actuá.
 - Inspeccioná el estado actual (list/get) antes de modificar.
+- El MCP sólo conecta si `COOLIFY_URL` y `COOLIFY_TOKEN` están en el entorno
+  desde el que se abre Claude (si no, responde `Invalid URL`). El CLI del skill
+  (`python3 ~/.claude/skills/coolify-deploy/scripts/coolify.py …`) lee su
+  propio token y funciona igual: es el camino que no depende del entorno.
 - No edites la configuración de deploy a mano ni por fuera de Coolify: si el
   cambio se puede hacer por el skill o el MCP, se hace por ahí.
 - Las herramientas destructivas del MCP siguen pidiendo aprobación; el skill no

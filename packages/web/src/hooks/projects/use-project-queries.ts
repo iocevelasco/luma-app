@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type {
   CreateProjectInput,
+  DeleteProjectInput,
   InvitableProjectRole,
   InviteProjectMemberInput,
   UpdateProjectInput,
@@ -12,7 +13,7 @@ import { projectsApi } from '@/api/projects';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
-import { projectDetailPath } from '@/lib/routes';
+import { projectDetailPath, ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-auth-queries.ts`. */
@@ -88,9 +89,16 @@ export function useInviteProjectMember(projectId: string) {
       // con el enlace; un toast verde diría que todo salió bien.
       if (data.emailSent !== false) toast.success(t('project.detail.memberInvited'));
     },
-      // Sin `onError`: esta mutación se envía desde un formulario y el banner
-      // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
-      // mensaje dos veces, en dos lugares distintos de la pantalla.
+    // Sin toast en `onError`: esta mutación se envía desde un formulario y el
+    // banner de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo
+    // mensaje dos veces, en dos lugares distintos de la pantalla.
+    //
+    // Sí se recarga la lista: un 409 por el tope de gerentes quiere decir que el
+    // equipo cambió desde que se abrió la pantalla, y el contador tiene que
+    // mostrar lo que hay ahora.
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
+    },
   });
 }
 
@@ -186,6 +194,68 @@ export function useRemoveProjectMember(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
       toast.success(t('project.team.removed'));
     },
+    onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
+/** Qué se va con la obra. Se pide recién al abrir el diálogo, no antes. */
+export function useProjectDeletionSummary(projectId: string, enabled: boolean) {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.projectDeletionSummary, projectId],
+    queryFn: () => projectsApi.deletionSummary(projectId),
+    enabled: isAuthenticated && enabled,
+    // Un conteo viejo en una confirmación es peor que ninguno.
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+export function useDeleteProject(projectId: string) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: DeleteProjectInput) => projectsApi.remove(projectId, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.projects] });
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.deletedProjects] });
+      // Una obra menos libera un lugar en el límite y baja el próximo cobro.
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.subscription] });
+      // La obra ya no existe para la pantalla en la que estamos.
+      queryClient.removeQueries({ queryKey: [QueryKeys.project, projectId] });
+      toast.success(t('project.delete.done'));
+      navigate(ROUTES.ADMIN);
+    },
+    // Sin `onError`: se envía desde un diálogo que muestra la falla adentro.
+  });
+}
+
+export function useDeletedProjects() {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.deletedProjects],
+    queryFn: () => projectsApi.listDeleted(),
+    enabled: isAuthenticated,
+  });
+}
+
+export function useRestoreProject() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (projectId: string) => projectsApi.restore(projectId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.projects] });
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.deletedProjects] });
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.subscription] });
+      toast.success(t('project.trash.restored'));
+    },
+    // Una falla acá no tiene formulario detrás: va por toast.
     onError: (error) => toast.error(errorMessage(error, t)),
   });
 }

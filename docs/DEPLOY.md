@@ -181,6 +181,48 @@ de `EMAIL_FROM` más arriba): sin él no sale nada y no se marca nada. Los otros
 mails de la suscripción (pago aprobado/rechazado, pago a revisar para los
 admins, cobro con tarjeta fallido) salen en el momento, sin tarea.
 
+### Papelera de obras
+
+Eliminar una obra es lógico: queda 90 días en la papelera y se puede
+restaurar. Esta tarea es la que la borra de verdad (con cobros, gastos,
+archivos del media-service y todo lo que colgaba de ella) cuando vence.
+**Sin ella la papelera nunca se vacía.**
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/purge-deleted-projects.js` |
+| Container | `app` |
+| Frequency | `30 7 * * *` — todos los días a las 3:30 de Caracas |
+
+Correrla más de una vez es inofensivo. Si el media-service falla con una obra,
+esa obra no se toca y se reintenta al otro día; el script sale con código 1
+para que se vea en el historial. A mano: `pnpm --filter @luma/api projects:purge`.
+
+### Purga de cuentas dadas de baja
+
+La Política de Privacidad promete borrar los datos personales de una cuenta
+90 días después de darla de baja. Esta tarea lo cumple: deja el documento (lo
+referencian obras, cobros y gastos) pero borra lo que identifica a la persona:
+email, nombre, foto, contraseña, tokens, IP y user agent de la aceptación; sus
+notificaciones y accesos a obras; los datos de pago de la suscripción (banco,
+referencia, documento y comprobante, archivo incluido); y su cliente de Stripe
+si era la única persona de su Empresa, que además queda sin nombre ni contacto.
+Pisa su nombre como responsable de tareas dentro de sus obras. Los archivos y
+Stripe van primero: si fallan, la cuenta se reintenta al otro día.
+Cuenta los 90 días desde `deactivated_at` (el modelo la completa solo al pasar
+a `inactive`); una baja sin esa fecha cuenta desde `updatedAt`.
+**Sin ella esa promesa del texto legal no se cumple.**
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/purge-deactivated-accounts.js` |
+| Container | `app` |
+| Frequency | `45 7 * * *` — todos los días a las 3:45 de Caracas |
+
+Idempotente: una cuenta ya purgada (`purgedAt`) no se toca. A mano:
+`pnpm --filter @luma/api accounts:purge`.
+
+
 ## Verificar
 
 ```bash

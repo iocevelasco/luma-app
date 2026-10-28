@@ -161,19 +161,22 @@ Controles en la escala chica, superficies en la grande.
 |---|---|---|
 | `rounded-xs` | 4px | Chips micro, indicadores |
 | `rounded-sm` | 6px | **Input**, Select, Textarea, ítems de menú |
-| `rounded-md` | 8px | Code blocks, filas internas de un control |
-| `rounded-lg` | 14px | Dialog, menú, dropdown, toast |
+| `rounded-md` | 8px | **Botones**, **buscador** y la **pestaña** de un Tabs; code blocks, filas internas de un control |
+| `rounded-lg` | 14px | **Contenedor de un Tabs**, Dialog, menú, dropdown, toast |
 | `rounded-xl` | 18px | Popover grande, alert dialog, bloque de la izquierda de una fila-tarjeta |
 | `rounded-2xl` | 22px | Panel destacado, **fila-tarjeta** de una lista |
 | `rounded-3xl` | **28px** | **Card** — el radio dominante |
-| `rounded-full` | píldora | **Botones** —todas las variantes— y estados: Badge, Avatar, Switch, Slider, Progress |
+| `rounded-full` | píldora | Estados y marcas: Badge, Avatar, Switch, Slider, Progress. **No** los botones |
 
 Dos reglas:
 
-1. **Los botones son píldora, y con relieve.** La forma la comparten con el
-   badge; lo que dice "esto se toca" es el volumen (ver *Profundidad*). Un
-   badge es plano y chico; un botón se levanta del lienzo. Una píldora plana
-   y sin borde no es un botón.
+1. **Un solo criterio para los controles del panel: el de los Tabs.** Cuadrado
+   de esquinas suaves (`rounded-md`; el contenedor, `rounded-lg`), superficie
+   blanca (`bg-card`), **sin borde** y con la sombra suave `shadow-surface`.
+   Lo comparten el Tabs, el botón (`outline`, ghost) y el buscador
+   (`SearchField`). Lo que dice "esto se toca" es el relleno y la sombra, no
+   un marco: **no hay variante "de contorno"**. La pestaña seleccionada y el
+   hover se marcan con un gris (`muted`/`accent`), no con un borde.
 2. **El hijo va un escalón abajo del padre.** Un input `rounded-sm` dentro de una
    card `rounded-3xl`. Un radio interno mayor que el del contenedor deja una luz
    visible en la esquina.
@@ -212,8 +215,9 @@ Nada de `shadow-glow`: un resplandor de marca no es profundidad.
 | `shadow-raised` | Filete claro arriba y la misma sombra, sin bisel | Botón secundario — superficie neutra elevada |
 | `shadow-cta-pressed` | Sombra interna: la luz se va adentro | `:active` de los dos anteriores |
 
-El outline no lleva sombra: lo levanta el borde de 1px. Las sombras de afuera
-son negras siempre — el relieve es luz y sombra, no un halo verde.
+El outline lleva `shadow-surface` y fondo `card`, sin borde: lo levanta la sombra
+suave, la misma de los tabs. Las sombras de afuera son negras siempre — el
+relieve es luz y sombra, no un halo verde.
 
 `cn()` registra estas sombras en `tailwind-merge` (`lib/utils.ts`): sin eso
 las toma por un color de sombra y no resuelve el conflicto con `shadow-none`.
@@ -223,25 +227,96 @@ las toma por un color de sombra y no resuelve el conflicto con `shadow-none`.
 Los botones salen de una referencia de cuatro estados —elevado, contorno,
 relleno con bisel, relleno con anillo— traducida al lienzo oscuro:
 
-**Botón primario** — píldora, `bg-primary text-primary-foreground`, filete
+**Botón primario** — `rounded-md`, `bg-primary text-primary-foreground`, filete
 `primary-pressed`, `shadow-cta`. Hover `primary-pressed`, `:active`
 `shadow-cta-pressed`. Altura `h-9`, o `h-10` en `lg`.
 
-**Botón secundario** — píldora, `bg-secondary`, `shadow-raised`. Hover sube el
+**Botón secundario** — `rounded-md`, `bg-secondary`, `shadow-raised`. Hover sube el
 brillo; `:active` igual que el primario.
 
-**Botón outline** — píldora sin relleno, borde de 1px en `foreground` al 45%
-(70% en hover), texto `foreground`. No va en verde: son los "Cancelar" y
-"Volver" del panel, y el verde es para la acción principal.
+**Botón outline** — `rounded-md`, fondo `card` (blanco), `shadow-surface`, **sin
+borde**, texto `foreground`; hover en `accent`. No va en verde: son los
+"Cancelar" y "Volver" del panel, y el verde es para la acción principal.
 
-**Foco de un botón** — anillo verde de 2px separado del botón por 2px de aire
-(`outline` + `outline-offset`). Pegado, un anillo verde no se ve contra el
-relleno verde. Va con `outline` y no con `ring` porque el ring es box-shadow y
-pisaría el relieve.
+**Botón ghost** — `rounded-md`, sin fondo ni borde; hover en `accent`. Es el de
+los íconos sueltos (anterior/siguiente, "…").
 
-En la landing los CTA son links, no `Button`: usan `CTA_PRIMARY` y
-`CTA_OUTLINE` de `src/lib/cta.ts`, que son las mismas clases. La altura va con
-`h-*`, no con `py-*`: aunque hoy el outline y el primario llevan el mismo borde de 1px, la altura no tiene que depender de él.
+**Buscador** — `SearchField` (`components/common/search-field.tsx`): `rounded-md`,
+`bg-card`, `shadow-surface`, sin borde, lupa a la izquierda. El foco es el anillo
+verde. Los demás campos de un formulario conservan su borde: es lo que dice
+"acá se escribe"; un buscador es un control de la barra, no un campo.
+
+**Tabs** — la base del criterio. Contenedor `rounded-lg` blanco con
+`shadow-surface`; cada pestaña `rounded-md`, `h-9`, **siempre con ícono**; la
+activa en `bg-muted` y el fondo se desliza de una a otra (300 ms).
+
+**Card de obra (inicio del panel)** — `ProjectCard` en `admin-home.tsx`. Es la
+pieza más central de la app —es desde donde se entra a trabajar—, así que tiene
+su propio lenguaje: oscura (`surface-dark`), sombreada de arriba hacia abajo (un
+gris que se apaga hasta el negro) y con una textura de puntos (`luma-project-card`,
+en `index.css`). El orden, de arriba abajo, es el de una tarjeta de referencia
+—la marca, lo que es, sus etiquetas y, al pie, el dato y la acción— con un solo
+nivel que compite por la mirada: el nombre de la obra.
+
+| Zona | Qué | Cómo |
+|---|---|---|
+| Arriba | La marca de la obra y en qué momento está | Casco en un cuadrado translúcido (`size-10 rounded-md bg-foreground/10`); a la derecha una pastilla `rounded-md bg-foreground/10 text-xs` con un punto de color: "Por empezar" (warning), "En curso" (primary), "Finalizada" (gris). La fase **se calcula** de las fechas, no se guarda |
+| Qué es | Dónde, con cuánto falta, y el nombre | Ubicación `text-base` con pin; al lado, en `text-xs` gris, "Termina dentro de 5 meses" / "Empieza…" / "Terminó hace…"; el nombre, `text-2xl font-medium`: lo único grande |
+| Etiquetas | Moneda y tamaño | Pastillas translúcidas `rounded-md bg-foreground/10 text-xs` |
+| Pie | Las fechas y la forma de entrar | Divisor `bg-foreground/15` (con `mt-auto`: todas las cards de una fila alinean su pie); a la izquierda el rango de fechas (`text-base font-semibold tabular-nums`) con la duración debajo; a la derecha "Abrir" en blanco (`bg-foreground text-background`) |
+
+Toda la tarjeta es el enlace. El "Abrir" del pie **no es un `Button`** sino la
+forma de uno (un `span` `aria-hidden`): un botón dentro de un enlace anida dos
+controles interactivos. Radio `rounded-3xl` (28px), el de toda card; el chip y
+el "Abrir", `rounded-md` como todo control. Al pasar el puntero la tarjeta sube
+2px.
+
+**Tarjeta de actividad (Tablero)** — `TaskCardContent` dentro de la columna de
+`@svar-ui/react-kanban`, oscura (`surface-dark`) y plana, con el orden de IA-9:
+el rubro como antetítulo (`text-2xs uppercase`) y el nombre (`text-sm
+font-medium`) arriba, con el "…" a la derecha; el motivo de una devolución en su
+bloque `bg-destructive/15`; abajo, avatar con iniciales y nombre a la izquierda y
+las fechas con ícono a la derecha; el atraso, un `Badge danger` con reloj.
+
+**Paleta del Tablero** — propia del Kanban de Actividades, tomada de una pieza
+de referencia (valores medidos de la imagen, no estimados). Son tokens globales
+`--board-*` en `index.css`:
+
+| Token | Valor | Dónde |
+|---|---|---|
+| `--board-canvas` | `#434343` | Fondo de las columnas (y de la lista del celular) |
+| `--board-card` | `#1f1f21` | La tarjeta de actividad |
+| `--board-ink` | `#f5f5f7` | Texto: nombre, encabezados de columna |
+| `--board-ink-muted` | `--board-ink` al 62 % sobre la tarjeta | Segundo orden: avatar, fechas, rubro, íconos de columna |
+| `--board-accent` | `#ff3d02` | Sólo el destino de un arrastre (el marcador punteado donde va a caer la tarjeta). **No** es un estado ni un relleno: el atraso y las devoluciones usan los tags y el rojo del sistema |
+
+Contraste (WCAG): `--board-ink` sobre la tarjeta ~15:1 y sobre el gris ~9:1; el
+acento sobre la tarjeta ~4,6:1, así que sirve de trazo o de relleno pero no de
+tinta de texto chico sobre el gris (ahí daría ~2,8:1). Es la excepción declarada
+a "un solo verde": el acento naranja vive **dentro del Tablero**, sólo marca el
+destino de un arrastre y nunca es el relleno de una acción; fuera de él, la marca
+sigue siendo el verde.
+
+**Los estados de la tarjeta usan los tags de la app**, no colores propios: el
+"Atrasada" es el `Badge danger` de siempre (en su tono suave del lienzo oscuro) y
+el motivo de una devolución usa el rojo `destructive`. La tarjeta lleva
+`surface-dark` junto a `luma-task-card`: la segunda pisa sólo `--foreground` y
+`--muted-foreground` con la paleta; los tokens de tags y de peligro se dejan como
+están.
+
+Radios: la columna tiene la mitad del de una card (`--radius-lg`, 14px) y la
+tarjeta, un escalón abajo (`--radius-md`, 8px, el de un botón): el hijo, un
+escalón abajo del padre. **El aspecto vive en el contenido** (`TASK_CARD` en `task-board.tsx`) y no
+en la caja `.wx-card` de la librería, que queda neutra: la librería dibuja la
+tarjeta que se arrastra (`.wx-ghost`) fuera de `.wx-board` y sin las clases de
+`cardCss`, y cualquier regla que dependiera de esos dos lugares se perdía al
+arrastrar. El mismo contenido se usa en la lista de canceladas y en la del
+celular.
+
+**Cronograma (SVAR Gantt)** — superficie blanca (`bg-card`, `shadow-surface`) con
+la mitad del radio de una card (`rounded-lg`, 14px); renglones y columnas
+separados con una línea (`#d4d4d8`); los headers —los de la tabla y los de la
+escala de tiempo— son rótulos: `text-2xs` (11px), negrita y mayúsculas.
 
 **Card** — `bg-card`, `rounded-3xl`, borde 1px, `shadow-surface`. Padding 16px en
 móvil, 24px desde `sm`. Adentro, dos piezas apoyadas un escalón abajo
@@ -360,10 +435,12 @@ En el panel **no va**: una app de trabajo no se firma en cada pantalla.
 
 ## Qué no hacer
 
-- No hacer un botón a escuadra ni una píldora plana: el botón es píldora con
-  relieve.
+- No hacer un botón píldora ni con borde de contorno **en el panel**: el botón es
+  cuadrado de esquinas suaves, con relleno y sombra. Un marco de 1px no lo
+  distingue del lienzo y rompe la familia con los tabs y el buscador.
 - No agregar acentos fuera del verde: los colores de estado son información,
-  no paleta. Los tags (`tag-*`) son esa información; no se usan como decoración.
+  no paleta. La única excepción es la paleta propia del Tablero (ver arriba), que no
+  sale de él. Los tags (`tag-*`) son esa información; no se usan como decoración.
 - No pintar un tag con `bg-warning` ni con un hex: `variant` y los tokens `tag-*`.
 - No poner texto blanco sobre el verde: el texto es `primary-foreground`
   (`#101010`).

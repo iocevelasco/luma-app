@@ -23,7 +23,7 @@ import {
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { errorMessage } from '@/lib/error-message';
 import { formatBolivares } from '@/lib/format-money';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey } from '@/lib/day-key';
 
 const RECEIPT_ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp';
 

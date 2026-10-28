@@ -9,9 +9,11 @@ import { INVITABLE_PROJECT_ROLES, type InvitableProjectRole } from '@luma/shared
  * decisión dejó de servir: dos tablas de la misma forma terminan con dos
  * flujos de invitación que se desincronizan.
  *
- * **El gerente no tiene fila acá.** Se deriva de `Project.createdBy`: una obra
- * sin dueño no existe, así que una fila que lo repita sólo agrega la
- * posibilidad de que discrepe con el proyecto.
+ * **Quien creó la obra no tiene fila acá.** Se deriva de `Project.createdBy`:
+ * una obra sin dueño no existe, así que una fila que lo repita sólo agrega la
+ * posibilidad de que discrepe con el proyecto. Los demás gerentes —hasta
+ * `MAX_PROJECT_MANAGERS` contando al dueño— sí tienen fila, con
+ * `role: 'gerente'`.
  *
  * El supervisor es por obra y no por Empresa —a diferencia del Asistente de
  * Obra de la v1, que era un `OrganizationMember` y entraba a todas las obras

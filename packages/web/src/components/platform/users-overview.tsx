@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import type { PlatformUsersOverview } from '@luma/shared';
-import { fromDayKey } from '@/components/common/date-range-filter';
+import { fromDayKey } from '@/lib/day-key';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDateLocale } from '@/hooks/use-date-locale';
 
