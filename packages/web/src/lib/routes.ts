@@ -27,6 +27,8 @@ export const ROUTES = {
   PLATFORM: '/plataforma',
   /** Las cuentas registradas, sólo lectura. */
   PLATFORM_USERS: '/plataforma/cuentas',
+  /** Cuánto hace la gente por rol de obra: sólo conteos agregados. */
+  PLATFORM_ACTIVITY: '/plataforma/actividad',
   /** La cola de pagos en Bs y la tasa BCV. */
   PLATFORM_BILLING: '/plataforma/pagos',
   /** Dónde vivía la cola de pagos antes de separar la administración: sigue redirigiendo. */

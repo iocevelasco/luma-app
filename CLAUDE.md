@@ -51,6 +51,13 @@ nombre de paquete contra su `dist`.
   ya resolvió; no la vuelve a derivar.
   Agregar un permiso = una celda en la grilla. Si estás escribiendo
   `role === 'supervisor'` en cualquier lado, estás en el camino equivocado.
+- **Actividad por rol** (`/plataforma/actividad`, `platform-activity.service.ts`):
+  conteos por rol de obra y acción, derivados de datos existentes. El rol es el
+  que la persona tiene *en la obra donde actuó*. La confidencialidad se aplica
+  **en la API**: nunca salen ids, nombres, montos ni personas, y un rol/período
+  con menos de `MIN_PEOPLE_PER_CELL` (5, en `@luma/shared`) personas distintas
+  sale con las cifras en `null`. Las cuentas `@luma.test` no cuentan. Varias de
+  esas colecciones se borran de verdad, así que el histórico puede bajar.
 - **Baja lógica**: `account_status: 'inactive'` + `enabled: false`. Nunca se borra
   el documento.
 - **Errores**: toda respuesta de error tiene la forma

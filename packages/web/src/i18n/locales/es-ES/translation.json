@@ -1556,7 +1556,51 @@
     },
     "nav": {
       "users": "Cuentas",
-      "billing": "Pagos"
+      "billing": "Pagos",
+      "activity": "Actividad"
+    },
+    "activity": {
+      "periodLabel": "Período",
+      "periods": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "all": "Desde siempre"
+      },
+      "columns": {
+        "action": "Rol y acción",
+        "count": "Cantidad"
+      },
+      "roles": {
+        "gerente": "Jefe de obra",
+        "supervisor": "Supervisor",
+        "contador": "Contable",
+        "cliente": "Cliente",
+        "exMiembro": "Ex-miembro"
+      },
+      "people_one": "{{count}} persona",
+      "people_other": "{{count}} personas",
+      "fewData": "Pocos datos",
+      "readOnlyNote": "Solo lectura: su uso se ve con la capa B.",
+      "totalActions": "Acciones en total",
+      "otherActions": "Otras acciones",
+      "footnote": "Se cuenta lo que existe hoy en cada obra, con el rol que tenía la persona en esa obra. Un rol con menos de {{min}} personas distintas en el período no muestra cifras. Solo cantidades.",
+      "actions": {
+        "projectCreated": "Obras creadas",
+        "activityCreated": "Actividades creadas",
+        "activityApproved": "Actividades aprobadas",
+        "activityRejected": "Actividades devueltas",
+        "memberInvited": "Invitaciones a obra",
+        "budgetImported": "Presupuestos importados",
+        "milestonePublished": "Hitos publicados al cliente",
+        "documentUploaded": "Documentos subidos",
+        "engagementCreated": "Contrataciones de proveedor",
+        "progressReported": "Informes de avance",
+        "evidenceUploaded": "Evidencias subidas",
+        "laborLogged": "Partes de jornada",
+        "materialRequested": "Materiales solicitados",
+        "expenseRegistered": "Gastos registrados",
+        "paymentRegistered": "Cobros registrados"
+      }
     }
   }
 }
