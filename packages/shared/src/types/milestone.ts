@@ -13,8 +13,13 @@
  */
 
 /**
- * Los cinco tipos que enumera la matriz, el cambio de proyecto del gerente y
- * la reunión — ver `'reunion'`.
+ * Los cinco tipos que enumera la matriz, el cambio de proyecto del gerente, la
+ * reunión —ver `'reunion'`— y los dos que pidieron los usuarios al usarla:
+ * una decisión tomada y el inicio de un proceso.
+ *
+ * Los valores nuevos (`decision_made`, `process_started`) van en inglés a
+ * propósito: lo que ve la persona sigue en castellano por i18n. Los anteriores
+ * se quedan como están; renombrarlos pide migrar lo ya guardado.
  */
 export type MilestoneType =
   /** Concluir una etapa fundamental. */
@@ -29,6 +34,10 @@ export type MilestoneType =
   | 'retraso'
   /** Cambio fundamental del proyecto. */
   | 'cambio_proyecto'
+  /** Se tomó una decisión que condiciona lo que sigue (un material, un proveedor, un alcance). */
+  | 'decision_made'
+  /** Arranca un proceso o una etapa de la obra. */
+  | 'process_started'
   /**
    * Reunión de obra con su minuta. No viene de la matriz: es "pasó algo,
    * esto es, avisale a alguien" igual que el resto, con la descripción como
@@ -44,6 +53,8 @@ export const MILESTONE_TYPES: readonly MilestoneType[] = [
   'vicio_oculto',
   'retraso',
   'cambio_proyecto',
+  'decision_made',
+  'process_started',
   'reunion',
   'otro',
 ] as const;

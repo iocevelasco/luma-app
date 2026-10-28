@@ -136,8 +136,13 @@ export const inviteMemberSchema = inviteClientSchema.extend({
   phone: contactPhoneSchema,
 });
 
-/** Los roles que se invitan a una obra. El gerente no: se deriva de quién la creó. */
-export const invitableProjectRoleSchema = z.enum(['supervisor', 'contador', 'cliente']);
+/**
+ * Los roles que se invitan a una obra: los cuatro. El dueño es el único
+ * gerente sin invitación, pero otro gerente se invita como cualquiera —con
+ * el tope de `MAX_PROJECT_MANAGERS`, que se valida contra la base y no acá.
+ * Un test lo mantiene igual a `INVITABLE_PROJECT_ROLES`.
+ */
+export const invitableProjectRoleSchema = z.enum(['gerente', 'supervisor', 'contador', 'cliente']);
 
 /**
  * Invitar a alguien a una obra. A diferencia de `inviteClientSchema`, acá el

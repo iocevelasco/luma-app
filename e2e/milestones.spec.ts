@@ -171,6 +171,26 @@ test.describe('Hitos y reuniones', () => {
     await expect(page.getByText('Algo a medio escribir')).toHaveCount(0);
   });
 
+  test('se reportan los tipos «Decisión tomada» e «Inicio de proceso»', async ({ page }) => {
+    await loginWith(page, OWNER_EMAIL, PASSWORD);
+    await page.goto(milestonesUrl);
+
+    for (const [type, title] of [
+      [/^decisión tomada$/i, `Se eligió el porcelanato ${RUN_ID}`],
+      [/^inicio de proceso$/i, `Arranca la mampostería ${RUN_ID}`],
+    ] as const) {
+      const panel = await openNewMilestone(page, type, /^interno/i);
+      await panel.locator('#milestone-title').fill(title);
+      await panel.getByRole('button', { name: /^reportar$/i }).click();
+      await expect(page).toHaveURL(/\/hitos$/);
+
+      // La card dice de qué tipo es: es lo que se busca al recorrer la cronología.
+      const card = page.getByRole('article', { name: title });
+      await expect(card).toBeVisible();
+      await expect(card.getByText(type)).toBeVisible();
+    }
+  });
+
   test('un hito crítico se ve de entrada con su texto y su foto de evidencia', async ({ page }) => {
     await loginWith(page, OWNER_EMAIL, PASSWORD);
     await page.goto(milestonesUrl);

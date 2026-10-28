@@ -24,6 +24,7 @@ export const ACTIVITY_SPECIALTIES: readonly ProviderSpecialty[] = [
   'acabados',
   'pintura',
   'climatizacion',
+  'fire_protection',
   'techos',
   'pisos_revestimientos',
   'jardineria',

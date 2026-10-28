@@ -34,6 +34,7 @@ export type TradeSpecialty =
   | 'acabados'
   | 'pintura'
   | 'climatizacion'
+  | 'fire_protection'
   | 'techos'
   | 'pisos_revestimientos'
   | 'jardineria'

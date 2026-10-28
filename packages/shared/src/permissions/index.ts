@@ -17,8 +17,10 @@
 /**
  * Rol de una persona **en una obra puntual**, no en la Empresa.
  *
- * - `gerente`: quien la gestiona. Hoy es siempre quien la creó
- *   (`Project.createdBy`), por eso no tiene fila en `ProjectMembership`.
+ * - `gerente`: quien la gestiona. Hay un **dueño** —quien la creó
+ *   (`Project.createdBy`), que no tiene fila en `ProjectMembership`— y hasta
+ *   `MAX_PROJECT_MANAGERS - 1` gerentes más, que sí la tienen. Todos pueden lo
+ *   mismo salvo lo que sólo hace el dueño: eliminar la obra.
  * - `supervisor`: está en el sitio. Reporta lo que pasa, no planifica ni
  *   maneja plata. Reemplaza al "Asistente de Obra" de la v1, que era un rol
  *   de Empresa y por eso entraba a TODAS sus obras.
@@ -33,17 +35,52 @@
 export type ProjectRole = 'gerente' | 'supervisor' | 'contador' | 'cliente';
 
 /**
- * Roles que SÍ se invitan y por lo tanto se guardan en `ProjectMembership`.
- * `gerente` queda afuera porque se deriva de `createdBy`: una obra sin dueño
- * no existe, y tenerlo en dos lugares abre la puerta a que discrepen.
+ * Roles que se invitan y por lo tanto se guardan en `ProjectMembership`.
+ *
+ * Son los cuatro: el dueño de la obra es el único gerente sin fila (se deriva
+ * de `createdBy`: una obra sin dueño no existe, y tenerlo en dos lugares abre
+ * la puerta a que discrepen), pero un segundo gerente es una invitación como
+ * cualquier otra. La excepción es el tope: ver `MAX_PROJECT_MANAGERS`.
  */
-export type InvitableProjectRole = Exclude<ProjectRole, 'gerente'>;
+export type InvitableProjectRole = ProjectRole;
 
 export const INVITABLE_PROJECT_ROLES: readonly InvitableProjectRole[] = [
+  'gerente',
   'supervisor',
   'contador',
   'cliente',
 ] as const;
+
+/**
+ * Cuántos gerentes puede tener una obra, **contando al dueño**. Es un límite
+ * de producto y no de plan: no cambia con la suscripción.
+ *
+ * Vive acá y no en el controller porque lo necesitan los dos lados: la API
+ * para rechazar la invitación número seis, y la pantalla de Equipo para
+ * decir "3 de 5" y apagar la opción antes de que alguien la elija.
+ */
+export const MAX_PROJECT_MANAGERS = 5;
+
+/**
+ * La capacidad que hace falta para cambiarle el rol a alguien o sacarlo de la
+ * obra. Sumar gente es de cualquier gerente (`project.invite`); tocar a otro
+ * gerente es del dueño (`project.manager.write`). Vive acá para que la API y
+ * la lista de Equipo pregunten lo mismo sin comparar contra un rol.
+ */
+export function capabilityToManageMember(memberRole: ProjectRole): Capability {
+  return memberRole === 'gerente' ? 'project.manager.write' : 'project.invite';
+}
+
+/** ¿Un rol cuenta para el tope de `MAX_PROJECT_MANAGERS`? Hoy sólo el de gerente. */
+export function countsTowardManagerLimit(role: ProjectRole): boolean {
+  return role === 'gerente';
+}
+
+/** Cuántos gerentes hay, cuántos caben todavía y si ya no entra otro. */
+export function projectManagerSlots(managerCount: number) {
+  const remaining = Math.max(0, MAX_PROJECT_MANAGERS - managerCount);
+  return { count: managerCount, max: MAX_PROJECT_MANAGERS, remaining, isFull: remaining === 0 };
+}
 
 /**
  * Función de una persona dentro de la Empresa: personal administrativo, no
@@ -75,6 +112,12 @@ export type Capability =
   // Mandar la obra a la papelera y sacarla de ahí. Sólo el gerente: es la
   // única acción que hace desaparecer una obra para todo el equipo.
   | 'project.delete'
+  // Sacar o bajarle el rol a otro gerente. Sumarlo es `project.invite`; quitarlo
+  // es del dueño de la obra (ver `OWNER_ONLY`).
+  | 'project.manager.write'
+  // Editar o dar de baja personal de la Empresa (no cargado sólo en esta obra):
+  // su jornal liquida todas las obras de la Empresa. Ver `OWNER_ONLY`.
+  | 'crew.directory.write'
   // Presupuesto y Consultor IA — información económica interna
   | 'budget.read'
   | 'budget.write'
@@ -164,6 +207,8 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'project.update',
     'project.invite',
     'project.delete',
+    'project.manager.write',
+    'crew.directory.write',
     'budget.read',
     'budget.write',
     'advisor.use',
@@ -267,6 +312,30 @@ const CLIENT_GATED_BY_PROJECT_FLAG: Partial<
   'material.invoice.read': 'purchasesVisibleToClient',
 };
 
+/**
+ * Lo que de la fila `gerente` sólo tiene **quien creó la obra**. Los demás
+ * gerentes hacen todo lo del resto de la fila.
+ *
+ * - `project.delete`: mandar la obra a la papelera libera un lugar del plan
+ *   del dueño, y restaurarla ya era sólo de `createdBy`.
+ * - `project.manager.write`: sacar o degradar a otro gerente. Si cualquiera
+ *   pudiera, dos gerentes podrían sacarse entre sí.
+ * - `crew.directory.write`: el jornal del personal de la Empresa lo lee la
+ *   liquidación de todas sus obras; otro gerente cambiaría la plata de obras
+ *   donde no está invitado.
+ * - `provider.manage`: la libreta de proveedores es de la Empresa dueña de la
+ *   obra, y otro gerente puede ser de otra Empresa: vería los proveedores de
+ *   todas sus obras.
+ *
+ * Una capacidad nueva del gerente tiene que decidir si entra acá.
+ */
+const OWNER_ONLY: readonly Capability[] = [
+  'project.delete',
+  'project.manager.write',
+  'provider.manage',
+  'crew.directory.write',
+];
+
 /** Lo que de la obra necesita saber `canInProject` para resolver las excepciones. */
 export interface ProjectCapabilityContext {
   providersVisibleToClient: boolean;
@@ -286,8 +355,13 @@ export function canInProject(
   role: ProjectRole,
   capability: Capability,
   project?: ProjectCapabilityContext,
+  options: Pick<CapabilityOptions, 'isOwner'> = {},
 ): boolean {
   if (!PROJECT_CAPABILITIES[role].includes(capability)) return false;
+
+  // Sin `isOwner` vale `false`: si un call site se olvida de pasarlo, el dueño
+  // pierde el botón y se nota; al revés, otro gerente borraría la obra.
+  if (OWNER_ONLY.includes(capability) && options.isOwner !== true) return false;
 
   if (role === 'cliente') {
     const flag = CLIENT_GATED_BY_PROJECT_FLAG[capability];
@@ -312,6 +386,8 @@ export function isReadCapability(capability: Capability): boolean {
 export interface CapabilityOptions {
   /** La suscripción de la Empresa dueña de la obra venció: sólo lectura. */
   readOnly?: boolean;
+  /** Quien pregunta creó la obra (`Project.createdBy`). Ver `OWNER_ONLY`. */
+  isOwner?: boolean;
 }
 
 /** Todo lo que un rol puede hacer en una obra concreta, flags ya aplicados. */
@@ -322,7 +398,7 @@ export function capabilitiesInProject(
 ): Capability[] {
   return PROJECT_CAPABILITIES[role].filter(
     (capability) =>
-      canInProject(role, capability, project) &&
+      canInProject(role, capability, project, options) &&
       (!options.readOnly || isReadCapability(capability)),
   );
 }
