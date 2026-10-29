@@ -31,8 +31,10 @@ export interface NotifyParams {
 }
 
 /**
- * Las personas de una obra que tienen alguno de esos roles. El gerente sale de
- * `createdBy` —no tiene fila de membresía— y el resto de `ProjectMembership`.
+ * Las personas de una obra que tienen alguno de esos roles. Quien creó la obra
+ * es gerente sin fila de membresía —sale de `createdBy`—; los demás gerentes y
+ * el resto de los roles, de `ProjectMembership`. Un aviso "al gerente" les
+ * llega a todos: cualquiera puede aprobar o responder.
  */
 async function recipientsFor(
   project: IProject,
@@ -44,14 +46,11 @@ async function recipientsFor(
     ids.push(project.createdBy as mongoose.Types.ObjectId);
   }
 
-  const invitable = roles.filter((role) => role !== 'gerente');
-  if (invitable.length > 0) {
-    const rows = await ProjectMembership.find({
-      project: project._id,
-      role: { $in: invitable },
-    }).select('user');
-    ids.push(...rows.map((row) => row.user));
-  }
+  const rows = await ProjectMembership.find({
+    project: project._id,
+    role: { $in: roles },
+  }).select('user');
+  ids.push(...rows.map((row) => row.user));
 
   return ids;
 }

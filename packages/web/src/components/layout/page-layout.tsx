@@ -65,6 +65,14 @@ interface PageLayoutProps {
    * de un diagrama), y porque el aviso depende del estado, no de la pantalla.
    */
   reserveBottom?: boolean;
+  /**
+   * En `fill`, el contenido termina arriba de la acción principal en vez de
+   * llegar al borde de la ventana. Es para el diagrama que se lee hasta la
+   * última fila: el Cronograma, donde el botón flotante quedaba encima de la
+   * última tarea. El Tablero no lo pide: sus columnas tienen que llegar hasta
+   * abajo, y ahí lo que queda bajo el botón es el hueco de una columna.
+   */
+  clearAction?: boolean;
   className?: string;
   children?: ReactNode;
 }
@@ -93,6 +101,7 @@ export function PageLayout({
   width = 'default',
   fill = false,
   reserveBottom = false,
+  clearAction = false,
   className,
   children,
 }: PageLayoutProps) {
@@ -139,6 +148,10 @@ export function PageLayout({
           // Lo que flota abajo a la izquierda (a 2rem del borde y ~2.75rem de alto) tapaba la
           // última fila: en `fill` el contenido llega hasta el borde de la ventana.
           reserveBottom && 'pb-[calc(4.5rem+env(safe-area-inset-bottom))]',
+          // El botón flotante (un `Button` de 2.25rem) va a 2rem del borde en escritorio: ocupa
+          // hasta 4.25rem. El `<main>` ya deja 1rem; 4rem de relleno lo despejan con aire. Un
+          // `action` más alto (el `FloatingActionButton`, de 3.5rem) necesitaría más.
+          action && clearAction && 'pb-[calc(4rem+env(safe-area-inset-bottom))]',
         )}
       >
         {empty ? (

@@ -6,6 +6,8 @@
  * (token y datos de usuario) para evitar que tenga que volver a iniciar sesión.
  */
 
+import { RELEASE_SEEN_KEY } from './release-notes-storage';
+
 const VERSION_STORAGE_KEY = 'app_version';
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
@@ -15,6 +17,10 @@ const THEME_STORAGE_KEY = 'vite-ui-theme'; // Theme preference
 // Lo escribe i18next-browser-languagedetector (i18n/config.ts, `caches`). Si no
 // se preserva, cada deploy le resetea el idioma a todo el mundo.
 const LANGUAGE_STORAGE_KEY = 'i18nextLng';
+// Qué novedades vio cada persona (`release-notes-storage.ts`). Es justo lo que
+// un deploy tiene que respetar: el que trae la novedad es el que limpia el
+// storage, y sin esta clave todos volverían a ver el punto después de verla.
+const RELEASE_SEEN_STORAGE_KEY = RELEASE_SEEN_KEY;
 
 /** Lo que sobrevive a una invalidación: la sesión y las preferencias de la persona. */
 const PRESERVED_KEYS = [
@@ -24,6 +30,7 @@ const PRESERVED_KEYS = [
   USER_STORAGE_KEY,
   THEME_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
+  RELEASE_SEEN_STORAGE_KEY,
 ] as const;
 
 /**

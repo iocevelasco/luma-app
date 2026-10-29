@@ -107,7 +107,11 @@ describe('notifyProject', () => {
     expect(Notification.insertMany).not.toHaveBeenCalled();
   });
 
-  it('no consulta membresías si sólo se avisa al gerente', async () => {
+  it('"al gerente" les llega también a los otros gerentes, que tienen fila de membresía', async () => {
+    // Una obra puede tener hasta cinco gerentes: quien la creó (sin fila) y los
+    // demás (con `role: gerente`). Un aviso "al gerente" es para todos.
+    mockMemberships([{ user: 'gerente-2', role: 'gerente' }]);
+
     await notifyProject({
       project: PROJECT,
       type: 'eventualidad',
@@ -117,7 +121,12 @@ describe('notifyProject', () => {
       actorId: 'supervisor-1',
     });
 
-    expect(ProjectMembership.find).not.toHaveBeenCalled();
+    expect(ProjectMembership.find).toHaveBeenCalledWith({
+      project: 'project-1',
+      role: { $in: ['gerente'] },
+    });
+    const docs = vi.mocked(Notification.insertMany).mock.calls[0][0] as { user: string }[];
+    expect(docs.map((doc) => doc.user).sort()).toEqual(['gerente-1', 'gerente-2']);
   });
 
   it('si el reparto falla, devuelve 0 y NO relanza', async () => {

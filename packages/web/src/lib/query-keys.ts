@@ -44,4 +44,5 @@ export enum QueryKeys {
   platformUsersOverview = 'platform-users-overview',
   platformUsers = 'platform-users',
   chatPrompt = 'chat-prompt',
+  platformActivity = 'platform-activity',
 }

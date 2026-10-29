@@ -165,6 +165,7 @@
       "cliente": "Cliente"
     },
     "roleHint": {
+      "gerente": "Faz tudo o que você faz na obra, dinheiro e equipe incluídos. Não pode excluí-la, remover outro gerente nem usar a lista de fornecedores e o pessoal da Empresa.",
       "supervisor": "Reporta avanço, presença e materiais do canteiro. Não vê dinheiro.",
       "contador": "Apenas recebimentos e despesas. Não vê tarefas, pessoal nem fornecedores.",
       "cliente": "Acompanha o avanço da obra e seu cronograma de pagamentos. Somente leitura."
@@ -185,6 +186,20 @@
       "removeConfirm": "Remover",
       "removed": "Acesso removido",
       "capabilityCount": "{{count}} permissões",
+      "groups": {
+        "gerente": "Gerentes",
+        "supervisor": "Supervisores",
+        "contador": "Contadores",
+        "cliente": "Clientes"
+      },
+      "managersCount": "{{count}} de {{max}}",
+      "managersAtMax": "{{count}} de {{max}} · máximo",
+      "managerSlotsLeft_one": "Conta como um dos {{max}} gerentes. Resta {{count}} vaga.",
+      "managerSlotsLeft_other": "Conta como um dos {{max}} gerentes. Restam {{count}} vagas.",
+      "managersFull": "A obra já tem {{max}} gerentes, que é o máximo. Remova um para adicionar outro.",
+      "creatorNote": "Criou a obra",
+      "pendingNote": "Convite pendente",
+      "inactiveNote": "Conta desativada",
       "activationHint": "Quem ainda não tem conta recebe um e-mail para ativá-la e escolher a senha. Até lá, aparece na lista mesmo assim."
     },
     "delete": {
@@ -533,7 +548,7 @@
       "link": "Vincular",
       "linkAria": "Vincular a {{name}} de Fornecedores",
       "create": "Adicionar fornecedor",
-      "createHint": "Fica disponível só nesta obra. Para incluí-lo em todas, peça ao gerente."
+      "createHint": "Fica disponível só nesta obra. Para incluí-lo em todas, peça a quem criou a obra."
     },
     "list": {
       "unrequested_one": "{{count}} não pedido",
@@ -744,6 +759,7 @@
       "acabados": "Acabamentos",
       "pintura": "Pintura",
       "climatizacion": "Climatização",
+      "fire_protection": "Sistema contra incêndio",
       "techos": "Telhados e impermeabilização",
       "pisos_revestimientos": "Pisos e revestimentos",
       "jardineria": "Jardinagem",
@@ -1112,6 +1128,8 @@
       "vicio_oculto": "Vício oculto",
       "retraso": "Atraso",
       "cambio_proyecto": "Mudança no projeto",
+      "decision_made": "Decisão tomada",
+      "process_started": "Início de processo",
       "reunion": "Reunião",
       "otro": "Outro"
     },
@@ -1207,6 +1225,43 @@
         "tooLarge": "Tem mais de 20MB.",
         "tooMany": "Um marco aceita até {{max}} anexos.",
         "upload": "Não conseguimos enviar o arquivo."
+      }
+    }
+  },
+  "releaseNotes": {
+    "title": "Novidades",
+    "tabsAria": "Avisos e novidades",
+    "ariaWithNews": "Há novidades",
+    "heading": "Novidades no Luma",
+    "changesOf": "Mudanças de {{date}}",
+    "open": "Ver novidades",
+    "fresh": "Novo para você",
+    "kind": {
+      "new": "Novo",
+      "fix": "Corrigido"
+    },
+    "entries": {
+      "2026-10-28": {
+        "managers": {
+          "title": "Até 5 gerentes por obra",
+          "description": "Adicione gerentes em Equipe, em «Dar acesso». O medidor mostra quantas vagas restam; só quem criou a obra pode excluí-la ou remover outro gerente."
+        },
+        "milestoneTypes": {
+          "title": "Dois tipos novos de marco",
+          "description": "Em Marcos você já pode reportar «Decisão tomada» e «Início de processo»."
+        },
+        "fireProtection": {
+          "title": "Nova especialidade",
+          "description": "«Sistema contra incêndio» está disponível ao cadastrar tarefas, pessoal e fornecedores."
+        },
+        "whatsNew": {
+          "title": "Novidades no sino",
+          "description": "No sino, na aba Novidades, você vê o que há de novo e o que corrigimos."
+        },
+        "lastTask": {
+          "title": "«Nova tarefa» não cobre mais a última tarefa",
+          "description": "No Cronograma, a última tarefa fica visível acima do botão."
+        }
       }
     }
   },
@@ -1539,7 +1594,7 @@
       "inReview": "Seu pagamento está em análise. Enquanto isso, você continua com acesso completo.",
       "paymentFailed": "Não conseguimos cobrar seu cartão. Atualize-o para não perder o acesso.",
       "expired": "Sua assinatura venceu: suas obras estão somente para leitura.",
-      "readOnlyProject": "Esta obra está somente para leitura: a assinatura de quem a gerencia venceu.",
+      "readOnlyProject": "Esta obra está somente para leitura: a assinatura de quem a criou venceu.",
       "action": "Ver assinatura"
     },
     "bolivares": {
@@ -1706,7 +1761,51 @@
     "nav": {
       "users": "Contas",
       "billing": "Pagamentos",
+      "activity": "Atividade",
       "assistant": "Assistente"
+    },
+    "activity": {
+      "periodLabel": "Período",
+      "periods": {
+        "7d": "7 dias",
+        "30d": "30 dias",
+        "all": "Desde sempre"
+      },
+      "columns": {
+        "action": "Papel e ação",
+        "count": "Quantidade"
+      },
+      "roles": {
+        "gerente": "Gerente",
+        "supervisor": "Supervisor",
+        "contador": "Contador",
+        "cliente": "Cliente",
+        "exMiembro": "Ex-membro"
+      },
+      "people_one": "{{count}} pessoa",
+      "people_other": "{{count}} pessoas",
+      "fewData": "Poucos dados",
+      "readOnlyNote": "Somente leitura: o uso aparece com a camada B.",
+      "totalActions": "Ações no total",
+      "otherActions": "Outras ações",
+      "footnote": "Conta-se o que existe hoje em cada obra, com o papel que a pessoa tinha nessa obra. Um papel com menos de {{min}} pessoas distintas no período não mostra números. Somente quantidades.",
+      "actions": {
+        "projectCreated": "Obras criadas",
+        "activityCreated": "Atividades criadas",
+        "activityApproved": "Atividades aprovadas",
+        "activityRejected": "Atividades devolvidas",
+        "memberInvited": "Convites para a obra",
+        "budgetImported": "Orçamentos importados",
+        "milestonePublished": "Marcos publicados ao cliente",
+        "documentUploaded": "Documentos enviados",
+        "engagementCreated": "Contratações de fornecedor",
+        "progressReported": "Relatórios de avanço",
+        "evidenceUploaded": "Evidências enviadas",
+        "laborLogged": "Registros de jornada",
+        "materialRequested": "Materiais pedidos",
+        "expenseRegistered": "Despesas registradas",
+        "paymentRegistered": "Recebimentos registrados"
+      }
     }
   },
   "legal": {

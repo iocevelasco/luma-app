@@ -1,13 +1,16 @@
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, CheckCheck } from 'lucide-react';
-import { useState } from 'react';
+import { Bell, CheckCheck, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import type { AppNotification } from '@luma/shared';
+import { ReleaseNotesDialog } from '@/components/notifications/release-notes-panel';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { useReleaseNotes } from '@/hooks/use-release-notes';
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
@@ -20,6 +23,8 @@ import { cn } from '@/lib/utils';
  * alguien procese: es "tengo un montón", y "+9" lo dice sin romper el círculo.
  */
 const BADGE_MAX = 9;
+
+type BellTab = 'avisos' | 'novedades';
 
 function NotificationRow({
   notification,
@@ -85,6 +90,12 @@ export function NotificationCenter() {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
 
+  const { notes, unseen, hasUnseen, markSeen } = useReleaseNotes();
+  const [tab, setTab] = useState<BellTab>('avisos');
+  const [newsOpen, setNewsOpen] = useState(false);
+  // Lo que no había visto al abrir: sigue marcado aunque el punto se apague al mirarlo.
+  const [freshIds, setFreshIds] = useState<ReadonlySet<string>>(new Set());
+
   const notifications = data?.notifications ?? [];
   const unreadCount = data?.unreadCount ?? 0;
 
@@ -94,65 +105,123 @@ export function NotificationCenter() {
     navigate(notification.link);
   }
 
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) return;
+    setFreshIds(new Set(unseen.map((note) => note.id)));
+    setTab('avisos');
+  }
+
+  // Verlas es leerlas: al mostrarse la pestaña, se marcan como vistas.
+  useEffect(() => {
+    if (newsOpen && hasUnseen) markSeen();
+  }, [newsOpen, hasUnseen, markSeen]);
+
+  const ariaLabel = [
+    unreadCount > 0
+      ? t('notification.ariaWithUnread', { count: unreadCount })
+      : t('notification.aria'),
+    hasUnseen ? t('releaseNotes.ariaWithNews') : null,
+  ]
+    .filter(Boolean)
+    .join('. ');
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          aria-label={
-            unreadCount > 0
-              ? t('notification.ariaWithUnread', { count: unreadCount })
-              : t('notification.aria')
-          }
-        >
+        <Button variant="ghost" size="icon" className="relative" aria-label={ariaLabel}>
           <Bell className="size-4" />
-          {unreadCount > 0 && (
+          {unreadCount > 0 ? (
             // `rounded-full` acá es correcto: es un indicador de estado, no un
             // control. Ver la escala de radios en DESIGN.md.
             <span className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-2xs font-medium text-primary-foreground">
               {unreadCount > BADGE_MAX ? `+${BADGE_MAX}` : unreadCount}
             </span>
+          ) : (
+            // Lo nuevo de Luma es un punto, nunca un número: el número de la
+            // campana quiere decir "alguien necesita algo de vos", y si se
+            // encendiera por un lanzamiento enseñaría a ignorarlo.
+            hasUnseen && (
+              <span
+                aria-hidden
+                data-testid="release-notes-dot"
+                className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary ring-2 ring-background"
+              />
+            )
           )}
         </Button>
       </PopoverTrigger>
 
       <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-          <p className="text-sm font-medium">{t('notification.title')}</p>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => markAllRead.mutate()}
-              disabled={markAllRead.isPending}
-            >
-              <CheckCheck className="size-3.5" />
-              {t('notification.markAllRead')}
-            </Button>
-          )}
-        </div>
-
-        {notifications.length === 0 ? (
-          <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-            {t('notification.empty')}
-          </p>
-        ) : (
-          <ScrollArea className="max-h-96">
-            <div className="flex flex-col p-1">
-              {notifications.map((notification) => (
-                <NotificationRow
-                  key={notification.id}
-                  notification={notification}
-                  onOpen={handleOpen}
-                />
-              ))}
+        <Tabs
+          value={tab}
+          onValueChange={(next) => {
+            // Novedades es una pantalla propia: la pestaña la abre y cierra el popover.
+            if (next === 'novedades') {
+              setOpen(false);
+              setNewsOpen(true);
+            } else setTab(next as BellTab);
+          }}
+        >
+          {notes.length > 0 && (
+            <div className="border-b border-border p-2">
+              <TabsList aria-label={t('releaseNotes.tabsAria')} className="w-full">
+                <TabsTrigger value="avisos" icon={Bell}>
+                  {t('notification.title')}
+                </TabsTrigger>
+                <TabsTrigger value="novedades" icon={Sparkles}>
+                  {t('releaseNotes.title')}
+                  {/* Con avisos sin leer la campana abre en Avisos y el número tapa el
+                      punto: sin esta marca, quien más avisos tiene nunca vería la novedad. */}
+                  {hasUnseen && (
+                    <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+                  )}
+                </TabsTrigger>
+              </TabsList>
             </div>
-          </ScrollArea>
-        )}
+          )}
+
+          <TabsContent value="avisos">
+            <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+              <p className="text-sm font-medium">{t('notification.title')}</p>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => markAllRead.mutate()}
+                  disabled={markAllRead.isPending}
+                >
+                  <CheckCheck className="size-3.5" />
+                  {t('notification.markAllRead')}
+                </Button>
+              )}
+            </div>
+
+            {notifications.length === 0 ? (
+              <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+                {t('notification.empty')}
+              </p>
+            ) : (
+              <ScrollArea className="max-h-96">
+                <div className="flex flex-col p-1">
+                  {notifications.map((notification) => (
+                    <NotificationRow
+                      key={notification.id}
+                      notification={notification}
+                      onOpen={handleOpen}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </TabsContent>
+
+        </Tabs>
       </PopoverContent>
     </Popover>
+    <ReleaseNotesDialog open={newsOpen} onOpenChange={setNewsOpen} notes={notes} freshIds={freshIds} />
+    </>
   );
 }
 

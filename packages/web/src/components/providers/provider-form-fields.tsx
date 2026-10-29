@@ -31,6 +31,7 @@ export const PROVIDER_SPECIALTIES: ProviderSpecialty[] = [
   'acabados',
   'pintura',
   'climatizacion',
+  'fire_protection',
   'techos',
   'pisos_revestimientos',
   'jardineria',
