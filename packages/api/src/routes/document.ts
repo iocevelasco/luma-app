@@ -7,6 +7,7 @@ import { requireCapability, requireProjectAccess } from '../middleware/project.m
 import {
   createProjectDocument,
   deleteProjectDocument,
+  getProjectDocumentFile,
   listProjectDocuments,
   updateProjectDocument,
 } from '../controllers/index.js';
@@ -46,6 +47,7 @@ export const documentRouter = Router({ mergeParams: true });
 documentRouter.use(isAuthenticated, requireProjectAccess);
 
 documentRouter.get('/', requireCapability('document.read'), listProjectDocuments);
+documentRouter.get('/:documentId/file', requireCapability('document.read'), getProjectDocumentFile);
 documentRouter.post(
   '/',
   requireCapability('document.write'),
