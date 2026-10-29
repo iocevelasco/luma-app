@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CalendarClock, CalendarDays, Infinity as AllTime, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ACTIVITY_PERIODS, type ActivityPeriod } from '@luma/shared';
 import { ActivityTable } from '@/components/platform/activity-table';
@@ -11,6 +12,12 @@ import { usePlatformActivity } from '@/hooks/platform/use-platform-activity-quer
  * filtró: lo que no alcanza el umbral de personas llega sin cifras y acá sólo
  * se rotula. Sólo lectura.
  */
+const PERIOD_ICON: Record<ActivityPeriod, LucideIcon> = {
+  '7d': CalendarClock,
+  '30d': CalendarDays,
+  all: AllTime,
+};
+
 export function PlatformActivityPage() {
   const { t } = useTranslation();
   const [period, setPeriod] = useState<ActivityPeriod>('30d');
@@ -20,7 +27,7 @@ export function PlatformActivityPage() {
     <Tabs value={period} onValueChange={(value) => setPeriod(value as ActivityPeriod)}>
       <TabsList aria-label={t('platform.activity.periodLabel')}>
         {ACTIVITY_PERIODS.map((value) => (
-          <TabsTrigger key={value} value={value}>
+          <TabsTrigger key={value} value={value} icon={PERIOD_ICON[value]}>
             {t(`platform.activity.periods.${value}`)}
           </TabsTrigger>
         ))}
