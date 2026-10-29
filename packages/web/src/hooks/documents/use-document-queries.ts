@@ -75,3 +75,40 @@ export function useDeleteProjectDocument(projectId: string) {
     onError: (error) => toast.error(errorMessage(error, t)),
   });
 }
+
+/**
+ * Mover o renombrar varias cosas a la vez (el explorador de archivos): un solo
+ * aviso al final en vez de uno por documento. Si alguno falla, el listado se
+ * recarga igual —los que sí se aplicaron tienen que verse—.
+ */
+export function useUpdateProjectDocuments(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (changes: Array<UpdateProjectDocumentInput & { documentId: string }>) =>
+      Promise.all(
+        changes.map(({ documentId, ...payload }) =>
+          documentsApi.update(projectId, documentId, payload),
+        ),
+      ),
+    onSuccess: () => toast.success(t('document.updated')),
+    onError: (error) => toast.error(errorMessage(error, t)),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.projectDocuments, projectId] }),
+  });
+}
+
+export function useDeleteProjectDocuments(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (documentIds: string[]) =>
+      Promise.all(documentIds.map((documentId) => documentsApi.remove(projectId, documentId))),
+    onSuccess: () => toast.success(t('document.deleted')),
+    onError: (error) => toast.error(errorMessage(error, t)),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.projectDocuments, projectId] }),
+  });
+}

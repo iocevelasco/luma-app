@@ -1039,10 +1039,6 @@
     }
   },
   "document": {
-    "list": {
-      "title": "Documentação da obra",
-      "noSpace": "Sem espaço atribuído"
-    },
     "category": {
       "condiciones_sitio": "Condições do local",
       "horario_trabajo": "Horário de trabalho",
@@ -1052,34 +1048,6 @@
       "render": "Renders",
       "otra": "Outros"
     },
-    "fields": {
-      "file": "Arquivo",
-      "filePlaceholder": "Escolher arquivo",
-      "fileHint": "PDF ou imagem (.jpg, .png, .webp). Até 20MB.",
-      "category": "Categoria",
-      "categoryPlaceholder": "Escolha uma categoria",
-      "title": "Título",
-      "space": "Espaço",
-      "spacePlaceholder": "Cozinha, banheiro principal, sala…",
-      "notes": "Observações"
-    },
-    "new": {
-      "title": "Enviar documento",
-      "submit": "Enviar"
-    },
-    "delete": {
-      "action": "Excluir documento",
-      "title": "Excluir este documento?",
-      "description": "«{{title}}» e seu arquivo serão excluídos. Não é possível desfazer.",
-      "confirm": "Excluir"
-    },
-    "empty": {
-      "title": "Ainda não há documentação",
-      "description": "Envie as autorizações, as condições do local, as plantas e os renders da obra.",
-      "descriptionReadOnly": "Quando o gerente enviar autorizações, plantas ou renders, você verá aqui."
-    },
-    "open": "Abrir documento",
-    "uploadedBy": "Enviado por {{name}} em {{date}}",
     "created": "Documento enviado",
     "updated": "Documento atualizado",
     "deleted": "Documento excluído",
@@ -1091,21 +1059,63 @@
       "fileType": "Formato não suportado. Envie um PDF ou imagem .jpg, .png ou .webp.",
       "fileSize": "O arquivo é muito grande (máximo 20MB)."
     },
-    "filters": {
-      "category": "Tipo",
-      "allCategories": "Todos os tipos",
-      "uploader": "Enviado por",
-      "allUploaders": "Todas as pessoas",
-      "groupBy": "Agrupar por",
-      "groupNone": "Sem agrupar",
-      "groupCategory": "Tipo",
-      "groupUploader": "Quem enviou",
-      "noResults": "Nenhum documento corresponde a estes filtros.",
-      "clear": "Limpar filtros"
-    },
-    "pdf": "PDF",
-    "uploadedOn": "Enviado em {{date}}",
-    "previewUnavailable": "Pré-visualização indisponível"
+    "fm": {
+      "words": {
+        "root": "Documentação",
+        "addNew": "Adicionar",
+        "ok": "OK",
+        "cancel": "Cancelar",
+        "deleteFiles": "Excluir",
+        "files": "Arquivos",
+        "folder": "Pasta",
+        "backToParent": "Voltar à pasta anterior",
+        "information": "Informações",
+        "found": "Encontrados",
+        "confirmDelete": "Excluir estes itens? Os arquivos são apagados e não podem ser recuperados:",
+        "enterFileName": "Nome do arquivo",
+        "enterFolderName": "Nome do ambiente (cozinha, banheiro…)",
+        "result": "Resultado",
+        "search": "Buscar",
+        "searchResultsIn": "Resultados em",
+        "addFile": "Novo arquivo",
+        "addFolder": "Novo ambiente",
+        "upload": "Enviar documento",
+        "size": "Tamanho",
+        "name": "Nome",
+        "type": "Tipo",
+        "date": "Data",
+        "rename": "Renomear",
+        "cut": "Mover",
+        "delete": "Excluir",
+        "copy": "Copiar",
+        "paste": "Mover para cá",
+        "download": "Abrir",
+        "count": "Quantidade",
+        "folderLower": "pasta",
+        "foldersLower": "pastas",
+        "fileLower": "arquivo",
+        "filesLower": "arquivos",
+        "multipleFiles": "Vários arquivos",
+        "multiple": "vários",
+        "preview": "Pré-visualização",
+        "of": "de",
+        "used": "usado",
+        "selectToView": "Escolha um arquivo ou uma pasta para ver os detalhes",
+        "empty": "Ainda não há nada aqui",
+        "unknownFile": "Arquivo desconhecido",
+        "miniature": "Miniatura do arquivo"
+      },
+      "errors": {
+        "noUploadAtRoot": "Abra uma pasta (licenças, plantas…) para enviar ou mover documentos para ela.",
+        "foldersOnlyInPlans": "As pastas por ambiente só são criadas dentro de Plantas e Renders.",
+        "spaceTooLong": "O nome do ambiente é longo demais.",
+        "moveFolders": "As pastas não podem ser movidas. Mova os documentos um a um.",
+        "noCopy": "Não é possível copiar documentos. Envie o arquivo de novo onde precisar.",
+        "noDeleteCategory": "As pastas de tipo não podem ser excluídas.",
+        "folderNotEmpty": "Mova ou exclua antes os documentos dessa pasta.",
+        "noUrl": "O envio de documentação ainda não está configurado neste ambiente."
+      }
+    }
   },
   "milestone": {
     "list": {
