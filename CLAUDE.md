@@ -32,13 +32,25 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
   el admin tiene su propia área, `/plataforma` (cuentas y pagos), con
   `PlatformLayout`. Una pantalla de administración global no va en `DashboardLayout`.
 - **Roles de obra**: `gerente` | `supervisor` | `contador` | `cliente`, por obra y
-  no por Empresa. El gerente sale de `Project.createdBy`; los otros tres son filas
-  de `ProjectMembership`. **Quién puede qué vive en una sola grilla**:
+  no por Empresa. Quien creó la obra es el gerente por `Project.createdBy` (el
+  **dueño**, sin fila); los demás roles son filas de `ProjectMembership`, y eso
+  incluye a otros gerentes: **hasta 5 por obra, el dueño incluido**
+  (`MAX_PROJECT_MANAGERS`, `project-managers.service.ts`). Otro gerente hace todo
+  lo del gerente salvo lo que la grilla reserva al dueño (`OWNER_ONLY`: eliminar
+  la obra, sacar o degradar a otro gerente, la libreta de proveedores de la
+  Empresa). **Quién puede qué vive en una sola grilla**:
   `packages/shared/src/permissions/index.ts`. Los routers declaran la acción con
   `requireCapability('activity.plan')` y los controllers preguntan con
   `req.can(...)` — nunca por rol. La UI lee `project.capabilities`, que la API ya
   resolvió. Agregar un permiso = una celda en la grilla. Si escribís
   `role === 'supervisor'` en cualquier lado, estás en el camino equivocado.
+- **Actividad por rol** (`/plataforma/actividad`, `platform-activity.service.ts`):
+  conteos por rol de obra y acción, derivados de datos existentes. El rol es el
+  que la persona tiene *en la obra donde actuó*. La confidencialidad se aplica
+  **en la API**: nunca salen ids, nombres, montos ni personas, y un rol/período con
+  menos de `MIN_PEOPLE_PER_CELL` (5, en `@luma/shared`) personas distintas sale con
+  las cifras en `null`. Las cuentas `@luma.test` no cuentan. Varias de esas
+  colecciones se borran de verdad, así que el histórico puede bajar.
 - **Baja lógica**: `account_status: 'inactive'` + `enabled: false`. Nunca se borra
   el documento. A los 90 días `purge-deactivated-accounts` (tarea diaria de
   Coolify) borra los datos personales y marca `purgedAt`; el documento queda porque
@@ -52,7 +64,7 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
   `update`; sólo la papelera y el restaurar las piden **nombrando `deletedAt` en
   el filtro**. Lo que cuelga de la obra lo borra `purge-deleted-projects` con
   `PROJECT_OWNED` en `project-deletion.service.ts`: **un modelo nuevo con campo
-  `project` se suma a esa lista** (un test falla si no). Sólo el gerente
+  `project` se suma a esa lista** (un test falla si no). Sólo el dueño
   (`project.delete`).
 - **Términos y Privacidad**: un solo documento, versionado por `LEGAL_VERSION` en
   `@luma/shared/legal`. La aceptación es un hecho en `User`; si está al día lo

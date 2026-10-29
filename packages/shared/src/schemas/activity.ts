@@ -33,6 +33,7 @@ export const activitySpecialtySchema = z.enum([
   'acabados',
   'pintura',
   'climatizacion',
+  'fire_protection',
   'techos',
   'pisos_revestimientos',
   'jardineria',

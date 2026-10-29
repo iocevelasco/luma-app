@@ -155,6 +155,7 @@
       "cliente": "Cliente"
     },
     "roleHint": {
+      "gerente": "Hace todo lo que haces tú en la obra, dinero y equipo incluidos. No puede eliminarla, quitar a otro jefe de obra ni usar la libreta de proveedores y el personal de la empresa.",
       "supervisor": "Reporta avance, asistencia y materiales desde la obra. No ve el dinero.",
       "contador": "Solo cobros y gastos. No ve tareas, personal ni proveedores.",
       "cliente": "Sigue el avance de su obra y su cronograma de pagos. Solo lectura."
@@ -175,6 +176,20 @@
       "removeConfirm": "Quitar",
       "removed": "Acceso quitado",
       "capabilityCount": "{{count}} permisos",
+      "groups": {
+        "gerente": "Jefes de obra",
+        "supervisor": "Supervisores",
+        "contador": "Contables",
+        "cliente": "Clientes"
+      },
+      "managersCount": "{{count}} de {{max}}",
+      "managersAtMax": "{{count}} de {{max}} · máximo",
+      "managerSlotsLeft_one": "Cuenta como uno de los {{max}} jefes de obra. Queda {{count}} plaza.",
+      "managerSlotsLeft_other": "Cuenta como uno de los {{max}} jefes de obra. Quedan {{count}} plazas.",
+      "managersFull": "La obra ya tiene {{max}} jefes de obra, que es el máximo. Quita a uno para añadir otro.",
+      "creatorNote": "Creó la obra",
+      "pendingNote": "Invitación pendiente",
+      "inactiveNote": "Cuenta dada de baja",
       "activationHint": "Quien todavía no tiene cuenta recibe un correo para activarla y elegir su contraseña. Hasta que lo haga, figura igual en la lista."
     },
     "delete": {
@@ -523,7 +538,7 @@
       "link": "Vincular",
       "linkAria": "Vincular a {{name}} de Proveedores",
       "create": "Agregar proveedor",
-      "createHint": "Queda disponible solo en esta obra. Para añadirlo a todas, pídeselo al gerente."
+      "createHint": "Queda disponible solo en esta obra. Para añadirlo a todas, pídeselo a quien creó la obra."
     },
     "list": {
       "unrequested_one": "{{count}} sin pedir",
@@ -734,6 +749,7 @@
       "acabados": "Acabados",
       "pintura": "Pintura",
       "climatizacion": "Climatización",
+      "fire_protection": "Protección contra incendios",
       "techos": "Techos e impermeabilización",
       "pisos_revestimientos": "Pisos y revestimientos",
       "jardineria": "Jardinería",
@@ -1102,6 +1118,8 @@
       "vicio_oculto": "Vicio oculto",
       "retraso": "Retraso",
       "cambio_proyecto": "Cambio en el proyecto",
+      "decision_made": "Decisión tomada",
+      "process_started": "Inicio de proceso",
       "reunion": "Reunión",
       "otro": "Otro"
     },
@@ -1197,6 +1215,43 @@
         "tooLarge": "Pesa más de 20MB.",
         "tooMany": "Un hito admite hasta {{max}} adjuntos.",
         "upload": "No hemos podido subir el archivo."
+      }
+    }
+  },
+  "releaseNotes": {
+    "title": "Novedades",
+    "tabsAria": "Avisos y novedades",
+    "ariaWithNews": "Hay novedades",
+    "heading": "Novedades en Luma",
+    "changesOf": "Cambios del {{date}}",
+    "open": "Ver novedades",
+    "fresh": "Nuevo para ti",
+    "kind": {
+      "new": "Nuevo",
+      "fix": "Corregido"
+    },
+    "entries": {
+      "2026-10-28": {
+        "managers": {
+          "title": "Hasta 5 jefes de obra por obra",
+          "description": "Añade jefes de obra desde Equipo, en «Dar acceso». El medidor muestra cuántas plazas quedan; solo quien creó la obra puede eliminarla o quitar a otro jefe de obra."
+        },
+        "milestoneTypes": {
+          "title": "Dos tipos nuevos de hito",
+          "description": "En Hitos ya puedes reportar «Decisión tomada» e «Inicio de proceso»."
+        },
+        "fireProtection": {
+          "title": "Nueva especialidad",
+          "description": "«Protección contra incendios» está disponible al cargar tareas, personal y proveedores."
+        },
+        "whatsNew": {
+          "title": "Novedades en la campana",
+          "description": "Desde la campana, en la pestaña Novedades, verás lo nuevo y lo que hemos corregido."
+        },
+        "lastTask": {
+          "title": "«Nueva tarea» ya no tapa la última tarea",
+          "description": "En el Cronograma, la última tarea queda a la vista por encima del botón."
+        }
       }
     }
   },
@@ -1529,7 +1584,7 @@
       "inReview": "Tu pago está en revisión. Mientras tanto sigues con acceso completo.",
       "paymentFailed": "No hemos podido cobrar tu tarjeta. Actualízala para no perder el acceso.",
       "expired": "Tu suscripción ha caducado: tus obras están en solo lectura.",
-      "readOnlyProject": "Esta obra está en solo lectura: ha caducado la suscripción de quien la gestiona.",
+      "readOnlyProject": "Esta obra está en solo lectura: ha caducado la suscripción de quien la creó.",
       "action": "Ver suscripción"
     },
     "bolivares": {
@@ -1695,7 +1750,51 @@
     },
     "nav": {
       "users": "Cuentas",
-      "billing": "Pagos"
+      "billing": "Pagos",
+      "activity": "Actividad"
+    },
+    "activity": {
+      "periodLabel": "Período",
+      "periods": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "all": "Desde siempre"
+      },
+      "columns": {
+        "action": "Rol y acción",
+        "count": "Cantidad"
+      },
+      "roles": {
+        "gerente": "Jefe de obra",
+        "supervisor": "Supervisor",
+        "contador": "Contable",
+        "cliente": "Cliente",
+        "exMiembro": "Ex-miembro"
+      },
+      "people_one": "{{count}} persona",
+      "people_other": "{{count}} personas",
+      "fewData": "Pocos datos",
+      "readOnlyNote": "Solo lectura: su uso se ve con la capa B.",
+      "totalActions": "Acciones en total",
+      "otherActions": "Otras acciones",
+      "footnote": "Se cuenta lo que existe hoy en cada obra, con el rol que tenía la persona en esa obra. Un rol con menos de {{min}} personas distintas en el período no muestra cifras. Solo cantidades.",
+      "actions": {
+        "projectCreated": "Obras creadas",
+        "activityCreated": "Actividades creadas",
+        "activityApproved": "Actividades aprobadas",
+        "activityRejected": "Actividades devueltas",
+        "memberInvited": "Invitaciones a obra",
+        "budgetImported": "Presupuestos importados",
+        "milestonePublished": "Hitos publicados al cliente",
+        "documentUploaded": "Documentos subidos",
+        "engagementCreated": "Contrataciones de proveedor",
+        "progressReported": "Informes de avance",
+        "evidenceUploaded": "Evidencias subidas",
+        "laborLogged": "Partes de jornada",
+        "materialRequested": "Materiales solicitados",
+        "expenseRegistered": "Gastos registrados",
+        "paymentRegistered": "Cobros registrados"
+      }
     }
   },
   "legal": {

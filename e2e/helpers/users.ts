@@ -31,13 +31,14 @@ export type E2EUserKey =
   | 'admin'
   | 'user'
   | 'gerente'
+  | 'cogerente'
   | 'supervisor'
   | 'contador'
   | 'cliente'
   | 'inactive';
 
 /** Los roles de obra que tienen una cuenta fija en la obra compartida. */
-export type E2EProjectRoleKey = Extract<E2EUserKey, 'gerente' | 'supervisor' | 'contador' | 'cliente'>;
+export type E2EProjectRoleKey = 'gerente' | 'supervisor' | 'contador' | 'cliente';
 
 interface E2EUserFixture {
   email: string;
@@ -45,6 +46,8 @@ interface E2EUserFixture {
   name: string;
   platformRole: 'admin' | 'user';
   projectRole?: E2EProjectRoleKey;
+  /** Quien creó la obra compartida (hay dos gerentes: sólo uno la creó). */
+  projectOwner?: boolean;
   accountStatus?: 'active' | 'inactive';
 }
 

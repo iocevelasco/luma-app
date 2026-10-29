@@ -1,23 +1,30 @@
 import type { NextFunction, Request, Response } from 'express';
 import {
-  capabilitiesInProject,
+  capabilityToManageMember,
+  countsTowardManagerLimit,
   createProjectSchema,
   invitableProjectRoleSchema,
   inviteProjectMemberSchema,
   updateProjectSchema,
   type ActivationDelivery,
+  type Capability,
   type Project as ProjectDTO,
   type ProjectMemberSummary,
   type ProjectRole,
 } from '@luma/shared';
 import { User } from '../models/User.js';
+import { projectCapabilitiesFor } from '../middleware/project.middleware.js';
 import { Project, type IProject } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
+import {
+  assertManagerSlotFree,
+  confirmManagerSlot,
+} from '../services/project-managers.service.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
 import { removedProjectsForMember } from '../services/project-deletion.service.js';
 import { decideProjectCreation, statesFor } from '../services/subscription.service.js';
 import { syncStripeExtras } from '../services/stripe.service.js';
-import { AppError, isAppError } from '../utils/errors.js';
+import { AppError, forbidden, isAppError } from '../utils/errors.js';
 import { EmailService } from '../services/email.service.js';
 import {
   isLinkedToAnotherInviter,
@@ -30,6 +37,9 @@ import { ACTIVATION_TOKEN_TTL_MS, randomToken } from './auth.controller.js';
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
 }
+
+const MANAGER_WRITE_MESSAGE =
+  'Sólo quien creó la obra puede cambiarle el rol o sacar a otro gerente.';
 
 export function toProjectDTO(project: IProject): ProjectDTO {
   return {
@@ -164,8 +174,9 @@ export async function listProjects(req: Request, res: Response) {
       data: {
         removedProjects: await removedProjectsForMember(userId),
         projects: projects.map((project) => {
-          // El gerente no tiene fila: sale de `createdBy` y gana sobre
-          // cualquier membresía (mismo criterio que `requireProjectAccess`).
+          // El dueño no tiene fila: sale de `createdBy` y gana sobre cualquier
+          // membresía (mismo criterio que `requireProjectAccess`). Otro gerente
+          // sí la tiene, con `role: 'gerente'`.
           const role: ProjectRole =
             String(project.createdBy) === userId
               ? 'gerente'
@@ -174,7 +185,7 @@ export async function listProjects(req: Request, res: Response) {
           return {
             ...toProjectDTO(project),
             role,
-            capabilities: capabilitiesInProject(role, project, { readOnly }),
+            capabilities: projectCapabilitiesFor(project, role, userId, readOnly),
             readOnly,
           };
         }),
@@ -201,12 +212,10 @@ export async function getProject(req: Request, res: Response) {
           // Resueltas server-side contra la grilla, con los flags de la obra
           // ya aplicados: la UI pregunta por capacidad y no vuelve a derivar
           // nada. Es lo que permite sumar un rol sin tocar el frontend.
-          capabilities: capabilitiesInProject(role, project, {
-            readOnly: req.projectReadOnly === true,
-          }),
+          capabilities: req.projectCapabilities ?? [],
           readOnly: req.projectReadOnly === true,
         },
-        members: await listProjectMembers(project),
+        members: await listProjectMembers(project, (capability) => req.can?.(capability) === true),
       },
     });
   } catch (error) {
@@ -215,16 +224,53 @@ export async function getProject(req: Request, res: Response) {
   }
 }
 
+type MemberUser = {
+  _id: unknown;
+  email: string;
+  name: string;
+  email_verified?: boolean;
+  account_status?: string;
+};
+
+/** Qué ve la persona en la fila de quien todavía no entró o ya no puede entrar. */
+function accountState(user: MemberUser, hasPassword: boolean) {
+  return {
+    // "Ya activó" es tener contraseña, no sólo haber verificado el correo.
+    pending: !user.email_verified || !hasPassword,
+    inactive: user.account_status === 'inactive',
+  };
+}
+
 /**
- * El equipo de la obra: el gerente —que no tiene fila de membresía, sale de
- * `createdBy`— seguido de supervisores y clientes invitados.
+ * El equipo de la obra: quien la creó —que no tiene fila de membresía, sale de
+ * `createdBy`— seguido de los gerentes, supervisores, contadores y clientes
+ * invitados.
+ *
+ * `can` es la grilla de quien pide la lista: decide si cada fila se puede
+ * tocar (la de otro gerente pide `project.manager.write`). Se resuelve acá y
+ * no en la UI, que no sabe quién creó la obra.
  */
-async function listProjectMembers(project: IProject): Promise<ProjectMemberSummary[]> {
-  const manager = await User.findById(project.createdBy).select('email name');
+async function listProjectMembers(
+  project: IProject,
+  can: (capability: Capability) => boolean,
+): Promise<ProjectMemberSummary[]> {
+  const manager = await User.findById(project.createdBy).select(
+    'email name email_verified account_status',
+  );
 
   const rows = await ProjectMembership.find({ project: project._id }).populate<{
-    user: { _id: unknown; email: string; name: string };
-  }>('user', 'email name');
+    user: MemberUser;
+  }>('user', 'email name email_verified account_status');
+
+  // Quién tiene contraseña, en una sola consulta para toda la lista.
+  const withPassword = new Set(
+    (
+      await User.find({
+        _id: { $in: [project.createdBy, ...rows.map((row) => row.user._id)] },
+        password: { $exists: true },
+      }).select('_id')
+    ).map((found) => String(found._id)),
+  );
 
   const invited: ProjectMemberSummary[] = rows.map((row) => ({
     id: String(row._id),
@@ -232,6 +278,8 @@ async function listProjectMembers(project: IProject): Promise<ProjectMemberSumma
     email: row.user.email,
     name: row.user.name,
     role: row.role,
+    manageable: can(capabilityToManageMember(row.role)),
+    ...accountState(row.user, withPassword.has(String(row.user._id))),
     createdAt: row.createdAt.toISOString(),
   }));
 
@@ -239,12 +287,15 @@ async function listProjectMembers(project: IProject): Promise<ProjectMemberSumma
 
   return [
     {
-      // El id de la obra y no el de una membresía: el gerente no tiene fila.
+      // El id de la obra y no el de una membresía: el dueño no tiene fila, y
+      // por eso no hay nada que cambiarle ni que sacar.
       id: String(project._id),
       userId: String(manager._id),
       email: manager.email,
       name: manager.name,
       role: 'gerente',
+      manageable: false,
+      ...accountState(manager, withPassword.has(String(manager._id))),
       createdAt: project.createdAt.toISOString(),
     },
     ...invited,
@@ -252,8 +303,9 @@ async function listProjectMembers(project: IProject): Promise<ProjectMemberSumma
 }
 
 /**
- * Invita a alguien a la obra con un rol explícito —supervisor o cliente—.
- * Requiere `requireProjectAccess` + `requireCapability('project.invite')`.
+ * Invita a alguien a la obra con un rol explícito: gerente, supervisor,
+ * contador o cliente. Requiere `requireProjectAccess` +
+ * `requireCapability('project.invite')`.
  *
  * El rol viaja en el body y no se adivina: desde que el supervisor existe,
  * "invitar a la obra" dejó de significar una sola cosa.
@@ -261,8 +313,13 @@ async function listProjectMembers(project: IProject): Promise<ProjectMemberSumma
  * Si el email no tiene cuenta todavía, la crea sin contraseña y manda el mail
  * de activación que ya existe (`EmailService.sendAccountActivationEmail`) —
  * no hay flujo nuevo que inventar.
+ *
+ * **Un gerente más** cuenta para el tope (`MAX_PROJECT_MANAGERS`): se chequea
+ * antes de crear nada y se vuelve a chequear al guardar, porque dos
+ * invitaciones simultáneas pasan las dos el primer chequeo. Por eso el mail de
+ * activación sale **después**: no se manda a quien termina sin lugar.
  */
-export async function inviteProjectMember(req: Request, res: Response) {
+export async function inviteProjectMember(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
   }
@@ -288,6 +345,8 @@ export async function inviteProjectMember(req: Request, res: Response) {
     let delivery: ActivationDelivery | undefined;
     // Quien ya tenía cuenta no recibe activación: recibe un aviso de la obra.
     let notifyExistingUser = false;
+    // La cuenta se crea antes de guardar la membresía, pero el mail sale después.
+    let activation: { token: string; name: string } | null = null;
 
     if (user) {
       // Ver `isLinkedToAnotherInviter`: la cuenta puede estar en manos de quien
@@ -295,19 +354,39 @@ export async function inviteProjectMember(req: Request, res: Response) {
       if (isLinkedToAnotherInviter(user, req.user.sub)) {
         return res.status(409).json({ success: false, error: LINK_HELD_BY_ANOTHER_MESSAGE });
       }
-      const alreadyMember = await ProjectMembership.exists({
+      // Una cuenta dada de baja no puede entrar: invitarla sólo ocuparía un
+      // lugar (y, siendo gerente, uno de los cinco).
+      // 400 y no 409: no choca con nada de la obra, y la pantalla de la Empresa
+      // lee un 409 como "ya tenía acceso".
+      if (user.account_status === 'inactive') {
+        return res.status(400).json({
+          success: false,
+          error: 'Esa cuenta está dada de baja y no puede sumarse a la obra.',
+        });
+      }
+      const existing = await ProjectMembership.findOne({
         project: project._id,
         user: user._id,
-      });
-      // También 409 si ya está con otro rol: cambiar el rol de alguien es una
+      }).select('role');
+      // 409 también si ya está con otro rol: cambiar el rol de alguien es una
       // acción distinta de invitarlo, y hacerla por acá la volvería silenciosa.
-      if (alreadyMember || String(project.createdBy) === String(user._id)) {
-        return res
-          .status(409)
-          .json({ success: false, error: 'Esa persona ya tiene acceso a la obra' });
+      if (existing || String(project.createdBy) === String(user._id)) {
+        const current = existing?.role ?? 'gerente';
+        return res.status(409).json({
+          success: false,
+          error:
+            current === role
+              ? `Esa persona ya es ${role} de esta obra.`
+              : `Esa persona ya está en la obra como ${current}. Cambiale el rol desde la lista.`,
+        });
       }
       notifyExistingUser = true;
-    } else {
+    }
+
+    // Antes de crear la cuenta: no se deja una cuenta nueva colgada por un tope.
+    if (countsTowardManagerLimit(role)) await assertManagerSlotFree(project);
+
+    if (!user) {
       const activationToken = randomToken();
       const name = email.split('@')[0];
       user = await User.create({
@@ -319,13 +398,7 @@ export async function inviteProjectMember(req: Request, res: Response) {
         emailVerificationTokenExpires: new Date(Date.now() + ACTIVATION_TOKEN_TTL_MS),
       });
       await createPersonalOrganization(String(user._id), name);
-      const emailSent = await EmailService.sendAccountActivationEmail(email, activationToken, name, {
-        inviterName: inviter?.name,
-        projectName: project.name,
-        role,
-      });
-      await recordActivationDelivery(user._id, emailSent, req.user.sub);
-      delivery = activationDelivery(emailSent, activationToken);
+      activation = { token: activationToken, name };
     }
 
     const membership = await ProjectMembership.create({
@@ -334,6 +407,21 @@ export async function inviteProjectMember(req: Request, res: Response) {
       role,
       invitedBy: req.user.sub,
     });
+
+    if (countsTowardManagerLimit(role)) {
+      await confirmManagerSlot(project, () => ProjectMembership.findByIdAndDelete(membership._id));
+    }
+
+    if (activation) {
+      const emailSent = await EmailService.sendAccountActivationEmail(
+        email,
+        activation.token,
+        activation.name,
+        { inviterName: inviter?.name, projectName: project.name, role },
+      );
+      await recordActivationDelivery(user._id, emailSent, req.user.sub);
+      delivery = activationDelivery(emailSent, activation.token);
+    }
 
     if (notifyExistingUser) {
       // Sin `await`: el mail no demora ni voltea la invitación.
@@ -347,17 +435,24 @@ export async function inviteProjectMember(req: Request, res: Response) {
       });
     }
 
+    // Una cuenta que esta invitación acaba de crear no tiene contraseña todavía.
+    const hasPassword =
+      !activation && Boolean(await User.exists({ _id: user._id, password: { $exists: true } }));
+
     const member: ProjectMemberSummary = {
       id: String(membership._id),
       userId: String(user._id),
       email: user.email,
       name: user.name,
       role: membership.role,
+      manageable: req.can?.(capabilityToManageMember(membership.role)) === true,
+      ...accountState(user, hasPassword),
       createdAt: membership.createdAt.toISOString(),
     };
 
     return res.status(201).json({ success: true, data: { member, ...delivery } });
   } catch (error) {
+    if (isAppError(error)) return next(error);
     console.error('❌ [PROJECT] inviteProjectMember:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }
@@ -370,8 +465,13 @@ export async function inviteProjectMember(req: Request, res: Response) {
  * Es una acción distinta de invitar y por eso tiene su propio endpoint: pasar
  * a alguien de cliente a contador le abre los gastos de la obra, y eso no
  * puede ser el efecto lateral de un formulario de invitación.
+ *
+ * Hacer gerente a alguien cuenta para el tope, igual que invitarlo: es la otra
+ * puerta al sexto gerente. Bajarle el rol a un gerente es de quien creó la obra
+ * (`project.manager.write`): si cualquier gerente pudiera, dos podrían sacarse
+ * entre sí.
  */
-export async function updateProjectMemberRole(req: Request, res: Response) {
+export async function updateProjectMemberRole(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = invitableProjectRoleSchema.safeParse(req.body?.role);
     if (!parsed.success) {
@@ -390,10 +490,31 @@ export async function updateProjectMemberRole(req: Request, res: Response) {
       return res.status(404).json({ success: false, error: 'Esa persona no está en la obra' });
     }
 
-    membership.role = parsed.data;
-    await membership.save();
+    const previousRole = membership.role;
+    if (!req.can?.(capabilityToManageMember(previousRole))) throw forbidden(MANAGER_WRITE_MESSAGE);
 
-    const user = await User.findById(membership.user).select('email name');
+    if (parsed.data !== previousRole) {
+      const becomesManager =
+        countsTowardManagerLimit(parsed.data) && !countsTowardManagerLimit(previousRole);
+      if (becomesManager) await assertManagerSlotFree(project);
+
+      membership.role = parsed.data;
+      await membership.save();
+
+      if (becomesManager) {
+        await confirmManagerSlot(project, async () => {
+          membership.role = previousRole;
+          await membership.save();
+        });
+      }
+    }
+
+    const user = await User.findById(membership.user).select(
+      'email name email_verified account_status',
+    );
+    const hasPassword = Boolean(
+      await User.exists({ _id: membership.user, password: { $exists: true } }),
+    );
 
     const member: ProjectMemberSummary = {
       id: String(membership._id),
@@ -401,11 +522,14 @@ export async function updateProjectMemberRole(req: Request, res: Response) {
       email: user?.email ?? '',
       name: user?.name ?? '',
       role: membership.role,
+      manageable: req.can?.(capabilityToManageMember(membership.role)) === true,
+      ...(user ? accountState(user, hasPassword) : { pending: false, inactive: false }),
       createdAt: membership.createdAt.toISOString(),
     };
 
     return res.json({ success: true, data: { member } });
   } catch (error) {
+    if (isAppError(error)) return next(error);
     console.error('❌ [PROJECT] updateProjectMemberRole:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }
@@ -421,10 +545,11 @@ export async function updateProjectMemberRole(req: Request, res: Response) {
  * Nada referencia a la membresía, así que no hay trazabilidad que preservar —
  * lo que esa persona cargó queda con su `createdBy` intacto.
  *
- * Al gerente no se le puede revocar el acceso: sale de `Project.createdBy` y
- * no tiene fila, así que ni siquiera hay qué borrar.
+ * A quien creó la obra no se le puede revocar el acceso: sale de
+ * `Project.createdBy` y no tiene fila, así que ni siquiera hay qué borrar. A
+ * otro gerente sólo lo saca quien la creó (`project.manager.write`).
  */
-export async function removeProjectMember(req: Request, res: Response) {
+export async function removeProjectMember(req: Request, res: Response, next: NextFunction) {
   try {
     const project = req.project as IProject;
     const membership = await ProjectMembership.findOne({
@@ -436,10 +561,13 @@ export async function removeProjectMember(req: Request, res: Response) {
       return res.status(404).json({ success: false, error: 'Esa persona no está en la obra' });
     }
 
+    if (!req.can?.(capabilityToManageMember(membership.role))) throw forbidden(MANAGER_WRITE_MESSAGE);
+
     await ProjectMembership.findByIdAndDelete(membership._id);
 
     return res.json({ success: true, data: { membershipId: String(membership._id) } });
   } catch (error) {
+    if (isAppError(error)) return next(error);
     console.error('❌ [PROJECT] removeProjectMember:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
   }

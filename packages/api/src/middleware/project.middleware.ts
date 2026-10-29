@@ -18,6 +18,10 @@ declare global {
       project?: IProject;
       /** Rol de quien hace la request **en esta obra**, resuelto una sola vez. */
       projectRole?: ProjectRole;
+      /** Quien hace la request creó la obra. Sólo lo lee `requireCapability`: el resto pregunta por capacidad. */
+      isProjectOwner?: boolean;
+      /** Todo lo que puede hacer acá, resuelto una vez. Es lo que viaja en `project.capabilities`. */
+      projectCapabilities?: Capability[];
       /**
        * ¿Puede hacer esto acá? Única forma de preguntar por un permiso en un
        * controller. Pregunta por capacidad, nunca por rol: cuando entre un
@@ -67,7 +71,7 @@ export async function requireProjectAccess(req: Request, res: Response, next: Ne
     }
 
     const subscription = await stateFor(project.organization);
-    attachProjectRole(req, project, role, !subscription.canWrite);
+    attachProjectRole(req, project, role, !subscription.canWrite, req.user.sub);
     next();
   } catch (error) {
     // Un id con formato inválido también "no existe" — no es un 500.
@@ -79,12 +83,23 @@ export async function requireProjectAccess(req: Request, res: Response, next: Ne
   }
 }
 
-/** El rol de esta persona en esta obra, o `null` si no tiene ninguno. */
+/**
+ * ¿Creó la obra? Es lo que separa al dueño de los demás gerentes: la grilla
+ * guarda para él unas pocas capacidades (`OWNER_ONLY` en `@luma/shared`).
+ */
+export function isProjectOwner(project: IProject, userId: string): boolean {
+  return String(project.createdBy) === userId;
+}
+
+/**
+ * El rol de esta persona en esta obra, o `null` si no tiene ninguno. El dueño
+ * es `gerente` sin fila; otro gerente lo es por su fila de `ProjectMembership`.
+ */
 export async function resolveProjectRole(
   project: IProject,
   userId: string,
 ): Promise<ProjectRole | null> {
-  if (String(project.createdBy) === userId) return 'gerente';
+  if (isProjectOwner(project, userId)) return 'gerente';
 
   const membership = await ProjectMembership.findOne({
     project: project._id,
@@ -100,23 +115,35 @@ function attachProjectRole(
   project: IProject,
   role: ProjectRole,
   readOnly: boolean,
+  userId: string,
 ) {
+  const isOwner = isProjectOwner(project, userId);
   const can = (capability: Capability) =>
-    canInProject(role, capability, project) && (!readOnly || isReadCapability(capability));
+    canInProject(role, capability, project, { isOwner }) &&
+    (!readOnly || isReadCapability(capability));
 
   req.project = project;
   req.projectRole = role;
+  req.isProjectOwner = isOwner;
   req.projectReadOnly = readOnly;
   req.can = can;
+  req.projectCapabilities = projectCapabilitiesFor(project, role, userId, readOnly);
 }
 
-/** Todo lo que esta persona puede hacer en esta obra, flags y suscripción ya aplicados. */
+/**
+ * Todo lo que esta persona puede hacer en esta obra, flags, suscripción y
+ * titularidad ya aplicados. Es lo que la UI recibe: no deriva nada.
+ */
 export function projectCapabilitiesFor(
   project: IProject,
   role: ProjectRole,
+  userId: string,
   readOnly = false,
 ): Capability[] {
-  return capabilitiesInProject(role, project, { readOnly });
+  return capabilitiesInProject(role, project, {
+    readOnly,
+    isOwner: isProjectOwner(project, userId),
+  });
 }
 
 /**
@@ -131,7 +158,7 @@ export function requireCapability(capability: Capability) {
     // El rol sí podría, pero la obra está en sólo lectura: no es un permiso
     // que falta, es una suscripción vencida, y la UI tiene que poder decirlo.
     if (req.projectReadOnly && req.projectRole && req.project) {
-      if (canInProject(req.projectRole, capability, req.project)) {
+      if (canInProject(req.projectRole, capability, req.project, { isOwner: req.isProjectOwner })) {
         return res.status(402).json({
           success: false,
           error: 'La suscripción de esta obra venció: está en sólo lectura.',
