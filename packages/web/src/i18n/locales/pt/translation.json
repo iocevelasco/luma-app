@@ -1750,7 +1750,51 @@
     },
     "nav": {
       "users": "Contas",
-      "billing": "Pagamentos"
+      "billing": "Pagamentos",
+      "activity": "Atividade"
+    },
+    "activity": {
+      "periodLabel": "Período",
+      "periods": {
+        "7d": "7 dias",
+        "30d": "30 dias",
+        "all": "Desde sempre"
+      },
+      "columns": {
+        "action": "Papel e ação",
+        "count": "Quantidade"
+      },
+      "roles": {
+        "gerente": "Gerente",
+        "supervisor": "Supervisor",
+        "contador": "Contador",
+        "cliente": "Cliente",
+        "exMiembro": "Ex-membro"
+      },
+      "people_one": "{{count}} pessoa",
+      "people_other": "{{count}} pessoas",
+      "fewData": "Poucos dados",
+      "readOnlyNote": "Somente leitura: o uso aparece com a camada B.",
+      "totalActions": "Ações no total",
+      "otherActions": "Outras ações",
+      "footnote": "Conta-se o que existe hoje em cada obra, com o papel que a pessoa tinha nessa obra. Um papel com menos de {{min}} pessoas distintas no período não mostra números. Somente quantidades.",
+      "actions": {
+        "projectCreated": "Obras criadas",
+        "activityCreated": "Atividades criadas",
+        "activityApproved": "Atividades aprovadas",
+        "activityRejected": "Atividades devolvidas",
+        "memberInvited": "Convites para a obra",
+        "budgetImported": "Orçamentos importados",
+        "milestonePublished": "Marcos publicados ao cliente",
+        "documentUploaded": "Documentos enviados",
+        "engagementCreated": "Contratações de fornecedor",
+        "progressReported": "Relatórios de avanço",
+        "evidenceUploaded": "Evidências enviadas",
+        "laborLogged": "Registros de jornada",
+        "materialRequested": "Materiais pedidos",
+        "expenseRegistered": "Despesas registradas",
+        "paymentRegistered": "Recebimentos registrados"
+      }
     }
   },
   "legal": {

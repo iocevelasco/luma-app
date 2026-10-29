@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { isAuthenticated, requireAdmin } from '../middleware/auth.middleware.js';
 import {
   createManualExchangeRate,
+  getPlatformActivity,
   getPlatformUsersOverview,
   listExchangeRates,
   listPlatformUsersPage,
@@ -25,6 +26,8 @@ adminRouter.post('/exchange-rates/refresh', refreshExchangeRateNow);
 
 adminRouter.get('/users/overview', getPlatformUsersOverview);
 adminRouter.get('/users', listPlatformUsersPage);
+
+adminRouter.get('/activity', getPlatformActivity);
 
 adminRouter.get('/subscription-payments',listSubscriptionPaymentsForAdmin);
 adminRouter.post('/subscription-payments/:paymentId/review', reviewSubscriptionPayment);

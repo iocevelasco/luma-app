@@ -1,5 +1,6 @@
 import type {
   ApiResponse,
+  PlatformActivityReport,
   PlatformUsersOverview,
   PlatformUsersPage,
   PlatformUsersQuery,
@@ -24,4 +25,8 @@ export const platformUsersApi = {
     if (q) params.set('q', q);
     return unwrap<PlatformUsersPage>(apiClient.get(`/api/admin/users?${params.toString()}`));
   },
+};
+
+export const platformActivityApi = {
+  report: () => unwrap<PlatformActivityReport>(apiClient.get('/api/admin/activity')),
 };
