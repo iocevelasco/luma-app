@@ -110,7 +110,13 @@ export function buildDocumentTree(
     if (draft.space && isSpaceScoped(draft.category)) addSpace(draft.category, draft.space);
   }
 
-  for (const doc of docs) {
+  // Por antigüedad y no por el orden de la lista: el sufijo ` (n)` de un nombre
+  // repetido no puede cambiar cuando se sube un documento nuevo.
+  const byAge = [...docs].sort(
+    (a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
+  );
+
+  for (const doc of byAge) {
     const space = doc.space && isSpaceScoped(doc.category) ? doc.space : undefined;
     const parent = folderId(categoryLabel(doc.category), space);
 
@@ -138,4 +144,62 @@ export function documentsInSpace(tree: DocumentTree, folder: FolderRef): Project
   return [...tree.files.values()].filter(
     (doc) => doc.category === folder.category && (doc.space || '') === (folder.space || ''),
   );
+}
+
+export type SpaceNameCheck = 'ok' | 'empty' | 'tooLong' | 'exists';
+
+/** Lo mismo que acepta la API en `space` (120 caracteres). */
+export const SPACE_MAX_LENGTH = 120;
+
+/**
+ * Valida el nombre de un espacio nuevo o renombrado. Un espacio que ya existe
+ * se rechaza: renombrar uno a otro lo fusionaría sin forma de volver atrás.
+ * `current` es el nombre actual cuando se renombra (dejarlo igual no es un choque).
+ */
+export function checkSpaceName(
+  tree: DocumentTree,
+  category: DocumentCategory,
+  name: string,
+  current?: string,
+): SpaceNameCheck {
+  if (!name) return 'empty';
+  if (name.length > SPACE_MAX_LENGTH) return 'tooLong';
+  if (name === current) return 'ok';
+  const exists = [...tree.folders.values()].some(
+    (folder) => folder.category === category && folder.space === name,
+  );
+  return exists ? 'exists' : 'ok';
+}
+
+export interface DocumentMove {
+  documentId: string;
+  category: DocumentCategory;
+  /** `''` es "sin espacio": omitirlo dejaría el espacio viejo en una categoría que no lo usa. */
+  space: string;
+}
+
+export type MovePlan = { error: 'root' | 'folders' } | { changes: DocumentMove[] };
+
+/**
+ * Qué hay que cambiar para mover `ids` a la carpeta `target`. Los documentos que
+ * ya están ahí no se tocan: un PATCH sin cambios igual avisaría "actualizado".
+ */
+export function planMove(tree: DocumentTree, ids: string[], target: string): MovePlan {
+  const destination = tree.folders.get(target);
+  if (!destination) return { error: 'root' };
+
+  const docs = ids.map((id) => tree.files.get(id));
+  if (docs.some((doc) => !doc)) return { error: 'folders' };
+
+  const changes = (docs as ProjectDocument[])
+    .filter(
+      (doc) =>
+        doc.category !== destination.category || (doc.space || '') !== (destination.space ?? ''),
+    )
+    .map((doc) => ({
+      documentId: doc.id,
+      category: destination.category,
+      space: destination.space ?? '',
+    }));
+  return { changes };
 }

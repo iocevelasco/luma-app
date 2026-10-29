@@ -45,6 +45,13 @@ export const documentsApi = {
       apiClient.patch(`/api/projects/${projectId}/documents/${documentId}`, payload),
     ),
 
+  /**
+   * Los bytes del archivo, servidos por la API: la URL firmada no se puede
+   * mostrar en un `<iframe>` (el servicio de archivos la manda con `sandbox`).
+   */
+  file: (projectId: string, documentId: string) =>
+    apiClient.getBlob(`/api/projects/${projectId}/documents/${documentId}/file`),
+
   remove: (projectId: string, documentId: string) =>
     unwrap<DeleteProjectDocumentResponse>(
       apiClient.delete(`/api/projects/${projectId}/documents/${documentId}`),

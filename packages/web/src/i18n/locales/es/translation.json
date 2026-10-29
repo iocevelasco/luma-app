@@ -1052,10 +1052,6 @@
     "updated": "Documento actualizado",
     "deleted": "Documento eliminado",
     "errors": {
-      "create": "No pudimos subir el documento.",
-      "update": "No pudimos actualizar el documento.",
-      "delete": "No pudimos eliminar el documento.",
-      "fileRequired": "Elegí un archivo.",
       "fileType": "Formato no soportado. Subí un PDF o una imagen .jpg, .png o .webp.",
       "fileSize": "El archivo es demasiado grande (máximo 20MB)."
     },
@@ -1108,12 +1104,20 @@
       "errors": {
         "noUploadAtRoot": "Abrí una carpeta (permisos, planos…) para subir o mover documentos ahí.",
         "foldersOnlyInPlans": "Las carpetas por espacio sólo se crean dentro de Planos y Renders.",
-        "spaceTooLong": "El nombre del espacio es demasiado largo.",
         "moveFolders": "Las carpetas no se pueden mover. Movés los documentos de a uno.",
         "noCopy": "No se pueden copiar documentos. Subí el archivo de nuevo donde lo necesites.",
         "noDeleteCategory": "Las carpetas de tipo no se pueden eliminar.",
         "folderNotEmpty": "Mové o eliminá primero los documentos de esa carpeta.",
-        "noUrl": "La carga de documentación todavía no está configurada en este entorno."
+        "noUrl": "La carga de documentación todavía no está configurada en este entorno.",
+        "space": {
+          "exists": "Ya hay un espacio con ese nombre.",
+          "tooLong": "El nombre del espacio es demasiado largo."
+        }
+      },
+      "preview": {
+        "openInTab": "Abrir en otra pestaña",
+        "unavailable": "La vista previa no está disponible: la carga de documentación todavía no está configurada en este entorno.",
+        "loadFailed": "No pudimos cargar la imagen. Cerrá la vista previa y volvé a abrirla."
       }
     }
   },

@@ -34,6 +34,11 @@ import {
  * no depender de un CDN de terceros. Sin fuente, la barra y el menú quedan en
  * blanco. Acá cada clase de la librería se mapea a un ícono de Lucide, el único
  * set del proyecto, pintado con `mask` para que tome `currentColor`.
+ *
+ * La hoja es global a propósito: los menús y los modales de la librería se
+ * dibujan en un portal fuera del componente, y el Cronograma y el Tablero usan
+ * las mismas clases. Por eso la importan los tres (`import '@/lib/svar-icons'`):
+ * si sólo la cargara uno, los demás cambiarían de aspecto según la navegación.
  */
 const ICONS: Record<string, ComponentType<{ size?: number; strokeWidth?: number }>> = {
   'wxi-close': X,
@@ -92,3 +97,6 @@ export function installSvarIcons(): void {
   style.textContent = rules.join('\n');
   document.head.appendChild(style);
 }
+
+// Una vez, al cargar el módulo y fuera del render: `flushSync` no puede correr dentro de uno.
+if (typeof window !== 'undefined') window.setTimeout(installSvarIcons, 0);

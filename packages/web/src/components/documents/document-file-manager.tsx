@@ -24,16 +24,17 @@ import {
 } from '@/hooks/documents/use-document-queries';
 import { errorMessage } from '@/lib/error-message';
 import { cn } from '@/lib/utils';
-import { installSvarIcons } from './svar-icons';
+import '@/lib/svar-icons';
 import {
   buildDocumentTree,
+  checkSpaceName,
   documentsInSpace,
+  pathSegment,
+  planMove,
   titleFromName,
   type FolderRef,
 } from './document-tree';
-
-// Una vez, al cargar el módulo y fuera del render: `flushSync` no puede correr dentro de uno.
-window.setTimeout(installSvarIcons, 0);
+import { DocumentPreview } from './document-preview';
 
 /**
  * Las palabras que `@svar-ui/react-filemanager` trae en inglés (no publica
@@ -132,6 +133,8 @@ export function DocumentFileManager({
 
   // Espacios nuevos sin ningún archivo todavía: sólo existen en la pantalla.
   const [draftSpaces, setDraftSpaces] = useState<FolderRef[]>([]);
+  // Qué documento se está viendo (doble clic). Es un id y no el objeto: la URL firmada se renueva con cada recarga.
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const categoryLabel = useCallback(
     (category: ProjectDocument['category']) => t(`document.category.${category}`),
@@ -176,13 +179,15 @@ export function DocumentFileManager({
       }
 
       const folder = tree.folders.get(id);
-      const space = name.trim();
       // Las categorías son fijas; sólo un espacio se puede renombrar.
-      if (!folder || folder.space === undefined || !space) return false;
-      if (space.length > 120) {
-        toast.error(t('document.fm.errors.spaceTooLong'));
+      if (!folder || folder.space === undefined) return false;
+      const space = pathSegment(name);
+      const check = checkSpaceName(tree, folder.category, space, folder.space);
+      if (check !== 'ok') {
+        if (check !== 'empty') toast.error(t(`document.fm.errors.space.${check}`));
         return false;
       }
+      if (space === folder.space) return false;
 
       setDraftSpaces(
         draftSpaces.map((draft) =>
@@ -208,20 +213,18 @@ export function DocumentFileManager({
       }
 
       if (file.type === 'folder') {
-        const space = file.name.trim();
         if (target.space !== undefined || !isSpaceScoped(target.category)) {
           fail('document.fm.errors.foldersOnlyInPlans');
           return false;
         }
-        if (!space) return false;
-        if (space.length > 120) {
-          fail('document.fm.errors.spaceTooLong');
+        // Sin barras: el nombre es parte de la ruta de la carpeta (ver `pathSegment`).
+        const space = pathSegment(file.name);
+        const check = checkSpaceName(tree, target.category, space);
+        if (check !== 'ok') {
+          if (check !== 'empty') toast.error(t(`document.fm.errors.space.${check}`));
           return false;
         }
-        const exists = [...tree.folders.values()].some(
-          (folder) => folder.category === target.category && folder.space === space,
-        );
-        if (!exists) setDraftSpaces([...draftSpaces, { category: target.category, space }]);
+        setDraftSpaces([...draftSpaces, { category: target.category, space }]);
         return false;
       }
 
@@ -250,26 +253,17 @@ export function DocumentFileManager({
 
     api.intercept('move-files', ({ ids, target }) => {
       const { tree, updateDocuments } = latest.current;
-      const destination = tree.folders.get(target);
-      const docs = ids.map((id) => tree.files.get(id));
+      const plan = planMove(tree, ids, target);
 
-      if (!destination) {
-        fail('document.fm.errors.noUploadAtRoot');
-        return false;
+      if ('error' in plan) {
+        fail(
+          plan.error === 'root'
+            ? 'document.fm.errors.noUploadAtRoot'
+            : 'document.fm.errors.moveFolders',
+        );
+      } else if (plan.changes.length > 0) {
+        updateDocuments.mutate(plan.changes);
       }
-      if (docs.some((doc) => !doc)) {
-        fail('document.fm.errors.moveFolders');
-        return false;
-      }
-
-      updateDocuments.mutate(
-        (docs as ProjectDocument[]).map((doc) => ({
-          documentId: doc.id,
-          category: destination.category,
-          // `''` es "sin espacio": omitirlo dejaría el espacio viejo en una categoría que no lo usa.
-          space: destination.space ?? '',
-        })),
-      );
       return false;
     });
 
@@ -315,7 +309,14 @@ export function DocumentFileManager({
       return false;
     });
 
-    const open = ({ id }: { id: string }) => {
+    // Doble clic o Enter sobre un archivo: se abre la vista previa. Descargar
+    // (menú o Ctrl+D) lo abre en otra pestaña.
+    api.intercept('open-file', ({ id }) => {
+      const doc = latest.current.tree.files.get(id);
+      if (doc) setPreviewId(doc.id);
+      return false;
+    });
+    api.intercept('download-file', ({ id }) => {
       const doc = latest.current.tree.files.get(id);
       if (!doc) return false;
       if (!doc.url) {
@@ -325,9 +326,7 @@ export function DocumentFileManager({
       // La URL está firmada y vence: se abre al momento, nunca se guarda.
       window.open(doc.url, '_blank', 'noopener,noreferrer');
       return false;
-    };
-    api.intercept('open-file', open);
-    api.intercept('download-file', open);
+    });
   }, []);
 
   /*
@@ -389,6 +388,11 @@ export function DocumentFileManager({
           />
         </Locale>
       </Willow>
+      <DocumentPreview
+        projectId={projectId}
+        doc={documents.find((doc) => doc.id === previewId) ?? null}
+        onClose={() => setPreviewId(null)}
+      />
     </div>
   );
 }
