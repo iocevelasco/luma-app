@@ -1245,6 +1245,16 @@
       "fix": "Corregido"
     },
     "entries": {
+      "2026-10-29": {
+        "fileManager": {
+          "title": "Documentación como explorador de archivos",
+          "description": "Los documentos de la obra se ordenan en carpetas por tipo y por espacio. Puedes subir, renombrar, mover y eliminar sin salir de la pantalla."
+        },
+        "documentPreview": {
+          "title": "Vista previa con doble clic",
+          "description": "Abre un plano, un render o un PDF con doble clic, sin descargarlo. Las imágenes cargan a medida que las ves."
+        }
+      },
       "2026-10-28": {
         "managers": {
           "title": "Hasta 5 jefes de obra por obra",

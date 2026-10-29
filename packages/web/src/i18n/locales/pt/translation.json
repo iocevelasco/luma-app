@@ -1245,6 +1245,16 @@
       "fix": "Corrigido"
     },
     "entries": {
+      "2026-10-29": {
+        "fileManager": {
+          "title": "Documentação como explorador de arquivos",
+          "description": "Os documentos da obra ficam organizados em pastas por tipo e por ambiente. Você pode enviar, renomear, mover e excluir sem sair da tela."
+        },
+        "documentPreview": {
+          "title": "Pré-visualização com duplo clique",
+          "description": "Abra uma planta, um render ou um PDF com duplo clique, sem baixar. As imagens carregam conforme você as vê."
+        }
+      },
       "2026-10-28": {
         "managers": {
           "title": "Até 5 gerentes por obra",
