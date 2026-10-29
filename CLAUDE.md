@@ -328,6 +328,12 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
   capa 1 → capa 2 → UI → i18n. `criterio` es el agente de producto (sólo lectura):
   afila un pedido vago antes de codear; para revisar algo hecho, el diff va en el
   prompt.
+- **Code review de un PR**: si el cambio toca una pantalla (`packages/web/src/pages`,
+  `components` o la landing), quien revisa **deja evidencia en el PR**: una captura
+  por pantalla modificada, tomada en Chromium con la cuenta fija del rol que la ve
+  (`e2e/fixtures/users.json`) y, si el cambio es responsive, también en móvil. Cada
+  captura dice qué pantalla es y con qué rol. Una pantalla que no se pudo capturar
+  se lista aparte, con el motivo: no se da por revisada.
 - **Skills**: `verify` es la secuencia de cierre (typecheck → lint → unit → e2e).
   `verification-before-completion`: no digas "listo", "arreglado" ni "pasa" sin haber
   corrido el comando que lo prueba y leído su salida. `systematic-debugging`: ante
