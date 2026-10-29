@@ -354,14 +354,18 @@ test.describe('tareas', () => {
     await expectNoticeBelow(page.locator('.luma-gantt'));
   });
 
-  test('«Nueva tarea» no tapa la última fila del Cronograma', async ({ page }) => {
+  test('el Cronograma llega al borde y «Nueva tarea» no tapa la última fila', async ({ page }) => {
     test.setTimeout(60_000);
     const task = `Colocar el contrapiso ${RUN_ID}`;
     const projectUrl = await startProject(page, 'actiongap');
     await planTask(page, projectUrl, { name: task, start: dayKey(), end: dayKey(2) });
 
-    /** El diagrama termina arriba del botón flotante: su última fila no queda detrás. */
-    async function expectGanttAboveAction() {
+    /**
+     * El diagrama ocupa el alto que queda (sin un hueco abajo) y, scrolleado hasta el
+     * final, su última tarea queda por encima del botón flotante: el aire está dentro
+     * del scroll, no afuera.
+     */
+    async function expectLastRowAboveAction() {
       await page.goto(`${projectUrl}/actividades`);
       const gantt = page.locator('.luma-gantt');
       const action = page.getByTestId('primary-action');
@@ -374,18 +378,31 @@ test.describe('tareas', () => {
           if (node.scrollHeight > node.clientHeight) node.scrollTop = node.scrollHeight;
         }
       });
+
       const chart = (await gantt.boundingBox())!;
+      const main = (await page.locator('main').boundingBox())!;
+      // Sin un hueco grande abajo: el diagrama termina a pocos píxeles del borde del área.
+      // En el celular `<main>` reserva su propio relleno (`pb-24`), así que sólo se mide en escritorio.
+      if ((page.viewportSize()?.width ?? 0) >= 768) {
+        expect(
+          main.y + main.height - (chart.y + chart.height),
+          'el diagrama deja un hueco abajo',
+        ).toBeLessThanOrEqual(24);
+      }
+
+      // La fila de la tarea, la última real, queda por encima del botón.
+      const row = (await page.getByRole('gridcell', { name: task, exact: true }).boundingBox())!;
       const button = (await action.boundingBox())!;
-      expect(chart.y + chart.height, 'el botón flotante tapa el final del Cronograma').toBeLessThanOrEqual(
+      expect(row.y + row.height, 'el botón flotante tapa la última fila').toBeLessThanOrEqual(
         button.y + 0.5,
       );
     }
 
-    await expectGanttAboveAction();
+    await expectLastRowAboveAction();
 
     // Celular: el botón se apoya más cerca del borde, pero el diagrama también ocupa todo el alto.
     await page.setViewportSize({ width: 375, height: 812 });
-    await expectGanttAboveAction();
+    await expectLastRowAboveAction();
   });
 
   test('cambiar las fechas de una actividad se refleja en el Cronograma y en el Tablero', async ({

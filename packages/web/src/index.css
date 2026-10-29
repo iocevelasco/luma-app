@@ -606,6 +606,19 @@ select:-webkit-autofill {
   desplazar quedaba "septiembre / 2026" y `ActivityGantt` no podía medir cuánto
   ocupa de verdad para decidir si entra o se esconde.
 */
+/*
+  Filas de aire del final del diagrama (`SPACER_PREFIX` en `activity-gantt.tsx`):
+  el scroll llega hasta ahí para que la última tarea pase por encima del botón
+  flotante. Sin barra y sin interacción. Fuera de `@layer` por lo mismo que
+  `.luma-gantt`.
+*/
+.luma-gantt .wx-bar[data-id^=':__space'] {
+  display: none;
+}
+.luma-gantt .wx-row[data-id^=':__space'] {
+  pointer-events: none;
+}
+
 .luma-gantt .wx-scale .wx-cell-value {
   white-space: nowrap;
 }

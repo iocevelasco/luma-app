@@ -203,7 +203,9 @@ export function NotificationCenter() {
                 {t('notification.empty')}
               </p>
             ) : (
-              <ScrollArea className="max-h-96">
+              // El tope va en el visor y no en la raíz: Radix le da al visor el 100% de una raíz
+              // sin alto fijo, y con `max-h` en la raíz la lista crece y se sale del popover.
+              <ScrollArea className="[&_[data-slot=scroll-area-viewport]]:max-h-96">
                 <div className="flex flex-col p-1">
                   {notifications.map((notification) => (
                     <NotificationRow
