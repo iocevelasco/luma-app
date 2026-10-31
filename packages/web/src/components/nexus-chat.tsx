@@ -1,6 +1,14 @@
 import { useEffect, useRef } from 'react';
 
-const WIDGET_SRC = 'http://localhost:3000/widget/nexus-chat.js';
+/**
+ * En local el widget corre en el puerto 3000. En producción `VITE_NEXUSBOT_URL`
+ * se hornea en el build (Coolify): el navegador no puede pedir localhost.
+ */
+const NEXUSBOT_URL = (import.meta.env.VITE_NEXUSBOT_URL || 'http://localhost:3000').replace(
+  /\/+$/,
+  '',
+);
+const WIDGET_SRC = `${NEXUSBOT_URL}/widget/nexus-chat.js`;
 
 /**
  * El script no va en `index.html`: login y el resto de pantallas públicas no
@@ -49,7 +57,7 @@ export function NexusChat() {
       });
       const data = await res.json();
       if (cancelled) return;
-      node.setAttribute('api-url', 'http://localhost:3000');
+      node.setAttribute('api-url', NEXUSBOT_URL);
       node.setAttribute('session-token', data.sessionToken);
       node.setAttribute('title', 'Luma');
     }
