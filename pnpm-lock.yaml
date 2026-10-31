@@ -278,6 +278,12 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: 1.1.6
         version: 1.1.6(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/react-core':
+        specifier: 2.6.0
+        version: 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/react-filemanager':
+        specifier: 2.6.0
+        version: 2.6.0(react-dom@19.2.0)(react@19.2.0)
       '@svar-ui/react-gantt':
         specifier: 2.8.1
         version: 2.8.1(react-dom@19.2.0)(react@19.2.0)
@@ -3474,8 +3480,34 @@ packages:
     resolution: {integrity: sha512-NGCBdGMeprgE2wkWw/Dl3O/lrNjWXbYm3UmbMlKN84GmtwtutKCBspNiGGCGlrUgpy0SVhqN+EFpDMg2M4Avzw==}
     dev: false
 
+  /@svar-ui/filemanager-data-provider@2.6.0:
+    resolution: {integrity: sha512-H0cVpLblqPItF4zLmk1ZetTT7TDvE+sl2TVlQC3Wm3PzZrq32aSYfMDEoqliUWHaBRP2Lt1klSX9rPQGV2k8Sw==}
+    dependencies:
+      '@svar-ui/lib-data-provider': 1.7.1
+    dev: false
+
+  /@svar-ui/filemanager-locales@2.6.0:
+    resolution: {integrity: sha512-+gZPuAP2NUm3G/JPSCpd1pSS+VuFgSC1nu908xKk2KnwrU+NxIVUDvydMs0+P03AQPjcq0+ou3qwqK3OvrigSg==}
+    dev: false
+
+  /@svar-ui/filemanager-store@2.6.0:
+    resolution: {integrity: sha512-59fbDTpHDr7DzgXCTw+2aLLkVXR8Yg8Y5nMUImkuNf0ekD5eb0vfthwH8I2FqqhW3bupGfgGEFscRWTupBNq4w==}
+    dependencies:
+      '@svar-ui/lib-state': 1.9.7
+    dev: false
+
+  /@svar-ui/filter-locales@2.6.0:
+    resolution: {integrity: sha512-EQAadVLtpCMjch38T+EcgkX8GXt72MwT04DOSL0G4ZG2roTzgOEKsUV53tfZFiFyamUFnQRY2Hs9IEZApfHzLQ==}
+    dev: false
+
   /@svar-ui/filter-locales@2.6.1:
     resolution: {integrity: sha512-m963r4TnZxiZ6XzfJYvSmiYcmgSgKhkzpOVcUP25AviWle1oPulyv4Qe28Rak3JaAOFAHQAf0EucoaSMJzvK6A==}
+    dev: false
+
+  /@svar-ui/filter-store@2.6.0:
+    resolution: {integrity: sha512-IJzSTMSCyFDP5uF3ZskJODqeXQSn2v8bj8LCHEeCYv8lSVAWXis6iJ8ZBusf95OtV+omO5jpTe6ugZYZpaFTrA==}
+    dependencies:
+      '@svar-ui/lib-state': 1.9.6
     dev: false
 
   /@svar-ui/filter-store@2.6.1:
@@ -3502,14 +3534,31 @@ packages:
       date-fns: 3.6.0
     dev: false
 
+  /@svar-ui/grid-data-provider@2.7.0:
+    resolution: {integrity: sha512-bLhxYwGVjWnC3NbvGeYoOJ3Kv7/qhbEIJeXZhwGQZLYEYUaYrkgmz2pCVmzSt2EfPLG4YlUMf3y+Afz0EoE86g==}
+    dependencies:
+      '@svar-ui/lib-data-provider': 1.7.2
+    dev: false
+
   /@svar-ui/grid-data-provider@2.7.5:
     resolution: {integrity: sha512-cYf6Vi+cAVhZBkVeKFFIDXmMaLKqyzKPzup3H2v13kIB7R2B3yq/UmfkewFx58VKxzObnnt3T6VFx7JTB6pUDQ==}
     dependencies:
       '@svar-ui/lib-data-provider': 1.7.4
     dev: false
 
+  /@svar-ui/grid-locales@2.7.0:
+    resolution: {integrity: sha512-/y4aR6CEbIAsV2YTeLRPfGXTIKYBWqrKc485LN2xkT6jPilT5i1QST1BRn+S2ANC9p83MXCNVLJxAoR+3glsBw==}
+    dev: false
+
   /@svar-ui/grid-locales@2.7.5:
     resolution: {integrity: sha512-iqV49UxVOSwN+Va7VRYY6wiYrT7C1zwGPWSKdthkydXUcHbxxwkzwvgPUxcBgooN0tUANS03TMfqCX7tSMuD6w==}
+    dev: false
+
+  /@svar-ui/grid-store@2.7.0:
+    resolution: {integrity: sha512-m23KKQPuEyDfXiD+nLe7LCGX2+zRhbGUxIUzjAnInqhtjAM0HyhWsQpuZzzXhSdUyFYje5haStffUoK6rrpq6Q==}
+    dependencies:
+      '@svar-ui/lib-dom': 0.12.1
+      '@svar-ui/lib-state': 1.9.6
     dev: false
 
   /@svar-ui/grid-store@2.7.5:
@@ -3536,6 +3585,12 @@ packages:
 
   /@svar-ui/lib-data-provider@1.7.1:
     resolution: {integrity: sha512-5Bi9ywngcMTKpGtan0s7q8ivd84Bp0ZnRP+5bLZg6oiRB7YMyN5D5X+apc3CWDAnG4zZn3en4YwS2qc/aHIIuQ==}
+    dependencies:
+      '@svar-ui/lib-state': 1.9.6
+    dev: false
+
+  /@svar-ui/lib-data-provider@1.7.2:
+    resolution: {integrity: sha512-Od93Iiy0vBwVzgJm25WdizH3d4Xlli/HAA2kqoUj1pzeZ2SWBeFzvE59iihQz8NuIlfAtQJ6MMe168458T+2lQ==}
     dependencies:
       '@svar-ui/lib-state': 1.9.6
     dev: false
@@ -3721,6 +3776,43 @@ packages:
       react-dom: 19.2.0(react@19.2.0)
     dev: false
 
+  /@svar-ui/react-filemanager@2.6.0(react-dom@19.2.0)(react@19.2.0):
+    resolution: {integrity: sha512-1wCRpeRK8+q7y94N9J6TganH6VQG3hd2ySdwDrwc5zbKmNUdC1f/U2fHn0/8SewWJZz0HH99vw/63o7eggSSEg==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+    dependencies:
+      '@svar-ui/filemanager-data-provider': 2.6.0
+      '@svar-ui/filemanager-locales': 2.6.0
+      '@svar-ui/filemanager-store': 2.6.0
+      '@svar-ui/lib-dom': 0.13.1
+      '@svar-ui/lib-react': 1.3.0
+      '@svar-ui/lib-state': 1.9.7
+      '@svar-ui/react-core': 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/react-grid': 2.7.0(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/react-menu': 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/react-uploader': 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+    dev: false
+
+  /@svar-ui/react-filter@2.6.0(react-dom@19.2.0)(react@19.2.0):
+    resolution: {integrity: sha512-E4PlRzA9KoW4DmB7XDZ8uAwJHNYP2rwUq/H2KFnUKZZ4j3U4JuTvvho6lk8NbRZonIu4S5Jqj50YLUT4N1vhBw==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+    dependencies:
+      '@svar-ui/filter-locales': 2.6.0
+      '@svar-ui/filter-store': 2.6.0
+      '@svar-ui/lib-dom': 0.13.1
+      '@svar-ui/lib-react': 1.3.0
+      '@svar-ui/lib-state': 1.9.7
+      '@svar-ui/react-core': 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/react-menu': 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+    dev: false
+
   /@svar-ui/react-filter@2.6.1(react-dom@19.2.0)(react@19.2.0):
     resolution: {integrity: sha512-GBwReaJUa7Qb7EZTJroxjzm7NIGsAEFuDoTrmJqwkcmwFB+WBukQa/2Z0mf5Ya4t4/ldt1sfOzNWlbFhMo8FTA==}
     peerDependencies:
@@ -3761,6 +3853,26 @@ packages:
       '@svar-ui/react-tasklist': 2.6.1(react-dom@19.2.0)(react@19.2.0)
       '@svar-ui/react-toolbar': 2.6.1(react-dom@19.2.0)(react@19.2.0)
       date-fns: 3.6.0
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+    dev: false
+
+  /@svar-ui/react-grid@2.7.0(react-dom@19.2.0)(react@19.2.0):
+    resolution: {integrity: sha512-JUWPlM5gtW3xe7qVoiT16f1/NusRSSBga5or5N43IzxwbDRBRkqBs2GNzV8lTpJwjpVK+5wUtA0OhYPiia551w==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+    dependencies:
+      '@svar-ui/grid-data-provider': 2.7.0
+      '@svar-ui/grid-locales': 2.7.0
+      '@svar-ui/grid-store': 2.7.0
+      '@svar-ui/lib-dom': 0.13.1
+      '@svar-ui/lib-react': 1.3.0
+      '@svar-ui/lib-state': 1.9.7
+      '@svar-ui/react-core': 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/react-editor': 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/react-filter': 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/react-menu': 2.6.0(react-dom@19.2.0)(react@19.2.0)
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
     dev: false
@@ -3890,12 +4002,30 @@ packages:
       react-dom: 19.2.0(react@19.2.0)
     dev: false
 
+  /@svar-ui/react-uploader@2.6.0(react-dom@19.2.0)(react@19.2.0):
+    resolution: {integrity: sha512-UJIeXKIyvukZDZKmre9abxRW4XPS1XYNzr3FwViTkp71aCoSSYKy7KuxKIgyz3I9ZutO+8XKe6I9M5DkXXh2UQ==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+    dependencies:
+      '@svar-ui/core-locales': 2.6.0
+      '@svar-ui/lib-dom': 0.13.1
+      '@svar-ui/react-core': 2.6.0(react-dom@19.2.0)(react@19.2.0)
+      '@svar-ui/uploader-locales': 2.5.3
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+    dev: false
+
   /@svar-ui/tasklist-locales@2.6.0:
     resolution: {integrity: sha512-0VxhXVJJPFrfWiyLin5QrdRbp/9ESK74S3y7vmTmha17hLnI9kiz7+CNT4K4B98mSyS2KzD2BrPej5bhsZ7f8w==}
     dev: false
 
   /@svar-ui/tasklist-locales@2.6.1:
     resolution: {integrity: sha512-ewGvdmALpEJR3CpzlNX8aDL2JPmeyF1EweRBoI0jQmp7bIpYDIlpTWStmGwDEwQ5SgvUTJylFyIj6baPf2RBlw==}
+    dev: false
+
+  /@svar-ui/uploader-locales@2.5.3:
+    resolution: {integrity: sha512-PvYQj/vyp9BEDtBuT1v2pVLUiffcDrhaobOFqQ5Q0qhfSCm3Xb3EW0vDlbomQMowwa+zF4+B35B2FNg6+K79XA==}
     dev: false
 
   /@tailwindcss/node@4.1.9:
@@ -4925,7 +5055,7 @@ packages:
       estree-walker: 3.0.3
       magic-string: 0.30.21
       msw: 2.13.4(@types/node@22.0.0)(typescript@5.6.3)
-      vite: 6.4.3(@types/node@22.0.0)(tsx@4.19.2)
+      vite: 6.4.3(@types/node@22.0.0)
     dev: true
 
   /@vitest/pretty-format@3.2.4:
@@ -9064,6 +9194,31 @@ packages:
       d3-timer: 3.0.1
     dev: false
 
+  /vite-node@3.2.4(@types/node@22.0.0):
+    resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+    hasBin: true
+    dependencies:
+      cac: 6.7.14
+      debug: 4.4.3
+      es-module-lexer: 1.7.0
+      pathe: 2.0.3
+      vite: 6.4.3(@types/node@22.0.0)
+    transitivePeerDependencies:
+      - '@types/node'
+      - jiti
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+      - tsx
+      - yaml
+    dev: true
+
   /vite-node@3.2.4(@types/node@22.0.0)(tsx@4.19.2):
     resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
@@ -9133,6 +9288,57 @@ packages:
       esbuild: 0.24.2
       postcss: 8.5.28
       rollup: 4.63.2
+    optionalDependencies:
+      fsevents: 2.3.3
+    dev: true
+
+  /vite@6.4.3(@types/node@22.0.0):
+    resolution: {integrity: sha512-NTKlcQjlAK7MlQoyb6LgaqHc8sso/pVyUJYWMws3jg21uTJw/LddqIFPcPqP6PzpgbIcZyKI85sFE4HBrQDA8A==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
+      jiti: '>=1.21.0'
+      less: '*'
+      lightningcss: ^1.21.0
+      sass: '*'
+      sass-embedded: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+    dependencies:
+      '@types/node': 22.0.0
+      esbuild: 0.25.12
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
+      postcss: 8.5.28
+      rollup: 4.63.2
+      tinyglobby: 0.2.17
     optionalDependencies:
       fsevents: 2.3.3
     dev: true
@@ -9239,8 +9445,8 @@ packages:
       tinyglobby: 0.2.17
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 6.4.3(@types/node@22.0.0)(tsx@4.19.2)
-      vite-node: 3.2.4(@types/node@22.0.0)(tsx@4.19.2)
+      vite: 6.4.3(@types/node@22.0.0)
+      vite-node: 3.2.4(@types/node@22.0.0)
       why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - jiti

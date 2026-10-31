@@ -1114,9 +1114,6 @@ export function ProjectActivitiesPage() {
           fill={view === 'gantt' || (view === 'board' && !isMobile)}
           // El aviso de filtros flota abajo: mientras haya filtros, el contenido le deja lugar.
           reserveBottom={activeFilters > 0}
-          // El botón «Nueva tarea» flota sobre la esquina del diagrama: sin lugar, la última
-          // tarea queda detrás aunque se scrollee hasta el final.
-          clearAction={view === 'gantt'}
           toolbar={
             <>
               <TabsList aria-label={t('activity.views.aria')} className="h-10 p-1">
@@ -1225,6 +1222,8 @@ export function ProjectActivitiesPage() {
                 }
                 focusOnToday
                 focusRequest={todayRequest}
+                // Aire al final para scrollear la última tarea por encima de «Nueva tarea».
+                trailingRows={can('activity.create') ? 2 : 0}
               />
             )}
             {view === 'board' && (

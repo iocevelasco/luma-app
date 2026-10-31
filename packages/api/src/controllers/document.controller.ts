@@ -1,4 +1,5 @@
-import type { Request, Response } from 'express';
+import { pipeline } from 'node:stream/promises';
+import type { NextFunction, Request, Response } from 'express';
 import {
   createProjectDocumentSchema,
   updateProjectDocumentSchema,
@@ -6,9 +7,11 @@ import {
 } from '@luma/shared';
 import { ProjectDocument, type IProjectDocument } from '../models/ProjectDocument.js';
 import { User } from '../models/User.js';
+import { notFound, serviceUnavailable } from '../utils/errors.js';
 import type { IProject } from '../models/Project.js';
 import {
   deleteObject,
+  openObject,
   signObjectUrl,
   StorageNotConfiguredError,
   uploadProjectDocument,
@@ -224,5 +227,55 @@ export async function deleteProjectDocument(req: Request, res: Response) {
   } catch (error) {
     console.error('❌ [DOCUMENT] deleteProjectDocument:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
+  }
+}
+
+/**
+ * Requiere `requireProjectAccess` + `requireCapability('document.read')`. Los
+ * bytes del archivo, servidos por la API, para la vista previa. La URL firmada
+ * no sirve ahí: el servicio de archivos la entrega con
+ * `Content-Security-Policy: sandbox`, y con esa cabecera el navegador no abre un
+ * PDF dentro de un `<iframe>`. Pasa por el mismo permiso que el listado.
+ */
+export async function getProjectDocumentFile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const project = req.project as IProject;
+    const doc = await ProjectDocument.findOne({
+      _id: req.params.documentId,
+      project: project._id,
+    });
+    if (!doc) throw notFound('Documento no encontrado.');
+
+    let file;
+    try {
+      file = await openObject(doc.key);
+    } catch (error) {
+      if (error instanceof StorageNotConfiguredError) {
+        throw serviceUnavailable('La carga de documentación todavía no está configurada en este entorno.');
+      }
+      throw error;
+    }
+    if (!file) throw notFound('Ese documento ya no tiene archivo.');
+
+    // Siempre es el mismo archivo (un documento no se reemplaza, se sube otro),
+    // pero puede dejar de ser visible: nada de compartir la copia entre personas.
+    res.set('Cache-Control', 'private, max-age=3600');
+    // Lo subió una persona: que el navegador no lo "adivine" como otra cosa.
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.type(doc.contentType);
+    if (file.contentLength) res.set('Content-Length', String(file.contentLength));
+
+    try {
+      await pipeline(file.stream, res);
+    } catch (error) {
+      // Ya salieron las cabeceras: no se puede responder un error en JSON.
+      if (res.headersSent) {
+        res.destroy();
+        return;
+      }
+      throw error;
+    }
+  } catch (error) {
+    next(error);
   }
 }

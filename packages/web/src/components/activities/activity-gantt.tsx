@@ -3,6 +3,7 @@ import { addDays, addMonths, addQuarters, format, startOfMonth, startOfQuarter }
 import { useTranslation } from 'react-i18next';
 import { Gantt, Willow, type IApi, type IColumnConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
+import '@/lib/svar-icons';
 import type { Activity, ActivityStatus } from '@luma/shared';
 import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { TruncatedText } from '@/components/common/truncated-text';
@@ -45,19 +46,33 @@ interface ActivityGanttProps {
    */
   focusOnToday?: boolean;
   focusRequest?: number;
+  /**
+   * Filas vacías al final del diagrama: aire para scrollear la última tarea por
+   * encima del botón flotante «Nueva tarea». Van dentro del scroll y no como
+   * relleno de la pantalla, así el diagrama llega hasta el borde de la ventana y
+   * el botón sólo tapa espacio vacío. Cero si no hay botón.
+   */
+  trailingRows?: number;
 }
 
 interface GanttTaskRow {
-  activity: Activity;
+  /** Falta en las filas de aire del final (`SPACER_PREFIX`). */
+  activity?: Activity;
 }
 
+/** Id de las filas de aire: no son actividades, y ni se ven ni se tocan. */
+const SPACER_PREFIX = '__space';
+
 function TextCell({ row }: { row: unknown }) {
-  return <TruncatedText text={(row as GanttTaskRow).activity.name} />;
+  const { activity } = row as GanttTaskRow;
+  return activity ? <TruncatedText text={activity.name} /> : null;
 }
 
 function SpecialtyCell({ row }: { row: unknown }) {
   const { t } = useTranslation();
-  const { specialty } = (row as GanttTaskRow).activity;
+  const { activity } = row as GanttTaskRow;
+  if (!activity) return null;
+  const { specialty } = activity;
   // TruncatedText recibe un string; no se puede pasar <SpecialtyLabel />.
   return (
     <TruncatedText
@@ -67,11 +82,13 @@ function SpecialtyCell({ row }: { row: unknown }) {
 }
 
 function ResponsibleCell({ row }: { row: unknown }) {
-  return <TruncatedText text={(row as GanttTaskRow).activity.responsible.name} />;
+  const { activity } = row as GanttTaskRow;
+  return activity ? <TruncatedText text={activity.responsible.name} /> : null;
 }
 
 function StatusCell({ row }: { row: unknown }) {
   const { activity } = row as GanttTaskRow;
+  if (!activity) return null;
 
   return (
     <div className="flex items-center gap-1">
@@ -103,6 +120,7 @@ export function ActivityGantt({
   onReschedule,
   focusOnToday = false,
   focusRequest = 0,
+  trailingRows = 0,
 }: ActivityGanttProps) {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
@@ -241,9 +259,8 @@ export function ActivityGantt({
     };
   }, [zoom]);
 
-  const tasks = useMemo(
-    () =>
-      activities.map((activity) => ({
+  const tasks = useMemo(() => {
+    const rows = activities.map((activity) => ({
         id: activity.id,
         text: activity.name,
         start: fromDayKey(activity.startDate),
@@ -252,9 +269,18 @@ export function ActivityGantt({
         progress: STATUS_PROGRESS[activity.status],
         type: 'task' as const,
         activity,
-      })),
-    [activities],
-  );
+      }));
+    // Filas de aire: sin `activity`, así que sin texto; el CSS les saca la barra.
+    const day = fromDayKey(range.from);
+    const spacers = Array.from({ length: trailingRows }, (_, index) => ({
+      id: `${SPACER_PREFIX}-${index}`,
+      text: '',
+      start: day,
+      end: addDays(day, 1),
+      type: 'task' as const,
+    }));
+    return [...rows, ...spacers];
+  }, [activities, trailingRows, range.from]);
 
   const columns: IColumnConfig[] = useMemo(
     () => [
@@ -318,7 +344,9 @@ export function ActivityGantt({
 
   const handleInit = useCallback((api: IApi) => {
     apiRef.current = api;
-    api.on('select-task', ({ id }: { id: string | number }) => selectRef.current(String(id)));
+    api.on('select-task', ({ id }: { id: string | number }) => {
+      if (!String(id).startsWith(SPACER_PREFIX)) selectRef.current(String(id));
+    });
 
     for (const action of BLOCKED_ACTIONS) api.intercept(action, () => false);
 

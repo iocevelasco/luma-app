@@ -24,15 +24,17 @@ vi.mock('../../services/storage.service.js', () => ({
   uploadProjectDocument: vi.fn(),
   deleteObject: vi.fn(),
   signObjectUrl: vi.fn(),
+  openObject: vi.fn(),
 }));
 
 const { ProjectDocument } = await import('../../models/ProjectDocument.js');
 const { User } = await import('../../models/User.js');
-const { uploadProjectDocument, deleteObject, signObjectUrl, StorageNotConfiguredError } =
+const { uploadProjectDocument, deleteObject, signObjectUrl, openObject, StorageNotConfiguredError } =
   await import('../../services/storage.service.js');
 const {
   createProjectDocument,
   deleteProjectDocument,
+  getProjectDocumentFile,
   listProjectDocuments,
   updateProjectDocument,
 } = await import('../../controllers/document.controller.js');
@@ -280,5 +282,46 @@ describe('deleteProjectDocument', () => {
 
     expect(deleteObject).toHaveBeenCalledWith('documents/project-1/abc.pdf');
     expect(ProjectDocument.findByIdAndDelete).toHaveBeenCalledWith('doc-1');
+  });
+});
+
+describe('getProjectDocumentFile', () => {
+  const req = {
+    project: { _id: 'project-1' },
+    params: { documentId: 'doc-1' },
+  } as unknown as Request;
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('un documento que no es de la obra termina en un 404 por el errorHandler', async () => {
+    vi.mocked(ProjectDocument.findOne).mockResolvedValue(null as never);
+    const next = vi.fn();
+
+    await getProjectDocumentFile(req, mockRes(), next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 404 }));
+    expect(openObject).not.toHaveBeenCalled();
+  });
+
+  it('sin storage configurado responde un 503 explícito', async () => {
+    vi.mocked(ProjectDocument.findOne).mockResolvedValue(fakeDoc() as never);
+    vi.mocked(openObject).mockRejectedValue(new StorageNotConfiguredError());
+    const next = vi.fn();
+
+    await getProjectDocumentFile(req, mockRes(), next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 503 }));
+  });
+
+  it('busca el documento dentro de la obra y no filtra la key', async () => {
+    vi.mocked(ProjectDocument.findOne).mockResolvedValue(fakeDoc() as never);
+    vi.mocked(openObject).mockResolvedValue(null);
+
+    await getProjectDocumentFile(req, mockRes(), vi.fn());
+
+    expect(ProjectDocument.findOne).toHaveBeenCalledWith({
+      _id: 'doc-1',
+      project: 'project-1',
+    });
   });
 });

@@ -29,6 +29,7 @@ export enum QueryKeys {
   crewMembers = 'crew-members',
   activityCrew = 'activity-crew',
   projectDocuments = 'project-documents',
+  projectDocumentFile = 'project-document-file',
   milestones = 'milestones',
   notifications = 'notifications',
   paymentSchedule = 'payment-schedule',

@@ -1049,10 +1049,6 @@
     }
   },
   "document": {
-    "list": {
-      "title": "Documentación de la obra",
-      "noSpace": "Sin espacio asignado"
-    },
     "category": {
       "condiciones_sitio": "Condiciones del sitio",
       "horario_trabajo": "Horario de trabajo",
@@ -1062,60 +1058,78 @@
       "render": "Renders",
       "otra": "Otros"
     },
-    "fields": {
-      "file": "Archivo",
-      "filePlaceholder": "Elegir archivo",
-      "fileHint": "PDF o imagen (.jpg, .png, .webp). Hasta 20MB.",
-      "category": "Categoría",
-      "categoryPlaceholder": "Elegí una categoría",
-      "title": "Título",
-      "space": "Espacio",
-      "spacePlaceholder": "Cocina, baño principal, living…",
-      "notes": "Notas"
-    },
-    "new": {
-      "title": "Subir documento",
-      "submit": "Subir"
-    },
-    "delete": {
-      "action": "Eliminar documento",
-      "title": "¿Eliminar este documento?",
-      "description": "Se elimina «{{title}}» y su archivo. No se puede deshacer.",
-      "confirm": "Eliminar"
-    },
-    "empty": {
-      "title": "Todavía no hay documentación",
-      "description": "Subí los permisos, las condiciones del sitio, los planos y los renders de la obra.",
-      "descriptionReadOnly": "Cuando el gerente cargue permisos, planos o renders, los vas a ver acá."
-    },
-    "open": "Abrir documento",
-    "uploadedBy": "Subido por {{name}} el {{date}}",
     "created": "Documento subido",
     "updated": "Documento actualizado",
     "deleted": "Documento eliminado",
     "errors": {
-      "create": "No pudimos subir el documento.",
-      "update": "No pudimos actualizar el documento.",
-      "delete": "No pudimos eliminar el documento.",
-      "fileRequired": "Elegí un archivo.",
       "fileType": "Formato no soportado. Subí un PDF o una imagen .jpg, .png o .webp.",
       "fileSize": "El archivo es demasiado grande (máximo 20MB)."
     },
-    "filters": {
-      "category": "Tipo",
-      "allCategories": "Todos los tipos",
-      "uploader": "Subido por",
-      "allUploaders": "Todas las personas",
-      "groupBy": "Agrupar por",
-      "groupNone": "Sin agrupar",
-      "groupCategory": "Tipo",
-      "groupUploader": "Quién lo subió",
-      "noResults": "Ningún documento coincide con estos filtros.",
-      "clear": "Limpiar filtros"
-    },
-    "pdf": "PDF",
-    "uploadedOn": "Subido el {{date}}",
-    "previewUnavailable": "Vista previa no disponible"
+    "fm": {
+      "words": {
+        "root": "Documentación",
+        "addNew": "Agregar",
+        "ok": "Aceptar",
+        "cancel": "Cancelar",
+        "deleteFiles": "Eliminar",
+        "files": "Archivos",
+        "folder": "Carpeta",
+        "backToParent": "Volver a la carpeta anterior",
+        "information": "Información",
+        "found": "Encontrados",
+        "confirmDelete": "¿Eliminar estos elementos? Los archivos se borran y no se pueden recuperar:",
+        "enterFileName": "Nombre del archivo",
+        "enterFolderName": "Nombre del espacio (cocina, baño…)",
+        "result": "Resultado",
+        "search": "Buscar",
+        "searchResultsIn": "Resultados en",
+        "addFile": "Nuevo archivo",
+        "addFolder": "Nuevo espacio",
+        "upload": "Subir documento",
+        "size": "Tamaño",
+        "name": "Nombre",
+        "type": "Tipo",
+        "date": "Fecha",
+        "rename": "Renombrar",
+        "cut": "Mover",
+        "delete": "Eliminar",
+        "copy": "Copiar",
+        "paste": "Mover acá",
+        "download": "Abrir",
+        "count": "Cantidad",
+        "folderLower": "carpeta",
+        "foldersLower": "carpetas",
+        "fileLower": "archivo",
+        "filesLower": "archivos",
+        "multipleFiles": "Varios archivos",
+        "multiple": "varios",
+        "preview": "Vista previa",
+        "of": "de",
+        "used": "usado",
+        "selectToView": "Elegí un archivo o una carpeta para ver el detalle",
+        "empty": "Todavía no hay nada acá",
+        "unknownFile": "Archivo desconocido",
+        "miniature": "Vista previa en miniatura"
+      },
+      "errors": {
+        "noUploadAtRoot": "Abrí una carpeta (permisos, planos…) para subir o mover documentos ahí.",
+        "foldersOnlyInPlans": "Las carpetas por espacio sólo se crean dentro de Planos y Renders.",
+        "moveFolders": "Las carpetas no se pueden mover. Movés los documentos de a uno.",
+        "noCopy": "No se pueden copiar documentos. Subí el archivo de nuevo donde lo necesites.",
+        "noDeleteCategory": "Las carpetas de tipo no se pueden eliminar.",
+        "folderNotEmpty": "Mové o eliminá primero los documentos de esa carpeta.",
+        "noUrl": "La carga de documentación todavía no está configurada en este entorno.",
+        "space": {
+          "exists": "Ya hay un espacio con ese nombre.",
+          "tooLong": "El nombre del espacio es demasiado largo."
+        }
+      },
+      "preview": {
+        "openInTab": "Abrir en otra pestaña",
+        "unavailable": "La vista previa no está disponible: la carga de documentación todavía no está configurada en este entorno.",
+        "loadFailed": "No pudimos cargar la imagen. Cerrá la vista previa y volvé a abrirla."
+      }
+    }
   },
   "milestone": {
     "list": {
