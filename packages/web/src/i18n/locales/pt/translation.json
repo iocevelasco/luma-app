@@ -1751,7 +1751,8 @@
     "nav": {
       "users": "Contas",
       "billing": "Pagamentos",
-      "activity": "Atividade"
+      "activity": "Atividade",
+      "campaigns": "Campanhas"
     },
     "activity": {
       "periodLabel": "Período",
@@ -1795,6 +1796,43 @@
         "expenseRegistered": "Despesas registradas",
         "paymentRegistered": "Recebimentos registrados"
       }
+    },
+    "campaigns": {
+      "audience_one": "Uma campanha chega a {{count}} conta: ativa, com o e-mail confirmado e sem cancelamento de comunicados.",
+      "audience_other": "Uma campanha chega a {{count}} contas: ativas, com o e-mail confirmado e sem cancelamento de comunicados.",
+      "formTitle": "Nova campanha",
+      "title": "Título",
+      "body": "Conteúdo",
+      "bodyHint": "Uma linha em branco separa os parágrafos. Cada e-mail leva um link para cancelar o recebimento.",
+      "image": "Imagem",
+      "pickImage": "Escolher imagem",
+      "removeImage": "Remover a imagem",
+      "imageHint": "JPG, PNG ou GIF, até 2 MB.",
+      "imageType": "A imagem precisa ser JPG, PNG ou GIF.",
+      "imageSize": "A imagem passa de 2 MB.",
+      "save": "Salvar rascunho",
+      "created": "Salvamos o rascunho.",
+      "history": "Campanhas",
+      "empty": "Ainda não há campanhas.",
+      "status": {
+        "draft": "Rascunho",
+        "sending": "Enviando",
+        "sent": "Enviada"
+      },
+      "progress": "{{sent}} de {{total}} enviados · {{failed}} com erro",
+      "send": "Enviar",
+      "sendTest": "Enviar um teste para mim",
+      "delete": "Excluir",
+      "moreActions": "Mais ações",
+      "sendTitle": "Enviar esta campanha?",
+      "sendBody_one": "Vai sair para {{count}} conta. Não dá para desfazer nem reenviar.",
+      "sendBody_other": "Vai sair para {{count}} contas. Não dá para desfazer nem reenviar.",
+      "deleteTitle": "Excluir este rascunho?",
+      "deleteBody": "Você vai excluir \"{{title}}\". Não dá para desfazer.",
+      "sending": "O envio começou.",
+      "deleted": "Excluímos o rascunho.",
+      "testSent": "Enviamos para {{email}}.",
+      "testNotSent": "Não conseguimos enviar o teste: revise a configuração de e-mail."
     }
   },
   "legal": {

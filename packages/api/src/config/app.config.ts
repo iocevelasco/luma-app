@@ -39,6 +39,16 @@ export const SERVER_CONFIG = {
    * cada link de verificación cae en la landing.
    */
   APP_URL: process.env.APP_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:6173',
+  /**
+   * Dirección pública de la API, para lo que un mail tiene que poder abrir sin
+   * sesión (la imagen de una campaña, la baja). En producción API y SPA
+   * comparten dominio, así que por defecto es el origen de `APP_URL`.
+   */
+  PUBLIC_API_URL:
+    process.env.PUBLIC_API_URL ??
+    (process.env.NODE_ENV === 'production'
+      ? new URL(process.env.APP_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:6173').origin
+      : `http://localhost:${process.env.PORT ?? 8081}`),
   /** Hostname interno de la landing en la red de Docker. */
   LANDING_URL: process.env.LANDING_URL ?? 'http://landing:8080',
 } as const;

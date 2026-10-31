@@ -26,6 +26,7 @@ un aviso).
 | Restablecé tu contraseña | quien la olvidó | «Olvidé mi contraseña» |
 | Confirmá tu nuevo correo | la dirección nueva | cambio de correo desde el perfil |
 | Avisos de la suscripción | el dueño de la Empresa (y el admin de la plataforma, para revisar pagos) | ver `docs/SUSCRIPCION.md`, sección de mails |
+| Campaña | las cuentas activas, con el correo confirmado y sin baja | el admin la envía desde `/plataforma/campanas`. Es el único correo con enlace de baja (`marketing_opt_out`); la imagen la sirve la API en `/api/public/campaigns/:id/image` |
 
 Los avisos de obra (actividad para revisar, eventualidad, hito) son además
 avisos de la campanita. Sólo esos tres van por mail: el resto (actividad

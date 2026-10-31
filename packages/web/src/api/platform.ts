@@ -1,5 +1,8 @@
 import type {
   ApiResponse,
+  Campaign,
+  CampaignAudience,
+  CampaignInput,
   PlatformActivityReport,
   PlatformUsersOverview,
   PlatformUsersPage,
@@ -29,4 +32,26 @@ export const platformUsersApi = {
 
 export const platformActivityApi = {
   report: () => unwrap<PlatformActivityReport>(apiClient.get('/api/admin/activity')),
+};
+
+export const platformCampaignsApi = {
+  list: () => unwrap<Campaign[]>(apiClient.get('/api/admin/campaigns')),
+
+  audience: () => unwrap<CampaignAudience>(apiClient.get('/api/admin/campaigns/audience')),
+
+  /** Multipart: la imagen viaja con el texto en el mismo request. */
+  create: (payload: CampaignInput, image: File | null) => {
+    const formData = new FormData();
+    formData.append('title', payload.title);
+    formData.append('body', payload.body);
+    if (image) formData.append('image', image);
+    return unwrap<Campaign>(apiClient.post('/api/admin/campaigns', formData));
+  },
+
+  test: (id: string) =>
+    unwrap<{ sent: boolean; to: string }>(apiClient.post(`/api/admin/campaigns/${id}/test`)),
+
+  send: (id: string) => unwrap<Campaign>(apiClient.post(`/api/admin/campaigns/${id}/send`)),
+
+  remove: (id: string) => unwrap<{ id: string }>(apiClient.delete(`/api/admin/campaigns/${id}`)),
 };

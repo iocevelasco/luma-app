@@ -1751,7 +1751,8 @@
     "nav": {
       "users": "Cuentas",
       "billing": "Pagos",
-      "activity": "Actividad"
+      "activity": "Actividad",
+      "campaigns": "Campañas"
     },
     "activity": {
       "periodLabel": "Período",
@@ -1795,6 +1796,43 @@
         "expenseRegistered": "Gastos registrados",
         "paymentRegistered": "Cobros registrados"
       }
+    },
+    "campaigns": {
+      "audience_one": "Una campaña llega a {{count}} cuenta: activa, con el correo confirmado y sin baja de comunicados.",
+      "audience_other": "Una campaña llega a {{count}} cuentas: activas, con el correo confirmado y sin baja de comunicados.",
+      "formTitle": "Nueva campaña",
+      "title": "Título",
+      "body": "Contenido",
+      "bodyHint": "Una línea en blanco separa los párrafos. Cada correo lleva un enlace para darse de baja.",
+      "image": "Imagen",
+      "pickImage": "Elegir imagen",
+      "removeImage": "Quitar la imagen",
+      "imageHint": "JPG, PNG o GIF, hasta 2 MB.",
+      "imageType": "La imagen tiene que ser JPG, PNG o GIF.",
+      "imageSize": "La imagen supera los 2 MB.",
+      "save": "Guardar borrador",
+      "created": "Hemos guardado el borrador.",
+      "history": "Campañas",
+      "empty": "Todavía no hay campañas.",
+      "status": {
+        "draft": "Borrador",
+        "sending": "Enviando",
+        "sent": "Enviada"
+      },
+      "progress": "{{sent}} de {{total}} enviados · {{failed}} con error",
+      "send": "Enviar",
+      "sendTest": "Enviarme una prueba",
+      "delete": "Eliminar",
+      "moreActions": "Más acciones",
+      "sendTitle": "¿Enviar esta campaña?",
+      "sendBody_one": "Va a salir a {{count}} cuenta. No se puede deshacer ni volver a enviar.",
+      "sendBody_other": "Va a salir a {{count}} cuentas. No se puede deshacer ni volver a enviar.",
+      "deleteTitle": "¿Eliminar este borrador?",
+      "deleteBody": "Vas a eliminar \"{{title}}\". No se puede deshacer.",
+      "sending": "Ha empezado el envío.",
+      "deleted": "Hemos borrado el borrador.",
+      "testSent": "Te la hemos enviado a {{email}}.",
+      "testNotSent": "No hemos podido enviar la prueba: revisa la configuración del correo."
     }
   },
   "legal": {

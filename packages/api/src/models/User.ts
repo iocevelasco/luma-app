@@ -53,6 +53,12 @@ export interface IUser extends Document {
   termsAcceptedIp?: string;
   termsAcceptedUserAgent?: string;
 
+  /**
+   * Pidió no recibir comunicados (campañas). Sólo afecta a los comerciales: los
+   * correos de la cuenta y de las obras siguen llegando.
+   */
+  marketing_opt_out?: boolean;
+
   enabled: boolean;
   account_status: AccountStatus;
   deactivated_at?: Date;
@@ -103,6 +109,8 @@ const userSchema = new Schema<IUser>(
     termsAcceptedAt: { type: Date },
     termsAcceptedIp: { type: String, select: false },
     termsAcceptedUserAgent: { type: String, select: false },
+
+    marketing_opt_out: { type: Boolean, default: false },
 
     enabled: { type: Boolean, default: true },
     account_status: {
