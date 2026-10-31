@@ -2,11 +2,18 @@
  * Utility functions for JWT token handling
  */
 
+/** Claims read on the client. Anything else stays `unknown`. */
+type JwtPayload = {
+  exp?: number;
+  iat?: number;
+  [claim: string]: unknown;
+};
+
 /**
  * Decode JWT token without verification (client-side only)
  * This is safe to use for reading expiration time and payload
  */
-export function decodeJWT(token: string): { exp?: number; iat?: number; [key: string]: any } | null {
+export function decodeJWT(token: string): JwtPayload | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
