@@ -115,6 +115,9 @@ const PlatformUsersPage = lazy(() =>
 const PlatformActivityPage = lazy(() =>
   import('./pages/platform/platform-activity').then((m) => ({ default: m.PlatformActivityPage })),
 );
+const PlatformAssistantPage = lazy(() =>
+  import('./pages/platform/platform-assistant').then((m) => ({ default: m.PlatformAssistantPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -265,6 +268,10 @@ export function AppRoutes() {
             <Route
               path={ROUTES.PLATFORM_BILLING}
               element={<LazyRoute><PlatformBillingPage /></LazyRoute>}
+            />
+            <Route
+              path={ROUTES.PLATFORM_ASSISTANT}
+              element={<LazyRoute><PlatformAssistantPage /></LazyRoute>}
             />
           </Route>
         </Route>
