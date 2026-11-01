@@ -11,7 +11,7 @@ import { resolve } from 'node:path';
 
 process.env.EMAIL_PREVIEW_DIR = resolve(process.env.EMAIL_PREVIEW_DIR ?? 'email-previews');
 
-const { EmailService } = await import('../services/email.service.js');
+const { EmailService, sendCampaignEmail } = await import('../services/email.service.js');
 
 const inDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
@@ -77,3 +77,11 @@ await EmailService.sendSubscriptionExpired('ana@ejemplo.com', 'Ana');
 await EmailService.sendCardPaymentFailed('ana@ejemplo.com', 'Ana');
 
 console.log(`\n✅ Listo: abrí los .html de ${process.env.EMAIL_PREVIEW_DIR}`);
+await sendCampaignEmail({
+  to: 'ana@ejemplo.com',
+  name: 'Ana',
+  title: 'Novedades de Luma',
+  body: 'Ya podés registrar tus gastos con foto.\n\nProbalo desde la obra y contanos qué te parece.',
+  imageUrl: null,
+  unsubscribeUrl: 'https://luma.app/api/public/unsubscribe?u=1&s=firma',
+});

@@ -29,6 +29,9 @@ FROM base AS build
 # Las VITE_* se hornean en el bundle: tienen que existir en build time.
 ARG VITE_RECAPTCHA_SITE_KEY
 ENV VITE_RECAPTCHA_SITE_KEY=$VITE_RECAPTCHA_SITE_KEY
+# Origen público de NexusBot (script del widget y api-url). Vacío en local.
+ARG VITE_NEXUSBOT_URL
+ENV VITE_NEXUSBOT_URL=$VITE_NEXUSBOT_URL
 
 RUN pnpm --filter @luma/shared build
 RUN pnpm --filter @luma/web build

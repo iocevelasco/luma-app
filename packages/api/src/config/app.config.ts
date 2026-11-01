@@ -39,6 +39,16 @@ export const SERVER_CONFIG = {
    * cada link de verificación cae en la landing.
    */
   APP_URL: process.env.APP_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:6173',
+  /**
+   * Dirección pública de la API, para lo que un mail tiene que poder abrir sin
+   * sesión (la imagen de una campaña, la baja). En producción API y SPA
+   * comparten dominio, así que por defecto es el origen de `APP_URL`.
+   */
+  PUBLIC_API_URL:
+    process.env.PUBLIC_API_URL ??
+    (process.env.NODE_ENV === 'production'
+      ? new URL(process.env.APP_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:6173').origin
+      : `http://localhost:${process.env.PORT ?? 8081}`),
   /** Hostname interno de la landing en la red de Docker. */
   LANDING_URL: process.env.LANDING_URL ?? 'http://landing:8080',
 } as const;
@@ -219,6 +229,21 @@ export const ANTHROPIC_CONFIG = {
   API_KEY: process.env.ANTHROPIC_API_KEY,
   MODEL: 'claude-sonnet-5',
   ENABLED: Boolean(process.env.ANTHROPIC_API_KEY),
+} as const;
+
+/**
+ * Chat de Nexusbot. La API crea la sesión: la clave no sale al navegador.
+ * Sin URL, clave o proyecto el endpoint responde 503 y el resto sigue andando.
+ */
+export const NEXUSBOT_CONFIG = {
+  API_URL: process.env.NEXUSBOT_API_URL?.replace(/\/+$/, ''),
+  API_KEY: process.env.NEXUSBOT_API_KEY,
+  /** Clave de administración de NexusBot (`X-Admin-Key`). No es la de las sesiones. */
+  ADMIN_KEY: process.env.NEXUSBOT_ADMIN_KEY,
+  PROJECT_ID: process.env.NEXUSBOT_PROJECT_ID,
+  ENABLED: Boolean(
+    process.env.NEXUSBOT_API_URL && process.env.NEXUSBOT_API_KEY && process.env.NEXUSBOT_PROJECT_ID,
+  ),
 } as const;
 
 /**

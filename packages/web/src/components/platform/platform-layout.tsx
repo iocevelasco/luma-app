@@ -1,5 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { Activity, ArrowLeft, Landmark, MessageSquareHeart, Users, type LucideIcon } from 'lucide-react';
+import {
+  Activity,
+  ArrowLeft,
+  Bot,
+  Landmark,
+  Mail,
+  MessageSquareHeart,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AppLogo } from '@/components/app-logo';
@@ -10,11 +19,17 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { ROUTES } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 
-const SECTIONS: { to: string; key: 'users' | 'activity' | 'feedback' | 'billing'; icon: LucideIcon }[] = [
+const SECTIONS: {
+  to: string;
+  key: 'users' | 'activity' | 'campaigns' | 'feedback' | 'billing' | 'assistant';
+  icon: LucideIcon;
+}[] = [
   { to: ROUTES.PLATFORM_USERS, key: 'users', icon: Users },
   { to: ROUTES.PLATFORM_ACTIVITY, key: 'activity', icon: Activity },
+  { to: ROUTES.PLATFORM_CAMPAIGNS, key: 'campaigns', icon: Mail },
   { to: ROUTES.PLATFORM_FEEDBACK, key: 'feedback', icon: MessageSquareHeart },
   { to: ROUTES.PLATFORM_BILLING, key: 'billing', icon: Landmark },
+  { to: ROUTES.PLATFORM_ASSISTANT, key: 'assistant', icon: Bot },
 ];
 
 /**

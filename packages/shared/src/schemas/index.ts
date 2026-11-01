@@ -98,4 +98,5 @@ export * from './milestone.js';
 export * from './payment.js';
 export * from './subscription.js';
 export * from './platform.js';
+export * from './campaign.js';
 export * from './feedback.js';
