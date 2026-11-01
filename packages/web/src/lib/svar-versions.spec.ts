@@ -14,7 +14,12 @@ const { dependencies } = JSON.parse(
 ) as { dependencies: Record<string, string> };
 
 describe('versiones de SVAR', () => {
-  it.each(['@svar-ui/react-kanban', '@svar-ui/react-gantt'])('%s está fijada a una versión exacta', (name) => {
+  it.each([
+    '@svar-ui/react-kanban',
+    '@svar-ui/react-gantt',
+    '@svar-ui/react-filemanager',
+    '@svar-ui/react-core',
+  ])('%s está fijada a una versión exacta', (name) => {
     expect(dependencies[name]).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });

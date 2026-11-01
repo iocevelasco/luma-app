@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Kanban, Willow, type ColumnConfig, type KanbanCard, type KanbanInstanceApi } from '@svar-ui/react-kanban';
 import '@svar-ui/react-kanban/style.css';
+import '@/lib/svar-icons';
 import type { Activity } from '@luma/shared';
 import { useTranslation } from 'react-i18next';
 import { ActivityStatusIcon } from '@/components/common/activity-status-icon';

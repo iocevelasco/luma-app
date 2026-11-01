@@ -492,6 +492,26 @@ select:-webkit-autofill {
 }
 
 /*
+  Explorador de la documentación (`DocumentFileManager`). Fuera de `@layer` por lo
+  mismo que `.luma-gantt`: el CSS de la librería no está en una capa y le gana.
+  `all.css` trae `@font-face` de `cdn.svar.dev` para Open Sans; con la tipografía
+  de la app no se usa y el navegador nunca la baja.
+*/
+.luma-filemanager .wx-theme {
+  --wx-font-family: var(--font-sans);
+  --wx-background: var(--card);
+  --wx-background-alt: var(--muted);
+  --wx-color-primary: var(--primary);
+  /* Texto sobre el verde: #101010 (10.3:1), nunca blanco. */
+  --wx-color-primary-font: var(--primary-foreground);
+  --wx-color-primary-selected: color-mix(in srgb, var(--primary) 16%, transparent);
+  --wx-color-font: var(--foreground);
+  --wx-color-font-alt: var(--muted-foreground);
+  --wx-color-font-disabled: var(--muted-foreground);
+  --wx-color-secondary-font: var(--muted-foreground);
+}
+
+/*
   Cronograma (SVAR Gantt): el color de las líneas de la grilla y los renglones
   de la tabla.
 
@@ -709,4 +729,22 @@ select:-webkit-autofill {
 /* El fondo de la lista del celular y el de las canceladas: el mismo gris que las columnas. */
 .luma-board-canvas {
   background: var(--board-canvas);
+}
+
+/*
+  El chat flota en la misma esquina que la acción principal (Nueva obra y el
+  resto de los FAB). Estas variables las lee el widget, dentro de su shadow:
+  el botón queda encima del FAB, alineado a su derecha. En mobile el FAB sube
+  para dejar la barra inferior; el chat sube con él.
+*/
+nexus-chat {
+  --nexus-inset-end: 1rem;
+  --nexus-inset-bottom: calc(5rem + 2.25rem + 0.75rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  nexus-chat {
+    --nexus-inset-end: 2rem;
+    --nexus-inset-bottom: calc(2rem + 2.25rem + 0.75rem);
+  }
 }

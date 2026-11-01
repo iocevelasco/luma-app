@@ -3,6 +3,7 @@ import { addDays, addMonths, addQuarters, format, startOfMonth, startOfQuarter }
 import { useTranslation } from 'react-i18next';
 import { Gantt, Willow, type IApi, type IColumnConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
+import '@/lib/svar-icons';
 import type { Activity, ActivityStatus } from '@luma/shared';
 import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { TruncatedText } from '@/components/common/truncated-text';

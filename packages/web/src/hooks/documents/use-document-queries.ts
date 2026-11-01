@@ -27,6 +27,21 @@ export function useProjectDocuments(projectId: string | undefined) {
   });
 }
 
+/** El archivo de un documento como `Blob`, para la vista previa de un PDF. */
+export function useProjectDocumentFile(projectId: string, documentId: string | undefined) {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.projectDocumentFile, projectId, documentId],
+    queryFn: () => documentsApi.file(projectId, documentId!),
+    enabled: isAuthenticated && !!documentId,
+    // Un documento no cambia: se reabre sin volver a bajarlo. Pero un PDF
+    // pesa hasta 20MB, así que no se queda en memoria más de unos minutos.
+    staleTime: Infinity,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
 export function useCreateProjectDocument(projectId: string) {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -73,5 +88,53 @@ export function useDeleteProjectDocument(projectId: string) {
       toast.success(t('document.deleted'));
     },
     onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
+/**
+ * Espera a **todas** las peticiones, no sólo a la primera que falla: con
+ * `Promise.all` el listado se recargaría mientras las otras siguen en vuelo y
+ * mostraría un estado a medias que nadie vuelve a refrescar.
+ */
+async function settleAll(requests: Promise<unknown>[]): Promise<void> {
+  const results = await Promise.allSettled(requests);
+  const failed = results.find((result) => result.status === 'rejected');
+  if (failed) throw (failed as PromiseRejectedResult).reason;
+}
+
+/**
+ * Mover o renombrar varias cosas a la vez (el explorador de archivos): un solo
+ * aviso al final en vez de uno por documento. Si alguno falla, el listado se
+ * recarga igual —los que sí se aplicaron tienen que verse—.
+ */
+export function useUpdateProjectDocuments(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (changes: Array<UpdateProjectDocumentInput & { documentId: string }>) =>
+      settleAll(
+        changes.map(({ documentId, ...payload }) =>
+          documentsApi.update(projectId, documentId, payload),
+        ),
+      ),
+    onSuccess: () => toast.success(t('document.updated')),
+    onError: (error) => toast.error(errorMessage(error, t)),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.projectDocuments, projectId] }),
+  });
+}
+
+export function useDeleteProjectDocuments(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (documentIds: string[]) =>
+      settleAll(documentIds.map((documentId) => documentsApi.remove(projectId, documentId))),
+    onSuccess: () => toast.success(t('document.deleted')),
+    onError: (error) => toast.error(errorMessage(error, t)),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.projectDocuments, projectId] }),
   });
 }

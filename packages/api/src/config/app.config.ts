@@ -232,6 +232,21 @@ export const ANTHROPIC_CONFIG = {
 } as const;
 
 /**
+ * Chat de Nexusbot. La API crea la sesión: la clave no sale al navegador.
+ * Sin URL, clave o proyecto el endpoint responde 503 y el resto sigue andando.
+ */
+export const NEXUSBOT_CONFIG = {
+  API_URL: process.env.NEXUSBOT_API_URL?.replace(/\/+$/, ''),
+  API_KEY: process.env.NEXUSBOT_API_KEY,
+  /** Clave de administración de NexusBot (`X-Admin-Key`). No es la de las sesiones. */
+  ADMIN_KEY: process.env.NEXUSBOT_ADMIN_KEY,
+  PROJECT_ID: process.env.NEXUSBOT_PROJECT_ID,
+  ENABLED: Boolean(
+    process.env.NEXUSBOT_API_URL && process.env.NEXUSBOT_API_KEY && process.env.NEXUSBOT_PROJECT_ID,
+  ),
+} as const;
+
+/**
  * Esquema del entorno. Las reglas que dependen de producción van en el refine:
  * en desarrollo se puede arrancar sin reCAPTCHA ni Resend, en producción no.
  */

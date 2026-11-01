@@ -21,3 +21,14 @@ export const sendChatMessageSchema = z.object({
 });
 
 export type SendChatMessageInput = z.infer<typeof sendChatMessageSchema>;
+
+/** El prompt del asistente de Luma. Lo guarda la API y lo manda a NexusBot. */
+export const chatSystemPromptSchema = z.object({
+  systemPrompt: z
+    .string()
+    .trim()
+    .min(1, 'El prompt no puede estar vacío')
+    .max(20_000, 'El prompt es demasiado largo'),
+});
+
+export type ChatSystemPromptInput = z.infer<typeof chatSystemPromptSchema>;

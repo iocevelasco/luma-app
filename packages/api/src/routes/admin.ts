@@ -11,6 +11,7 @@ import {
   listCampaigns,
   sendCampaign,
   sendCampaignTest,
+  getChatPrompt,
   getPlatformActivity,
   getPlatformUsersOverview,
   listExchangeRates,
@@ -18,12 +19,14 @@ import {
   listSubscriptionPaymentsForAdmin,
   refreshExchangeRateNow,
   reviewSubscriptionPayment,
+  updateChatPrompt,
 } from '../controllers/index.js';
 
 /**
  * Lo que sólo hace el admin de la plataforma (`role: 'admin'`): no es un rol
  * de obra ni de Empresa, es quien opera Luma: la tasa del BCV, la cola de
- * pagos de la suscripción en bolívares y, sólo lectura, las cuentas registradas.
+ * pagos de la suscripción en bolívares, el prompt del asistente, la
+ * actividad por rol y, sólo lectura, las cuentas registradas.
  */
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -51,9 +54,12 @@ adminRouter.post('/exchange-rates/refresh', refreshExchangeRateNow);
 adminRouter.get('/users/overview', getPlatformUsersOverview);
 adminRouter.get('/users', listPlatformUsersPage);
 
+adminRouter.get('/chat-prompt', getChatPrompt);
+adminRouter.put('/chat-prompt', updateChatPrompt);
+
 adminRouter.get('/activity', getPlatformActivity);
 
-adminRouter.get('/subscription-payments',listSubscriptionPaymentsForAdmin);
+adminRouter.get('/subscription-payments', listSubscriptionPaymentsForAdmin);
 adminRouter.post('/subscription-payments/:paymentId/review', reviewSubscriptionPayment);
 
 adminRouter.get('/campaigns', listCampaigns);
