@@ -1956,7 +1956,6 @@
   },
   "feedback": {
     "title": "Como está sendo sua experiência com a Luma?",
-    "description": "Três perguntas rápidas, de 1 (nada) a 5 (muito). Elas nos ajudam a melhorar o que importa.",
     "questions": {
       "timeSaved": "A Luma economiza seu tempo na gestão das suas obras?",
       "clarity": "Você encontra rápido o que precisa?",

@@ -20,6 +20,8 @@ export const FEEDBACK_FIRST_AFTER_DAYS = 14;
 export const FEEDBACK_REPEAT_AFTER_DAYS = 90;
 /** Días de silencio tras cerrar la encuesta sin responder: se vuelve a preguntar antes. */
 export const FEEDBACK_DISMISS_REPEAT_AFTER_DAYS = 7;
+/** Minutos de sesión abierta antes de mostrar el modal: no se cruza apenas se entra. */
+export const FEEDBACK_SESSION_DELAY_MINUTES = 5;
 export const FEEDBACK_CHANGE_MAX_LENGTH = 200;
 /** Entre dos respuestas desde el menú: evita inflar el promedio con reenvíos. */
 export const FEEDBACK_MIN_GAP_DAYS = 7;

@@ -74,7 +74,6 @@ export function FeedbackDialog({ open, onOpenChange, onDismiss }: FeedbackDialog
       open={open}
       onOpenChange={(next) => !next && !submit.isPending && close(false)}
       title={t('feedback.title')}
-      description={t('feedback.description')}
     >
       <div className="flex flex-col gap-5">
         {FEEDBACK_QUESTIONS.map((question) => {
