@@ -24,6 +24,7 @@ type ResendEmail = {
   subject: string;
   html: string;
   text: string;
+  headers?: Record<string, string>;
 };
 
 type ResendClient = {
@@ -641,6 +642,49 @@ export class EmailService {
       'aviso de cobro fallido',
     );
   }
+}
+
+export interface CampaignEmail {
+  to: string;
+  name: string;
+  title: string;
+  body: string;
+  imageUrl?: string | null;
+  unsubscribeUrl: string;
+}
+
+/** Un párrafo por línea en blanco; un salto simple es un `<br>`. Siempre escapado. */
+export function campaignBodyHtml(body: string): string {
+  return body
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
+/** Comunicado del admin de la plataforma. Es el único correo con baja. */
+export async function sendCampaignEmail(c: CampaignEmail): Promise<boolean> {
+  return send(
+    {
+      from: FROM_EMAIL,
+      to: c.to,
+      subject: c.title,
+      html: layout({
+        heroImageUrl: c.imageUrl ?? undefined,
+        heading: c.title,
+        preheader: c.body.slice(0, 110),
+        bodyHtml: campaignBodyHtml(c.body),
+        unsubscribeUrl: c.unsubscribeUrl,
+      }),
+      text: `${c.title}\n\n${c.body}\n\nPara no recibir más comunicados: ${c.unsubscribeUrl}`,
+      headers: {
+        'List-Unsubscribe': `<${c.unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    },
+    'campaña',
+  );
 }
 
 export default EmailService;

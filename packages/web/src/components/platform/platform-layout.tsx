@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Activity, ArrowLeft, Bot, Landmark, Users, type LucideIcon } from 'lucide-react';
+import { Activity, ArrowLeft, Bot, Landmark, Mail, Users, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AppLogo } from '@/components/app-logo';
@@ -12,11 +12,12 @@ import { cn } from '@/lib/utils';
 
 const SECTIONS: {
   to: string;
-  key: 'users' | 'activity' | 'billing' | 'assistant';
+  key: 'users' | 'activity' | 'campaigns' | 'billing' | 'assistant';
   icon: LucideIcon;
 }[] = [
   { to: ROUTES.PLATFORM_USERS, key: 'users', icon: Users },
   { to: ROUTES.PLATFORM_ACTIVITY, key: 'activity', icon: Activity },
+  { to: ROUTES.PLATFORM_CAMPAIGNS, key: 'campaigns', icon: Mail },
   { to: ROUTES.PLATFORM_BILLING, key: 'billing', icon: Landmark },
   { to: ROUTES.PLATFORM_ASSISTANT, key: 'assistant', icon: Bot },
 ];

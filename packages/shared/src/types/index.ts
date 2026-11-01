@@ -110,3 +110,4 @@ export * from './payment.js';
 export * from './errors.js';
 export * from './subscription.js';
 export * from './platform.js';
+export * from './campaign.js';

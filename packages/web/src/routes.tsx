@@ -106,6 +106,9 @@ const ProjectAdvisorPage = lazy(() =>
 const SubscriptionPage = lazy(() =>
   import('./pages/subscription').then((m) => ({ default: m.SubscriptionPage })),
 );
+const PlatformCampaignsPage = lazy(() =>
+  import('./pages/platform/platform-campaigns').then((m) => ({ default: m.PlatformCampaignsPage })),
+);
 const PlatformBillingPage = lazy(() =>
   import('./pages/platform/platform-billing').then((m) => ({ default: m.PlatformBillingPage })),
 );
@@ -264,6 +267,10 @@ export function AppRoutes() {
             <Route
               path={ROUTES.PLATFORM_ACTIVITY}
               element={<LazyRoute><PlatformActivityPage /></LazyRoute>}
+            />
+            <Route
+              path={ROUTES.PLATFORM_CAMPAIGNS}
+              element={<LazyRoute><PlatformCampaignsPage /></LazyRoute>}
             />
             <Route
               path={ROUTES.PLATFORM_BILLING}

@@ -29,6 +29,8 @@ export interface EmailBrand {
 }
 
 export interface EmailLayoutOptions {
+  /** Imagen destacada arriba del título (campañas). Sólo http/https. */
+  heroImageUrl?: string;
   /** Encabezado principal, y también el `<title>`. */
   heading: string;
   /**
@@ -124,7 +126,7 @@ function styleParagraphs(html: string): string {
 }
 
 export function renderEmailLayout(opts: EmailLayoutOptions): string {
-  const { heading, preheader, bodyHtml, details, cta, showFallbackLink, note, brand, unsubscribeUrl, appName } =
+  const { heroImageUrl, heading, preheader, bodyHtml, details, cta, showFallbackLink, note, brand, unsubscribeUrl, appName } =
     opts;
 
   const color = safeColor(brand?.primaryColor);
@@ -136,6 +138,11 @@ export function renderEmailLayout(opts: EmailLayoutOptions): string {
 
   const preheaderBlock = preheader
     ? `<div style="display: none; max-height: 0; overflow: hidden; mso-hide: all;">${escapeHtml(preheader)}&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>`
+    : '';
+
+  const heroUrl = safeUrl(heroImageUrl);
+  const heroBlock = heroUrl
+    ? `<img src="${escapeHtml(heroUrl)}" alt="" width="536" style="display: block; width: 100%; max-width: 536px; height: auto; border-radius: 12px; margin: 0 0 24px;">`
     : '';
 
   const logoBlock = logoUrl
@@ -202,6 +209,7 @@ export function renderEmailLayout(opts: EmailLayoutOptions): string {
             <tr>
               <td style="background: ${C.card}; border: 1px solid ${C.border}; border-top: 0; border-radius: 0 0 16px 16px; padding: 32px;">
                 ${logoBlock}
+                ${heroBlock}
                 <h1 style="margin: 0 0 20px; font-family: ${FONT}; font-size: 24px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; color: ${C.text};">${escapeHtml(heading)}</h1>
                 ${styleParagraphs(bodyHtml)}
                 ${detailsBlock}

@@ -49,6 +49,7 @@ export const USER_REFERENCES: Record<string, Record<string, UserRefTreatment>> =
     createdBy: 'history',
   },
   Budget: { importedBy: 'history' },
+  Campaign: { createdBy: 'history' },
   // Quién publicó el prompt del asistente. El texto no es un dato personal.
   ChatPrompt: { updatedBy: 'history' },
   CrewGoal: { createdBy: 'history' },
