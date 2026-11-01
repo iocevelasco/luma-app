@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import {
   CORS_CONFIG,
+  NEXUSBOT_CONFIG,
   SERVER_CONFIG,
   isDevelopment,
   isProduction,
@@ -104,6 +105,19 @@ if (isProduction) {
   });
 }
 
+/** Origen de NexusBot, si está configurado. El widget y el stream salen del navegador. */
+function nexusbotOrigin(): string | null {
+  const raw = NEXUSBOT_CONFIG.API_URL;
+  if (!raw) return null;
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+}
+
+const chatOrigin = nexusbotOrigin();
+
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
@@ -112,7 +126,14 @@ app.use(
           directives: {
             defaultSrc: ["'self'"],
             // Stripe: Stripe.js y el checkout embebido de la suscripción.
-            scriptSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://js.stripe.com'],
+            // NexusBot: el script del botón y el stream de mensajes.
+            scriptSrc: [
+              "'self'",
+              'https://www.google.com',
+              'https://www.gstatic.com',
+              'https://js.stripe.com',
+              ...(chatOrigin ? [chatOrigin] : []),
+            ],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
             imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://*.stripe.com'],
@@ -130,6 +151,7 @@ app.use(
               'https://www.gstatic.com',
               'https://api.stripe.com',
               'https://checkout.stripe.com',
+              ...(chatOrigin ? [chatOrigin] : []),
             ],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
