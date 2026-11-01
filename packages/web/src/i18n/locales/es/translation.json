@@ -1831,7 +1831,9 @@
         "timeSaved": "¿Luma te ahorra tiempo en la gestión de tus obras?",
         "clarity": "¿Encontrás rápido lo que necesitás?",
         "control": "¿Sentís más control sobre el avance y la plata de la obra?"
-      }
+      },
+      "changesTitle": "Cambios que piden",
+      "noChanges": "Nadie pidió cambios todavía."
     }
   },
   "legal": {
@@ -1966,6 +1968,8 @@
     "commentPlaceholder": "Qué te frena, qué te gustaría que hiciera Luma…",
     "later": "Ahora no",
     "send": "Enviar",
-    "thanks": "¡Gracias por tu opinión!"
+    "thanks": "¡Gracias por tu opinión!",
+    "changeLabel": "¿Hay algún feature o algo que quieras cambiar? (opcional)",
+    "changePlaceholder": "Ej.: el cronograma, los reportes…"
   }
 }

@@ -15,15 +15,24 @@ describe('isFeedbackDue', () => {
   it('pregunta desde los 14 días', () => {
     expect(isFeedbackDue({ createdAt: day(0), now: day(14) })).toBe(true);
   });
-  it('tras responder o descartar espera 90 días', () => {
+  it('tras responder espera 90 días', () => {
     expect(isFeedbackDue({ createdAt: day(0), lastRespondedAt: day(20), now: day(109) })).toBe(false);
     expect(isFeedbackDue({ createdAt: day(0), lastRespondedAt: day(20), now: day(110) })).toBe(true);
-    expect(isFeedbackDue({ createdAt: day(0), lastDismissedAt: day(20), now: day(50) })).toBe(false);
   });
-  it('cuenta desde lo más reciente de las dos marcas', () => {
+  it('tras cerrarla sin responder vuelve a los 7 días', () => {
+    expect(isFeedbackDue({ createdAt: day(0), lastDismissedAt: day(20), now: day(26) })).toBe(false);
+    expect(isFeedbackDue({ createdAt: day(0), lastDismissedAt: day(20), now: day(27) })).toBe(true);
+  });
+  it('cerrarla después de una respuesta no acorta los 90 días', () => {
     expect(
-      isFeedbackDue({ createdAt: day(0), lastRespondedAt: day(15), lastDismissedAt: day(100), now: day(150) }),
+      isFeedbackDue({ createdAt: day(0), lastRespondedAt: day(100), lastDismissedAt: day(20), now: day(150) }),
     ).toBe(false);
+    expect(
+      isFeedbackDue({ createdAt: day(0), lastRespondedAt: day(20), lastDismissedAt: day(110), now: day(116) }),
+    ).toBe(false);
+    expect(
+      isFeedbackDue({ createdAt: day(0), lastRespondedAt: day(20), lastDismissedAt: day(110), now: day(117) }),
+    ).toBe(true);
   });
 });
 
@@ -41,6 +50,7 @@ describe('summarizeFeedback', () => {
     timeSaved: score,
     clarity: score,
     control: score,
+    change: comment?.trim() ? `x${comment}` : undefined,
     comment,
     createdAt: day(1),
   });
@@ -56,6 +66,7 @@ describe('summarizeFeedback', () => {
     expect(report.suppressed).toBe(false);
     expect(report.averages).toEqual({ timeSaved: 3, clarity: 3, control: 3 });
     expect(report.comments).toHaveLength(4);
+    expect(report.changes).toHaveLength(4);
     expect(JSON.stringify(report)).not.toContain('"user"');
   });
 });

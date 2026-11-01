@@ -1,5 +1,10 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import { FEEDBACK_COMMENT_MAX_LENGTH, FEEDBACK_SCORE_MAX, FEEDBACK_SCORE_MIN } from '@luma/shared';
+import {
+  FEEDBACK_CHANGE_MAX_LENGTH,
+  FEEDBACK_COMMENT_MAX_LENGTH,
+  FEEDBACK_SCORE_MAX,
+  FEEDBACK_SCORE_MIN,
+} from '@luma/shared';
 
 /**
  * Una respuesta a la encuesta de productividad, una fila por vez que la persona
@@ -15,6 +20,8 @@ export interface IFeedbackResponse extends Document {
   timeSaved: number;
   clarity: number;
   control: number;
+  /** Qué feature o qué cosa cambiaría. Opcional. */
+  change?: string;
   comment?: string;
   createdAt: Date;
 }
@@ -27,6 +34,7 @@ const feedbackResponseSchema = new Schema<IFeedbackResponse>(
     timeSaved: score,
     clarity: score,
     control: score,
+    change: { type: String, trim: true, maxlength: FEEDBACK_CHANGE_MAX_LENGTH },
     comment: { type: String, trim: true, maxlength: FEEDBACK_COMMENT_MAX_LENGTH },
   },
   { timestamps: { createdAt: true, updatedAt: false } },

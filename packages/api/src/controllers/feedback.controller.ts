@@ -52,14 +52,15 @@ export async function submitFeedback(req: Request, res: Response, next: NextFunc
     if (!canSubmitFeedback(await lastResponseAt(id))) {
       throw conflict('Ya nos respondiste hace poco. ¡Gracias! Volvé a contarnos en unos días.');
     }
-    await FeedbackResponse.create({ ...input, comment: input.comment || undefined, user: id });
+    await FeedbackResponse.create({ ...input, change: input.change || undefined,
+      comment: input.comment || undefined, user: id });
     return res.status(201).json({ success: true, data: { due: false } satisfies FeedbackStatus });
   } catch (error) {
     next(error);
   }
 }
 
-/** `POST /api/feedback/dismiss` — "ahora no": se vuelve a preguntar en 90 días. */
+/** `POST /api/feedback/dismiss` — "ahora no": se vuelve a preguntar en 7 días. */
 export async function dismissFeedback(req: Request, res: Response, next: NextFunction) {
   try {
     await User.updateOne({ _id: userId(req) }, { feedbackDismissedAt: new Date() });
@@ -82,6 +83,7 @@ export async function getPlatformFeedback(_req: Request, res: Response, next: Ne
         timeSaved: d.timeSaved,
         clarity: d.clarity,
         control: d.control,
+        change: d.change,
         comment: d.comment,
         createdAt: d.createdAt,
       })),

@@ -58,6 +58,26 @@ export function PlatformFeedbackPage() {
 
               <Card>
                 <CardHeader>
+                  <CardTitle className="text-base">{t('platform.feedback.changesTitle')}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  {report.changes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t('platform.feedback.noChanges')}</p>
+                  ) : (
+                    report.changes.map((item) => (
+                      <div key={item.createdAt + item.change} className="flex flex-col gap-1">
+                        <p className="text-sm">{item.change}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(item.createdAt).toLocaleDateString(i18n.language)}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
                   <CardTitle className="text-base">{t('platform.feedback.commentsTitle')}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">

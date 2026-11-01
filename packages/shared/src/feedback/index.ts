@@ -16,8 +16,11 @@ export const FEEDBACK_COMMENT_MAX_LENGTH = 500;
 
 /** Días desde el alta hasta la primera vez que se pregunta sola. */
 export const FEEDBACK_FIRST_AFTER_DAYS = 14;
-/** Días de silencio tras responder o descartar. */
+/** Días de silencio tras responder. */
 export const FEEDBACK_REPEAT_AFTER_DAYS = 90;
+/** Días de silencio tras cerrar la encuesta sin responder: se vuelve a preguntar antes. */
+export const FEEDBACK_DISMISS_REPEAT_AFTER_DAYS = 7;
+export const FEEDBACK_CHANGE_MAX_LENGTH = 200;
 /** Entre dos respuestas desde el menú: evita inflar el promedio con reenvíos. */
 export const FEEDBACK_MIN_GAP_DAYS = 7;
 /** Tope de comentarios que lista el panel de plataforma. */
@@ -34,8 +37,9 @@ export interface FeedbackFacts {
 }
 
 /**
- * ¿Toca mostrar el modal solo? A los 14 días de uso la primera vez; después,
- * 90 días desde lo último que la persona hizo (responder o descartar).
+ * ¿Toca mostrar el modal solo? A los 14 días de uso la primera vez. Después,
+ * 90 días desde que respondió, o 7 desde que la cerró sin responder: gana el
+ * plazo que vence más tarde.
  */
 export function isFeedbackDue({
   createdAt,
@@ -43,11 +47,12 @@ export function isFeedbackDue({
   lastDismissedAt,
   now = new Date(),
 }: FeedbackFacts): boolean {
-  const touched = [lastRespondedAt, lastDismissedAt].filter((d): d is Date => d instanceof Date);
-  if (touched.length > 0) {
-    const last = Math.max(...touched.map((d) => d.getTime()));
-    return now.getTime() - last >= FEEDBACK_REPEAT_AFTER_DAYS * DAY_MS;
+  const waits: number[] = [];
+  if (lastRespondedAt) waits.push(lastRespondedAt.getTime() + FEEDBACK_REPEAT_AFTER_DAYS * DAY_MS);
+  if (lastDismissedAt) {
+    waits.push(lastDismissedAt.getTime() + FEEDBACK_DISMISS_REPEAT_AFTER_DAYS * DAY_MS);
   }
+  if (waits.length > 0) return now.getTime() >= Math.max(...waits);
   return now.getTime() - createdAt.getTime() >= FEEDBACK_FIRST_AFTER_DAYS * DAY_MS;
 }
 
@@ -62,6 +67,7 @@ export interface FeedbackRow {
   timeSaved: number;
   clarity: number;
   control: number;
+  change?: string | null;
   comment?: string | null;
   createdAt: Date;
 }
@@ -77,6 +83,8 @@ export interface FeedbackReport {
    */
   suppressed: boolean;
   averages: Record<FeedbackQuestion, number> | null;
+  /** Qué quieren cambiar, sin autor. */
+  changes: { change: string; createdAt: string }[];
   comments: { comment: string; createdAt: string }[];
 }
 
@@ -87,18 +95,27 @@ export function summarizeFeedback(rows: FeedbackRow[]): FeedbackReport {
   const respondents = new Set(rows.map((r) => r.user)).size;
   const base = { responses: rows.length, respondents };
   if (respondents < MIN_PEOPLE_PER_CELL) {
-    return { ...base, suppressed: true, averages: null, comments: [] };
+    return { ...base, suppressed: true, averages: null, changes: [], comments: [] };
   }
   const avg = (q: FeedbackQuestion) => round1(rows.reduce((sum, r) => sum + r[q], 0) / rows.length);
-  const comments = rows
-    .filter((r) => r.comment && r.comment.trim())
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, FEEDBACK_REPORT_COMMENTS_LIMIT)
-    .map((r) => ({ comment: r.comment as string, createdAt: r.createdAt.toISOString() }));
+  const latest = (field: 'comment' | 'change') =>
+    rows
+      .filter((r) => r[field] && r[field]!.trim())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, FEEDBACK_REPORT_COMMENTS_LIMIT);
+  const comments = latest('comment').map((r) => ({
+    comment: r.comment as string,
+    createdAt: r.createdAt.toISOString(),
+  }));
+  const changes = latest('change').map((r) => ({
+    change: r.change as string,
+    createdAt: r.createdAt.toISOString(),
+  }));
   return {
     ...base,
     suppressed: false,
     averages: { timeSaved: avg('timeSaved'), clarity: avg('clarity'), control: avg('control') },
+    changes,
     comments,
   };
 }

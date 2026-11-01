@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  FEEDBACK_CHANGE_MAX_LENGTH,
   FEEDBACK_COMMENT_MAX_LENGTH,
   FEEDBACK_QUESTIONS,
   FEEDBACK_SCORE_MAX,
@@ -8,6 +9,7 @@ import {
   type FeedbackQuestion,
 } from '@luma/shared';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,6 +36,7 @@ export function FeedbackDialog({ open, onOpenChange, onDismiss }: FeedbackDialog
   const { t } = useTranslation();
   const submit = useSubmitFeedback();
   const [scores, setScores] = useState<Partial<Record<FeedbackQuestion, number>>>({});
+  const [change, setChange] = useState('');
   const [comment, setComment] = useState('');
 
   const complete = FEEDBACK_QUESTIONS.every((q) => scores[q] !== undefined);
@@ -50,11 +53,13 @@ export function FeedbackDialog({ open, onOpenChange, onDismiss }: FeedbackDialog
         timeSaved: scores.timeSaved!,
         clarity: scores.clarity!,
         control: scores.control!,
+        change: change.trim() || undefined,
         comment: comment.trim() || undefined,
       },
       {
         onSuccess: () => {
           setScores({});
+          setChange('');
           setComment('');
           close(true);
         },
@@ -104,6 +109,19 @@ export function FeedbackDialog({ open, onOpenChange, onDismiss }: FeedbackDialog
             </div>
           );
         })}
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="feedback-change" className="text-sm">
+            {t('feedback.changeLabel')}
+          </Label>
+          <Input
+            id="feedback-change"
+            maxLength={FEEDBACK_CHANGE_MAX_LENGTH}
+            value={change}
+            onChange={(event) => setChange(event.target.value)}
+            placeholder={t('feedback.changePlaceholder')}
+          />
+        </div>
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="feedback-comment" className="text-sm">
