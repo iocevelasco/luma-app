@@ -45,4 +45,6 @@ export enum QueryKeys {
   platformUsersOverview = 'platform-users-overview',
   platformUsers = 'platform-users',
   platformActivity = 'platform-activity',
+  feedbackStatus = 'feedback-status',
+  platformFeedback = 'platform-feedback',
 }

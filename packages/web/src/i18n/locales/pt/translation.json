@@ -43,7 +43,8 @@
     "settings": "Configurações",
     "logout": "Sair",
     "subscription": "Assinatura",
-    "platform": "Administração da plataforma"
+    "platform": "Administração da plataforma",
+    "feedback": "Conte como está indo"
   },
   "project": {
     "list": {
@@ -1775,7 +1776,8 @@
     "nav": {
       "users": "Contas",
       "billing": "Pagamentos",
-      "activity": "Atividade"
+      "activity": "Atividade",
+      "feedback": "Feedback"
     },
     "activity": {
       "periodLabel": "Período",
@@ -1818,6 +1820,17 @@
         "materialRequested": "Materiais pedidos",
         "expenseRegistered": "Despesas registradas",
         "paymentRegistered": "Recebimentos registrados"
+      }
+    },
+    "feedback": {
+      "summary": "{{responses}} respostas de {{respondents}} pessoas.",
+      "suppressed": "Ainda há menos de {{min}} pessoas que responderam: por privacidade não mostramos médias nem comentários.",
+      "commentsTitle": "Comentários",
+      "noComments": "Ninguém deixou comentários ainda.",
+      "questions": {
+        "timeSaved": "A Luma economiza seu tempo na gestão das suas obras?",
+        "clarity": "Você encontra rápido o que precisa?",
+        "control": "Você sente mais controle sobre o andamento e o dinheiro da obra?"
       }
     }
   },
@@ -1938,5 +1951,21 @@
         }
       ]
     }
+  },
+  "feedback": {
+    "title": "Como está sendo sua experiência com a Luma?",
+    "description": "Três perguntas rápidas, de 1 (nada) a 5 (muito). Elas nos ajudam a melhorar o que importa.",
+    "questions": {
+      "timeSaved": "A Luma economiza seu tempo na gestão das suas obras?",
+      "clarity": "Você encontra rápido o que precisa?",
+      "control": "Você sente mais controle sobre o andamento e o dinheiro da obra?"
+    },
+    "scaleLow": "1 · Nada",
+    "scaleHigh": "5 · Muito",
+    "commentLabel": "Mais alguma coisa que queira nos contar? (opcional)",
+    "commentPlaceholder": "O que te atrapalha, o que você gostaria que a Luma fizesse…",
+    "later": "Agora não",
+    "send": "Enviar",
+    "thanks": "Obrigado pela sua opinião!"
   }
 }

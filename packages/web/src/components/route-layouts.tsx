@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { FeedbackGate } from '@/components/feedback/feedback-gate';
 import { TermsGate } from '@/components/legal/terms-gate';
 import { RouteLoading } from '@/components/routes/route-loading';
 import { isAdmin } from '@/lib/roles';
@@ -48,6 +49,7 @@ export function AuthenticatedLayout() {
     <>
       <Outlet />
       <TermsGate />
+      <FeedbackGate />
     </>
   );
 }

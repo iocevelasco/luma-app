@@ -112,6 +112,9 @@ const PlatformBillingPage = lazy(() =>
 const PlatformUsersPage = lazy(() =>
   import('./pages/platform/platform-users').then((m) => ({ default: m.PlatformUsersPage })),
 );
+const PlatformFeedbackPage = lazy(() =>
+  import('./pages/platform/platform-feedback').then((m) => ({ default: m.PlatformFeedbackPage })),
+);
 const PlatformActivityPage = lazy(() =>
   import('./pages/platform/platform-activity').then((m) => ({ default: m.PlatformActivityPage })),
 );
@@ -261,6 +264,10 @@ export function AppRoutes() {
             <Route
               path={ROUTES.PLATFORM_ACTIVITY}
               element={<LazyRoute><PlatformActivityPage /></LazyRoute>}
+            />
+            <Route
+              path={ROUTES.PLATFORM_FEEDBACK}
+              element={<LazyRoute><PlatformFeedbackPage /></LazyRoute>}
             />
             <Route
               path={ROUTES.PLATFORM_BILLING}

@@ -43,7 +43,8 @@
     "settings": "Configuración",
     "logout": "Cerrar sesión",
     "subscription": "Suscripción",
-    "platform": "Administración de la plataforma"
+    "platform": "Administración de la plataforma",
+    "feedback": "Cuéntanos cómo te va"
   },
   "project": {
     "list": {
@@ -1775,7 +1776,8 @@
     "nav": {
       "users": "Cuentas",
       "billing": "Pagos",
-      "activity": "Actividad"
+      "activity": "Actividad",
+      "feedback": "Feedback"
     },
     "activity": {
       "periodLabel": "Período",
@@ -1818,6 +1820,17 @@
         "materialRequested": "Materiales solicitados",
         "expenseRegistered": "Gastos registrados",
         "paymentRegistered": "Cobros registrados"
+      }
+    },
+    "feedback": {
+      "summary": "{{responses}} respuestas de {{respondents}} personas.",
+      "suppressed": "Todavía han respondido menos de {{min}} personas: por privacidad no mostramos medias ni comentarios.",
+      "commentsTitle": "Comentarios",
+      "noComments": "Nadie ha dejado comentarios todavía.",
+      "questions": {
+        "timeSaved": "¿Luma te ahorra tiempo en la gestión de tus obras?",
+        "clarity": "¿Encuentras rápido lo que necesitas?",
+        "control": "¿Sientes más control sobre el avance y el dinero de la obra?"
       }
     }
   },
@@ -1938,5 +1951,21 @@
         }
       ]
     }
+  },
+  "feedback": {
+    "title": "¿Cómo te está yendo con Luma?",
+    "description": "Tres preguntas rápidas, de 1 (nada) a 5 (mucho). Nos ayudan a mejorar lo que importa.",
+    "questions": {
+      "timeSaved": "¿Luma te ahorra tiempo en la gestión de tus obras?",
+      "clarity": "¿Encuentras rápido lo que necesitas?",
+      "control": "¿Sientes más control sobre el avance y el dinero de la obra?"
+    },
+    "scaleLow": "1 · Nada",
+    "scaleHigh": "5 · Mucho",
+    "commentLabel": "¿Algo más que quieras contarnos? (opcional)",
+    "commentPlaceholder": "Qué te frena, qué te gustaría que hiciera Luma…",
+    "later": "Ahora no",
+    "send": "Enviar",
+    "thanks": "¡Gracias por tu opinión!"
   }
 }

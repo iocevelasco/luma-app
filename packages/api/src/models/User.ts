@@ -53,6 +53,9 @@ export interface IUser extends Document {
   termsAcceptedIp?: string;
   termsAcceptedUserAgent?: string;
 
+  /** Última vez que descartó la encuesta de feedback. Ver `isFeedbackDue`. */
+  feedbackDismissedAt?: Date;
+
   enabled: boolean;
   account_status: AccountStatus;
   deactivated_at?: Date;
@@ -100,6 +103,7 @@ const userSchema = new Schema<IUser>(
     claimedViaLinkBy: { type: Schema.Types.ObjectId, ref: 'User' },
 
     termsVersion: { type: String },
+    feedbackDismissedAt: { type: Date },
     termsAcceptedAt: { type: Date },
     termsAcceptedIp: { type: String, select: false },
     termsAcceptedUserAgent: { type: String, select: false },

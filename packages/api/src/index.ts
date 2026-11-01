@@ -21,6 +21,7 @@ import { normalizeErrors } from './middleware/normalizeErrors.js';
 import { CACHE_REVALIDATE, setSpaCacheHeaders } from './middleware/spaCache.js';
 import { authRouter } from './routes/auth.js';
 import { organizationRouter } from './routes/organization.js';
+import { feedbackRouter } from './routes/feedback.js';
 import { notificationRouter } from './routes/notification.js';
 import { projectRouter } from './routes/project.js';
 import { subscriptionRouter } from './routes/subscription.js';
@@ -188,6 +189,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/organizations', organizationRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/feedback', feedbackRouter);
 app.use('/api/subscription', subscriptionRouter);
 app.use('/api/admin', adminRouter);
 
