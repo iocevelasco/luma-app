@@ -61,32 +61,54 @@ const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Pasa la campaña de borrador a enviándose (atómico: un segundo intento ve
  * `sending` y falla) y la manda en segundo plano. Devuelve apenas queda
  * marcada; el resultado se ve en `sent` / `failed`.
+ *
+ * Primero se reclama y después se arma la audiencia: un doble clic o una
+ * campaña ya enviada no pagan la consulta de todas las cuentas.
  */
 export async function startCampaign(id: string): Promise<ICampaign> {
-  const recipients = await User.find(AUDIENCE).select('_id email name').lean();
-
   const campaign = await Campaign.findOneAndUpdate(
     { _id: id, status: 'draft' },
-    { status: 'sending', recipients: recipients.length, sent: 0, failed: 0 },
+    { status: 'sending', recipients: 0, sent: 0, failed: 0 },
     { new: true },
   );
   if (!campaign) throw conflict('Esta campaña ya se envió o se está enviando.');
+
+  let recipients: Recipient[];
+  try {
+    recipients = await User.find(AUDIENCE).select('_id email name').lean();
+    await Campaign.updateOne({ _id: campaign._id }, { recipients: recipients.length });
+  } catch (error) {
+    // Sin audiencia no salió nada: vuelve a borrador para poder reintentar.
+    await Campaign.updateOne({ _id: campaign._id }, { status: 'draft' }).catch(() => undefined);
+    throw error;
+  }
+  campaign.recipients = recipients.length;
 
   void deliver(campaign, recipients);
   return campaign;
 }
 
-async function deliver(
-  campaign: ICampaign,
-  recipients: { _id: unknown; email: string; name: string }[],
-): Promise<void> {
+type Recipient = { _id: unknown; email: string; name: string };
+
+/**
+ * De esta tanda, quién sigue siendo audiencia: el envío dura minutos y alguien
+ * puede haberse dado de baja (o desactivado) desde que se armó la lista.
+ */
+async function stillInAudience(batch: Recipient[]): Promise<Recipient[]> {
+  const ids = await User.find({ ...AUDIENCE, _id: { $in: batch.map((user) => user._id) } })
+    .select('_id')
+    .lean();
+  const allowed = new Set(ids.map((user) => String(user._id)));
+  return batch.filter((user) => allowed.has(String(user._id)));
+}
+
+async function deliver(campaign: ICampaign, recipients: Recipient[]): Promise<void> {
   let sent = 0;
   let failed = 0;
   try {
     for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-      const results = await Promise.all(
-        recipients.slice(i, i + BATCH_SIZE).map((user) => sendCampaignTo(campaign, user)),
-      );
+      const batch = await stillInAudience(recipients.slice(i, i + BATCH_SIZE));
+      const results = await Promise.all(batch.map((user) => sendCampaignTo(campaign, user)));
       for (const ok of results) {
         if (ok) sent += 1;
         else failed += 1;
@@ -99,7 +121,9 @@ async function deliver(
   } finally {
     await Campaign.updateOne(
       { _id: campaign._id },
-      { status: 'sent', sent, failed, sentAt: new Date() },
+      // `recipients` queda en a cuántas cuentas se les intentó mandar: quien se
+      // dio de baja a mitad de camino no cuenta ni como enviado ni como fallido.
+      { status: 'sent', recipients: sent + failed, sent, failed, sentAt: new Date() },
     ).catch((error) => console.error('❌ [CAMPAÑA] No se pudo cerrar:', error));
   }
 }

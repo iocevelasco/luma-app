@@ -19,6 +19,7 @@ import {
   StorageNotConfiguredError,
 } from '../services/storage.service.js';
 import { badRequest, notFound, serviceUnavailable, unauthenticated } from '../utils/errors.js';
+import { escapeHtml } from '../services/email-layout.js';
 import { isValidUnsubscribe } from '../utils/unsubscribe.js';
 
 const EXTENSIONS: Record<string, string> = {
@@ -156,29 +157,40 @@ const PAGE = (message: string, form = '') => `<!doctype html><html lang="es"><he
 <title>Comunicados</title></head><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:420px;margin:15vh auto;padding:0 16px;text-align:center;color:#18181b">
 <p style="font-size:17px;line-height:1.5">${message}</p>${form}</body></html>`;
 
+/** `u` y `s` del enlace de baja, sólo si son texto y la firma es de esa cuenta. */
+function verifiedUnsubscribe(req: Request): { u: string; s: string } | null {
+  const { u, s } = req.query;
+  if (typeof u !== 'string' || typeof s !== 'string' || !isValidUnsubscribe(u, s)) return null;
+  return { u, s };
+}
+
 /**
  * `GET /api/public/unsubscribe` muestra la confirmación y `POST` da la baja. La
  * baja va por POST porque los escáneres de correo abren los enlaces: con GET
  * darían de baja a todo el mundo. El POST también atiende el
  * `List-Unsubscribe-Post` de un clic.
+ *
+ * El formulario se arma sólo con `u` y `s` ya verificados y escapados, nunca con
+ * la URL pedida: un parámetro de más no llega al HTML.
  */
 export async function unsubscribePage(req: Request, res: Response) {
-  const { u, s } = req.query as { u?: string; s?: string };
-  if (!u || !s || !isValidUnsubscribe(u, s)) {
-    return res.status(400).type('html').send(PAGE('Este enlace no es válido.'));
-  }
-  const form = `<form method="post" action="${req.originalUrl.replace(/"/g, '&quot;')}">
+  const link = verifiedUnsubscribe(req);
+  if (!link) return res.status(400).type('html').send(PAGE('Este enlace no es válido.'));
+
+  const action = escapeHtml(
+    `?u=${encodeURIComponent(link.u)}&s=${encodeURIComponent(link.s)}`,
+  );
+  const form = `<form method="post" action="${action}">
 <button style="margin-top:16px;padding:12px 24px;border:0;border-radius:999px;background:#00d992;color:#101010;font-size:15px;cursor:pointer">Dejar de recibir comunicados</button></form>`;
   return res.type('html').send(PAGE('¿Querés dejar de recibir comunicados?', form));
 }
 
 export async function unsubscribe(req: Request, res: Response, next: NextFunction) {
   try {
-    const { u, s } = req.query as { u?: string; s?: string };
-    if (!u || !s || !isValidUnsubscribe(u, s)) {
-      return res.status(400).type('html').send(PAGE('Este enlace no es válido.'));
-    }
-    await User.updateOne({ _id: u }, { marketing_opt_out: true });
+    const link = verifiedUnsubscribe(req);
+    if (!link) return res.status(400).type('html').send(PAGE('Este enlace no es válido.'));
+
+    await User.updateOne({ _id: link.u }, { marketing_opt_out: true });
     return res.type('html').send(PAGE('Listo. No vas a recibir más comunicados.'));
   } catch (error) {
     next(error);
