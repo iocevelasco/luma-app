@@ -46,7 +46,7 @@ export const TABLE_REPLY = [
 ].join('\n');
 
 const DEFAULT_REPLY =
-  'Soy un **asistente simulado**. Probá escribir `xss` para ver contenido hostil bloqueado, `tabla` para ver una tabla, o `error` para ver un fallo recuperable.';
+  'Soy un **asistente simulado**. Prueba a escribir `xss` para ver contenido hostil bloqueado, `tabla` para ver una tabla, o `error` para ver un fallo recuperable.';
 
 export function pickMockReply(prompt: string): string {
   const q = prompt.toLowerCase();
@@ -91,9 +91,9 @@ export async function* streamMockReply(
 export const MOCK_HISTORY = {
   title: 'Conversación anterior (simulada)',
   messages: [
-    { role: 'user', content: 'Mostrame un resumen de la obra.' },
+    { role: 'user', content: 'Muéstrame un resumen de la obra.' },
     { role: 'assistant', content: TABLE_REPLY },
-    { role: 'user', content: 'Ahora probá con contenido hostil.' },
+    { role: 'user', content: 'Ahora prueba con contenido hostil.' },
     { role: 'assistant', content: HOSTILE_REPLY },
   ],
 };

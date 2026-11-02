@@ -2027,21 +2027,21 @@
     "open": "Abrir asistente",
     "loadHistory": "Cargar historial de ejemplo",
     "examples": [
-      "Escribí «xss» para recibir contenido hostil y ver cómo queda bloqueado.",
-      "Escribí «tabla» para ver una tabla y enlaces válidos.",
-      "Escribí «error» para ver un fallo recuperable.",
-      "Adjuntá una imagen JPEG, PNG o WebP; un SVG o un archivo renombrado se rechaza."
+      "Escribe «xss» para recibir contenido hostil y ver cómo queda bloqueado.",
+      "Escribe «tabla» para ver una tabla y enlaces válidos.",
+      "Escribe «error» para ver un fallo recuperable.",
+      "Adjunta una imagen JPEG, PNG o WebP; un SVG o un archivo renombrado se rechaza."
     ],
     "newTitle": "Conversación nueva",
     "newConversation": "Nueva conversación",
     "emptyTitle": "Todavía no hay mensajes",
-    "emptyHint": "Escribí algo para empezar.",
+    "emptyHint": "Escribe algo para empezar.",
     "logLabel": "Mensajes del chat",
-    "you": "Vos",
+    "you": "Tú",
     "assistant": "Asistente",
     "streaming": "Escribiendo…",
     "inputLabel": "Mensaje",
-    "inputPlaceholder": "Escribí tu mensaje",
+    "inputPlaceholder": "Escribe tu mensaje",
     "send": "Enviar",
     "stop": "Detener",
     "attach": "Adjuntar imagen",
@@ -2056,13 +2056,13 @@
     "restoredDiscarded_one": "Se descartó {{count}} mensaje del historial por tener un formato inválido.",
     "restoredDiscarded_other": "Se descartaron {{count}} mensajes del historial por tener un formato inválido.",
     "errors": {
-      "empty": "Escribí un mensaje o adjuntá una imagen.",
+      "empty": "Escribe un mensaje o adjunta una imagen.",
       "tooLong": "El mensaje es demasiado largo o la conversación llegó a su límite.",
-      "busy": "Esperá a que termine la respuesta o detenela.",
-      "stream": "No pudimos obtener la respuesta. Probá de nuevo."
+      "busy": "Espera a que termine la respuesta o deténla.",
+      "stream": "No pudimos obtener la respuesta. Inténtalo de nuevo."
     },
     "rejections": {
-      "tooMany": "{{name}}: ya llegaste al máximo de imágenes por mensaje.",
+      "tooMany": "{{name}}: ya alcanzaste el máximo de imágenes por mensaje.",
       "type": "{{name}}: formato no permitido. Sólo JPEG, PNG o WebP.",
       "empty": "{{name}}: el archivo está vacío.",
       "tooLarge": "{{name}}: supera el tamaño máximo de 5 MB.",
@@ -2071,8 +2071,8 @@
     },
     "copy": "Copiar",
     "copied": "Copiado",
-    "copyFailed": "No pudimos copiar. Seleccioná el texto y copialo a mano.",
-    "dropHere": "Soltá las imágenes para adjuntarlas",
+    "copyFailed": "No pudimos copiar. Selecciona el texto y cópialo manualmente.",
+    "dropHere": "Suelta las imágenes para adjuntarlas",
     "inputHint": "Enter envía, Shift+Enter hace un salto de línea",
     "sent": "Enviado",
     "attachFile": "Adjuntar archivo"
