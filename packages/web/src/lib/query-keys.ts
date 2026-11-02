@@ -48,4 +48,6 @@ export enum QueryKeys {
   platformActivity = 'platform-activity',
   platformCampaigns = 'platform-campaigns',
   platformCampaignAudience = 'platform-campaign-audience',
+  feedbackStatus = 'feedback-status',
+  platformFeedback = 'platform-feedback',
 }

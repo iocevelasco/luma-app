@@ -12,6 +12,7 @@ import {
   sendCampaign,
   sendCampaignTest,
   getChatPrompt,
+  getPlatformFeedback,
   getPlatformActivity,
   getPlatformUsersOverview,
   listExchangeRates,
@@ -58,6 +59,7 @@ adminRouter.get('/chat-prompt', getChatPrompt);
 adminRouter.put('/chat-prompt', updateChatPrompt);
 
 adminRouter.get('/activity', getPlatformActivity);
+adminRouter.get('/feedback', getPlatformFeedback);
 
 adminRouter.get('/subscription-payments', listSubscriptionPaymentsForAdmin);
 adminRouter.post('/subscription-payments/:paymentId/review', reviewSubscriptionPayment);

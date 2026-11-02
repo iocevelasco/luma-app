@@ -26,3 +26,4 @@ export * from './subscription-payment.controller.js';
 export * from './stripe.controller.js';
 export * from './campaign.controller.js';
 export * from './chat.controller.js';
+export * from './feedback.controller.js';

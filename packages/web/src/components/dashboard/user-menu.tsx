@@ -1,6 +1,8 @@
-import { CreditCard, Landmark, LogOut, Settings, Trash2, User } from 'lucide-react';
+import { CreditCard, Landmark, LogOut, MessageSquareHeart, Settings, Trash2, User } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { FeedbackDialog } from '@/components/feedback/feedback-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,11 +23,13 @@ export function UserMenu() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const logout = useLogout();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { data: trash } = useDeletedProjects();
 
   const initials = (user?.name ?? user?.email ?? '?').slice(0, 2).toUpperCase();
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
@@ -74,6 +78,11 @@ export function UserMenu() {
           </DropdownMenuItem>
         )}
 
+        <DropdownMenuItem onSelect={() => setFeedbackOpen(true)} data-testid="user-menu-feedback">
+          <MessageSquareHeart className="size-4" />
+          {t('userMenu.feedback')}
+        </DropdownMenuItem>
+
         {isAdmin(user?.role) && (
           <DropdownMenuItem asChild>
             <Link to={ROUTES.PLATFORM}>
@@ -91,5 +100,7 @@ export function UserMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+    </>
   );
 }

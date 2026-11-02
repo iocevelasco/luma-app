@@ -43,7 +43,8 @@
     "settings": "Configurações",
     "logout": "Sair",
     "subscription": "Assinatura",
-    "platform": "Administração da plataforma"
+    "platform": "Administração da plataforma",
+    "feedback": "Conte como está indo"
   },
   "settings": {
     "chat": {
@@ -1255,6 +1256,16 @@
       "fix": "Corrigido"
     },
     "entries": {
+      "2026-10-29": {
+        "fileManager": {
+          "title": "Documentação como explorador de arquivos",
+          "description": "Os documentos da obra ficam organizados em pastas por tipo e por ambiente. Você pode enviar, renomear, mover e excluir sem sair da tela."
+        },
+        "documentPreview": {
+          "title": "Pré-visualização com duplo clique",
+          "description": "Abra uma planta, um render ou um PDF com duplo clique, sem baixar. As imagens carregam conforme você as vê."
+        }
+      },
       "2026-10-28": {
         "managers": {
           "title": "Até 5 gerentes por obra",
@@ -1777,7 +1788,8 @@
       "billing": "Pagamentos",
       "activity": "Atividade",
       "campaigns": "Campanhas",
-      "assistant": "Assistente"
+      "assistant": "Assistente",
+      "feedback": "Feedback"
     },
     "activity": {
       "periodLabel": "Período",
@@ -1858,6 +1870,19 @@
       "deleted": "Excluímos o rascunho.",
       "testSent": "Enviamos para {{email}}.",
       "testNotSent": "Não conseguimos enviar o teste: revise a configuração de e-mail."
+    },
+    "feedback": {
+      "summary": "{{responses}} respostas de {{respondents}} pessoas.",
+      "suppressed": "Ainda há menos de {{min}} pessoas que responderam: por privacidade não mostramos médias nem comentários.",
+      "commentsTitle": "Comentários",
+      "noComments": "Ninguém deixou comentários ainda.",
+      "questions": {
+        "timeSaved": "A Luma economiza seu tempo na gestão das suas obras?",
+        "clarity": "Você encontra rápido o que precisa?",
+        "control": "Você sente mais controle sobre o andamento e o dinheiro da obra?"
+      },
+      "changesTitle": "Mudanças pedidas",
+      "noChanges": "Ninguém pediu mudanças ainda."
     }
   },
   "legal": {
@@ -1977,5 +2002,22 @@
         }
       ]
     }
+  },
+  "feedback": {
+    "title": "Como está sendo sua experiência com a Luma?",
+    "questions": {
+      "timeSaved": "A Luma economiza seu tempo na gestão das suas obras?",
+      "clarity": "Você encontra rápido o que precisa?",
+      "control": "Você sente mais controle sobre o andamento e o dinheiro da obra?"
+    },
+    "scaleLow": "1 · Nada",
+    "scaleHigh": "5 · Muito",
+    "commentLabel": "Mais alguma coisa que queira nos contar? (opcional)",
+    "commentPlaceholder": "O que te atrapalha, o que você gostaria que a Luma fizesse…",
+    "later": "Agora não",
+    "send": "Enviar",
+    "thanks": "Obrigado pela sua opinião!",
+    "changeLabel": "Há alguma funcionalidade ou algo que você queira mudar? (opcional)",
+    "changePlaceholder": "Ex.: o cronograma, os relatórios…"
   }
 }

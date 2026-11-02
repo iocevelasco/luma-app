@@ -12,7 +12,16 @@
  * sí, y un arreglo interno no.
  */
 
-import { CalendarRange, FireExtinguisher, Flag, Sparkles, Users, type LucideIcon } from 'lucide-react';
+import {
+  CalendarRange,
+  Eye,
+  FireExtinguisher,
+  Flag,
+  FolderTree,
+  Sparkles,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 
 export type ReleaseNoteKind = 'new' | 'fix';
 
@@ -33,6 +42,14 @@ export interface ReleaseNote {
 }
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
+  {
+    id: '2026-10-29',
+    date: '2026-10-29',
+    items: [
+      { kind: 'new', key: 'fileManager', icon: FolderTree },
+      { kind: 'new', key: 'documentPreview', icon: Eye },
+    ],
+  },
   {
     id: '2026-10-28',
     date: '2026-10-28',

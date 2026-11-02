@@ -1,5 +1,6 @@
 import { ACCOUNT_PURGE_RETENTION_DAYS } from '@luma/shared';
 import { Activity } from '../models/Activity.js';
+import { FeedbackResponse } from '../models/FeedbackResponse.js';
 import { Notification } from '../models/Notification.js';
 import { Organization } from '../models/Organization.js';
 import { OrganizationMember } from '../models/OrganizationMember.js';
@@ -55,6 +56,8 @@ export const USER_REFERENCES: Record<string, Record<string, UserRefTreatment>> =
   CrewGoal: { createdBy: 'history' },
   ExchangeRate: { createdBy: 'history' },
   Expense: { registeredBy: 'history' },
+  // El comentario es texto libre y puede traer datos personales: se borra.
+  FeedbackResponse: { user: 'owner-deleted' },
   LaborRecord: { createdBy: 'history' },
   MaterialItem: { statusChangedBy: 'history', 'photo.uploadedBy': 'history', createdBy: 'history' },
   Milestone: { 'attachments.uploadedBy': 'history', reportedBy: 'history' },
@@ -247,6 +250,7 @@ export async function purgeAccount(
 
   // 4. Su bandeja y sus accesos: ya no puede entrar, no hay a quién mostrárselos.
   await Notification.deleteMany({ user: id });
+  await FeedbackResponse.deleteMany({ user: id });
   await ProjectMembership.deleteMany({ user: id });
   await ProjectClient.deleteMany({ user: id });
 

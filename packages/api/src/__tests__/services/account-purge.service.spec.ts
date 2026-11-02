@@ -38,6 +38,7 @@ const mock = vi.hoisted(() => {
 
   const names = [
     'Activity',
+    'FeedbackResponse',
     'Notification',
     'Organization',
     'OrganizationMember',
@@ -59,6 +60,7 @@ const mock = vi.hoisted(() => {
 const { calls, state, models, deleteObject, stripeRequest } = mock;
 
 vi.mock('../../models/Activity.js', () => ({ Activity: mock.models.Activity }));
+vi.mock('../../models/FeedbackResponse.js', () => ({ FeedbackResponse: mock.models.FeedbackResponse }));
 vi.mock('../../models/Notification.js', () => ({ Notification: mock.models.Notification }));
 vi.mock('../../models/Organization.js', () => ({ Organization: mock.models.Organization }));
 vi.mock('../../models/OrganizationMember.js', () => ({
@@ -213,7 +215,7 @@ describe('purgeAccount', () => {
 
   it('borra su bandeja y sus accesos', async () => {
     await purgeAccount(USER, NOW);
-    for (const model of ['Notification', 'ProjectMembership', 'ProjectClient'] as const) {
+    for (const model of ['Notification', 'FeedbackResponse', 'ProjectMembership', 'ProjectClient'] as const) {
       expect(models[model].deleteMany).toHaveBeenCalledWith({ user: 'u1' });
     }
   });
