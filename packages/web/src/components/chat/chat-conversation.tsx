@@ -8,11 +8,11 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
-import { Check, Copy, Paperclip, RotateCcw, Send, Square, X } from 'lucide-react';
+import { Bot, Check, CheckCheck, Copy, ImagePlus, Paperclip, RotateCcw, SendHorizontal, Square, User, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useChatStore } from '@/lib/chat/chat-store';
 import { ALLOWED_IMAGE_TYPES, CHAT_LIMITS } from '@/lib/chat/limits';
 import type { ChatMessage } from '@/lib/chat/types';
@@ -61,15 +61,34 @@ function CopyButton({ text }: { text: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Button type="button" variant="ghost" size="sm" onClick={copy} aria-label={t('secureChat.copy')}>
+    <span className="inline-flex items-center gap-1">
+      <Button type="button" variant="ghost" size="icon" className="size-6" onClick={copy} aria-label={t('secureChat.copy')}>
         {state === 'copied' ? <Check aria-hidden /> : <Copy aria-hidden />}
-        {t('secureChat.copy')}
       </Button>
-      <span role="status" className="text-2xs text-muted-foreground">
+      <span role="status" className="text-2xs">
         {state === 'copied' && t('secureChat.copied')}
         {state === 'failed' && t('secureChat.copyFailed')}
       </span>
+    </span>
+  );
+}
+
+function formatTime(ms: number): string {
+  return ms > 0 ? new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+}
+
+/** Quién habla: avatar + nombre, arriba de cada burbuja. */
+function Sender({ mine }: { mine: boolean }) {
+  const { t } = useTranslation();
+  const Icon = mine ? User : Bot;
+  return (
+    <div className={cn('mb-1 flex items-center gap-2 text-xs text-muted-foreground', mine && 'flex-row-reverse')}>
+      <Avatar className="size-6">
+        <AvatarFallback className="bg-secondary text-secondary-foreground">
+          <Icon className="size-3.5" aria-hidden />
+        </AvatarFallback>
+      </Avatar>
+      <span>{t(mine ? 'secureChat.you' : 'secureChat.assistant')}</span>
     </div>
   );
 }
@@ -77,17 +96,19 @@ function CopyButton({ text }: { text: string }) {
 function MessageBubble({ message }: { message: ChatMessage }) {
   const { t } = useTranslation();
   const mine = message.role === 'user';
+  const time = formatTime(message.createdAt);
+  const streaming = message.status === 'streaming';
   return (
-    <li className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
+    <li className={cn('flex flex-col', mine ? 'items-end' : 'items-start')}>
+      <Sender mine={mine} />
       <div
         data-testid={`message-${message.role}`}
-        aria-busy={message.status === 'streaming'}
+        aria-busy={streaming}
         className={cn(
-          'max-w-[85%] space-y-2 rounded-md px-3 py-2 text-sm',
-          mine ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
+          'max-w-[88%] space-y-2 rounded-xl border px-4 py-3 text-sm',
+          mine ? 'border-transparent bg-primary text-primary-foreground' : 'border-border bg-card text-foreground',
         )}
       >
-        <span className="sr-only">{t(mine ? 'secureChat.you' : 'secureChat.assistant')}</span>
         {message.attachments.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {message.attachments.map((a) => (
@@ -103,10 +124,17 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         ) : (
           <ChatMarkdown text={message.content} maxChars={CHAT_LIMITS.maxAssistantChars} />
         )}
-        {message.status === 'streaming' && (
-          <p className="text-2xs text-muted-foreground">{t('secureChat.streaming')}</p>
-        )}
-        {!mine && message.status !== 'streaming' && message.content && <CopyButton text={message.content} />}
+        <div className={cn('flex items-center gap-1.5 text-2xs', mine ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
+          {streaming ? (
+            <span>{t('secureChat.streaming')}</span>
+          ) : (
+            <>
+              {time && <time dateTime={new Date(message.createdAt).toISOString()}>{time}</time>}
+              {mine && <CheckCheck className="size-3.5" aria-label={t('secureChat.sent')} />}
+              {!mine && message.content && <CopyButton text={message.content} />}
+            </>
+          )}
+        </div>
       </div>
     </li>
   );
@@ -268,51 +296,59 @@ export function ChatConversation() {
           </ul>
         )}
 
-        <Textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={onKeyDown}
-          onPaste={onPaste}
-          aria-label={t('secureChat.inputLabel')}
-          aria-describedby="chat-input-hint"
-          placeholder={t('secureChat.inputPlaceholder')}
-          rows={2}
-          // Límite duro del control; el store lo vuelve a comprobar.
-          maxLength={CHAT_LIMITS.maxUserChars}
-        />
+        <div className="flex flex-col gap-2 rounded-2xl bg-card px-4 pb-2 pt-3 shadow-surface ring-1 ring-border focus-within:ring-2 focus-within:ring-ring/50">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={onKeyDown}
+            onPaste={onPaste}
+            aria-label={t('secureChat.inputLabel')}
+            aria-describedby="chat-input-hint"
+            placeholder={t('secureChat.inputPlaceholder')}
+            rows={2}
+            // Límite duro del control; el store lo vuelve a comprobar.
+            maxLength={CHAT_LIMITS.maxUserChars}
+            className="field-sizing-content max-h-40 min-h-12 w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
+          />
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            // Sólo orienta al selector del sistema; la validación real está en `validateAttachments`.
+            accept={ALLOWED_IMAGE_TYPES.join(',')}
+            className="hidden"
+            data-testid="file-input"
+            onChange={onFiles}
+          />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              {/* Los dos abren el mismo selector: sólo se aceptan imágenes. */}
+              <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attach')} onClick={() => fileRef.current?.click()}>
+                <ImagePlus aria-hidden />
+              </Button>
+              <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attachFile')} onClick={() => fileRef.current?.click()}>
+                <Paperclip aria-hidden />
+              </Button>
+            </div>
+            {store.isStreaming ? (
+              <Button type="button" size="icon" aria-label={t('secureChat.stop')} onClick={store.stop}>
+                <Square aria-hidden />
+              </Button>
+            ) : (
+              <Button type="submit" size="icon" aria-label={t('secureChat.send')}>
+                <SendHorizontal aria-hidden />
+              </Button>
+            )}
+          </div>
+        </div>
         <span id="chat-input-hint" className="sr-only">
           {t('secureChat.inputHint')}
         </span>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              // Sólo orienta al selector del sistema; la validación real está en `validateAttachments`.
-              accept={ALLOWED_IMAGE_TYPES.join(',')}
-              className="hidden"
-              data-testid="file-input"
-              onChange={onFiles}
-            />
-            <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
-              <Paperclip aria-hidden />
-              {t('secureChat.attach')}
-            </Button>
-            <span className="text-2xs text-muted-foreground">{draft.length}/{CHAT_LIMITS.maxUserChars}</span>
-          </div>
-          {store.isStreaming ? (
-            <Button type="button" variant="outline" size="sm" onClick={store.stop}>
-              <Square aria-hidden />
-              {t('secureChat.stop')}
-            </Button>
-          ) : (
-            <Button type="submit" size="sm">
-              <Send aria-hidden />
-              {t('secureChat.send')}
-            </Button>
-          )}
-        </div>
+        {draft.length > CHAT_LIMITS.maxUserChars * 0.8 && (
+          <p className="text-right text-2xs text-muted-foreground">
+            {draft.length}/{CHAT_LIMITS.maxUserChars}
+          </p>
+        )}
       </form>
     </div>
   );

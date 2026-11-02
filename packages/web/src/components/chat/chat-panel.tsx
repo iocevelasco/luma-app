@@ -10,7 +10,7 @@ export function ChatPanel({ open, onOpenChange }: { open: boolean; onOpenChange:
   const { t } = useTranslation();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-lg">
+      <SheetContent side="right" className="surface-light flex w-full flex-col gap-0 bg-background p-0 text-foreground sm:max-w-lg">
         <div className="border-b border-border px-4 py-3">
           <SheetTitle>{t('secureChat.title')}</SheetTitle>
           <SheetDescription>{t('secureChat.prototypeNote')}</SheetDescription>

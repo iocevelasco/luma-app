@@ -2037,8 +2037,8 @@
     "emptyTitle": "Todavía no hay mensajes",
     "emptyHint": "Escribe algo para empezar.",
     "logLabel": "Mensajes del chat",
-    "you": "Tú:",
-    "assistant": "Asistente:",
+    "you": "Tú",
+    "assistant": "Asistente",
     "streaming": "Escribiendo…",
     "inputLabel": "Mensaje",
     "inputPlaceholder": "Escribe tu mensaje",
@@ -2073,6 +2073,8 @@
     "copied": "Copiado",
     "copyFailed": "No hemos podido copiar. Selecciona el texto y cópialo a mano.",
     "dropHere": "Suelta las imágenes para adjuntarlas",
-    "inputHint": "Enter envía, Mayús+Enter hace un salto de línea"
+    "inputHint": "Enter envía, Mayús+Enter hace un salto de línea",
+    "sent": "Enviado",
+    "attachFile": "Adjuntar archivo"
   }
 }

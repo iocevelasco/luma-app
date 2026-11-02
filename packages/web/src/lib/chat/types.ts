@@ -9,6 +9,8 @@ export interface ChatMessage {
   /** No confiable: texto del usuario o Markdown generado por IA. */
   content: string;
   status: MessageStatus;
+  /** Epoch en ms; 0 = desconocido (historial restaurado sin fecha válida). */
+  createdAt: number;
   attachments: ChatAttachment[];
 }
 

@@ -87,6 +87,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       role: 'user',
       content: text,
       status: 'done',
+      createdAt: Date.now(),
       attachments: draftAttachments,
     };
     const replyId = nextId();
@@ -94,7 +95,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: [
         ...s.messages,
         userMsg,
-        { id: replyId, role: 'assistant', content: '', status: 'streaming', attachments: [] },
+        { id: replyId, role: 'assistant', content: '', status: 'streaming', createdAt: Date.now(), attachments: [] },
       ],
       draftAttachments: [],
       rejected: [],

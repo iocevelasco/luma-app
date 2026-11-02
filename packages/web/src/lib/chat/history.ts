@@ -63,6 +63,9 @@ export function restoreHistory(raw: unknown): RestoreResult {
       role: item.role,
       content: item.content.slice(0, max),
       status: 'done',
+      // Una fecha del historial es un dato no confiable más: si no es un número sano, se oculta.
+      createdAt:
+        typeof item.createdAt === 'number' && Number.isFinite(item.createdAt) && item.createdAt > 0 ? item.createdAt : 0,
       attachments,
     });
   });
