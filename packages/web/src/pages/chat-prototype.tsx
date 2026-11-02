@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { History, MessageSquare } from 'lucide-react';
+import { Bot, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ChatPanel } from '@/components/chat/chat-panel';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -22,7 +22,7 @@ export function ChatPrototypePage() {
         width="narrow"
         action={
           <Button onClick={() => setOpen(true)}>
-            <MessageSquare aria-hidden />
+            <Bot aria-hidden />
             {t('secureChat.open')}
           </Button>
         }
