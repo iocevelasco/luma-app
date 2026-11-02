@@ -220,6 +220,7 @@ export function ChatConversation() {
 
   return (
     <div
+      data-testid="chat-conversation"
       className="relative flex h-full min-h-0 flex-col"
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
