@@ -2019,5 +2019,55 @@
     "thanks": "Obrigado pela sua opinião!",
     "changeLabel": "Há alguma funcionalidade ou algo que você queira mudar? (opcional)",
     "changePlaceholder": "Ex.: o cronograma, os relatórios…"
+  },
+  "secureChat": {
+    "title": "Assistente (protótipo)",
+    "description": "Protótipo do chat com dados simulados. Não há rede nem modelo: serve para ver como são bloqueados o HTML, os links perigosos, as imagens de terceiros e os anexos não permitidos.",
+    "prototypeNote": "Dados simulados. Nada é salvo ao recarregar.",
+    "open": "Abrir assistente",
+    "loadHistory": "Carregar histórico de exemplo",
+    "examples": [
+      "Escreva «xss» para receber conteúdo hostil e ver como ele é bloqueado.",
+      "Escreva «tabla» para ver uma tabela e links válidos.",
+      "Escreva «error» para ver uma falha recuperável.",
+      "Anexe uma imagem JPEG, PNG ou WebP; um SVG ou um arquivo renomeado é rejeitado."
+    ],
+    "newTitle": "Nova conversa",
+    "newConversation": "Nova conversa",
+    "emptyTitle": "Ainda não há mensagens",
+    "emptyHint": "Escreva algo para começar.",
+    "logLabel": "Mensagens do chat",
+    "you": "Você:",
+    "assistant": "Assistente:",
+    "streaming": "Escrevendo…",
+    "inputLabel": "Mensagem",
+    "inputPlaceholder": "Escreva sua mensagem",
+    "send": "Enviar",
+    "stop": "Parar",
+    "attach": "Anexar imagem",
+    "removeAttachment": "Remover {{name}}",
+    "openImage": "Ampliar {{name}}",
+    "viewerTitle": "Imagem anexada",
+    "blockedLink": "Link bloqueado",
+    "blockedImage": "Imagem bloqueada",
+    "plainMode": "A mensagem é longa ou complexa demais; é exibida como texto simples.",
+    "truncated": "A mensagem foi cortada por seu tamanho.",
+    "renderFailed": "Não conseguimos exibir esta mensagem com formatação. Mostramos como texto.",
+    "restoredDiscarded_one": "{{count}} mensagem do histórico foi descartada por ter formato inválido.",
+    "restoredDiscarded_other": "{{count}} mensagens do histórico foram descartadas por terem formato inválido.",
+    "errors": {
+      "empty": "Escreva uma mensagem ou anexe uma imagem.",
+      "tooLong": "A mensagem é longa demais ou a conversa chegou ao limite.",
+      "busy": "Espere a resposta terminar ou pare-a.",
+      "stream": "Não conseguimos obter a resposta. Tente novamente."
+    },
+    "rejections": {
+      "tooMany": "{{name}}: você já atingiu o máximo de imagens por mensagem.",
+      "type": "{{name}}: formato não permitido. Somente JPEG, PNG ou WebP.",
+      "empty": "{{name}}: o arquivo está vazio.",
+      "tooLarge": "{{name}}: excede o tamanho máximo de 5 MB.",
+      "dimensions": "{{name}}: as dimensões da imagem excedem o máximo permitido.",
+      "unreadable": "{{name}}: não conseguimos ler o arquivo."
+    }
   }
 }

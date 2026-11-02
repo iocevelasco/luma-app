@@ -37,6 +37,9 @@ const AdminHomePage = lazy(() =>
 const AccountSettingsPage = lazy(() =>
   import('./pages/account-settings').then((m) => ({ default: m.AccountSettingsPage })),
 );
+const ChatPrototypePage = lazy(() =>
+  import('./pages/chat-prototype').then((m) => ({ default: m.ChatPrototypePage })),
+);
 const EmployeesPage = lazy(() =>
   import('./pages/employees').then((m) => ({ default: m.EmployeesPage })),
 );
@@ -174,6 +177,10 @@ export function AppRoutes() {
           <Route
             path={ROUTES.PROVIDERS}
             element={<LazyRoute><ProvidersDirectoryPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.CHAT_PROTOTYPE}
+            element={<LazyRoute><ChatPrototypePage /></LazyRoute>}
           />
           <Route path={ROUTES.CREW} element={<LazyRoute><EmployeesPage /></LazyRoute>} />
           <Route
