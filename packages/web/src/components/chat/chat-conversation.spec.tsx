@@ -378,3 +378,47 @@ describe('copiar, pegar, arrastrar y enviar con Enter', () => {
     expect(useChatStore.getState().draftAttachments).toEqual([]);
   });
 });
+
+describe('botón de enviar', () => {
+  const sendButton = () => screen.getByRole('button', { name: 'secureChat.send' });
+
+  it('está deshabilitado mientras se envía y vuelve cuando termina la respuesta', async () => {
+    render(<ChatConversation />);
+    expect(sendButton()).toBeEnabled();
+    await sendMessage('hola');
+    await waitFor(() => expect(sendButton()).toBeDisabled());
+    expect(screen.getByRole('button', { name: 'secureChat.stop' })).toBeEnabled();
+
+    await act(async () => control.push(null));
+    await waitFor(() => expect(sendButton()).toBeEnabled());
+    expect(screen.queryByRole('button', { name: 'secureChat.stop' })).toBeNull();
+  });
+
+  it('Enter no envía mientras hay una respuesta en curso', async () => {
+    render(<ChatConversation />);
+    await sendMessage('uno');
+    await waitFor(() => expect(sendButton()).toBeDisabled());
+    await userEvent.type(screen.getByLabelText('secureChat.inputLabel'), 'dos{Enter}');
+    expect(useChatStore.getState().messages.filter((m) => m.role === 'user')).toHaveLength(1);
+    expect((screen.getByLabelText('secureChat.inputLabel') as HTMLTextAreaElement).value).toBe('dos');
+  });
+
+  it('está deshabilitado mientras se validan los adjuntos', async () => {
+    render(<ChatConversation />);
+    let done!: Promise<void>;
+    act(() => {
+      done = useChatStore.getState().addFiles([makeFile(pngBytes(), 'a.png', 'image/png')]);
+    });
+    expect(sendButton()).toBeDisabled();
+    await act(async () => {
+      await done;
+    });
+    expect(sendButton()).toBeEnabled();
+  });
+
+  it('es plano: sin sombra de relieve', () => {
+    render(<ChatConversation />);
+    expect(sendButton().className).toContain('shadow-none');
+    expect(sendButton().className).not.toMatch(/(^|\s)shadow-cta/);
+  });
+});

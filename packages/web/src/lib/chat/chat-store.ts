@@ -25,6 +25,8 @@ interface ChatState {
   rejected: { name: string; reason: AttachmentRejection }[];
   error: ChatErrorCode | null;
   isStreaming: boolean;
+  /** Hay adjuntos en validación (se leen sus bytes): no se puede enviar todavía. */
+  isAttaching: boolean;
   /** Mensajes descartados al restaurar el historial. */
   discarded: number;
 
@@ -48,6 +50,7 @@ const initial = {
   rejected: [] as ChatState['rejected'],
   error: null as ChatErrorCode | null,
   isStreaming: false,
+  isAttaching: false,
   discarded: 0,
 };
 
@@ -60,8 +63,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
   ...initial,
 
   async addFiles(files) {
-    const { accepted, rejected } = await validateAttachments(files, get().draftAttachments.length);
-    set((s) => ({ draftAttachments: [...s.draftAttachments, ...accepted], rejected }));
+    set({ isAttaching: true });
+    try {
+      const { accepted, rejected } = await validateAttachments(files, get().draftAttachments.length);
+      set((s) => ({ draftAttachments: [...s.draftAttachments, ...accepted], rejected }));
+    } finally {
+      set({ isAttaching: false });
+    }
   },
 
   removeDraftAttachment(id) {
@@ -76,8 +84,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   async send(raw) {
     const text = raw.trim();
-    const { draftAttachments, isStreaming } = get();
-    if (isStreaming) return set({ error: 'busy' });
+    const { draftAttachments, isStreaming, isAttaching } = get();
+    // Mientras se envía o se valida un adjunto no se envía: ni por el botón ni por Enter.
+    if (isStreaming || isAttaching) return set({ error: 'busy' });
     if (!text && draftAttachments.length === 0) return set({ error: 'empty' });
     if (text.length > CHAT_LIMITS.maxUserChars) return set({ error: 'too-long' });
     if (get().messages.length >= CHAT_LIMITS.maxHistoryMessages) return set({ error: 'too-long' });

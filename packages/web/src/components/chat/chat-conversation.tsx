@@ -164,7 +164,10 @@ export function ChatConversation() {
     if (files.length) await store.addFiles(files);
   }
 
+  const busy = store.isStreaming || store.isAttaching;
+
   async function submit() {
+    if (busy) return;
     const text = draft;
     // Se limpia sólo si el envío es válido; si no, la persona conserva lo escrito.
     const trimmed = text.trim();
@@ -330,15 +333,23 @@ export function ChatConversation() {
                 <Paperclip aria-hidden />
               </Button>
             </div>
-            {store.isStreaming ? (
-              <Button type="button" size="icon" aria-label={t('secureChat.stop')} onClick={store.stop}>
-                <Square aria-hidden />
-              </Button>
-            ) : (
-              <Button type="submit" size="icon" aria-label={t('secureChat.send')}>
+            <div className="flex items-center gap-1">
+              {store.isStreaming && (
+                <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.stop')} onClick={store.stop}>
+                  <Square aria-hidden />
+                </Button>
+              )}
+              {/* Plano a propósito (sin relieve) y apagado mientras se envía o se valida un adjunto. */}
+              <Button
+                type="submit"
+                size="icon"
+                className="border-transparent shadow-none active:shadow-none"
+                aria-label={t('secureChat.send')}
+                disabled={busy}
+              >
                 <SendHorizontal aria-hidden />
               </Button>
-            )}
+            </div>
           </div>
         </div>
         <span id="chat-input-hint" className="sr-only">
