@@ -2068,6 +2068,11 @@
       "tooLarge": "{{name}}: supera el tamaño máximo de 5 MB.",
       "dimensions": "{{name}}: las dimensiones de la imagen superan el máximo permitido.",
       "unreadable": "{{name}}: no pudimos leer el archivo."
-    }
+    },
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyFailed": "No pudimos copiar. Seleccioná el texto y copialo a mano.",
+    "dropHere": "Soltá las imágenes para adjuntarlas",
+    "inputHint": "Enter envía, Shift+Enter hace un salto de línea"
   }
 }

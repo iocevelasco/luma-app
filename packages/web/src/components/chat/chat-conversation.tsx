@@ -1,5 +1,14 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { Paperclip, RotateCcw, Send, Square, X } from 'lucide-react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ClipboardEvent,
+  type DragEvent,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react';
+import { Check, Copy, Paperclip, RotateCcw, Send, Square, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -22,6 +31,46 @@ function AttachmentThumb({ name, previewUrl, zoomable }: { name: string; preview
       {/* El nombre es texto: React lo escapa y `break-all` evita que ensanche la burbuja. */}
       <figcaption className="break-all text-2xs text-muted-foreground">{name}</figcaption>
     </figure>
+  );
+}
+
+/**
+ * Copia el texto **tal como llegó** (Markdown crudo), no el HTML renderizado:
+ * no se lee el DOM ni se escribe HTML en el portapapeles. La API del
+ * portapapeles no está en todos los contextos (HTTP, algunos WebViews): se
+ * detecta y, si falta, se avisa en lugar de fallar en silencio.
+ */
+function CopyButton({ text }: { text: string }) {
+  const { t } = useTranslation();
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
+
+  useEffect(() => {
+    if (state === 'idle') return;
+    const id = window.setTimeout(() => setState('idle'), 2000);
+    return () => window.clearTimeout(id);
+  }, [state]);
+
+  async function copy() {
+    try {
+      if (typeof window.navigator.clipboard?.writeText !== 'function') throw new Error('no-clipboard');
+      await window.navigator.clipboard.writeText(text);
+      setState('copied');
+    } catch {
+      setState('failed');
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button type="button" variant="ghost" size="sm" onClick={copy} aria-label={t('secureChat.copy')}>
+        {state === 'copied' ? <Check aria-hidden /> : <Copy aria-hidden />}
+        {t('secureChat.copy')}
+      </Button>
+      <span role="status" className="text-2xs text-muted-foreground">
+        {state === 'copied' && t('secureChat.copied')}
+        {state === 'failed' && t('secureChat.copyFailed')}
+      </span>
+    </div>
   );
 }
 
@@ -57,6 +106,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         {message.status === 'streaming' && (
           <p className="text-2xs text-muted-foreground">{t('secureChat.streaming')}</p>
         )}
+        {!mine && message.status !== 'streaming' && message.content && <CopyButton text={message.content} />}
       </div>
     </li>
   );
@@ -71,6 +121,7 @@ export function ChatConversation() {
   const { t } = useTranslation();
   const store = useChatStore();
   const [draft, setDraft] = useState('');
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -85,8 +136,7 @@ export function ChatConversation() {
     if (files.length) await store.addFiles(files);
   }
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function submit() {
     const text = draft;
     // Se limpia sólo si el envío es válido; si no, la persona conserva lo escrito.
     const trimmed = text.trim();
@@ -95,10 +145,63 @@ export function ChatConversation() {
     await store.send(text);
   }
 
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    void submit();
+  }
+
+  /** Enter envía; Shift+Enter hace un salto de línea. Mientras un IME compone, Enter es suyo. */
+  function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
+    e.preventDefault();
+    void submit();
+  }
+
+  /** Pegar una imagen la adjunta (pasa por la misma validación). El texto pegado sigue su camino normal. */
+  function onPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    const files = Array.from(e.clipboardData?.files ?? []);
+    if (files.length === 0) return;
+    e.preventDefault();
+    void store.addFiles(files);
+  }
+
+  const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes('Files');
+
+  function onDragOver(e: DragEvent) {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    setDragging(true);
+  }
+
+  function onDragLeave(e: DragEvent) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+  }
+
+  function onDrop(e: DragEvent) {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    setDragging(false);
+    // Sólo archivos: texto o URLs arrastrados desde otra página se ignoran.
+    void store.addFiles(Array.from(e.dataTransfer.files));
+  }
+
   const title = clampTitle(store.title);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div
+      className="relative flex h-full min-h-0 flex-col"
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      {dragging && (
+        <div
+          data-testid="drop-overlay"
+          className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-md border-2 border-dashed border-primary bg-background/90 text-sm"
+        >
+          {t('secureChat.dropHere')}
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2">
         <p className="min-w-0 break-words text-sm text-muted-foreground">{title || t('secureChat.newTitle')}</p>
         <Button type="button" variant="ghost" size="sm" onClick={() => { store.reset(); setDraft(''); }}>
@@ -168,12 +271,18 @@ export function ChatConversation() {
         <Textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={onKeyDown}
+          onPaste={onPaste}
           aria-label={t('secureChat.inputLabel')}
+          aria-describedby="chat-input-hint"
           placeholder={t('secureChat.inputPlaceholder')}
           rows={2}
           // Límite duro del control; el store lo vuelve a comprobar.
           maxLength={CHAT_LIMITS.maxUserChars}
         />
+        <span id="chat-input-hint" className="sr-only">
+          {t('secureChat.inputHint')}
+        </span>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <input

@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '@/lib/chat/chat-store';
@@ -299,5 +299,82 @@ describe('límites del mensaje, privacidad y estado', () => {
     expect(window.localStorage.length).toBe(0);
     expect(window.sessionStorage.length).toBe(0);
     for (const spy of consoleSpies) expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('copiar, pegar, arrastrar y enviar con Enter', () => {
+  const textbox = () => screen.getByLabelText('secureChat.inputLabel');
+
+  it('Enter envía y Shift+Enter hace un salto de línea sin enviar', async () => {
+    render(<ChatConversation />);
+    await userEvent.type(textbox(), 'hola{Shift>}{Enter}{/Shift}mundo');
+    expect(useChatStore.getState().messages).toEqual([]);
+    expect((textbox() as HTMLTextAreaElement).value).toBe('hola\nmundo');
+
+    await userEvent.type(textbox(), '{Enter}');
+    await waitFor(() => expect(useChatStore.getState().messages[0]?.content).toBe('hola\nmundo'));
+    expect((textbox() as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('Enter con el campo vacío no envía y avisa', async () => {
+    render(<ChatConversation />);
+    await userEvent.type(textbox(), '{Enter}');
+    expect(screen.getByTestId('chat-notices')).toHaveTextContent('secureChat.errors.empty');
+  });
+
+  it('copia el texto original de la respuesta, no el HTML renderizado', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window.navigator, 'clipboard', { value: { writeText }, configurable: true });
+    act(() => useChatStore.getState().restore(MOCK_HISTORY));
+    render(<ChatConversation />);
+
+    const buttons = screen.getAllByRole('button', { name: 'secureChat.copy' });
+    expect(buttons).toHaveLength(2); // sólo respuestas del asistente
+    await userEvent.click(buttons[1]);
+    expect(writeText).toHaveBeenCalledWith(HOSTILE_REPLY);
+    expect(await screen.findByText('secureChat.copied')).toBeInTheDocument();
+  });
+
+  it('si el portapapeles no está disponible, lo avisa', async () => {
+    Object.defineProperty(window.navigator, 'clipboard', { value: undefined, configurable: true });
+    act(() => useChatStore.getState().restore(MOCK_HISTORY));
+    render(<ChatConversation />);
+    await userEvent.click(screen.getAllByRole('button', { name: 'secureChat.copy' })[0]);
+    expect(await screen.findByText('secureChat.copyFailed')).toBeInTheDocument();
+  });
+
+  it('pegar una imagen la adjunta; pegar un SVG la rechaza; pegar texto no adjunta nada', async () => {
+    render(<ChatConversation />);
+    fireEvent.paste(textbox(), { clipboardData: { files: [makeFile(pngBytes(), 'image.png', 'image/png')], types: ['Files'] } });
+    await waitFor(() => expect(useChatStore.getState().draftAttachments).toHaveLength(1));
+
+    fireEvent.paste(textbox(), { clipboardData: { files: [makeFile('<svg onload="alert(1)"/>', 'x.svg', 'image/svg+xml')], types: ['Files'] } });
+    expect(await screen.findByTestId('chat-notices')).toHaveTextContent('secureChat.rejections.type:x.svg');
+
+    fireEvent.paste(textbox(), { clipboardData: { files: [], types: ['text/plain'], getData: () => 'texto' } });
+    expect(useChatStore.getState().draftAttachments).toHaveLength(1);
+  });
+
+  it('arrastrar imágenes muestra la zona y las adjunta con la misma validación', async () => {
+    const { container } = render(<ChatConversation />);
+    const zone = container.firstElementChild as HTMLElement;
+    const files = [makeFile(jpegBytes(), 'a.jpg', 'image/jpeg'), makeFile('<script>alert(1)</script>', 'b.png', 'image/png')];
+
+    fireEvent.dragOver(zone, { dataTransfer: { types: ['Files'], files } });
+    expect(screen.getByTestId('drop-overlay')).toBeInTheDocument();
+
+    fireEvent.drop(zone, { dataTransfer: { types: ['Files'], files } });
+    expect(screen.queryByTestId('drop-overlay')).toBeNull();
+    await waitFor(() => expect(useChatStore.getState().draftAttachments).toHaveLength(1));
+    expect(await screen.findByTestId('chat-notices')).toHaveTextContent('secureChat.rejections.type:b.png');
+  });
+
+  it('arrastrar texto o una URL no hace nada', () => {
+    const { container } = render(<ChatConversation />);
+    const zone = container.firstElementChild as HTMLElement;
+    fireEvent.dragOver(zone, { dataTransfer: { types: ['text/uri-list', 'text/plain'], files: [] } });
+    fireEvent.drop(zone, { dataTransfer: { types: ['text/uri-list'], files: [] } });
+    expect(screen.queryByTestId('drop-overlay')).toBeNull();
+    expect(useChatStore.getState().draftAttachments).toEqual([]);
   });
 });

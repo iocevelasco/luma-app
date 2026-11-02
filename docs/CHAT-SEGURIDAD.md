@@ -22,6 +22,7 @@ modelo ni credenciales. Este documento dice qué controla el frontend y qué
 | Imágenes locales | `blob:` sólo si lo creó la app (registro) y se revoca al quitar el adjunto o reiniciar. Miniaturas y visor pasan por el mismo `SafeImage` y vuelven a validar. | `urls.ts`, `safe-image.tsx` |
 | Adjuntos | JPEG/PNG/WebP. Se rechazan SVG y HTML. Máx. 4 por mensaje, 5 MB cada uno, 4096 px por lado, 16 Mpx. El formato y las dimensiones salen de **los bytes** (firma y cabecera), no de la extensión, el MIME ni `accept`. | `lib/chat/attachments.ts`, `image-info.ts` |
 | Nombres de archivo | Se muestran como texto; se quitan caracteres de control y de dirección y se acota el largo. | `attachments.ts` |
+| Copiar, pegar, arrastrar | Copiar escribe el texto original de la respuesta (no el DOM) y avisa si el portapapeles no está. Pegar e arrastrar archivos pasan por `validateAttachments`; texto o URLs arrastrados se ignoran. Enter envía, Shift+Enter salta de línea (no durante IME). | `chat-conversation.tsx` |
 | Privacidad | Sin `console.*` con contenido, sin analítica. Los errores son un código traducido, sin stack ni detalles. | `chat-store.ts` |
 | Estado | En memoria (`zustand`, sin `persist`). Cerrar el panel conserva la conversación; recargar la borra. Nada en `localStorage`. | `chat-store.ts` |
 | Límites | Mensaje de usuario 4000 caracteres; respuesta 20 000; 200 mensajes; Markdown con más de 400 líneas, 60 filas de tabla o 4 imágenes se muestra como texto plano. Un fallo de render cae a texto plano. | `limits.ts`, `content.ts` |
