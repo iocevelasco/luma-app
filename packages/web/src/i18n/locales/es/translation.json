@@ -2022,14 +2022,14 @@
   },
   "secureChat": {
     "title": "Asistente (prototipo)",
-    "description": "Prototipo del chat con datos simulados. No hay red ni modelo: sirve para ver cómo se bloquean el HTML, los enlaces peligrosos, las imágenes ajenas y los adjuntos no permitidos.",
+    "description": "Prototipo del chat con datos simulados. No hay red ni modelo: sirve para ver cómo se bloquean el HTML, los enlaces peligrosos, las imágenes externas y los adjuntos no permitidos.",
     "prototypeNote": "Datos simulados. Nada se guarda al recargar.",
     "open": "Abrir asistente",
     "loadHistory": "Cargar historial de ejemplo",
     "examples": [
       "Escribe «xss» para recibir contenido hostil y ver cómo queda bloqueado.",
       "Escribe «tabla» para ver una tabla y enlaces válidos.",
-      "Escribe «error» para ver un fallo recuperable.",
+      "Escribe «error» para ver una falla recuperable.",
       "Adjunta una imagen JPEG, PNG o WebP; un SVG o un archivo renombrado se rechaza."
     ],
     "newTitle": "Conversación nueva",

@@ -46,7 +46,7 @@ export const TABLE_REPLY = [
 ].join('\n');
 
 const DEFAULT_REPLY =
-  'Soy un **asistente simulado**. Prueba a escribir `xss` para ver contenido hostil bloqueado, `tabla` para ver una tabla, o `error` para ver un fallo recuperable.';
+  'Soy un **asistente simulado**. Prueba escribiendo `xss` para ver contenido hostil bloqueado, `tabla` para ver una tabla, o `error` para ver una falla recuperable.';
 
 export function pickMockReply(prompt: string): string {
   const q = prompt.toLowerCase();
