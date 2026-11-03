@@ -15,13 +15,16 @@
 import {
   CalendarDays,
   CalendarRange,
+  ClipboardCheck,
   Eye,
   FireExtinguisher,
   Flag,
   FolderTree,
   Languages,
   ListPlus,
+  MessageCircle,
   SlidersHorizontal,
+  Smartphone,
   Sparkles,
   Users,
   UserRoundCog,
@@ -58,6 +61,15 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
       { kind: 'new', key: 'mobileAgenda', icon: CalendarDays },
       { kind: 'new', key: 'mobileDrawers', icon: SlidersHorizontal },
       { kind: 'new', key: 'languageInAccount', icon: Languages },
+      { kind: 'fix', key: 'mobileHeader', icon: Smartphone },
+    ],
+  },
+  {
+    id: '2026-11-02',
+    date: '2026-11-02',
+    items: [
+      { kind: 'new', key: 'productivitySurvey', icon: ClipboardCheck },
+      { kind: 'new', key: 'assistantChat', icon: MessageCircle },
     ],
   },
   {

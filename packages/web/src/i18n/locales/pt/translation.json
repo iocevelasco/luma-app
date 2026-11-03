@@ -1327,7 +1327,21 @@
         },
         "languageInAccount": {
           "title": "Idioma em Minha conta",
-          "description": "O idioma agora é escolhido em Minha conta. No celular o cabeçalho mostra só o isotipo e o nome da seção aparece completo."
+          "description": "O idioma agora é escolhido em Minha conta e não ocupa mais lugar no cabeçalho."
+        },
+        "mobileHeader": {
+          "title": "Título completo no celular",
+          "description": "No celular o cabeçalho mostra só o isotipo, então o nome da tela aparece inteiro."
+        }
+      },
+      "2026-11-02": {
+        "productivitySurvey": {
+          "title": "Conte como está indo",
+          "description": "Uma pesquisa curta de três perguntas para saber como a Luma ajuda você. Também está no menu da sua conta."
+        },
+        "assistantChat": {
+          "title": "Chat com o assistente",
+          "description": "Abra o chat pelo botão no canto inferior direito e faça suas perguntas ao assistente da Luma."
         }
       },
       "2026-10-29": {
