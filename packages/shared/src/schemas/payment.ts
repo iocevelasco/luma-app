@@ -41,7 +41,7 @@ export const paymentMethodSchema = z.enum([
   'efectivo',
   'cheque',
   'otro',
-]);
+], { required_error: 'Elegí el método de pago', invalid_type_error: 'Elegí el método de pago' });
 
 export const expenseCategorySchema = z.enum([
   'material',
@@ -155,7 +155,8 @@ export const updateExpenseSchema = z
     category: expenseCategorySchema.optional(),
     description: z.string().trim().min(1).max(300).optional(),
     spentOn: dayKeySchema.optional(),
-    method: paymentMethodSchema.optional(),
+    // `null` lo deja sin especificar: es la única forma de quitar uno ya cargado.
+    method: paymentMethodSchema.nullable().optional(),
     providerId: z.string().trim().optional(),
     activityId: z.string().trim().optional(),
     notes: z.string().trim().max(1000).optional(),

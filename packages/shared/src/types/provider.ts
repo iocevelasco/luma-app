@@ -52,6 +52,37 @@ export type TradeSpecialty =
 export type ProviderSpecialty = TradeSpecialty | 'materiales';
 
 /**
+ * Cómo se llama cada especialidad de base en castellano (el mismo texto que
+ * `provider.specialty.*` de la web, y un test lo comprueba). La API lo usa para
+ * no dejar crear una propia que se llame igual que una de base.
+ */
+export const BASE_SPECIALTY_NAMES: Record<ProviderSpecialty, string> = {
+  electricidad: 'Electricidad',
+  plomeria: 'Plomería',
+  gas: 'Gas',
+  carpinteria: 'Carpintería',
+  cristaleria: 'Cristalería',
+  albanileria: 'Albañilería',
+  herreria: 'Herrería',
+  redes: 'Redes (CCTV, internet, domótica)',
+  mecanicas: 'Mecánicas (aires, ascensores, escaleras)',
+  estructura: 'Estructura (columnas, vigas, losas)',
+  acabados: 'Acabados',
+  pintura: 'Pintura',
+  climatizacion: 'Climatización',
+  fire_protection: 'Sistema contra incendio',
+  techos: 'Techos e impermeabilización',
+  pisos_revestimientos: 'Pisos y revestimientos',
+  jardineria: 'Jardinería',
+  demolicion: 'Demolición',
+  arquitectura: 'Arquitectura',
+  diseno: 'Diseño',
+  drywall: 'Drywall',
+  materiales: 'Venta de materiales',
+  otra: 'Otra',
+};
+
+/**
  * De dónde sale el proveedor.
  *
  * `organization` es la libreta del ejecutante: los que usa siempre, visibles

@@ -60,7 +60,7 @@ async function toExpenseDTO(
     currency: expense.currency,
     exchangeRate: expense.exchangeRate,
     spentOn: expense.spentOn,
-    method: expense.method,
+    method: expense.method ?? undefined,
     providerId: expense.provider ? String(expense.provider) : undefined,
     providerName,
     activityId: expense.activity ? String(expense.activity) : undefined,

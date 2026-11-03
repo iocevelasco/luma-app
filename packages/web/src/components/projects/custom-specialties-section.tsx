@@ -23,6 +23,7 @@ import {
   useCreateCustomSpecialty,
   useUpdateCustomSpecialty,
 } from '@/hooks/projects/use-project-queries';
+import { toast } from 'sonner';
 import { errorMessage } from '@/lib/error-message';
 import { cn } from '@/lib/utils';
 import { FormDrawer } from '@/components/common/form-drawer';
@@ -121,7 +122,10 @@ export function CustomSpecialtiesSection({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() =>
-                      update.mutate({ key: specialty.key, archived: !specialty.archived })
+                      update.mutate(
+                        { key: specialty.key, archived: !specialty.archived },
+                        { onError: (error) => toast.error(errorMessage(error, t)) },
+                      )
                     }
                   >
                     {specialty.archived
@@ -135,7 +139,11 @@ export function CustomSpecialtiesSection({
         </ul>
       )}
 
-      <Dialog open={renaming !== null} onOpenChange={(open) => !open && setRenaming(null)}>
+      <Dialog open={renaming !== null} onOpenChange={(open) => {
+          if (open) return;
+          setRenaming(null);
+          update.reset();
+        }}>
         <DialogContent>
           <form
             className="flex flex-col gap-4"
@@ -158,8 +166,17 @@ export function CustomSpecialtiesSection({
                 id="specialty-rename"
                 maxLength={40}
                 value={renameValue}
-                onChange={(event) => setRenameValue(event.target.value)}
+                aria-invalid={update.isError}
+                onChange={(event) => {
+                  setRenameValue(event.target.value);
+                  if (update.isError) update.reset();
+                }}
               />
+              {update.isError && (
+                <p role="alert" className="text-sm text-destructive">
+                  {errorMessage(update.error, t)}
+                </p>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setRenaming(null)}>

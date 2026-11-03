@@ -56,8 +56,24 @@ export type PlatformAction = keyof typeof PLATFORM_ACTION_OWNER;
 
 export const PLATFORM_ACTIONS = Object.keys(PLATFORM_ACTION_OWNER) as PlatformAction[];
 
+/**
+ * Arquitecto, ingeniero y diseñador hacen lo del supervisor y además planifican
+ * y cargan documentación: ninguna acción es "suya" en `PLATFORM_ACTION_OWNER`
+ * (cada acción tiene un solo dueño), pero la tarjeta de su rol muestra esas.
+ */
+const PROFESSIONAL_ROLE_GROUPS: readonly ActivityRoleGroup[] = ['arquitecto', 'ingeniero', 'disenador'];
+const PROFESSIONAL_ACTIONS: readonly PlatformAction[] = [
+  'activityCreated',
+  'documentUploaded',
+  'progressReported',
+  'evidenceUploaded',
+  'laborLogged',
+  'materialRequested',
+];
+
 /** Las acciones propias de un rol, en el orden en que se muestran. */
 export function actionsOwnedBy(role: ActivityRoleGroup): PlatformAction[] {
+  if (PROFESSIONAL_ROLE_GROUPS.includes(role)) return [...PROFESSIONAL_ACTIONS];
   return PLATFORM_ACTIONS.filter((action) => PLATFORM_ACTION_OWNER[action] === role);
 }
 

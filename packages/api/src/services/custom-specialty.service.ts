@@ -1,7 +1,7 @@
 import {
+  BASE_SPECIALTY_NAMES,
   CUSTOM_SPECIALTY_PREFIX,
   MAX_CUSTOM_SPECIALTIES,
-  activityBaseSpecialtySchema,
   type CustomSpecialtyKey,
 } from '@luma/shared';
 import type { IProject } from '../models/Project.js';
@@ -13,6 +13,7 @@ function fold(value: string): string {
   return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }
 
+/** Lo que identifica un nombre: sin tildes ni signos, así «A/B» y «A B» chocan. */
 function slug(label: string): string {
   return fold(label)
     .replace(/[^a-z0-9]+/g, '_')
@@ -20,40 +21,60 @@ function slug(label: string): string {
     .slice(0, 50);
 }
 
+const BASE_SLUGS: ReadonlySet<string> = new Set([
+  ...Object.keys(BASE_SPECIALTY_NAMES),
+  ...Object.values(BASE_SPECIALTY_NAMES).map(slug),
+]);
+
+/** ¿Otra especialidad de la obra se llama (casi) igual? `exceptKey` es la que se está renombrando. */
 function sameName(project: IProject, label: string, exceptKey?: string): boolean {
-  const wanted = fold(label);
+  const wanted = slug(label);
   return project.customSpecialties.some(
-    (specialty) => specialty.key !== exceptKey && fold(specialty.label) === wanted,
+    (specialty) => specialty.key !== exceptKey && slug(specialty.label) === wanted,
   );
 }
 
-/** «Drywall» o «Diseño» ya existen de base: la clave de base es el rótulo sin tildes. */
+/** «Sistema contra incendio» o «Diseño» ya existen de base: se compara con el nombre visible y con la clave. */
 function collidesWithBase(label: string): boolean {
-  return (activityBaseSpecialtySchema.options as readonly string[]).includes(slug(label));
+  return BASE_SLUGS.has(slug(label));
+}
+
+function assertValidName(label: string) {
+  if (!slug(label)) throw badRequest('Escribí un nombre con letras o números.');
+  if (collidesWithBase(label)) throw conflict('Ya existe una especialidad con ese nombre.');
 }
 
 /**
- * Agrega una especialidad propia a la obra. La clave la arma el servidor a
- * partir del nombre; si dos nombres distintos dan la misma, la segunda lleva un
- * número. Una vez creada la clave no cambia nunca: es lo que guardan las tareas.
+ * Agrega una especialidad propia a la obra. La clave sale del nombre
+ * (`custom_<nombre sin tildes>`) y no cambia nunca: es lo que guardan las tareas.
+ *
+ * Que el nombre no se repita y que no se pase el tope se decide **en la misma
+ * escritura** (el filtro del `updateOne`), no contra la copia de la obra que
+ * trajo el middleware: dos gerentes creando lo mismo a la vez no pueden dejar
+ * dos entradas con la misma clave.
  */
 export async function addCustomSpecialty(project: IProject, label: string) {
-  if (!slug(label)) throw badRequest('Escribí un nombre con letras o números.');
-  if (collidesWithBase(label) || sameName(project, label)) {
+  assertValidName(label);
+
+  const key = `${CUSTOM_SPECIALTY_PREFIX}${slug(label)}` as CustomSpecialtyKey;
+  const created = { key, label: label.trim(), archived: false };
+
+  const result = await Project.updateOne(
+    {
+      _id: project._id,
+      'customSpecialties.key': { $ne: key },
+      [`customSpecialties.${MAX_CUSTOM_SPECIALTIES - 1}`]: { $exists: false },
+    },
+    { $push: { customSpecialties: created } },
+  );
+  if (result.modifiedCount === 1) return created;
+
+  // No entró: o ya existe, o la obra está llena. Se mira la obra de ahora para decirlo.
+  const fresh = await Project.findById(project._id).select('customSpecialties').lean();
+  if (fresh?.customSpecialties.some((specialty) => specialty.key === key)) {
     throw conflict('Ya existe una especialidad con ese nombre.');
   }
-  if (project.customSpecialties.length >= MAX_CUSTOM_SPECIALTIES) {
-    throw conflict(`Una obra admite hasta ${MAX_CUSTOM_SPECIALTIES} especialidades propias.`);
-  }
-
-  const taken = new Set(project.customSpecialties.map((specialty) => specialty.key));
-  const base = `${CUSTOM_SPECIALTY_PREFIX}${slug(label)}`;
-  let key = base;
-  for (let n = 2; taken.has(key); n += 1) key = `${base}_${n}`;
-
-  const created = { key: key as CustomSpecialtyKey, label: label.trim(), archived: false };
-  await Project.updateOne({ _id: project._id }, { $push: { customSpecialties: created } });
-  return created;
+  throw conflict(`Una obra admite hasta ${MAX_CUSTOM_SPECIALTIES} especialidades propias.`);
 }
 
 /** Renombra o archiva. Archivar no toca las tareas: dejan de poder elegirla, nada más. */
@@ -66,8 +87,8 @@ export async function updateCustomSpecialty(
   if (!current) return null;
 
   if (changes.label !== undefined) {
-    if (!slug(changes.label)) throw badRequest('Escribí un nombre con letras o números.');
-    if (collidesWithBase(changes.label) || sameName(project, changes.label, key)) {
+    assertValidName(changes.label);
+    if (sameName(project, changes.label, key)) {
       throw conflict('Ya existe una especialidad con ese nombre.');
     }
   }

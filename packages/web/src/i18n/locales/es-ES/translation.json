@@ -1444,6 +1444,7 @@
       "method": "Forma de pago",
       "methodOptional": "Método de pago (opcional)",
       "methodPlaceholder": "Sin especificar",
+      "methodChoose": "Elige cómo se pagó",
       "scheduleItem": "Imputar a",
       "scheduleItemPlaceholder": "A cuenta, sin cuota",
       "reference": "Referencia",

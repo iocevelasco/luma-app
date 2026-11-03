@@ -1444,6 +1444,7 @@
       "method": "Forma de pagamento",
       "methodOptional": "Forma de pagamento (opcional)",
       "methodPlaceholder": "Não especificada",
+      "methodChoose": "Escolha como foi pago",
       "scheduleItem": "Vincular a",
       "scheduleItemPlaceholder": "Por conta, sem parcela",
       "reference": "Referência",

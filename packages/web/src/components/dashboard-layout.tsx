@@ -14,6 +14,7 @@ import { UserMenu } from '@/components/dashboard/user-menu';
 import { LanguageSelector } from '@/components/language-selector';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { SpecialtyLabelProvider } from '@/hooks/activities/use-specialty-label';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { ContentAreaContext } from '@/components/layout/content-area-context';
 import { SubscriptionNotice } from '@/components/subscription/subscription-notice';
@@ -131,7 +132,9 @@ export function DashboardLayout() {
               >
                 <ContentAreaContext.Provider value={contentArea}>
                   <SubscriptionNotice />
-                  <Outlet />
+                  <SpecialtyLabelProvider>
+                    <Outlet />
+                  </SpecialtyLabelProvider>
                 </ContentAreaContext.Provider>
               </div>
             </main>

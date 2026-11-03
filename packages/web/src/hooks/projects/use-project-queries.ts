@@ -106,7 +106,9 @@ export function useUpdateCustomSpecialty(projectId: string) {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
       toast.success(t('specialty.saved'));
     },
-    onError: (error) => toast.error(errorMessage(error, t)),
+    // Sin `onError`: renombrar falla dentro de un formulario y la falla va ahí;
+    // archivar y restaurar no tienen formulario y avisan con un toast desde
+    // `CustomSpecialtiesSection`.
   });
 }
 

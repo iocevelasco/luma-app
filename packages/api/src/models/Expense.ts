@@ -40,7 +40,7 @@ export interface IExpense extends Document {
   exchangeRate: number;
   /** `YYYY-MM-DD`. */
   spentOn: string;
-  method?: PaymentMethod;
+  method?: PaymentMethod | null;
   provider?: mongoose.Types.ObjectId | null;
   activity?: mongoose.Types.ObjectId | null;
   receipt?: IExpenseReceipt | null;
