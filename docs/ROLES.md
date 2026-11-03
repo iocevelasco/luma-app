@@ -73,6 +73,15 @@ Rol nuevo, no está en la matriz original del cliente. Lleva cobros y gastos y
 único rol además del gerente que ve gastos, y por lo tanto el margen — no se
 puede llevar la contabilidad de una obra viendo un solo lado.
 
+### Arquitecto, ingeniero y diseñador
+
+Roles de obra que se invitan igual que un supervisor. Hoy tienen **los mismos
+permisos**: lo del supervisor (reportar avance, fotos, materiales, asistencia)
+más `activity.plan` (cronograma y actividades) y `document.write` (planos y
+renders). No ven plata (`payment.*`, `expense.*`, `budget.*`), no cierran tareas
+(`activity.review`) y no gestionan la obra. Comparten `PROFESSIONAL_CAPABILITIES`
+en la grilla; si el cliente los separa, cada uno pasa a tener la suya.
+
 ### Proveedor
 
 Nada todavía. Ver arriba.

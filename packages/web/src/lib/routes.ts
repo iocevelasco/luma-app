@@ -18,6 +18,8 @@ export const ROUTES = {
   ADMIN: '/admin',
   COMPANY: '/admin/empresa',
   PROVIDERS: '/admin/proveedores',
+  /** Prototipo del chat seguro, con datos simulados. */
+  CHAT_PROTOTYPE: '/admin/chat-prototipo',
   CREW: '/admin/empleados',
   ACCOUNT_SETTINGS: '/admin/settings/account',
   /** La API arma las vueltas desde Stripe con este mismo path: ver `stripe.service.ts`. */

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  activityBaseSpecialtySchema,
   activitySpecialtySchema,
   createActivitySchema,
   rejectActivitySchema,
@@ -80,9 +81,16 @@ describe('createActivitySchema', () => {
 describe('activitySpecialtySchema', () => {
   it('tiene los mismos oficios que el de proveedores, que suma sólo `materiales`', () => {
     // `materiales` es quien vende, no un oficio: no existe fuera de proveedores.
-    expect([...activitySpecialtySchema.options].sort()).toEqual(
+    expect([...activityBaseSpecialtySchema.options].sort()).toEqual(
       providerSpecialtySchema.options.filter((specialty) => specialty !== 'materiales').sort(),
     );
+  });
+
+  it('acepta una especialidad propia de la obra pero no un texto cualquiera', () => {
+    expect(activitySpecialtySchema.safeParse('custom_yeseria').success).toBe(true);
+    expect(activitySpecialtySchema.safeParse('yeseria').success).toBe(false);
+    expect(activitySpecialtySchema.safeParse('custom_').success).toBe(false);
+    expect(activitySpecialtySchema.safeParse('custom_Con Espacio').success).toBe(false);
   });
 
   it('la especialidad es obligatoria al crear: reemplaza al área', () => {

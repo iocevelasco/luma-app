@@ -36,6 +36,10 @@ const VISIBLE_SECTIONS: Record<E2EProjectRoleKey, readonly Section[]> = {
   gerente: SECTIONS,
   // Reporta, no maneja plata ni accesos.
   supervisor: ['detail', 'activities', 'materials', 'labor', 'milestones', 'documents', 'providers'],
+  // Hacen lo del supervisor (más planificar y cargar planos): misma navegación.
+  arquitecto: ['detail', 'activities', 'materials', 'labor', 'milestones', 'documents', 'providers'],
+  ingeniero: ['detail', 'activities', 'materials', 'labor', 'milestones', 'documents', 'providers'],
+  disenador: ['detail', 'activities', 'materials', 'labor', 'milestones', 'documents', 'providers'],
   // Sólo plata: nada de obra.
   contador: ['detail', 'payments', 'expenses'],
   // Cobros sí, gastos nunca. Proveedores depende del flag de la obra, que el

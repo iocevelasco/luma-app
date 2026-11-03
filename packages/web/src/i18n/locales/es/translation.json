@@ -1,4 +1,30 @@
 {
+  "optionPicker": {
+    "searchPlaceholder": "Buscar…",
+    "empty": "No encontramos nada con ese texto.",
+    "suggested": "Sugeridas",
+    "all": "Todas",
+    "create": "Presioná Enter para crear «{{name}}»"
+  },
+  "specialty": {
+    "created": "Especialidad agregada.",
+    "saved": "Especialidad guardada.",
+    "unknown": "Especialidad",
+    "manage": {
+      "open": "Ver y editar las especialidades de la obra",
+      "title": "Especialidades propias",
+      "hint": "Sumá las que tu obra necesita además de las de siempre. Las ves al crear una tarea.",
+      "name": "Nombre de la especialidad",
+      "placeholder": "Ej. Yesería",
+      "add": "Agregar",
+      "empty": "Todavía no agregaste ninguna.",
+      "archived": "Archivada",
+      "actions": "Acciones de {{name}}",
+      "rename": "Renombrar",
+      "archive": "Archivar",
+      "restore": "Restaurar"
+    }
+  },
   "common": {
     "appName": "Luma",
     "save": "Guardar",
@@ -162,12 +188,18 @@
     "role": {
       "gerente": "Gerente de obra",
       "supervisor": "Supervisor de obra",
+      "arquitecto": "Arquitecto",
+      "ingeniero": "Ingeniero",
+      "disenador": "Diseñador",
       "contador": "Contador",
       "cliente": "Cliente"
     },
     "roleHint": {
       "gerente": "Hace todo lo que vos hacés en la obra, plata y equipo incluidos. No puede eliminarla, sacar a otro gerente ni usar la libreta de proveedores y el personal de la Empresa.",
       "supervisor": "Reporta avance, asistencia y materiales desde el sitio. No ve plata.",
+      "arquitecto": "Ve y planifica el cronograma y las actividades, reporta avance y carga planos y documentación. No ve plata.",
+      "ingeniero": "Ve y planifica el cronograma y las actividades, reporta avance y carga planos y documentación. No ve plata.",
+      "disenador": "Ve y planifica el cronograma y las actividades, reporta avance y carga planos y documentación. No ve plata.",
       "contador": "Sólo cobros y gastos. No ve tareas, personal ni proveedores.",
       "cliente": "Sigue el avance de su obra y su cronograma de pagos. Sólo lectura."
     },
@@ -190,6 +222,9 @@
       "groups": {
         "gerente": "Gerentes",
         "supervisor": "Supervisores",
+        "arquitecto": "Arquitectos",
+        "ingeniero": "Ingenieros",
+        "disenador": "Diseñadores",
         "contador": "Contadores",
         "cliente": "Clientes"
       },
@@ -765,6 +800,9 @@
       "pisos_revestimientos": "Pisos y revestimientos",
       "jardineria": "Jardinería",
       "demolicion": "Demolición",
+      "arquitectura": "Arquitectura",
+      "diseno": "Diseño",
+      "drywall": "Drywall",
       "materiales": "Venta de materiales",
       "otra": "Otra"
     },
@@ -1378,6 +1416,12 @@
     },
     "method": {
       "transferencia": "Transferencia",
+      "transferencia_ves": "Transferencia en bolívares",
+      "transferencia_usd": "Transferencia en dólares",
+      "transferencia_eur": "Transferencia en euros",
+      "pago_movil": "Pago móvil",
+      "zelle": "Zelle",
+      "binance": "Binance",
       "efectivo": "Efectivo",
       "cheque": "Cheque",
       "otro": "Otro"
@@ -1398,6 +1442,9 @@
       "dueOn": "Vencimiento",
       "paidOn": "Fecha del cobro",
       "method": "Forma de pago",
+      "methodOptional": "Método de pago (opcional)",
+      "methodPlaceholder": "Sin especificar",
+      "methodChoose": "Elegí cómo se pagó",
       "scheduleItem": "Imputar a",
       "scheduleItemPlaceholder": "A cuenta, sin cuota",
       "reference": "Referencia",
@@ -1805,6 +1852,9 @@
       "roles": {
         "gerente": "Gerente",
         "supervisor": "Supervisor",
+        "arquitecto": "Arquitecto",
+        "ingeniero": "Ingeniero",
+        "disenador": "Diseñador",
         "contador": "Contador",
         "cliente": "Cliente",
         "exMiembro": "Ex-miembro"
@@ -2019,5 +2069,62 @@
     "thanks": "¡Gracias por tu opinión!",
     "changeLabel": "¿Hay algún feature o algo que quieras cambiar? (opcional)",
     "changePlaceholder": "Ej.: el cronograma, los reportes…"
+  },
+  "secureChat": {
+    "title": "Asistente (prototipo)",
+    "description": "Prototipo del chat con datos simulados. No hay red ni modelo: sirve para ver cómo se bloquean el HTML, los enlaces peligrosos, las imágenes externas y los adjuntos no permitidos.",
+    "prototypeNote": "Datos simulados. Nada se guarda al recargar.",
+    "open": "Abrir asistente",
+    "loadHistory": "Cargar historial de ejemplo",
+    "examples": [
+      "Escribe «xss» para recibir contenido hostil y ver cómo queda bloqueado.",
+      "Escribe «tabla» para ver una tabla y enlaces válidos.",
+      "Escribe «error» para ver una falla recuperable.",
+      "Adjunta una imagen JPEG, PNG o WebP; un SVG o un archivo renombrado se rechaza."
+    ],
+    "newTitle": "Conversación nueva",
+    "newConversation": "Nueva conversación",
+    "emptyTitle": "Todavía no hay mensajes",
+    "emptyHint": "Escribe algo para empezar.",
+    "logLabel": "Mensajes del chat",
+    "you": "Tú",
+    "assistant": "Asistente",
+    "streaming": "Escribiendo…",
+    "inputLabel": "Mensaje",
+    "inputPlaceholder": "Escribe tu mensaje",
+    "send": "Enviar",
+    "stop": "Detener",
+    "attach": "Adjuntar imagen",
+    "removeAttachment": "Quitar {{name}}",
+    "openImage": "Ampliar {{name}}",
+    "viewerTitle": "Imagen adjunta",
+    "blockedLink": "Enlace bloqueado",
+    "blockedImage": "Imagen bloqueada",
+    "plainMode": "El mensaje es demasiado largo o complejo; se muestra como texto plano.",
+    "truncated": "El mensaje se recortó por su largo.",
+    "renderFailed": "No pudimos mostrar este mensaje con formato. Lo mostramos como texto.",
+    "restoredDiscarded_one": "Se descartó {{count}} mensaje del historial por tener un formato inválido.",
+    "restoredDiscarded_other": "Se descartaron {{count}} mensajes del historial por tener un formato inválido.",
+    "errors": {
+      "empty": "Escribe un mensaje o adjunta una imagen.",
+      "tooLong": "El mensaje es demasiado largo o la conversación llegó a su límite.",
+      "busy": "Espera a que termine la respuesta o deténla.",
+      "stream": "No pudimos obtener la respuesta. Inténtalo de nuevo."
+    },
+    "rejections": {
+      "tooMany": "{{name}}: ya alcanzaste el máximo de imágenes por mensaje.",
+      "type": "{{name}}: formato no permitido. Sólo JPEG, PNG o WebP.",
+      "empty": "{{name}}: el archivo está vacío.",
+      "tooLarge": "{{name}}: supera el tamaño máximo de 5 MB.",
+      "dimensions": "{{name}}: las dimensiones de la imagen superan el máximo permitido.",
+      "unreadable": "{{name}}: no pudimos leer el archivo."
+    },
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyFailed": "No pudimos copiar. Selecciona el texto y cópialo manualmente.",
+    "dropHere": "Suelta las imágenes para adjuntarlas",
+    "inputHint": "Enter envía, Shift+Enter hace un salto de línea",
+    "sent": "Enviado",
+    "attachFile": "Adjuntar archivo"
   }
 }

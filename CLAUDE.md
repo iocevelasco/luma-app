@@ -31,7 +31,8 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
   `requireAdmin` | `requireRole`. No gatean ninguna pantalla del panel de obras:
   el admin tiene su propia área, `/plataforma` (cuentas y pagos), con
   `PlatformLayout`. Una pantalla de administración global no va en `DashboardLayout`.
-- **Roles de obra**: `gerente` | `supervisor` | `contador` | `cliente`, por obra y
+- **Roles de obra**: `gerente` | `supervisor` | `arquitecto` | `ingeniero` | `disenador` | `contador` |
+  `cliente`, por obra y
   no por Empresa. Quien creó la obra es el gerente por `Project.createdBy` (el
   **dueño**, sin fila); los demás roles son filas de `ProjectMembership`, y eso
   incluye a otros gerentes: **hasta 5 por obra, el dueño incluido**

@@ -223,6 +223,44 @@ describe('cobros y gastos', () => {
   });
 });
 
+describe('arquitecto, ingeniero y diseñador', () => {
+  const PROFESSIONALS = ['arquitecto', 'ingeniero', 'disenador'] as const;
+
+  it('hacen todo lo del supervisor y además planifican y cargan documentación', () => {
+    for (const role of PROFESSIONALS) {
+      const caps = PROJECT_CAPABILITIES[role];
+      for (const capability of PROJECT_CAPABILITIES.supervisor) expect(caps, role).toContain(capability);
+      expect(caps, role).toContain('document.write');
+      expect(caps, role).toContain('activity.plan');
+    }
+  });
+
+  it('no ven plata, no cierran tareas y no gestionan la obra', () => {
+    const forbidden: Capability[] = [
+      'payment.read',
+      'expense.read',
+      'budget.read',
+      'activity.review',
+      'project.update',
+      'project.invite',
+      'specialty.manage',
+      'provider.manage',
+    ];
+    for (const role of PROFESSIONALS) {
+      for (const capability of forbidden) {
+        expect(canInProject(role, capability, VISIBLE), `${role} ${capability}`).toBe(false);
+      }
+    }
+  });
+
+  it('se pueden invitar a una obra', () => {
+    for (const role of PROFESSIONALS) {
+      expect(INVITABLE_PROJECT_ROLES).toContain(role);
+      expect(invitableProjectRoleSchema.safeParse(role).success).toBe(true);
+    }
+  });
+});
+
 describe('contador', () => {
   it('lleva cobros y gastos', () => {
     for (const capability of [

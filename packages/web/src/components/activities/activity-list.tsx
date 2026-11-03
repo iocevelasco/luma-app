@@ -14,6 +14,7 @@ import {
   type RowCardLeadTone,
 } from '@/components/common/row-card-list';
 import { Badge } from '@/components/ui/badge';
+import { useSpecialtyLabel } from '@/hooks/activities/use-specialty-label';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { isActivityOverdue } from '@/lib/week';
 
@@ -46,6 +47,7 @@ interface ActivityListProps {
  */
 export function ActivityList({ activities, missingMaterialIds, onSelectActivity }: ActivityListProps) {
   const { t } = useTranslation();
+  const specialtyLabel = useSpecialtyLabel();
   const dateLocale = useDateLocale();
 
   const groups = useMemo(() => {
@@ -101,7 +103,7 @@ export function ActivityList({ activities, missingMaterialIds, onSelectActivity 
                       </button>
                     }
                     meta={[
-                      activity.specialty ? t(`provider.specialty.${activity.specialty}`) : null,
+                      activity.specialty ? specialtyLabel(activity.specialty) : null,
                       activity.responsible.name,
                       dates,
                     ]

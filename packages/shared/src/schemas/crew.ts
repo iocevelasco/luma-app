@@ -31,6 +31,9 @@ export const crewSpecialtySchema = z.enum([
   'pisos_revestimientos',
   'jardineria',
   'demolicion',
+  'arquitectura',
+  'diseno',
+  'drywall',
   'otra',
 ]);
 

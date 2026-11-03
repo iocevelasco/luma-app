@@ -48,6 +48,9 @@ interface SeedPerson {
 const PEOPLE: SeedPerson[] = [
   { email: 'gerente@luma.test', name: 'Gabriela Gerente', role: null },
   { email: 'supervisor@luma.test', name: 'Sergio Supervisor', role: 'supervisor' },
+  { email: 'arquitecto@luma.test', name: 'Alicia Arquitecta', role: 'arquitecto' },
+  { email: 'ingeniero@luma.test', name: 'Ignacio Ingeniero', role: 'ingeniero' },
+  { email: 'disenador@luma.test', name: 'Diana Diseñadora', role: 'disenador' },
   { email: 'contador@luma.test', name: 'Carla Contadora', role: 'contador' },
   { email: 'cliente@luma.test', name: 'Clara Cliente', role: 'cliente' },
 ];

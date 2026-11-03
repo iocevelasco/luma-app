@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { isSelectableSpecialty } from '../services/custom-specialty.service.js';
 import mongoose from 'mongoose';
 // Import de sólo-tipos: activa la ampliación de `Express.Request.file` que
 // trae `@types/multer`, aunque este archivo no llame a multer directamente
@@ -136,6 +137,10 @@ export async function createActivity(req: Request, res: Response) {
     const project = req.project as IProject;
     const { crewMemberIds, ...fields } = parsed.data;
 
+    if (!isSelectableSpecialty(project, fields.specialty)) {
+      return res.status(400).json({ success: false, error: 'Esa especialidad no está disponible en esta obra.' });
+    }
+
     const crewIds = [...new Set(crewMemberIds ?? [])];
     if (crewIds.length > 0) {
       const visible = await CrewMember.find({
@@ -225,6 +230,16 @@ export async function updateActivity(req: Request, res: Response) {
 
     if (!activity) {
       return res.status(404).json({ success: false, error: 'Tarea no encontrada' });
+    }
+
+    // Una archivada no se puede elegir de nuevo, pero una tarea que ya la tiene
+    // puede guardarse sin tocarla.
+    if (
+      parsed.data.specialty &&
+      parsed.data.specialty !== activity.specialty &&
+      !isSelectableSpecialty(project, parsed.data.specialty)
+    ) {
+      return res.status(400).json({ success: false, error: 'Esa especialidad no está disponible en esta obra.' });
     }
 
     // Reabrir una completada deshace la aprobación del gerente: es suya.
@@ -470,9 +485,9 @@ export async function deleteActivityEvidence(req: Request, res: Response) {
  * anunciarlo como avance sería anunciar algo que puede volver atrás.
  */
 const STATUS_NOTIFICATIONS = {
-  en_curso: { type: 'actividad_iniciada', audience: ['gerente', 'supervisor', 'cliente'] },
+  en_curso: { type: 'actividad_iniciada', audience: ['gerente', 'supervisor', 'arquitecto', 'ingeniero', 'disenador', 'cliente'] },
   en_revision: { type: 'actividad_en_revision', audience: ['gerente'] },
-  completada: { type: 'actividad_completada', audience: ['gerente', 'supervisor', 'cliente'] },
+  completada: { type: 'actividad_completada', audience: ['gerente', 'supervisor', 'arquitecto', 'ingeniero', 'disenador', 'cliente'] },
 } as const satisfies Partial<
   Record<ActivityStatus, { type: NotificationType; audience: readonly ProjectRole[] }>
 >;

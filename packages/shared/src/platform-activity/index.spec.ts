@@ -46,6 +46,16 @@ describe('acciones', () => {
     expect([...owned].sort()).toEqual([...PLATFORM_ACTIONS].sort());
   });
 
+  it('los profesionales muestran lo del supervisor más planificar y documentos', () => {
+    for (const role of ['arquitecto', 'ingeniero', 'disenador'] as const) {
+      const shown = actionsOwnedBy(role);
+      for (const action of actionsOwnedBy('supervisor')) expect(shown, role).toContain(action);
+      expect(shown, role).toContain('activityCreated');
+      expect(shown, role).toContain('documentUploaded');
+      expect(shown.every((action) => PLATFORM_ACTIONS.includes(action))).toBe(true);
+    }
+  });
+
   it('no hay ninguna acción de montos', () => {
     expect(PLATFORM_ACTIONS.every((action) => !/amount|monto|total/i.test(action))).toBe(true);
   });

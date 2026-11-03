@@ -1,5 +1,6 @@
 import type {
   ApiResponse,
+  CreateCustomSpecialtyInput,
   CreateProjectInput,
   CreateProjectResponse,
   DeleteProjectInput,
@@ -12,8 +13,10 @@ import type {
   InviteProjectMemberResponse,
   RemoveProjectMemberResponse,
   UpdateProjectMemberResponse,
+  ProjectCustomSpecialty,
   ProjectDetailResponse,
   ProjectListResponse,
+  UpdateCustomSpecialtyInput,
   UpdateProjectInput,
 } from '@luma/shared';
 import { apiClient } from '@/lib/api-client';
@@ -39,6 +42,16 @@ export const projectsApi = {
 
   update: (projectId: string, payload: UpdateProjectInput) =>
     unwrap<CreateProjectResponse>(apiClient.patch(`/api/projects/${projectId}`, payload)),
+
+  createSpecialty: (projectId: string, payload: CreateCustomSpecialtyInput) =>
+    unwrap<{ specialty: ProjectCustomSpecialty }>(
+      apiClient.post(`/api/projects/${projectId}/specialties`, payload),
+    ),
+
+  updateSpecialty: (projectId: string, key: string, payload: UpdateCustomSpecialtyInput) =>
+    unwrap<{ specialty: ProjectCustomSpecialty }>(
+      apiClient.patch(`/api/projects/${projectId}/specialties/${key}`, payload),
+    ),
 
   deletionSummary: (projectId: string) =>
     unwrap<{ summary: ProjectDeletionSummary }>(

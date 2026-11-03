@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createExpenseSchema,
   EXPENSE_CATEGORIES,
+  PAYMENT_METHOD_OPTIONS,
   DOCUMENT_MAX_BYTES,
   DOCUMENT_MIME_TYPES,
   type CreateExpenseInput,
@@ -239,6 +240,28 @@ function NewExpenseDrawer({
         <div className="flex flex-col gap-2">
           <Label htmlFor="expense-date">{t('finance.fields.spentOn')}</Label>
           <Input id="expense-date" type="date" {...form.register('spentOn')} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="expense-method">{t('finance.fields.methodOptional')}</Label>
+          <Controller
+            control={form.control}
+            name="method"
+            render={({ field }) => (
+              <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                <SelectTrigger id="expense-method">
+                  <SelectValue placeholder={t('finance.fields.methodPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHOD_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {t(`finance.method.${option}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -512,12 +535,18 @@ export function ProjectExpensesPage() {
                       <RowCardBody
                         title={<p className="truncate">{expense.description}</p>}
                         meta={
-                          (expense.providerName || expense.activityName || expense.materials) && (
+                          (expense.method || expense.providerName || expense.activityName || expense.materials) && (
                             <p>
-                              {[expense.providerName, expense.activityName].filter(Boolean).join(' · ')}
+                              {[
+                                expense.method && t(`finance.method.${expense.method}`),
+                                expense.providerName,
+                                expense.activityName,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')}
                               {expense.materials && (
                                 <>
-                                  {(expense.providerName || expense.activityName) && ' · '}
+                                  {(expense.method || expense.providerName || expense.activityName) && ' · '}
                                   <ExpenseMaterials projectId={projectId!} materials={expense.materials} />
                                 </>
                               )}

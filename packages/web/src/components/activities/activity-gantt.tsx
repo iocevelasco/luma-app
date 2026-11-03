@@ -9,6 +9,7 @@ import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { TruncatedText } from '@/components/common/truncated-text';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { useSpecialtyLabel } from '@/hooks/activities/use-specialty-label';
 import type { GanttZoom } from '@/lib/gantt-zoom';
 import { cn } from '@/lib/utils';
 
@@ -70,13 +71,14 @@ function TextCell({ row }: { row: unknown }) {
 
 function SpecialtyCell({ row }: { row: unknown }) {
   const { t } = useTranslation();
+  const specialtyLabel = useSpecialtyLabel();
   const { activity } = row as GanttTaskRow;
   if (!activity) return null;
   const { specialty } = activity;
   // TruncatedText recibe un string; no se puede pasar <SpecialtyLabel />.
   return (
     <TruncatedText
-      text={specialty ? t(`provider.specialty.${specialty}`) : t('activity.detail.noSpecialty')}
+      text={specialty ? specialtyLabel(specialty) : t('activity.detail.noSpecialty')}
     />
   );
 }
