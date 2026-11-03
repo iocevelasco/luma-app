@@ -1294,6 +1294,20 @@
       "fix": "Corrigido"
     },
     "entries": {
+      "2026-11-03": {
+        "customSpecialties": {
+          "title": "Especialidades próprias da obra",
+          "description": "Crie as especialidades que a sua obra precisa, com busca no seletor. Entram Arquitetura, Design e Drywall."
+        },
+        "paymentMethods": {
+          "title": "Mais formas de pagamento",
+          "description": "Registre recebimentos e gastos com Zelle, Binance, Pago móvil e transferências em euros, bolívares ou dólares."
+        },
+        "designRoles": {
+          "title": "Arquiteto, Engenheiro e Designer",
+          "description": "Três novos papéis para convidar para a obra: veem o cronograma e as atividades, podem planejar e enviar documentação, sem acesso ao dinheiro."
+        }
+      },
       "2026-10-29": {
         "fileManager": {
           "title": "Documentação como explorador de arquivos",

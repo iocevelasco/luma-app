@@ -18,8 +18,11 @@ import {
   FireExtinguisher,
   Flag,
   FolderTree,
+  ListPlus,
   Sparkles,
   Users,
+  UserRoundCog,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -42,6 +45,15 @@ export interface ReleaseNote {
 }
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
+  {
+    id: '2026-11-03',
+    date: '2026-11-03',
+    items: [
+      { kind: 'new', key: 'customSpecialties', icon: ListPlus },
+      { kind: 'new', key: 'paymentMethods', icon: Wallet },
+      { kind: 'new', key: 'designRoles', icon: UserRoundCog },
+    ],
+  },
   {
     id: '2026-10-29',
     date: '2026-10-29',
