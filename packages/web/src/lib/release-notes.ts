@@ -13,12 +13,15 @@
  */
 
 import {
+  CalendarDays,
   CalendarRange,
   Eye,
   FireExtinguisher,
   Flag,
   FolderTree,
+  Languages,
   ListPlus,
+  SlidersHorizontal,
   Sparkles,
   Users,
   UserRoundCog,
@@ -52,6 +55,9 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
       { kind: 'new', key: 'customSpecialties', icon: ListPlus },
       { kind: 'new', key: 'paymentMethods', icon: Wallet },
       { kind: 'new', key: 'designRoles', icon: UserRoundCog },
+      { kind: 'new', key: 'mobileAgenda', icon: CalendarDays },
+      { kind: 'new', key: 'mobileDrawers', icon: SlidersHorizontal },
+      { kind: 'new', key: 'languageInAccount', icon: Languages },
     ],
   },
   {

@@ -347,11 +347,11 @@ test.describe('tareas', () => {
     await expect(pill).toBeVisible();
     await expectNoticeBelow(page.locator('.luma-kanban'));
 
-    // Celular: ahí sólo el Cronograma ocupa el alto de la ventana.
+    // Celular: el Cronograma es una agenda por semana (no hay diagrama) y scrollea con la página.
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(`${projectUrl}/actividades`);
     await expect(pill).toBeVisible();
-    await expectNoticeBelow(page.locator('.luma-gantt'));
+    await expectNoticeBelow(page.getByTestId('activity-agenda'));
   });
 
   test('el Cronograma llega al borde y «Nueva tarea» no tapa la última fila', async ({ page }) => {
@@ -400,9 +400,22 @@ test.describe('tareas', () => {
 
     await expectLastRowAboveAction();
 
-    // Celular: el botón se apoya más cerca del borde, pero el diagrama también ocupa todo el alto.
+    // Celular: no hay diagrama sino una agenda por semana que scrollea con la página. Llegando al
+    // final, su última tarjeta queda por encima del botón flotante (que es sólo el «+»).
     await page.setViewportSize({ width: 375, height: 812 });
-    await expectLastRowAboveAction();
+    await page.goto(`${projectUrl}/actividades`);
+    const agenda = page.getByTestId('activity-agenda');
+    await expect(agenda).toBeVisible();
+    await agenda.evaluate((element) => {
+      for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+        if (node.scrollHeight > node.clientHeight) node.scrollTop = node.scrollHeight;
+      }
+    });
+    const lastCard = (await agenda.locator('[data-slot="row-card"]').last().boundingBox())!;
+    const mobileButton = (await page.getByTestId('primary-action').boundingBox())!;
+    expect(lastCard.y + lastCard.height, 'el botón flotante tapa la última tarjeta').toBeLessThanOrEqual(
+      mobileButton.y + 0.5,
+    );
   });
 
   test('cambiar las fechas de una actividad se refleja en el Cronograma y en el Tablero', async ({

@@ -5,6 +5,9 @@ import {
   LUMA_WORDMARK_PATHS,
 } from '@shared/brand/luma-logo';
 
+/** El recuadro del triángulo dentro del lienzo del logo completo (x 122.6–354, y 13.9–120). */
+const ISOTYPE_VIEWBOX = '121 12 234.4 109.5';
+
 interface BranchLumaLogoProps extends Omit<SVGProps<SVGSVGElement>, 'fill'> {
   /**
    * Color del logo. Cualquier valor de `fill` de SVG; por defecto hereda el
@@ -16,6 +19,8 @@ interface BranchLumaLogoProps extends Omit<SVGProps<SVGSVGElement>, 'fill'> {
    * pantalla (casi siempre va junto al nombre escrito).
    */
   title?: string;
+  /** Sólo el triángulo: para espacios angostos (el header en mobile). */
+  isotypeOnly?: boolean;
 }
 
 /**
@@ -26,23 +31,26 @@ interface BranchLumaLogoProps extends Omit<SVGProps<SVGSVGElement>, 'fill'> {
 export function BranchLumaLogo({
   fill = 'currentColor',
   title,
+  isotypeOnly = false,
   ...props
 }: BranchLumaLogoProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox={LUMA_LOGO_VIEWBOX}
+      viewBox={isotypeOnly ? ISOTYPE_VIEWBOX : LUMA_LOGO_VIEWBOX}
       fill={fill}
       role={title ? 'img' : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
       {...props}
     >
-      <g>
-        {LUMA_WORDMARK_PATHS.map((path) => (
-          <path key={path} d={path} />
-        ))}
-      </g>
+      {!isotypeOnly && (
+        <g>
+          {LUMA_WORDMARK_PATHS.map((path) => (
+            <path key={path} d={path} />
+          ))}
+        </g>
+      )}
       <path d={LUMA_ISOTYPE_PATH} />
     </svg>
   );

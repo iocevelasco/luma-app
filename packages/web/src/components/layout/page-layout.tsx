@@ -119,7 +119,7 @@ export function PageLayout({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">{toolbar}</div>
           <div
-            className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2"
+            className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-2"
             data-testid="page-actions"
           >
             {secondaryActions}

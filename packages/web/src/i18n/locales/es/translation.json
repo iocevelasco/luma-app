@@ -475,6 +475,12 @@
       "removeEvidence": "No pudimos borrar la foto.",
       "reject": "No pudimos devolver la tarea."
     },
+    "agenda": {
+      "previousWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "empty": "No hay actividades esta semana.",
+      "today": "Hoy"
+    },
     "gantt": {
       "goToToday": "Ir a hoy",
       "zoomLabel": "Escala del cronograma",
@@ -517,6 +523,9 @@
     },
     "filters": {
       "search": "Buscar actividad o responsable",
+      "actions": "Acciones",
+      "done": "Listo",
+      "drawerHint": "Buscá y filtrá las actividades",
       "people": "Filtrar por responsable",
       "button": "Filtros",
       "quick": "Rápidos",
@@ -612,6 +621,7 @@
       "emptyReadOnly": "Todavía no hay compras cargadas.",
       "withoutActivity": "Sin tarea asociada",
       "copyList": "Copiar lista",
+      "exportTitle": "Exportar lista",
       "share": "Compartir",
       "copied": "Lista copiada al portapapeles",
       "confirmStatusTitle": "Confirmar cambio de estado",
@@ -1306,6 +1316,18 @@
         "designRoles": {
           "title": "Arquitecto, Ingeniero y Diseñador",
           "description": "Tres roles nuevos para invitar a la obra: ven el cronograma y las actividades, pueden planificar y cargar documentación, sin acceso al dinero."
+        },
+        "mobileAgenda": {
+          "title": "Cronograma como agenda en el celular",
+          "description": "En el celular el Cronograma se lee como una agenda por semana: cada día con lo que se trabaja, y las flechas para pasar de semana."
+        },
+        "mobileDrawers": {
+          "title": "Filtros y exportar en un solo botón",
+          "description": "En el celular los filtros, la búsqueda y las acciones de la lista están en un panel que sube desde abajo. Las listas de Actividades y Compras son más compactas, y agregar es un botón con «+»."
+        },
+        "languageInAccount": {
+          "title": "Idioma en Mi cuenta",
+          "description": "El idioma se elige ahora desde Mi cuenta. En el celular el encabezado muestra solo el isotipo y el nombre de la sección se lee completo."
         }
       },
       "2026-10-29": {

@@ -280,6 +280,7 @@ function NewActivityDialog({
   canCancel: boolean;
 }) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const createActivity = useCreateActivity(projectId);
   const { members: assignableCrew } = useAssignableCrew(projectId);
@@ -297,9 +298,14 @@ function NewActivityDialog({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        <Plus className="size-4" />
-        {t('activity.list.new')}
+      {/* Mobile: sólo el ícono, redondo; desktop: ícono y texto. */}
+      <Button
+        size={isMobile ? 'icon-lg' : 'default'}
+        aria-label={t('activity.list.new')}
+        onClick={() => setOpen(true)}
+      >
+        <Plus className={isMobile ? 'size-5' : 'size-4'} />
+        {!isMobile && t('activity.list.new')}
       </Button>
 
       <FormDrawer
@@ -965,6 +971,7 @@ const ACTIVITIES_VIEWS: readonly ActivitiesView[] = ['gantt', 'board', 'list'];
 const loadGantt = () => import('@/components/activities/activity-gantt');
 const loadBoard = () => import('@/components/activities/task-board');
 const ActivityGantt = lazy(loadGantt);
+const ActivityAgenda = lazy(() => import('@/components/activities/activity-agenda'));
 const TaskBoard = lazy(loadBoard);
 
 /** La vista va en la URL (`?vista=`), en castellano como el resto de las rutas. */
@@ -1153,51 +1160,9 @@ export function ProjectActivitiesPage() {
           }
         : undefined;
 
-  return (
-    <>
-      <Tabs
-        value={view}
-        onValueChange={(next) => {
-          const param = VIEW_PARAM[next as ActivitiesView];
-          // `replace`: cambiar de vista no es navegar, y "atrás" vuelve a la pantalla anterior.
-          setSearchParams(param ? { vista: param } : {}, { replace: true });
-        }}
-      >
-        <PageLayout
-          width={view === 'list' ? 'default' : 'full'}
-          // El Cronograma y el Tablero ocupan el alto que queda de la ventana: las columnas
-          // del Tablero tienen que llegar hasta abajo, o soltar una tarea en la parte vacía
-          // de una columna no cuenta. En el celular el Tablero es una lista y scrollea la página.
-          fill={view === 'gantt' || (view === 'board' && !isMobile)}
-          // El aviso de filtros flota abajo: mientras haya filtros, el contenido le deja lugar.
-          reserveBottom={activeFilters > 0}
-          toolbar={
-            <>
-              <TabsList aria-label={t('activity.views.aria')} className="h-10 p-1">
-                {views.map((name) => (
-                  <TabsTrigger key={name} value={name} icon={VIEW_ICON[name]} className="h-full">
-                    {t(`activity.views.${name}`)}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <ActivityFilterControls
-                filters={effectiveFilters}
-                onChange={updateFilters}
-                onReset={resetFilters}
-                people={people}
-                canFilterMaterials={canReadMaterials}
-                canFilterReview={can('activity.review')}
-              />
-              <ActiveFiltersNotice
-                filters={effectiveFilters}
-                onChange={updateFilters}
-                onReset={resetFilters}
-                people={people}
-              />
-            </>
-          }
-          secondaryActions={
-            view === 'gantt' ? (
+  // Las acciones de la barra de arriba; en mobile van dentro del drawer de filtros.
+  const secondary = (
+            view === 'gantt' && !isMobile ? (
               <>
                 {/* La misma superficie suave que las vistas: un segmentado con aire entre opciones. */}
                 <ToggleGroup
@@ -1206,7 +1171,7 @@ export function ProjectActivitiesPage() {
                   value={zoom}
                   aria-label={t('activity.gantt.zoomLabel')}
                   onValueChange={(next) => next && setZoom(next as GanttZoom)}
-                  className={SEGMENT_LIST}
+                  className={cn(SEGMENT_LIST, 'max-w-full overflow-x-auto')}
                 >
                   {GANTT_ZOOMS.map((level) => (
                     <ToggleGroupItem
@@ -1249,7 +1214,66 @@ export function ProjectActivitiesPage() {
                 {t('crew.list.title')}
               </Button>
             ) : undefined
+  );
+
+  return (
+    <>
+      <Tabs
+        value={view}
+        onValueChange={(next) => {
+          const param = VIEW_PARAM[next as ActivitiesView];
+          // `replace`: cambiar de vista no es navegar, y "atrás" vuelve a la pantalla anterior.
+          setSearchParams(param ? { vista: param } : {}, { replace: true });
+        }}
+      >
+        <PageLayout
+          // Barra de arriba → contenido: 12 px en mobile, en vez de 24.
+          className="max-sm:gap-3"
+          width={view === 'list' ? 'default' : 'full'}
+          // El Cronograma y el Tablero ocupan el alto que queda de la ventana: las columnas
+          // del Tablero tienen que llegar hasta abajo, o soltar una tarea en la parte vacía
+          // de una columna no cuenta. En el celular el Tablero es una lista y scrollea la página.
+          fill={!isMobile && (view === 'gantt' || view === 'board')}
+          // El aviso de filtros flota abajo: mientras haya filtros, el contenido le deja lugar.
+          reserveBottom={activeFilters > 0}
+          toolbar={
+            <>
+              <div className="flex w-full items-center gap-2 md:contents">
+              <TabsList aria-label={t('activity.views.aria')} className="h-10 min-w-0 p-1 max-md:flex-1">
+                {views.map((name) => (
+                  <TabsTrigger
+                    key={name}
+                    value={name}
+                    icon={VIEW_ICON[name]}
+                    // En mobile conservan el texto —sin él no se entiende qué es cada una—
+                    // pero más compactas para entrar con el botón de filtros.
+                    className="h-full max-md:gap-1 max-md:px-2 max-md:text-xs max-md:[&_svg]:size-4"
+                  >
+                    {t(`activity.views.${name}`)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <ActivityFilterControls
+                filters={effectiveFilters}
+                onChange={updateFilters}
+                onReset={resetFilters}
+                people={people}
+                canFilterMaterials={canReadMaterials}
+                canFilterReview={can('activity.review')}
+                compact={isMobile}
+                suggestions={activities.map((activity) => activity.name)}
+                actions={isMobile ? secondary : undefined}
+              />
+            </div>
+              <ActiveFiltersNotice
+                filters={effectiveFilters}
+                onChange={updateFilters}
+                onReset={resetFilters}
+                people={people}
+              />
+            </>
           }
+          secondaryActions={isMobile ? undefined : secondary}
           /* El supervisor crea tareas; modificarlas es del gerente. */
           action={
             can('activity.create') ? (
@@ -1265,7 +1289,11 @@ export function ProjectActivitiesPage() {
           empty={view === 'board' ? undefined : empty}
         >
           <Suspense fallback={<LoadingIndicator />}>
-            {view === 'gantt' && (
+            {/* Un teléfono no tiene ancho para el diagrama: ahí el Cronograma es una agenda por semana. */}
+            {view === 'gantt' && isMobile && (
+              <ActivityAgenda activities={visible} onSelectActivity={setSelectedActivityId} />
+            )}
+            {view === 'gantt' && !isMobile && (
               <ActivityGantt
                 activities={visible}
                 range={range}
