@@ -29,6 +29,9 @@ export const ACTIVITY_SPECIALTIES: readonly ProviderSpecialty[] = [
   'pisos_revestimientos',
   'jardineria',
   'demolicion',
+  'arquitectura',
+  'diseno',
+  'drywall',
   'otra',
 ];
 

@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createPaymentSchema,
   createPaymentScheduleItemSchema,
-  PAYMENT_METHODS,
+  PAYMENT_METHOD_OPTIONS,
   type CreatePaymentInput,
   type CreatePaymentScheduleItemInput,
   type Payment,
@@ -258,7 +258,6 @@ function NewPaymentDrawer({
       currency: projectCurrency,
       exchangeRate: 1,
       paidOn: toDayKey(new Date()),
-      method: 'transferencia',
     },
   });
 
@@ -308,12 +307,12 @@ function NewPaymentDrawer({
             control={form.control}
             name="method"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="payment-method">
-                  <SelectValue />
+              <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                <SelectTrigger id="payment-method" aria-invalid={Boolean(form.formState.errors.method)}>
+                  <SelectValue placeholder={t('finance.fields.methodChoose')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_METHODS.map((option) => (
+                  {PAYMENT_METHOD_OPTIONS.map((option) => (
                     <SelectItem key={option} value={option}>
                       {t(`finance.method.${option}`)}
                     </SelectItem>
@@ -322,6 +321,9 @@ function NewPaymentDrawer({
               </Select>
             )}
           />
+          {form.formState.errors.method && (
+            <p className="text-sm text-destructive">{form.formState.errors.method.message}</p>
+          )}
         </div>
 
         {/* Imputar a una cuota es opcional: un cobro a cuenta es normal al

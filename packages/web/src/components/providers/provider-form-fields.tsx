@@ -5,6 +5,7 @@ import {
 } from '@luma/shared';
 import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { OptionPicker } from '@/components/common/option-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -36,6 +37,9 @@ export const PROVIDER_SPECIALTIES: ProviderSpecialty[] = [
   'pisos_revestimientos',
   'jardineria',
   'demolicion',
+  'arquitectura',
+  'diseno',
+  'drywall',
   'materiales',
   'otra',
 ];
@@ -81,18 +85,14 @@ export function ProviderFormFields({
           control={control}
           name="specialty"
           render={({ field }) => (
-            <Select value={field.value ?? ''} onValueChange={field.onChange}>
-              <SelectTrigger id={`${idPrefix}-specialty`} aria-invalid={Boolean(errors.specialty)}>
-                <SelectValue placeholder={t('provider.fields.specialtyPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVIDER_SPECIALTIES.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {t(`provider.specialty.${value}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <OptionPicker
+              id={`${idPrefix}-specialty`}
+              invalid={Boolean(errors.specialty)}
+              value={field.value}
+              onChange={field.onChange}
+              options={PROVIDER_SPECIALTIES.map((value) => ({ value, label: t(`provider.specialty.${value}`) }))}
+              placeholder={t('provider.fields.specialtyPlaceholder')}
+            />
           )}
         />
         {errors.specialty && (

@@ -43,6 +43,27 @@
       "platformRole": "user",
       "projectRole": "supervisor"
     },
+    "arquitecto": {
+      "email": "e2e-arquitecto@luma.test",
+      "password": "E2eRoles1234!",
+      "name": "Alicia Arquitecta E2E",
+      "platformRole": "user",
+      "projectRole": "arquitecto"
+    },
+    "ingeniero": {
+      "email": "e2e-ingeniero@luma.test",
+      "password": "E2eRoles1234!",
+      "name": "Ignacio Ingeniero E2E",
+      "platformRole": "user",
+      "projectRole": "ingeniero"
+    },
+    "disenador": {
+      "email": "e2e-disenador@luma.test",
+      "password": "E2eRoles1234!",
+      "name": "Diana Diseñadora E2E",
+      "platformRole": "user",
+      "projectRole": "disenador"
+    },
     "contador": {
       "email": "e2e-contador@luma.test",
       "password": "E2eRoles1234!",

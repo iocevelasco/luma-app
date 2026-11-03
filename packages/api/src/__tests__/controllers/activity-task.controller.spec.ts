@@ -234,3 +234,55 @@ describe('updateActivity — el supervisor mueve, el gerente modifica', () => {
     expect(cancelled.save).toHaveBeenCalled();
   });
 });
+
+describe('especialidades propias de la obra en las tareas', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const withCustom = {
+    ...project,
+    customSpecialties: [
+      { key: 'custom_yeseria', label: 'Yesería', archived: false },
+      { key: 'custom_vieja', label: 'Vieja', archived: true },
+    ],
+  };
+
+  function create(specialty: string) {
+    const res = mockRes();
+    return createActivity(
+      { user: { sub: 'user-1' }, project: withCustom, body: { ...validTask, specialty } } as unknown as Request,
+      res,
+    ).then(() => res);
+  }
+
+  function update(specialty: string, current = 'otra') {
+    const res = mockRes();
+    vi.mocked(Activity.findOne).mockResolvedValue(activityDoc({ specialty: current }) as never);
+    return updateActivity(
+      {
+        user: { sub: 'user-1' },
+        project: withCustom,
+        params: { activityId: 'activity-1' },
+        body: { specialty },
+        can: canFor('gerente'),
+      } as unknown as Request,
+      res,
+    ).then(() => res);
+  }
+
+  it('crea una tarea con una propia de la obra', async () => {
+    vi.mocked(Activity.create).mockResolvedValue(activityDoc({ specialty: 'custom_yeseria' }) as never);
+    expect((await create('custom_yeseria')).status).toHaveBeenCalledWith(201);
+  });
+
+  it('400 con una archivada o de otra obra, y no crea nada', async () => {
+    for (const key of ['custom_vieja', 'custom_de_otra_obra']) {
+      expect((await create(key)).status, key).toHaveBeenCalledWith(400);
+    }
+    expect(Activity.create).not.toHaveBeenCalled();
+  });
+
+  it('al editar, no deja pasar a una archivada, pero sí guardar una tarea que ya la tiene', async () => {
+    expect((await update('custom_vieja')).status).toHaveBeenCalledWith(400);
+    expect((await update('custom_vieja', 'custom_vieja')).status).not.toHaveBeenCalledWith(400);
+  });
+});

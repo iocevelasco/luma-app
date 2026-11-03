@@ -38,14 +38,40 @@ export interface PaymentScheduleItem extends MoneyAmount {
   updatedAt: string;
 }
 
-export type PaymentMethod = 'transferencia' | 'efectivo' | 'cheque' | 'otro';
+/**
+ * `transferencia` es el valor de antes de distinguir la moneda: los cobros ya
+ * cargados lo tienen, así que sigue siendo válido pero ya no se ofrece.
+ * `PAYMENT_METHOD_OPTIONS` es lo que muestra un selector.
+ */
+export type PaymentMethod =
+  | 'transferencia'
+  | 'transferencia_ves'
+  | 'transferencia_usd'
+  | 'transferencia_eur'
+  | 'pago_movil'
+  | 'zelle'
+  | 'binance'
+  | 'efectivo'
+  | 'cheque'
+  | 'otro';
 
 export const PAYMENT_METHODS: readonly PaymentMethod[] = [
   'transferencia',
+  'transferencia_ves',
+  'transferencia_usd',
+  'transferencia_eur',
+  'pago_movil',
+  'zelle',
+  'binance',
   'efectivo',
   'cheque',
   'otro',
 ] as const;
+
+/** Los que se ofrecen al registrar algo nuevo: todos menos el `transferencia` legado. */
+export const PAYMENT_METHOD_OPTIONS: readonly PaymentMethod[] = PAYMENT_METHODS.filter(
+  (method) => method !== 'transferencia',
+);
 
 /** Un cobro efectivamente recibido del cliente. */
 export interface Payment extends MoneyAmount {
@@ -93,6 +119,8 @@ export interface Expense extends MoneyAmount {
   category: ExpenseCategory;
   description: string;
   spentOn: string;
+  /** Cómo se pagó. Opcional: los gastos anteriores no lo registraron. */
+  method?: PaymentMethod;
   providerId?: string;
   providerName?: string;
   activityId?: string;

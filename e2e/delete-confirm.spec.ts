@@ -72,6 +72,9 @@ test.describe('borrar pide confirmación', () => {
 
     await page.getByRole('button', { name: /registrar cobro/i }).first().click();
     await page.locator('#payment-amount').fill('40000');
+    // El método es obligatorio y no tiene valor por defecto.
+    await page.locator('#payment-method').click();
+    await page.getByRole('option', { name: /^zelle$/i }).click();
     await page.getByRole('button', { name: /^registrar$/i }).click();
     await expect(page.getByRole('button', { name: /eliminar cobro/i })).toBeVisible();
 

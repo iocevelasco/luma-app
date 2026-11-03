@@ -1,4 +1,30 @@
 {
+  "optionPicker": {
+    "searchPlaceholder": "Buscar…",
+    "empty": "No encontramos nada con ese texto.",
+    "suggested": "Sugeridas",
+    "all": "Todas",
+    "create": "Pulsa Intro para crear «{{name}}»"
+  },
+  "specialty": {
+    "created": "Especialidad añadida.",
+    "saved": "Especialidad guardada.",
+    "unknown": "Especialidad",
+    "manage": {
+      "open": "Ver y editar las especialidades de la obra",
+      "title": "Especialidades propias",
+      "hint": "Añade las que tu obra necesita además de las de siempre. Las verás al crear una tarea.",
+      "name": "Nombre de la especialidad",
+      "placeholder": "Ej. Yesería",
+      "add": "Añadir",
+      "empty": "Todavía no has añadido ninguna.",
+      "archived": "Archivada",
+      "actions": "Acciones de {{name}}",
+      "rename": "Renombrar",
+      "archive": "Archivar",
+      "restore": "Restaurar"
+    }
+  },
   "common": {
     "appName": "Luma",
     "save": "Guardar",
@@ -162,12 +188,18 @@
     "role": {
       "gerente": "Jefe de obra",
       "supervisor": "Supervisor de obra",
+      "arquitecto": "Arquitecto",
+      "ingeniero": "Ingeniero",
+      "disenador": "Diseñador",
       "contador": "Contable",
       "cliente": "Cliente"
     },
     "roleHint": {
       "gerente": "Hace todo lo que haces tú en la obra, dinero y equipo incluidos. No puede eliminarla, quitar a otro jefe de obra ni usar la libreta de proveedores y el personal de la empresa.",
       "supervisor": "Reporta avance, asistencia y materiales desde la obra. No ve el dinero.",
+      "arquitecto": "Ve y planifica el cronograma y las actividades, informa del avance y sube planos y documentación. No ve dinero.",
+      "ingeniero": "Ve y planifica el cronograma y las actividades, informa del avance y sube planos y documentación. No ve dinero.",
+      "disenador": "Ve y planifica el cronograma y las actividades, informa del avance y sube planos y documentación. No ve dinero.",
       "contador": "Solo cobros y gastos. No ve tareas, personal ni proveedores.",
       "cliente": "Sigue el avance de su obra y su cronograma de pagos. Solo lectura."
     },
@@ -190,6 +222,9 @@
       "groups": {
         "gerente": "Jefes de obra",
         "supervisor": "Supervisores",
+        "arquitecto": "Arquitectos",
+        "ingeniero": "Ingenieros",
+        "disenador": "Diseñadores",
         "contador": "Contables",
         "cliente": "Clientes"
       },
@@ -440,6 +475,12 @@
       "removeEvidence": "No hemos podido borrar la foto.",
       "reject": "No hemos podido devolver la tarea."
     },
+    "agenda": {
+      "previousWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "empty": "No hay actividades esta semana.",
+      "today": "Hoy"
+    },
     "gantt": {
       "goToToday": "Ir a hoy",
       "zoomLabel": "Escala del cronograma",
@@ -482,6 +523,9 @@
     },
     "filters": {
       "search": "Buscar actividad o responsable",
+      "actions": "Acciones",
+      "done": "Hecho",
+      "drawerHint": "Busca y filtra las actividades",
       "people": "Filtrar por responsable",
       "button": "Filtros",
       "quick": "Rápidos",
@@ -577,6 +621,7 @@
       "emptyReadOnly": "Todavía no hay compras cargadas.",
       "withoutActivity": "Sin tarea asociada",
       "copyList": "Copiar lista",
+      "exportTitle": "Exportar lista",
       "share": "Compartir",
       "copied": "Lista copiada al portapapeles",
       "confirmStatusTitle": "Confirmar cambio de estado",
@@ -765,6 +810,9 @@
       "pisos_revestimientos": "Pisos y revestimientos",
       "jardineria": "Jardinería",
       "demolicion": "Demolición",
+      "arquitectura": "Arquitectura",
+      "diseno": "Diseño",
+      "drywall": "Pladur",
       "materiales": "Venta de materiales",
       "otra": "Otra"
     },
@@ -1256,6 +1304,46 @@
       "fix": "Corregido"
     },
     "entries": {
+      "2026-11-03": {
+        "customSpecialties": {
+          "title": "Especialidades propias de la obra",
+          "description": "Crea las especialidades que tu obra necesita, con buscador en el selector. Se añaden Arquitectura, Diseño y Drywall."
+        },
+        "paymentMethods": {
+          "title": "Más métodos de pago",
+          "description": "Registra cobros y gastos con Zelle, Binance, Pago móvil y transferencias en euros, bolívares o dólares."
+        },
+        "designRoles": {
+          "title": "Arquitecto, Ingeniero y Diseñador",
+          "description": "Tres roles nuevos para invitar a la obra: ven el cronograma y las actividades, pueden planificar y subir documentación, sin acceso al dinero."
+        },
+        "mobileAgenda": {
+          "title": "Cronograma como agenda en el móvil",
+          "description": "En el móvil el Cronograma se lee como una agenda por semana: cada día con lo que se trabaja, y las flechas para pasar de semana."
+        },
+        "mobileDrawers": {
+          "title": "Filtros y exportar en un solo botón",
+          "description": "En el móvil los filtros, la búsqueda y las acciones de la lista están en un panel que sube desde abajo. Las listas de Actividades y Compras son más compactas, y añadir es un botón con «+»."
+        },
+        "languageInAccount": {
+          "title": "Idioma en Mi cuenta",
+          "description": "El idioma se elige ahora desde Mi cuenta y ya no ocupa sitio en la cabecera."
+        },
+        "mobileHeader": {
+          "title": "Título completo en el móvil",
+          "description": "En el móvil la cabecera muestra solo el isotipo, así que el nombre de la pantalla se lee entero."
+        }
+      },
+      "2026-11-02": {
+        "productivitySurvey": {
+          "title": "Cuéntanos cómo te va",
+          "description": "Una encuesta corta de tres preguntas para saber cómo te ayuda Luma. También la tienes en el menú de tu cuenta."
+        },
+        "assistantChat": {
+          "title": "Chat con el asistente",
+          "description": "Abre el chat con el botón de abajo a la derecha y hazle tus preguntas al asistente de Luma."
+        }
+      },
       "2026-10-29": {
         "fileManager": {
           "title": "Documentación como explorador de archivos",
@@ -1378,6 +1466,12 @@
     },
     "method": {
       "transferencia": "Transferencia",
+      "transferencia_ves": "Transferencia en bolívares",
+      "transferencia_usd": "Transferencia en dólares",
+      "transferencia_eur": "Transferencia en euros",
+      "pago_movil": "Pago móvil",
+      "zelle": "Zelle",
+      "binance": "Binance",
       "efectivo": "Efectivo",
       "cheque": "Cheque",
       "otro": "Otro"
@@ -1398,6 +1492,9 @@
       "dueOn": "Vencimiento",
       "paidOn": "Fecha del cobro",
       "method": "Forma de pago",
+      "methodOptional": "Método de pago (opcional)",
+      "methodPlaceholder": "Sin especificar",
+      "methodChoose": "Elige cómo se pagó",
       "scheduleItem": "Imputar a",
       "scheduleItemPlaceholder": "A cuenta, sin cuota",
       "reference": "Referencia",
@@ -1805,6 +1902,9 @@
       "roles": {
         "gerente": "Jefe de obra",
         "supervisor": "Supervisor",
+        "arquitecto": "Arquitecto",
+        "ingeniero": "Ingeniero",
+        "disenador": "Diseñador",
         "contador": "Contable",
         "cliente": "Cliente",
         "exMiembro": "Ex-miembro"

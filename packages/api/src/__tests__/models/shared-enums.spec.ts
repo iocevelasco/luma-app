@@ -16,8 +16,16 @@ function enumOf(model: { schema: { path: (name: string) => { enumValues?: unknow
 }
 
 describe('las listas de Mongoose acompañan a @luma/shared', () => {
-  it('Activity acepta los oficios (no «materiales»)', () => {
-    expect(enumOf(Activity)).toEqual([...TRADES].sort());
+  // Activity ya no tiene un enum: acepta además las propias de la obra (`custom_…`).
+  function activityRejects(specialty: string) {
+    return Boolean(new Activity({ specialty }).validateSync()?.errors.specialty);
+  }
+
+  it('Activity acepta los oficios y las propias de la obra (no «materiales»)', () => {
+    for (const trade of TRADES) expect(activityRejects(trade), trade).toBe(false);
+    expect(activityRejects('custom_yeseria')).toBe(false);
+    expect(activityRejects('materiales')).toBe(true);
+    expect(activityRejects('yeseria')).toBe(true);
   });
 
   it('CrewMember acepta los oficios (no «materiales»)', () => {
@@ -29,8 +37,9 @@ describe('las listas de Mongoose acompañan a @luma/shared', () => {
   });
 
   it('el sistema contra incendio se puede guardar en los tres', () => {
-    for (const model of [Activity, CrewMember, Provider]) {
+    for (const model of [CrewMember, Provider]) {
       expect(enumOf(model)).toContain('fire_protection');
     }
+    expect(new Activity({ specialty: 'fire_protection' }).validateSync()?.errors.specialty).toBeUndefined();
   });
 });

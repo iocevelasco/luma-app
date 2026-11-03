@@ -19,7 +19,7 @@ export const activityStatusSchema = z.enum([
  * Duplica el catálogo de `providerSpecialtySchema` (los schemas de dominio no
  * se importan entre sí). Hay un test que falla si se desincronizan.
  */
-export const activitySpecialtySchema = z.enum([
+export const activityBaseSpecialtySchema = z.enum([
   'electricidad',
   'plomeria',
   'gas',
@@ -38,8 +38,20 @@ export const activitySpecialtySchema = z.enum([
   'pisos_revestimientos',
   'jardineria',
   'demolicion',
+  'arquitectura',
+  'diseno',
+  'drywall',
   'otra',
 ]);
+
+/** Clave de una especialidad propia de la obra: el servidor la genera, nunca el cliente. */
+export const customSpecialtyKeySchema = z.string().regex(/^custom_[a-z0-9_]{1,60}$/, 'Elegí una especialidad');
+
+/**
+ * Una de base o una propia de la obra. Que la propia exista y no esté archivada
+ * lo comprueba la API contra la obra: el schema sólo conoce la forma.
+ */
+export const activitySpecialtySchema = z.union([activityBaseSpecialtySchema, customSpecialtyKeySchema]);
 
 /** El supervisor devuelve el trabajo: el motivo es obligatorio a propósito. */
 export const rejectActivitySchema = z.object({

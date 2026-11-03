@@ -56,6 +56,11 @@ export function toProjectDTO(project: IProject): ProjectDTO {
     status: project.status,
     providersVisibleToClient: Boolean(project.providersVisibleToClient),
     purchasesVisibleToClient: Boolean(project.purchasesVisibleToClient),
+    customSpecialties: (project.customSpecialties ?? []).map((specialty) => ({
+      key: specialty.key,
+      label: specialty.label,
+      archived: Boolean(specialty.archived),
+    })),
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };

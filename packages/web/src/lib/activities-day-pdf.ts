@@ -28,7 +28,7 @@ export interface ActivitiesDayPdfLabels {
   generated: string;
   /** "Página 2 de 3". */
   page: (page: number, total: number) => string;
-  specialty: (specialty: NonNullable<Activity['specialty']>) => string;
+  specialty: (specialty: string) => string;
   status: (status: ActivityStatus) => string;
   /** Un día `YYYY-MM-DD` como se lee en el idioma de la persona. */
   day: (dayKey: string) => string;

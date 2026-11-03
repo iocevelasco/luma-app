@@ -16,6 +16,7 @@ import {
   FileDown,
   LayoutGrid,
   List,
+  ListChecks,
   PackageX,
   Pencil,
   Plus,
@@ -25,7 +26,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
+import { Controller, useForm, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -67,6 +68,9 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/components/ui/use-mobile';
+import { OptionPicker } from '@/components/common/option-picker';
+import { SpecialtiesDrawer } from '@/components/projects/custom-specialties-section';
+import { useSpecialtyLabel } from '@/hooks/activities/use-specialty-label';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -90,7 +94,7 @@ import {
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useAssignableCrew } from '@/hooks/crew/use-crew-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
-import { useProject } from '@/hooks/projects/use-project-queries';
+import { useCreateCustomSpecialty, useProject } from '@/hooks/projects/use-project-queries';
 import { useActivityFilters } from '@/hooks/activities/use-activity-filters';
 import { ACTIVITY_SPECIALTIES, ACTIVITY_STATUSES, MATERIAL_STATUSES_BLOCKING } from '@/lib/activity-catalog';
 import { activitiesOfDay } from '@/lib/activities-day';
@@ -102,6 +106,18 @@ import { allowedMoves, taskPeople } from '@/lib/task-board';
 import { isWithinNextDays } from '@/lib/week';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
+
+/** Las especialidades que más usa esta obra, de mayor a menor: el atajo del selector. */
+function topSpecialties(activities: readonly { specialty?: string }[], limit = 5): string[] {
+  const counts = new Map<string, number>();
+  for (const { specialty } of activities) {
+    if (specialty) counts.set(specialty, (counts.get(specialty) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([specialty]) => specialty);
+}
 
 /**
  * Campos del formulario de actividad, compartidos entre "Nueva actividad" y
@@ -127,6 +143,24 @@ function ActivityFormFields({
   canCancel?: boolean;
 }) {
   const { t } = useTranslation();
+  const { data: existing } = useAllActivities(projectId);
+  const { data: projectData } = useProject(projectId);
+  const { can } = useProjectCapabilities(projectId);
+  const createSpecialty = useCreateCustomSpecialty(projectId);
+  const [specialtiesOpen, setSpecialtiesOpen] = useState(false);
+  const specialtyLabel = useSpecialtyLabel();
+  const currentSpecialty = useWatch({ control, name: 'specialty' });
+  // Las archivadas no se ofrecen, salvo la que esta misma tarea ya tiene.
+  const specialtyOptions = useMemo(
+    () => [
+      ...ACTIVITY_SPECIALTIES,
+      ...(projectData?.project.customSpecialties ?? [])
+        .filter((item) => !item.archived || item.key === currentSpecialty)
+        .map((item) => item.key),
+    ].map((value) => ({ value, label: specialtyLabel(value) })),
+    [projectData?.project.customSpecialties, currentSpecialty, specialtyLabel],
+  );
+  const suggestedSpecialties = useMemo(() => topSpecialties(existing?.activities ?? []), [existing]);
   const statuses = ACTIVITY_STATUSES.filter(
     (status) => (status !== 'completada' || canReview) && (status !== 'cancelada' || canCancel),
   );
@@ -145,20 +179,42 @@ function ActivityFormFields({
           control={control}
           name="specialty"
           render={({ field }) => (
-            <Select value={field.value ?? undefined} onValueChange={field.onChange}>
-              <SelectTrigger aria-invalid={Boolean(errors.specialty)} id={`${idPrefix}-specialty`}>
-                <SelectValue placeholder={t('activity.fields.specialtyPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {ACTIVITY_SPECIALTIES.map((specialty) => (
-                  <SelectItem key={specialty} value={specialty}>
-                    {t(`provider.specialty.${specialty}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <OptionPicker
+                  id={`${idPrefix}-specialty`}
+                  invalid={Boolean(errors.specialty)}
+                  value={field.value ?? undefined}
+                  onChange={field.onChange}
+                  options={specialtyOptions}
+                  suggested={suggestedSpecialties}
+                  onCreate={can('specialty.manage') ? async (label) => (await createSpecialty.mutateAsync(label)).specialty.key : undefined}
+                  placeholder={t('activity.fields.specialtyPlaceholder')}
+                />
+              </div>
+              {can('specialty.manage') && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label={t('specialty.manage.open')}
+                  title={t('specialty.manage.open')}
+                  onClick={() => setSpecialtiesOpen(true)}
+                >
+                  <ListChecks className="size-4" />
+                </Button>
+              )}
+            </div>
           )}
         />
+        {can('specialty.manage') && (
+          <SpecialtiesDrawer
+            projectId={projectId}
+            specialties={projectData?.project.customSpecialties ?? []}
+            open={specialtiesOpen}
+            onOpenChange={setSpecialtiesOpen}
+          />
+        )}
         {errors.specialty && (
           <p className="text-sm text-destructive">{t('activity.fields.specialtyRequired')}</p>
         )}
@@ -224,6 +280,7 @@ function NewActivityDialog({
   canCancel: boolean;
 }) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const createActivity = useCreateActivity(projectId);
   const { members: assignableCrew } = useAssignableCrew(projectId);
@@ -241,9 +298,14 @@ function NewActivityDialog({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        <Plus className="size-4" />
-        {t('activity.list.new')}
+      {/* Mobile: sólo el ícono, redondo; desktop: ícono y texto. */}
+      <Button
+        size={isMobile ? 'icon-lg' : 'default'}
+        aria-label={t('activity.list.new')}
+        onClick={() => setOpen(true)}
+      >
+        <Plus className={isMobile ? 'size-5' : 'size-4'} />
+        {!isMobile && t('activity.list.new')}
       </Button>
 
       <FormDrawer
@@ -909,6 +971,7 @@ const ACTIVITIES_VIEWS: readonly ActivitiesView[] = ['gantt', 'board', 'list'];
 const loadGantt = () => import('@/components/activities/activity-gantt');
 const loadBoard = () => import('@/components/activities/task-board');
 const ActivityGantt = lazy(loadGantt);
+const ActivityAgenda = lazy(() => import('@/components/activities/activity-agenda'));
 const TaskBoard = lazy(loadBoard);
 
 /** La vista va en la URL (`?vista=`), en castellano como el resto de las rutas. */
@@ -934,6 +997,7 @@ function viewFrom(value: string | null): ActivitiesView {
  * quitarse. Las vistas pestañean sin perder el recorte.
  */
 export function ProjectActivitiesPage() {
+  const specialtyLabel = useSpecialtyLabel();
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1063,7 +1127,7 @@ export function ProjectActivitiesPage() {
           overdue: t('activity.list.overdue'),
           generated: t('activity.dayPdf.generated', { date: format(now, 'Pp', { locale: dateLocale }) }),
           page: (page, total) => t('activity.dayPdf.page', { page, total }),
-          specialty: (specialty) => t(`provider.specialty.${specialty}`),
+          specialty: (specialty) => specialtyLabel(specialty),
           status: (status) => t(`activity.status.${status}`),
           day: (dayKey) => format(fromDayKey(dayKey), 'd MMM', { locale: dateLocale }),
         },
@@ -1096,51 +1160,9 @@ export function ProjectActivitiesPage() {
           }
         : undefined;
 
-  return (
-    <>
-      <Tabs
-        value={view}
-        onValueChange={(next) => {
-          const param = VIEW_PARAM[next as ActivitiesView];
-          // `replace`: cambiar de vista no es navegar, y "atrás" vuelve a la pantalla anterior.
-          setSearchParams(param ? { vista: param } : {}, { replace: true });
-        }}
-      >
-        <PageLayout
-          width={view === 'list' ? 'default' : 'full'}
-          // El Cronograma y el Tablero ocupan el alto que queda de la ventana: las columnas
-          // del Tablero tienen que llegar hasta abajo, o soltar una tarea en la parte vacía
-          // de una columna no cuenta. En el celular el Tablero es una lista y scrollea la página.
-          fill={view === 'gantt' || (view === 'board' && !isMobile)}
-          // El aviso de filtros flota abajo: mientras haya filtros, el contenido le deja lugar.
-          reserveBottom={activeFilters > 0}
-          toolbar={
-            <>
-              <TabsList aria-label={t('activity.views.aria')} className="h-10 p-1">
-                {views.map((name) => (
-                  <TabsTrigger key={name} value={name} icon={VIEW_ICON[name]} className="h-full">
-                    {t(`activity.views.${name}`)}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <ActivityFilterControls
-                filters={effectiveFilters}
-                onChange={updateFilters}
-                onReset={resetFilters}
-                people={people}
-                canFilterMaterials={canReadMaterials}
-                canFilterReview={can('activity.review')}
-              />
-              <ActiveFiltersNotice
-                filters={effectiveFilters}
-                onChange={updateFilters}
-                onReset={resetFilters}
-                people={people}
-              />
-            </>
-          }
-          secondaryActions={
-            view === 'gantt' ? (
+  // Las acciones de la barra de arriba; en mobile van dentro del drawer de filtros.
+  const secondary = (
+            view === 'gantt' && !isMobile ? (
               <>
                 {/* La misma superficie suave que las vistas: un segmentado con aire entre opciones. */}
                 <ToggleGroup
@@ -1149,7 +1171,7 @@ export function ProjectActivitiesPage() {
                   value={zoom}
                   aria-label={t('activity.gantt.zoomLabel')}
                   onValueChange={(next) => next && setZoom(next as GanttZoom)}
-                  className={SEGMENT_LIST}
+                  className={cn(SEGMENT_LIST, 'max-w-full overflow-x-auto')}
                 >
                   {GANTT_ZOOMS.map((level) => (
                     <ToggleGroupItem
@@ -1192,7 +1214,66 @@ export function ProjectActivitiesPage() {
                 {t('crew.list.title')}
               </Button>
             ) : undefined
+  );
+
+  return (
+    <>
+      <Tabs
+        value={view}
+        onValueChange={(next) => {
+          const param = VIEW_PARAM[next as ActivitiesView];
+          // `replace`: cambiar de vista no es navegar, y "atrás" vuelve a la pantalla anterior.
+          setSearchParams(param ? { vista: param } : {}, { replace: true });
+        }}
+      >
+        <PageLayout
+          // Barra de arriba → contenido: 12 px en mobile, en vez de 24.
+          className="max-sm:gap-3"
+          width={view === 'list' ? 'default' : 'full'}
+          // El Cronograma y el Tablero ocupan el alto que queda de la ventana: las columnas
+          // del Tablero tienen que llegar hasta abajo, o soltar una tarea en la parte vacía
+          // de una columna no cuenta. En el celular el Tablero es una lista y scrollea la página.
+          fill={!isMobile && (view === 'gantt' || view === 'board')}
+          // El aviso de filtros flota abajo: mientras haya filtros, el contenido le deja lugar.
+          reserveBottom={activeFilters > 0}
+          toolbar={
+            <>
+              <div className="flex w-full items-center gap-2 md:contents">
+              <TabsList aria-label={t('activity.views.aria')} className="h-10 min-w-0 p-1 max-md:flex-1">
+                {views.map((name) => (
+                  <TabsTrigger
+                    key={name}
+                    value={name}
+                    icon={VIEW_ICON[name]}
+                    // En mobile conservan el texto —sin él no se entiende qué es cada una—
+                    // pero más compactas para entrar con el botón de filtros.
+                    className="h-full max-md:gap-1 max-md:px-2 max-md:text-xs max-md:[&_svg]:size-4"
+                  >
+                    {t(`activity.views.${name}`)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <ActivityFilterControls
+                filters={effectiveFilters}
+                onChange={updateFilters}
+                onReset={resetFilters}
+                people={people}
+                canFilterMaterials={canReadMaterials}
+                canFilterReview={can('activity.review')}
+                compact={isMobile}
+                suggestions={activities.map((activity) => activity.name)}
+                actions={isMobile ? secondary : undefined}
+              />
+            </div>
+              <ActiveFiltersNotice
+                filters={effectiveFilters}
+                onChange={updateFilters}
+                onReset={resetFilters}
+                people={people}
+              />
+            </>
           }
+          secondaryActions={isMobile ? undefined : secondary}
           /* El supervisor crea tareas; modificarlas es del gerente. */
           action={
             can('activity.create') ? (
@@ -1208,7 +1289,11 @@ export function ProjectActivitiesPage() {
           empty={view === 'board' ? undefined : empty}
         >
           <Suspense fallback={<LoadingIndicator />}>
-            {view === 'gantt' && (
+            {/* Un teléfono no tiene ancho para el diagrama: ahí el Cronograma es una agenda por semana. */}
+            {view === 'gantt' && isMobile && (
+              <ActivityAgenda activities={visible} onSelectActivity={setSelectedActivityId} />
+            )}
+            {view === 'gantt' && !isMobile && (
               <ActivityGantt
                 activities={visible}
                 range={range}

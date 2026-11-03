@@ -64,6 +64,7 @@ import {
   tasksForWeek,
   type TaskColumn,
 } from '@/lib/task-board';
+import { useSpecialtyLabel } from '@/hooks/activities/use-specialty-label';
 import { cn } from '@/lib/utils';
 import {
   currentWeekRange,
@@ -226,6 +227,7 @@ function TaskCardContent({
   onOpen?: () => void;
 }) {
   const { t } = useTranslation();
+  const specialtyLabel = useSpecialtyLabel();
   const dateLocale = useDateLocale();
   const overdue = isActivityOverdue(task.endDate, task.status);
   const returnedReason =
@@ -257,7 +259,7 @@ function TaskCardContent({
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           {task.specialty && (
             <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t(`provider.specialty.${task.specialty}`)}
+              {specialtyLabel(task.specialty)}
             </span>
           )}
           {onOpen ? (

@@ -14,8 +14,15 @@ import {
   type RowCardLeadTone,
 } from '@/components/common/row-card-list';
 import { Badge } from '@/components/ui/badge';
+import { useSpecialtyLabel } from '@/hooks/activities/use-specialty-label';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { isActivityOverdue } from '@/lib/week';
+import {
+  MOBILE_ROW,
+  MOBILE_ROW_LIST,
+  MOBILE_SECTION,
+  MOBILE_SECTIONS,
+} from '@/lib/mobile-list-density';
 
 /**
  * Qué grupo va primero: lo que pide una decisión (en revisión) y lo que está
@@ -46,6 +53,7 @@ interface ActivityListProps {
  */
 export function ActivityList({ activities, missingMaterialIds, onSelectActivity }: ActivityListProps) {
   const { t } = useTranslation();
+  const specialtyLabel = useSpecialtyLabel();
   const dateLocale = useDateLocale();
 
   const groups = useMemo(() => {
@@ -70,10 +78,15 @@ export function ActivityList({ activities, missingMaterialIds, onSelectActivity 
   const day = (key: string) => format(fromDayKey(key), 'd MMM', { locale: dateLocale });
 
   return (
-    <ListSections>
+    <ListSections className={MOBILE_SECTIONS}>
       {groups.map(({ status, items }) => (
-        <ListSection key={status} label={t(`activity.status.${status}`)} meta={items.length}>
-          <RowCardList>
+        <ListSection
+          key={status}
+          label={t(`activity.status.${status}`)}
+          meta={items.length}
+          className={MOBILE_SECTION}
+        >
+          <RowCardList className={MOBILE_ROW_LIST}>
             {items.map((activity) => {
               const overdue = isActivityOverdue(activity.endDate, activity.status);
               const missing = missingMaterialIds.has(activity.id);
@@ -83,7 +96,7 @@ export function ActivityList({ activities, missingMaterialIds, onSelectActivity 
                   : `${day(activity.startDate)} – ${day(activity.endDate)}`;
 
               return (
-                <RowCard key={activity.id}>
+                <RowCard key={activity.id} className={MOBILE_ROW}>
                   <RowCardDate
                     date={fromDayKey(activity.endDate)}
                     locale={dateLocale}
@@ -101,7 +114,7 @@ export function ActivityList({ activities, missingMaterialIds, onSelectActivity 
                       </button>
                     }
                     meta={[
-                      activity.specialty ? t(`provider.specialty.${activity.specialty}`) : null,
+                      activity.specialty ? specialtyLabel(activity.specialty) : null,
                       activity.responsible.name,
                       dates,
                     ]

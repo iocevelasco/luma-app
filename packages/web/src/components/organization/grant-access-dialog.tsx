@@ -19,7 +19,7 @@ import { useGrantProjectAccess, useProjects } from '@/hooks/projects/use-project
  * Empresa y se invita desde la obra. `gerente` tampoco se da acá: se suma
  * desde Equipo, en cada obra, que es donde se ve el tope de gerentes.
  */
-const GRANTABLE_ROLES: InvitableProjectRole[] = ['supervisor', 'contador'];
+const GRANTABLE_ROLES: InvitableProjectRole[] = ['supervisor', 'arquitecto', 'ingeniero', 'disenador', 'contador'];
 
 /**
  * Dar acceso a una persona del equipo a una o varias obras.

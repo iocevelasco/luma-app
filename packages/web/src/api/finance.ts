@@ -72,6 +72,7 @@ export const financeApi = {
     formData.append('category', payload.category);
     formData.append('description', payload.description);
     formData.append('spentOn', payload.spentOn);
+    if (payload.method) formData.append('method', payload.method);
     if (payload.providerId) formData.append('providerId', payload.providerId);
     if (payload.activityId) formData.append('activityId', payload.activityId);
     if (payload.notes) formData.append('notes', payload.notes);

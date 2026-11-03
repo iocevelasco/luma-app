@@ -2,9 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 /**
- * Selector de idioma. Vive en el header, así que el disparador muestra la
- * abreviatura y el nombre completo queda para las opciones: un trigger con
- * "Español (Argentina)" se come el ancho de la barra y termina truncado.
+ * Selector de idioma. Vive en Mi cuenta (la app se usa en Venezuela y el idioma
+ * se toca una vez, no a diario). En el header —`variant="header"`— el disparador
+ * muestra la abreviatura: un trigger con "Español (Argentina)" se come el ancho
+ * de la barra y termina truncado. En un formulario —`"form"`— muestra el nombre.
  */
 const LANGUAGES = [
   { value: 'es-AR', short: 'ES-AR', label: 'Español (Argentina)' },
@@ -12,7 +13,7 @@ const LANGUAGES = [
   { value: 'pt-BR', short: 'PT', label: 'Português (Brasil)' },
 ] as const;
 
-export function LanguageSelector() {
+export function LanguageSelector({ variant = 'header' }: { variant?: 'header' | 'form' }) {
   const { t, i18n } = useTranslation();
 
   const current = i18n.language.startsWith('pt')
@@ -20,12 +21,18 @@ export function LanguageSelector() {
     : i18n.language === 'es-ES'
       ? 'es-ES'
       : 'es-AR';
-  const short = LANGUAGES.find((l) => l.value === current)?.short ?? 'ES-AR';
+  const selected = LANGUAGES.find((l) => l.value === current);
+  const short = selected?.short ?? 'ES-AR';
 
   return (
     <Select value={current} onValueChange={(lang) => i18n.changeLanguage(lang)}>
-      <SelectTrigger className="w-auto gap-1 border-0 bg-transparent shadow-none" aria-label={t('common.language')}>
-        <SelectValue>{short}</SelectValue>
+      <SelectTrigger
+        className={
+          variant === 'header' ? 'w-auto gap-1 border-0 bg-transparent shadow-none' : 'w-full sm:w-72'
+        }
+        aria-label={t('common.language')}
+      >
+        <SelectValue>{variant === 'header' ? short : selected?.label}</SelectValue>
       </SelectTrigger>
       <SelectContent align="end">
         {LANGUAGES.map((language) => (

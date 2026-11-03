@@ -11,7 +11,17 @@ import {
   type ProjectMemberSummary,
   type ProjectRole,
 } from '@luma/shared';
-import { Briefcase, Calculator, HardHat, Trash2, User, UserPlus } from 'lucide-react';
+import {
+  Briefcase,
+  Calculator,
+  Cog,
+  DraftingCompass,
+  HardHat,
+  Palette,
+  Trash2,
+  User,
+  UserPlus,
+} from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -95,6 +105,9 @@ function ManagerSlotsMeter({ slots }: { slots: ManagerSlots }) {
 const ROLE_ICON: Record<ProjectRole, ComponentType<{ className?: string }>> = {
   gerente: Briefcase,
   supervisor: HardHat,
+  arquitecto: DraftingCompass,
+  ingeniero: Cog,
+  disenador: Palette,
   contador: Calculator,
   cliente: User,
 };

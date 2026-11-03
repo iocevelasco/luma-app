@@ -98,6 +98,9 @@ const layout = (o: Omit<EmailLayoutOptions, 'appName'>) =>
 const ROLE_LABELS: Record<string, string> = {
   gerente: 'Gerente',
   supervisor: 'Supervisor',
+  arquitecto: 'Arquitecto',
+  ingeniero: 'Ingeniero',
+  disenador: 'Diseñador',
   contador: 'Contador',
   cliente: 'Cliente',
 };

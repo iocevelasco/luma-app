@@ -7,6 +7,7 @@ import type {
   DeleteProjectInput,
   InvitableProjectRole,
   InviteProjectMemberInput,
+  UpdateCustomSpecialtyInput,
   UpdateProjectInput,
 } from '@luma/shared';
 import { projectsApi } from '@/api/projects';
@@ -74,6 +75,40 @@ export function useUpdateProject(projectId: string) {
       toast.success(t('project.detail.settingsSaved'));
     },
     onError: (error) => toast.error(errorMessage(error, t)),
+  });
+}
+
+/**
+ * Agregar una especialidad propia. Sin `onError` propio: quien la usa decide
+ * dónde mostrar la falla (el selector la pone junto al campo, no en un toast).
+ */
+export function useCreateCustomSpecialty(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (label: string) => projectsApi.createSpecialty(projectId, { label }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
+      toast.success(t('specialty.created'));
+    },
+  });
+}
+
+export function useUpdateCustomSpecialty(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: ({ key, ...payload }: { key: string } & UpdateCustomSpecialtyInput) =>
+      projectsApi.updateSpecialty(projectId, key, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
+      toast.success(t('specialty.saved'));
+    },
+    // Sin `onError`: renombrar falla dentro de un formulario y la falla va ahí;
+    // archivar y restaurar no tienen formulario y avisan con un toast desde
+    // `CustomSpecialtiesSection`.
   });
 }
 

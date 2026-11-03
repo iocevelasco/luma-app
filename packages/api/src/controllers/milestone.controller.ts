@@ -205,7 +205,9 @@ async function notifyForMilestone(project: IProject, milestone: IMilestone, acto
     type: isPublic ? 'hito' : 'eventualidad',
     subjectName: milestone.title,
     link: `/admin/proyectos/${String(project._id)}/hitos`,
-    audience: isPublic ? ['gerente', 'supervisor', 'cliente'] : ['gerente', 'supervisor'],
+    audience: isPublic
+      ? ['gerente', 'supervisor', 'arquitecto', 'ingeniero', 'disenador', 'cliente']
+      : ['gerente', 'supervisor', 'arquitecto', 'ingeniero', 'disenador'],
     actorId,
   });
 }
