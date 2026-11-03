@@ -188,12 +188,18 @@
     "role": {
       "gerente": "Jefe de obra",
       "supervisor": "Supervisor de obra",
+      "arquitecto": "Arquitecto",
+      "ingeniero": "Ingeniero",
+      "disenador": "Diseñador",
       "contador": "Contable",
       "cliente": "Cliente"
     },
     "roleHint": {
       "gerente": "Hace todo lo que haces tú en la obra, dinero y equipo incluidos. No puede eliminarla, quitar a otro jefe de obra ni usar la libreta de proveedores y el personal de la empresa.",
       "supervisor": "Reporta avance, asistencia y materiales desde la obra. No ve el dinero.",
+      "arquitecto": "Ve y planifica el cronograma y las actividades, informa del avance y sube planos y documentación. No ve dinero.",
+      "ingeniero": "Ve y planifica el cronograma y las actividades, informa del avance y sube planos y documentación. No ve dinero.",
+      "disenador": "Ve y planifica el cronograma y las actividades, informa del avance y sube planos y documentación. No ve dinero.",
       "contador": "Solo cobros y gastos. No ve tareas, personal ni proveedores.",
       "cliente": "Sigue el avance de su obra y su cronograma de pagos. Solo lectura."
     },
@@ -216,6 +222,9 @@
       "groups": {
         "gerente": "Jefes de obra",
         "supervisor": "Supervisores",
+        "arquitecto": "Arquitectos",
+        "ingeniero": "Ingenieros",
+        "disenador": "Diseñadores",
         "contador": "Contables",
         "cliente": "Clientes"
       },
@@ -1842,6 +1851,9 @@
       "roles": {
         "gerente": "Jefe de obra",
         "supervisor": "Supervisor",
+        "arquitecto": "Arquitecto",
+        "ingeniero": "Ingeniero",
+        "disenador": "Diseñador",
         "contador": "Contable",
         "cliente": "Cliente",
         "exMiembro": "Ex-miembro"

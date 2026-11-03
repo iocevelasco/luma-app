@@ -36,7 +36,7 @@ Empresa y obra no son lo mismo
 - La Empresa es quien contrata Luma. Sus datos (nombre y contacto) se editan en Configuración. Paga la suscripción el dueño de la Empresa. Quien entra invitado no paga.
 - Estar en la Empresa no abre ninguna obra. El acceso se da obra por obra, en Equipo, con el rol de esa obra.
 - Proveedores y empleados de la Empresa se comparten. Sacarlos de una obra los desasigna de esa obra; siguen en la libreta. Borrar la obra no borra la libreta de la Empresa.
-- El gerente de una obra es quien la creó. No se invita: ya es el dueño de esa obra. A una obra se invita supervisor, contador y cliente.
+- El gerente de una obra es quien la creó. No se invita: ya es el dueño de esa obra. A una obra se invita supervisor, arquitecto, ingeniero, diseñador, contador y cliente.
 
 Roles, en cristiano
 El rol es por obra, no un título global.
@@ -88,7 +88,7 @@ Hechos y eventualidades: etapa concluida, compra significativa, problema de perm
 Audiencia: "Visible para el cliente" (el cliente lo ve y recibe el aviso) o "Interno" (solo gerente y supervisor). Publicar hacia el cliente es del gerente. El supervisor puede cargar una eventualidad interna, no una visible para el cliente. Una reunión puede llevar adjuntos.
 
 Equipo
-Quién entra a ESA obra y con qué rol: supervisor, contador o cliente. Invitar a la Empresa (Empleados) no alcanza: después hay que dar acceso a las obras, desde la fila de la persona o desde Equipo. El cliente no es personal de la Empresa.
+Quién entra a ESA obra y con qué rol: supervisor, arquitecto, ingeniero, diseñador, contador o cliente. Invitar a la Empresa (Empleados) no alcanza: después hay que dar acceso a las obras, desde la fila de la persona o desde Equipo. El cliente no es personal de la Empresa.
 
 Pagos y Gastos son dos cosas
 Pagos es lo que el cliente paga a la obra: el cronograma acordado (anticipos, avances, saldo) y lo ya cobrado. Estados de una cuota: Pendiente, Parcial, Cobrado, Vencido. El cliente los ve y no los carga. El gerente y el contador sí. Un cobro no se edita: es un hecho con fecha. Si está mal, se borra y se carga de nuevo.

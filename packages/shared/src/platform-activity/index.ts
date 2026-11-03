@@ -24,6 +24,9 @@ export type ActivityPeriod = (typeof ACTIVITY_PERIODS)[number];
 export const ACTIVITY_ROLE_GROUPS = [
   'gerente',
   'supervisor',
+  'arquitecto',
+  'ingeniero',
+  'disenador',
   'contador',
   'cliente',
   'exMiembro',

@@ -485,9 +485,9 @@ export async function deleteActivityEvidence(req: Request, res: Response) {
  * anunciarlo como avance sería anunciar algo que puede volver atrás.
  */
 const STATUS_NOTIFICATIONS = {
-  en_curso: { type: 'actividad_iniciada', audience: ['gerente', 'supervisor', 'cliente'] },
+  en_curso: { type: 'actividad_iniciada', audience: ['gerente', 'supervisor', 'arquitecto', 'ingeniero', 'disenador', 'cliente'] },
   en_revision: { type: 'actividad_en_revision', audience: ['gerente'] },
-  completada: { type: 'actividad_completada', audience: ['gerente', 'supervisor', 'cliente'] },
+  completada: { type: 'actividad_completada', audience: ['gerente', 'supervisor', 'arquitecto', 'ingeniero', 'disenador', 'cliente'] },
 } as const satisfies Partial<
   Record<ActivityStatus, { type: NotificationType; audience: readonly ProjectRole[] }>
 >;

@@ -188,12 +188,18 @@
     "role": {
       "gerente": "Gerente de obra",
       "supervisor": "Supervisor de obra",
+      "arquitecto": "Arquiteto",
+      "ingeniero": "Engenheiro",
+      "disenador": "Designer",
       "contador": "Contador",
       "cliente": "Cliente"
     },
     "roleHint": {
       "gerente": "Faz tudo o que você faz na obra, dinheiro e equipe incluídos. Não pode excluí-la, remover outro gerente nem usar a lista de fornecedores e o pessoal da Empresa.",
       "supervisor": "Reporta avanço, presença e materiais do canteiro. Não vê dinheiro.",
+      "arquitecto": "Vê e planeja o cronograma e as atividades, reporta o andamento e carrega plantas e documentação. Não vê dinheiro.",
+      "ingeniero": "Vê e planeja o cronograma e as atividades, reporta o andamento e carrega plantas e documentação. Não vê dinheiro.",
+      "disenador": "Vê e planeja o cronograma e as atividades, reporta o andamento e carrega plantas e documentação. Não vê dinheiro.",
       "contador": "Apenas recebimentos e despesas. Não vê tarefas, pessoal nem fornecedores.",
       "cliente": "Acompanha o avanço da obra e seu cronograma de pagamentos. Somente leitura."
     },
@@ -216,6 +222,9 @@
       "groups": {
         "gerente": "Gerentes",
         "supervisor": "Supervisores",
+        "arquitecto": "Arquitetos",
+        "ingeniero": "Engenheiros",
+        "disenador": "Designers",
         "contador": "Contadores",
         "cliente": "Clientes"
       },
@@ -1842,6 +1851,9 @@
       "roles": {
         "gerente": "Gerente",
         "supervisor": "Supervisor",
+        "arquitecto": "Arquiteto",
+        "ingeniero": "Engenheiro",
+        "disenador": "Designer",
         "contador": "Contador",
         "cliente": "Cliente",
         "exMiembro": "Ex-membro"

@@ -12,7 +12,7 @@ const dayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida');
 export const organizationRoleSchema = z.enum(['owner', 'member']);
 
 /** Función de alguien del personal administrativo. No es un permiso: ver `CompanyStaffRole`. */
-export const companyStaffRoleSchema = z.enum(['gerente', 'supervisor', 'contador']);
+export const companyStaffRoleSchema = z.enum(['gerente', 'supervisor', 'arquitecto', 'ingeniero', 'disenador', 'contador']);
 
 export const renameOrganizationSchema = z.object({
   name: z
@@ -156,7 +156,15 @@ export const inviteMemberSchema = inviteClientSchema.extend({
  * el tope de `MAX_PROJECT_MANAGERS`, que se valida contra la base y no acá.
  * Un test lo mantiene igual a `INVITABLE_PROJECT_ROLES`.
  */
-export const invitableProjectRoleSchema = z.enum(['gerente', 'supervisor', 'contador', 'cliente']);
+export const invitableProjectRoleSchema = z.enum([
+  'gerente',
+  'supervisor',
+  'arquitecto',
+  'ingeniero',
+  'disenador',
+  'contador',
+  'cliente',
+]);
 
 /**
  * Invitar a alguien a una obra. A diferencia de `inviteClientSchema`, acá el

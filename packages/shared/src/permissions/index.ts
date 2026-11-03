@@ -24,6 +24,9 @@
  * - `supervisor`: está en el sitio. Reporta lo que pasa, no planifica ni
  *   maneja plata. Reemplaza al "Asistente de Obra" de la v1, que era un rol
  *   de Empresa y por eso entraba a TODAS sus obras.
+ * - `arquitecto`, `ingeniero` y `disenador`: profesionales de la obra. Hacen lo del
+ *   supervisor, planifican el cronograma y las actividades y cargan planos y
+ *   documentación. Sin plata y sin gestionar la obra.
  * - `contador`: lleva la plata. Cobros y gastos, nada de obra — no ve
  *   actividades, ni personal, ni proveedores, ni documentación. Es el único
  *   rol además del gerente que ve gastos, y por lo tanto el margen.
@@ -32,12 +35,19 @@
  * El proveedor NO está acá a propósito: no tiene membresía ni cuenta. Su
  * permiso nace del `ProviderEngagement` y viaja en un enlace firmado.
  */
-export type ProjectRole = 'gerente' | 'supervisor' | 'contador' | 'cliente';
+export type ProjectRole =
+  | 'gerente'
+  | 'supervisor'
+  | 'arquitecto'
+  | 'ingeniero'
+  | 'disenador'
+  | 'contador'
+  | 'cliente';
 
 /**
  * Roles que se invitan y por lo tanto se guardan en `ProjectMembership`.
  *
- * Son los cuatro: el dueño de la obra es el único gerente sin fila (se deriva
+ * Son todos: el dueño de la obra es el único gerente sin fila (se deriva
  * de `createdBy`: una obra sin dueño no existe, y tenerlo en dos lugares abre
  * la puerta a que discrepen), pero un segundo gerente es una invitación como
  * cualquier otra. La excepción es el tope: ver `MAX_PROJECT_MANAGERS`.
@@ -47,6 +57,9 @@ export type InvitableProjectRole = ProjectRole;
 export const INVITABLE_PROJECT_ROLES: readonly InvitableProjectRole[] = [
   'gerente',
   'supervisor',
+  'arquitecto',
+  'ingeniero',
+  'disenador',
   'contador',
   'cliente',
 ] as const;
@@ -97,6 +110,9 @@ export type CompanyStaffRole = Exclude<ProjectRole, 'cliente'>;
 export const COMPANY_STAFF_ROLES: readonly CompanyStaffRole[] = [
   'gerente',
   'supervisor',
+  'arquitecto',
+  'ingeniero',
+  'disenador',
   'contador',
 ] as const;
 
@@ -172,6 +188,45 @@ export type Capability =
   | 'provider.assign'
   | 'engagement.write';
 
+/** Lo que hace quien está en el sitio. Los profesionales parten de acá. */
+const SUPERVISOR_CAPABILITIES = [
+    'project.read',
+    'activity.read',
+    'activity.create',
+    'activity.report',
+    'activity.evidence.write',
+    'material.read',
+    'material.write',
+    'material.cost.read',
+    // Carga la factura de lo que compró. Sin `expense.*`: no ve Finanzas, ni
+    // cobros, así que tampoco puede calcular el margen.
+    'material.invoice.read',
+    'material.invoice.write',
+    'milestone.read',
+    'milestone.report',
+    'document.read',
+    'crew.read',
+    // Suma gente a SU obra —crear o traer de la Empresa—, pero no edita, no
+    // da de baja ni saca: el CRUD del roster sigue siendo del gerente.
+    'crew.create',
+    'crew.attendance.write',
+    'provider.read',
+    // El que está en la obra encuentra al corralón de la esquina: lo carga
+    // desde Compras sin esperar al gerente, pero sólo para esta obra.
+    'provider.create',
+    'provider.assign',
+] as const satisfies readonly Capability[];
+
+/**
+ * Arquitecto, ingeniero y diseñador: lo del supervisor, más planificar
+ * (`activity.plan`: fechas, alcance, cancelar, borrar) y cargar documentación.
+ */
+const PROFESSIONAL_CAPABILITIES: readonly Capability[] = [
+  ...SUPERVISOR_CAPABILITIES,
+  'activity.plan',
+  'document.write',
+];
+
 /**
  * La grilla. Una fila por rol; lo que no está listado, no se puede.
  *
@@ -245,33 +300,14 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'provider.assign',
     'engagement.write',
   ],
-  supervisor: [
-    'project.read',
-    'activity.read',
-    'activity.create',
-    'activity.report',
-    'activity.evidence.write',
-    'material.read',
-    'material.write',
-    'material.cost.read',
-    // Carga la factura de lo que compró. Sin `expense.*`: no ve Finanzas, ni
-    // cobros, así que tampoco puede calcular el margen.
-    'material.invoice.read',
-    'material.invoice.write',
-    'milestone.read',
-    'milestone.report',
-    'document.read',
-    'crew.read',
-    // Suma gente a SU obra —crear o traer de la Empresa—, pero no edita, no
-    // da de baja ni saca: el CRUD del roster sigue siendo del gerente.
-    'crew.create',
-    'crew.attendance.write',
-    'provider.read',
-    // El que está en la obra encuentra al corralón de la esquina: lo carga
-    // desde Compras sin esperar al gerente, pero sólo para esta obra.
-    'provider.create',
-    'provider.assign',
-  ],
+  supervisor: SUPERVISOR_CAPABILITIES,
+  // Arquitecto, ingeniero y diseñador: el trabajo del supervisor más planificar
+  // el cronograma y cargar planos y renders, que es lo que aportan. Cerrar una
+  // tarea (`activity.review`) y la plata siguen siendo del gerente. Hoy son
+  // iguales; si el cliente los separa, cada uno tiene su fila.
+  arquitecto: PROFESSIONAL_CAPABILITIES,
+  ingeniero: PROFESSIONAL_CAPABILITIES,
+  disenador: PROFESSIONAL_CAPABILITIES,
   // La documentación es la columna derecha de la matriz: el cliente accede a
   // permisos, condiciones del sitio, planos y renders. Es lo único operativo
   // que la matriz le abre explícitamente, así que no pasa por ningún flag.

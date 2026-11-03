@@ -15,6 +15,9 @@ import path from 'node:path';
  * | `user`       | Usuario común sin obras: ve el estado vacío del panel   |
  * | `gerente`    | Dueño de la obra compartida (`E2E_PROJECT_NAME`)        |
  * | `supervisor` | Supervisor en esa obra                                  |
+ * | `arquitecto` | Arquitecto en esa obra                                  |
+ * | `ingeniero`  | Ingeniero en esa obra                                   |
+ * | `disenador`  | Diseñador en esa obra                                   |
  * | `contador`   | Contador en esa obra                                    |
  * | `cliente`    | Cliente en esa obra                                     |
  * | `inactive`   | Cuenta dada de baja: el login la rechaza                |
@@ -33,12 +36,22 @@ export type E2EUserKey =
   | 'gerente'
   | 'cogerente'
   | 'supervisor'
+  | 'arquitecto'
+  | 'ingeniero'
+  | 'disenador'
   | 'contador'
   | 'cliente'
   | 'inactive';
 
 /** Los roles de obra que tienen una cuenta fija en la obra compartida. */
-export type E2EProjectRoleKey = 'gerente' | 'supervisor' | 'contador' | 'cliente';
+export type E2EProjectRoleKey =
+  | 'gerente'
+  | 'supervisor'
+  | 'arquitecto'
+  | 'ingeniero'
+  | 'disenador'
+  | 'contador'
+  | 'cliente';
 
 interface E2EUserFixture {
   email: string;

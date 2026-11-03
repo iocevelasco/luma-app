@@ -178,7 +178,16 @@ export interface RoleFacts {
 export function resolveRole(project: string, actor: string, facts: RoleFacts): ActivityRoleGroup {
   if (facts.owners.get(project) === actor) return 'gerente';
   const role = facts.memberships.get(`${project}:${actor}`);
-  if (role === 'supervisor' || role === 'contador' || role === 'cliente') return role;
+  if (
+    role === 'supervisor' ||
+    role === 'arquitecto' ||
+    role === 'ingeniero' ||
+    role === 'disenador' ||
+    role === 'contador' ||
+    role === 'cliente'
+  ) {
+    return role;
+  }
   return 'exMiembro';
 }
 
