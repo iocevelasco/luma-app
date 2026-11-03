@@ -1,4 +1,5 @@
 import { STATUS_BY_ERROR_CODE, type ApiErrorCode } from '@luma/shared';
+import type { NextFunction, Request, Response } from 'express';
 
 /**
  * El error que lanza la API cuando sabe qué pasó.
@@ -89,3 +90,20 @@ export const materialsLocked = (ids: string[], action: 'delete' | 'update') => {
     { ids },
   );
 };
+
+/**
+ * Express 4 no atrapa el `throw` de un handler async: sin esto el rechazo queda
+ * sin manejar y, en Node moderno, tira abajo el proceso entero. Todo error va por
+ * `next(error)` al `errorHandler`, que le da la forma `{ success, error, code }`.
+ *
+ * Un handler que **lanza** (`throw notFound(...)`) tiene que ir envuelto acá.
+ */
+export function wrapAsync(handler: (req: Request, res: Response) => Promise<unknown>) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await handler(req, res);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
