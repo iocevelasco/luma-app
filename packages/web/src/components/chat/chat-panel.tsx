@@ -1,22 +1,36 @@
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
+import type { ChatStoreHook } from '@/lib/chat/chat-store';
 import { ChatConversation } from './chat-conversation';
 
 /**
  * Panel lateral del chat. Al cerrarlo se desmonta la vista, no la
- * conversación: ésta vive en memoria en `useChatStore`.
+ * conversación: ésta vive en memoria en el store.
  */
-export function ChatPanel({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function ChatPanel({
+  open,
+  onOpenChange,
+  store,
+  title,
+  description,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Sin store usa el del prototipo (asistente simulado). */
+  store?: ChatStoreHook;
+  title?: string;
+  description?: string;
+}) {
   const { t } = useTranslation();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="surface-light flex w-full flex-col gap-0 bg-background p-0 text-foreground sm:max-w-lg">
         <div className="border-b border-border px-4 py-3">
-          <SheetTitle>{t('secureChat.title')}</SheetTitle>
-          <SheetDescription>{t('secureChat.prototypeNote')}</SheetDescription>
+          <SheetTitle>{title ?? t('secureChat.title')}</SheetTitle>
+          <SheetDescription>{description ?? t('secureChat.prototypeNote')}</SheetDescription>
         </div>
         <div className="min-h-0 flex-1">
-          <ChatConversation />
+          <ChatConversation store={store} />
         </div>
       </SheetContent>
     </Sheet>

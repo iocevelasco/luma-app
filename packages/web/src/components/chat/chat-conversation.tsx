@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useChatStore } from '@/lib/chat/chat-store';
+import { useChatStore, type ChatStoreHook } from '@/lib/chat/chat-store';
 import { ALLOWED_IMAGE_TYPES, CHAT_LIMITS } from '@/lib/chat/limits';
 import type { ChatMessage } from '@/lib/chat/types';
 import { clampTitle } from '@/lib/chat/content';
@@ -142,12 +142,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
 /**
  * El contenido del chat, sin el contenedor: así vive igual en un panel lateral
- * que en una página. El estado está en `useChatStore`, no acá, por eso cerrar
- * el panel no pierde la conversación.
+ * que en una página. El estado está en el store, no acá, por eso cerrar el
+ * panel no pierde la conversación. Sin `store` usa el del prototipo.
  */
-export function ChatConversation() {
+export function ChatConversation({ store: useStore = useChatStore }: { store?: ChatStoreHook }) {
   const { t } = useTranslation();
-  const store = useChatStore();
+  const store = useStore();
+  const attachments = store.capabilities.attachments;
   const [draft, setDraft] = useState('');
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -191,7 +192,7 @@ export function ChatConversation() {
   /** Pegar una imagen la adjunta (pasa por la misma validación). El texto pegado sigue su camino normal. */
   function onPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
     const files = Array.from(e.clipboardData?.files ?? []);
-    if (files.length === 0) return;
+    if (!attachments || files.length === 0) return;
     e.preventDefault();
     void store.addFiles(files);
   }
@@ -200,8 +201,9 @@ export function ChatConversation() {
 
   function onDragOver(e: DragEvent) {
     if (!hasFiles(e)) return;
+    // Siempre se frena: un archivo soltado fuera de un destino navega a él y tira la app.
     e.preventDefault();
-    setDragging(true);
+    if (attachments) setDragging(true);
   }
 
   function onDragLeave(e: DragEvent) {
@@ -213,7 +215,7 @@ export function ChatConversation() {
     e.preventDefault();
     setDragging(false);
     // Sólo archivos: texto o URLs arrastrados desde otra página se ignoran.
-    void store.addFiles(Array.from(e.dataTransfer.files));
+    if (attachments) void store.addFiles(Array.from(e.dataTransfer.files));
   }
 
   const title = clampTitle(store.title);
@@ -314,27 +316,29 @@ export function ChatConversation() {
             maxLength={CHAT_LIMITS.maxUserChars}
             className="field-sizing-content max-h-40 min-h-12 w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
           />
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            // Sólo orienta al selector del sistema; la validación real está en `validateAttachments`.
-            accept={ALLOWED_IMAGE_TYPES.join(',')}
-            className="hidden"
-            data-testid="file-input"
-            onChange={onFiles}
-          />
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1">
-              {/* Los dos abren el mismo selector: sólo se aceptan imágenes. */}
-              <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attach')} onClick={() => fileRef.current?.click()}>
-                <ImagePlus aria-hidden />
-              </Button>
-              <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attachFile')} onClick={() => fileRef.current?.click()}>
-                <Paperclip aria-hidden />
-              </Button>
-            </div>
-            <div className="flex items-center gap-1">
+            {attachments && (
+              <div className="flex items-center gap-1">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  multiple
+                  // Sólo orienta al selector del sistema; la validación real está en `validateAttachments`.
+                  accept={ALLOWED_IMAGE_TYPES.join(',')}
+                  className="hidden"
+                  data-testid="file-input"
+                  onChange={onFiles}
+                />
+                {/* Los dos abren el mismo selector: sólo se aceptan imágenes. */}
+                <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attach')} onClick={() => fileRef.current?.click()}>
+                  <ImagePlus aria-hidden />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attachFile')} onClick={() => fileRef.current?.click()}>
+                  <Paperclip aria-hidden />
+                </Button>
+              </div>
+            )}
+            <div className="ms-auto flex items-center gap-1">
               {store.isStreaming && (
                 <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.stop')} onClick={store.stop}>
                   <Square aria-hidden />

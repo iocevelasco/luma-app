@@ -55,6 +55,59 @@ Fuera del alcance de este PR (no hay backend de chat todavía):
 8. **Secretos**: claves del proveedor de IA sólo en el servidor
    (`config/app.config.ts`); nunca en el bundle ni en `VITE_*`.
 
+## Conexión con NexusBot
+
+El botón flotante del panel (`LiveChat`, en `DashboardLayout`) reemplazó al widget
+de NexusBot. El prototipo de `/admin/chat-prototipo` sigue con datos simulados y
+su propio store: no comparten conversación.
+
+```
+navegador ──POST /api/chat/session──▶ API de Luma ──X-API-KEY──▶ NexusBot /api/v1/sessions
+    │            { conversationId }        (sin correo, sin cuerpo de NexusBot)
+    │◀── { sessionToken, expiresAt } ──────┘
+    └──POST /api/v1/chat/stream  (Bearer sessionToken, SSE, sin cookies) ──▶ NexusBot
+```
+
+- **La clave de NexusBot no sale de la API.** El navegador sólo recibe un token
+  efímero, que vive en memoria (nada en `localStorage`).
+- **Una conversación = una sesión.** `conversationId` lo genera el navegador;
+  "Nueva conversación" pide otra sesión, así que NexusBot (que guarda memoria por
+  sesión) tampoco recuerda lo anterior.
+- **Token vencido:** se renueva 30 s antes de vencer y, si NexusBot responde
+  `token_expired` antes de contestar, se pide uno nuevo y se reintenta una vez
+  (nunca si ya se mostró texto).
+- **Errores por código, nunca por texto.** Los códigos de NexusBot
+  (`rate_limited`, `token_expired`, `origin_not_allowed`, `llm_error`…) se
+  reducen a un mensaje propio y traducido. El mensaje del servidor no llega a la UI
+  ni a la consola. La API de Luma tampoco reenvía su cuerpo: responde en el sobre
+  estándar y un fallo de NexusBot es un 503 propio.
+- **Privacidad:** la sesión se abre con metadata vacía. Antes viajaba el correo de
+  la persona, que NexusBot guarda y mete en el prompt que va al proveedor del
+  modelo. Las sesiones ya creadas conservan el correo hasta que se reemplace su
+  metadata; las nuevas no lo llevan.
+- **Sin adjuntos:** NexusBot sólo recibe texto (`deepseek-chat`). En modo real no
+  hay botones, pegado ni arrastre de imágenes; un archivo soltado se frena para que
+  el navegador no navegue a él. Se activan con `capabilities.attachments` cuando
+  haya soporte.
+- **CSP más estricta:** ya no se carga ningún script de NexusBot, así que su origen
+  salió de `scriptSrc`. Queda sólo en `connectSrc`, para el stream.
+- **Límite de sesiones:** `/api/chat/session` tiene rate limit por IP en producción
+  (30 cada 15 min).
+
+### Pendiente en NexusBot (repo aparte, no se tocó acá)
+
+1. **Rate limit por tenant, por sesión y por mensaje** en `/sessions` y
+   `/chat/stream` (hoy sólo lo tiene el admin). Es lo que protege el gasto del modelo.
+2. **Historial:** un `GET` con el Bearer de sesión para restaurar conversaciones. Sin
+   él, `restoreHistory` sólo se usa con datos simulados.
+3. **Adjuntos:** requeriría un modelo con visión y un endpoint que reciba imágenes
+   (y que verifique su contenido real, como en "Pendiente de backend").
+4. **CORS:** el origen de la SPA (producción y `http://localhost:6173`) tiene que
+   estar en `allowedOrigins` del proyecto `luma`; si no, el stream falla.
+5. **Memoria de sesión:** `userMetadata` se reemplaza sólo si se manda; para limpiar
+   el correo de sesiones viejas hay que reenviarlas con `{}` o borrarlas.
+6. **Pruebas automáticas** del backend de NexusBot: hoy no hay ninguna en el repo.
+
 ## Pruebas
 
 `pnpm --filter @luma/web test src/lib/chat src/components/chat` cubre: `<script>` y

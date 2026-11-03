@@ -107,7 +107,7 @@ if (isProduction) {
   });
 }
 
-/** Origen de NexusBot, si está configurado. El widget y el stream salen del navegador. */
+/** Origen de NexusBot, si está configurado. El stream de mensajes sale del navegador. */
 function nexusbotOrigin(): string | null {
   const raw = NEXUSBOT_CONFIG.API_URL;
   if (!raw) return null;
@@ -128,14 +128,9 @@ app.use(
           directives: {
             defaultSrc: ["'self'"],
             // Stripe: Stripe.js y el checkout embebido de la suscripción.
-            // NexusBot: el script del botón y el stream de mensajes.
-            scriptSrc: [
-              "'self'",
-              'https://www.google.com',
-              'https://www.gstatic.com',
-              'https://js.stripe.com',
-              ...(chatOrigin ? [chatOrigin] : []),
-            ],
+            // NexusBot ya no carga ningún script: el chat es un componente de la
+            // SPA y sólo necesita `connectSrc` para el stream de mensajes.
+            scriptSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://js.stripe.com'],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
             imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://*.stripe.com'],

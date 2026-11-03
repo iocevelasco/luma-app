@@ -2059,7 +2059,11 @@
       "empty": "Escribe un mensaje o adjunta una imagen.",
       "tooLong": "El mensaje es demasiado largo o la conversación ha llegado a su límite.",
       "busy": "Espera a que termine la respuesta o deténla.",
-      "stream": "No hemos podido obtener la respuesta. Inténtalo de nuevo."
+      "stream": "No hemos podido obtener la respuesta. Inténtalo de nuevo.",
+      "network": "Problema de conexión. Revisa tu internet e inténtalo de nuevo.",
+      "rateLimited": "Estás enviando mensajes demasiado rápido. Espera un momento.",
+      "session": "No hemos podido abrir la conversación. Inténtalo de nuevo.",
+      "unavailable": "El asistente no está disponible en este momento. Inténtalo más tarde."
     },
     "rejections": {
       "tooMany": "{{name}}: has llegado al máximo de imágenes por mensaje.",
@@ -2075,6 +2079,8 @@
     "dropHere": "Suelta las imágenes para adjuntarlas",
     "inputHint": "Enter envía, Mayús+Enter hace un salto de línea",
     "sent": "Enviado",
-    "attachFile": "Adjuntar archivo"
+    "attachFile": "Adjuntar archivo",
+    "liveTitle": "Asistente de Luma",
+    "liveDescription": "Resuelve dudas sobre cómo usar Luma. No ve los datos de tus obras."
   }
 }
