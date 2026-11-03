@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 interface AppLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  /** Sólo el isotipo (el triángulo), sin el nombre. */
+  isotypeOnly?: boolean;
 }
 
 /** Alto del logo; el ancho sale de su proporción. */
@@ -20,12 +22,13 @@ const sizes = {
  * consumen desde este único lugar. Hereda el color del texto de donde esté
  * (`currentColor`), así sirve sobre el chrome oscuro y sobre superficies claras.
  */
-export function AppLogo({ size = 'md', className }: AppLogoProps) {
+export function AppLogo({ size = 'md', className, isotypeOnly = false }: AppLogoProps) {
   const { t } = useTranslation();
 
   return (
     <BranchLumaLogo
       title={t('common.appName')}
+      isotypeOnly={isotypeOnly}
       className={cn('w-auto shrink-0 select-none', sizes[size], className)}
     />
   );

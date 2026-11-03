@@ -9,6 +9,7 @@ import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { TruncatedText } from '@/components/common/truncated-text';
 import { ActivityStatusBadge } from '@/components/common/activity-status-badge';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useSpecialtyLabel } from '@/hooks/activities/use-specialty-label';
 import type { GanttZoom } from '@/lib/gantt-zoom';
 import { cn } from '@/lib/utils';
@@ -284,6 +285,11 @@ export function ActivityGantt({
     return [...rows, ...spacers];
   }, [activities, trailingRows, range.from]);
 
+  // Por debajo de 650 px la librería pasa a su modo compacto: muestra la grilla **o** el
+  // diagrama, no los dos, y por defecto la grilla, así que las barras —lo que distingue al
+  // cronograma de la Lista— quedaban fuera de pantalla. En un teléfono se muestra sólo el
+  // diagrama; el nombre va dentro de cada barra y el resto está en el detalle al tocarla.
+  const isMobile = useIsMobile();
   const columns: IColumnConfig[] = useMemo(
     () => [
       { id: 'text', header: t('activity.fields.name'), width: 180, flexgrow: 1, cell: TextCell },
@@ -398,6 +404,7 @@ export function ActivityGantt({
           cellHeight={40}
           cellBorders="full"
           gridWidth={580}
+          displayMode={isMobile ? 'chart' : 'all'}
           readonly={!onReschedule}
           init={handleInit}
         />

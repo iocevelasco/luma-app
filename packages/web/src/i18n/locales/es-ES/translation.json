@@ -475,6 +475,12 @@
       "removeEvidence": "No hemos podido borrar la foto.",
       "reject": "No hemos podido devolver la tarea."
     },
+    "agenda": {
+      "previousWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "empty": "No hay actividades esta semana.",
+      "today": "Hoy"
+    },
     "gantt": {
       "goToToday": "Ir a hoy",
       "zoomLabel": "Escala del cronograma",
@@ -517,6 +523,9 @@
     },
     "filters": {
       "search": "Buscar actividad o responsable",
+      "actions": "Acciones",
+      "done": "Hecho",
+      "drawerHint": "Busca y filtra las actividades",
       "people": "Filtrar por responsable",
       "button": "Filtros",
       "quick": "Rápidos",
@@ -612,6 +621,7 @@
       "emptyReadOnly": "Todavía no hay compras cargadas.",
       "withoutActivity": "Sin tarea asociada",
       "copyList": "Copiar lista",
+      "exportTitle": "Exportar lista",
       "share": "Compartir",
       "copied": "Lista copiada al portapapeles",
       "confirmStatusTitle": "Confirmar cambio de estado",
@@ -1294,6 +1304,46 @@
       "fix": "Corregido"
     },
     "entries": {
+      "2026-11-03": {
+        "customSpecialties": {
+          "title": "Especialidades propias de la obra",
+          "description": "Crea las especialidades que tu obra necesita, con buscador en el selector. Se añaden Arquitectura, Diseño y Drywall."
+        },
+        "paymentMethods": {
+          "title": "Más métodos de pago",
+          "description": "Registra cobros y gastos con Zelle, Binance, Pago móvil y transferencias en euros, bolívares o dólares."
+        },
+        "designRoles": {
+          "title": "Arquitecto, Ingeniero y Diseñador",
+          "description": "Tres roles nuevos para invitar a la obra: ven el cronograma y las actividades, pueden planificar y subir documentación, sin acceso al dinero."
+        },
+        "mobileAgenda": {
+          "title": "Cronograma como agenda en el móvil",
+          "description": "En el móvil el Cronograma se lee como una agenda por semana: cada día con lo que se trabaja, y las flechas para pasar de semana."
+        },
+        "mobileDrawers": {
+          "title": "Filtros y exportar en un solo botón",
+          "description": "En el móvil los filtros, la búsqueda y las acciones de la lista están en un panel que sube desde abajo. Las listas de Actividades y Compras son más compactas, y añadir es un botón con «+»."
+        },
+        "languageInAccount": {
+          "title": "Idioma en Mi cuenta",
+          "description": "El idioma se elige ahora desde Mi cuenta y ya no ocupa sitio en la cabecera."
+        },
+        "mobileHeader": {
+          "title": "Título completo en el móvil",
+          "description": "En el móvil la cabecera muestra solo el isotipo, así que el nombre de la pantalla se lee entero."
+        }
+      },
+      "2026-11-02": {
+        "productivitySurvey": {
+          "title": "Cuéntanos cómo te va",
+          "description": "Una encuesta corta de tres preguntas para saber cómo te ayuda Luma. También la tienes en el menú de tu cuenta."
+        },
+        "assistantChat": {
+          "title": "Chat con el asistente",
+          "description": "Abre el chat con el botón de abajo a la derecha y hazle tus preguntas al asistente de Luma."
+        }
+      },
       "2026-10-29": {
         "fileManager": {
           "title": "Documentación como explorador de archivos",

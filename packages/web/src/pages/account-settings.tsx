@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormShell } from '@/components/common/form-shell';
+import { LanguageSelector } from '@/components/language-selector';
 import { OrganizationProfile } from '@/components/organization/organization-panel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,15 @@ export function AccountSettingsPage() {
     <div className="flex w-full flex-col gap-4 p-3 md:p-4">
       {/* Nombre y contacto de la Empresa: se tocan una vez, no es una pantalla de uso diario. */}
       <OrganizationProfile />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('common.language')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LanguageSelector variant="form" />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

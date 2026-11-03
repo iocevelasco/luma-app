@@ -1,11 +1,21 @@
-import { useId, type ReactNode } from 'react';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { useId, useMemo, useState, type ReactNode } from 'react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ActivityStatusIcon } from '@/components/common/activity-status-icon';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SearchField } from '@/components/common/search-field';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ACTIVITY_STATUSES } from '@/lib/activity-catalog';
@@ -28,10 +38,83 @@ interface ActivityFilterControlsProps {
   canFilterMaterials: boolean;
   /** `activity.review`: "esperando revisión" es del que cierra. */
   canFilterReview: boolean;
+  /**
+   * Mobile: un solo botón que abre un drawer con todo — búsqueda, filtros y las
+   * acciones de la vista. Sin buscador ni avatares sueltos en la barra.
+   */
+  compact?: boolean;
+  /** Nombres de las actividades, para autocompletar la búsqueda (`compact`). */
+  suggestions?: string[];
+  /** Las acciones secundarias de la vista, que en mobile viven en el drawer (`compact`). */
+  actions?: ReactNode;
 }
 
 /** Cuántos responsables se ofrecen como avatar de un toque; el resto, en el panel. */
 const AVATAR_LIMIT = 5;
+
+/** Sin mayúsculas ni tildes: "fundacion" encuentra "Fundación". */
+function normalize(text: string): string {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+const MAX_SUGGESTIONS = 6;
+
+/**
+ * La búsqueda del drawer de mobile: el campo a lo ancho y, debajo, hasta 6 nombres
+ * de actividades que coinciden con lo escrito (autocompletado).
+ */
+function SearchWithSuggestions({
+  value,
+  onChange,
+  suggestions,
+}: {
+  value: string;
+  onChange: (text: string) => void;
+  suggestions: string[];
+}) {
+  const { t } = useTranslation();
+
+  const matches = useMemo(() => {
+    const query = normalize(value.trim());
+    if (!query) return [];
+    return [...new Set(suggestions)]
+      .filter((name) => {
+        const candidate = normalize(name);
+        return candidate.includes(query) && candidate !== query;
+      })
+      .slice(0, MAX_SUGGESTIONS);
+  }, [suggestions, value]);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <SearchField
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={t('activity.filters.search')}
+        aria-label={t('activity.filters.search')}
+        autoComplete="off"
+        wrapperClassName="w-full"
+        className="h-11 w-full"
+      />
+      {matches.length > 0 && (
+        <ul role="listbox" className="overflow-hidden rounded-md bg-card shadow-surface">
+          {matches.map((name) => (
+            <li key={name} role="option" aria-selected={false}>
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+                onClick={() => onChange(name)}
+              >
+                <Search aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 truncate">{name}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
@@ -73,78 +156,26 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/**
- * Los controles de filtro de Actividades: búsqueda, responsables de un toque
- * (como los avatares de Jira) y el panel con el resto. Van en la barra de
- * arriba, a la derecha de las vistas, y valen para las tres.
- *
- * El botón lleva el conteo de filtros puestos: si algo quedó guardado de otra
- * vez, es lo primero que se ve (el detalle, en `ActiveFiltersNotice`).
- */
-export function ActivityFilterControls({
+/** Los grupos de filtros: los mismos en el panel de escritorio y en el drawer de mobile. */
+function FilterGroups({
   filters,
   onChange,
   onReset,
   people,
   canFilterMaterials,
   canFilterReview,
-}: ActivityFilterControlsProps) {
+  active,
+}: Pick<
+  ActivityFilterControlsProps,
+  'filters' | 'onChange' | 'onReset' | 'people' | 'canFilterMaterials' | 'canFilterReview'
+> & { active: number }) {
   const { t } = useTranslation();
-  const active = countActiveFilters(filters);
   // Un `id` por persona sale del índice, no de su clave: la clave es `name:juan perez`,
   // con dos puntos y espacios, y un `id` con espacios no es válido en HTML.
   const personIdBase = useId();
 
   return (
     <>
-      <SearchField
-        value={filters.text}
-        onChange={(event) => onChange({ text: event.target.value })}
-        placeholder={t('activity.filters.search')}
-        aria-label={t('activity.filters.search')}
-        // 40 px, el alto de toda la barra de Actividades (ver `TOOLBAR_H`).
-        className="h-10 w-44 sm:w-56"
-      />
-
-      {people.length > 1 && (
-        <div role="group" aria-label={t('activity.filters.people')} className="flex items-center -space-x-1.5">
-          {people.slice(0, AVATAR_LIMIT).map((person) => {
-            const selected = filters.responsibles.includes(person.key);
-            return (
-              <button
-                key={person.key}
-                type="button"
-                title={person.name}
-                aria-label={person.name}
-                aria-pressed={selected}
-                onClick={() => onChange({ responsibles: toggle(filters.responsibles, person.key) })}
-                className={cn(
-                  'rounded-full outline-none transition-transform hover:z-10 hover:-translate-y-0.5 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring',
-                  selected && 'z-10 ring-2 ring-primary',
-                )}
-              >
-                <Avatar className="size-8 border-2 border-background">
-                  <AvatarFallback className="text-2xs">{initials(person.name)}</AvatarFallback>
-                </Avatar>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button type="button" variant="outline" className="h-10" data-testid="activity-filters-button">
-            <SlidersHorizontal className="size-4" />
-            {t('activity.filters.button')}
-            {active > 0 && (
-              <span className="rounded-full bg-primary px-1.5 text-2xs font-medium tabular-nums text-primary-foreground">
-                {active}
-              </span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="flex max-h-[70dvh] w-80 flex-col gap-5 overflow-y-auto">
           <Group title={t('activity.filters.quick')}>
             <CheckRow
               id="af-mine"
@@ -208,6 +239,158 @@ export function ActivityFilterControls({
               {t('activity.filters.clear')}
             </Button>
           )}
+    </>
+  );
+}
+
+/**
+ * Los controles de filtro de Actividades: búsqueda, responsables de un toque
+ * (como los avatares de Jira) y el panel con el resto. Van en la barra de
+ * arriba, a la derecha de las vistas, y valen para las tres.
+ *
+ * El botón lleva el conteo de filtros puestos: si algo quedó guardado de otra
+ * vez, es lo primero que se ve (el detalle, en `ActiveFiltersNotice`).
+ */
+export function ActivityFilterControls({
+  filters,
+  onChange,
+  onReset,
+  people,
+  canFilterMaterials,
+  canFilterReview,
+  compact = false,
+  suggestions = [],
+  actions,
+}: ActivityFilterControlsProps) {
+  const { t } = useTranslation();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const active = countActiveFilters(filters);
+
+  if (compact) {
+    return (
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10"
+            aria-label={t('activity.filters.button')}
+            data-testid="activity-filters-button"
+          >
+            <SlidersHorizontal className="size-4" />
+            {active > 0 && (
+              <span className="rounded-full bg-primary px-1.5 text-2xs font-medium tabular-nums text-primary-foreground">
+                {active}
+              </span>
+            )}
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="max-h-[88dvh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle>{t('activity.filters.button')}</DrawerTitle>
+            <DrawerDescription className="sr-only">{t('activity.filters.drawerHint')}</DrawerDescription>
+          </DrawerHeader>
+          <div className="flex flex-col gap-5 overflow-y-auto px-4 pb-4">
+            <SearchWithSuggestions
+              value={filters.text}
+              onChange={(text) => onChange({ text })}
+              suggestions={suggestions}
+            />
+            <FilterGroups
+              filters={filters}
+              onChange={onChange}
+              onReset={onReset}
+              people={people}
+              canFilterMaterials={canFilterMaterials}
+              canFilterReview={canFilterReview}
+              active={active}
+            />
+            {actions && (
+              <Group title={t('activity.filters.actions')}>
+                {/* Tocar una acción cierra el drawer: lo que abre (un diálogo, una descarga) va encima. */}
+                <div
+                  className="flex flex-col gap-2 [&_button]:w-full [&_button]:justify-start"
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  {actions}
+                </div>
+              </Group>
+            )}
+          </div>
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button type="button">{t('activity.filters.done')}</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <>
+      <SearchField
+        value={filters.text}
+        onChange={(event) => onChange({ text: event.target.value })}
+        placeholder={t('activity.filters.search')}
+        aria-label={t('activity.filters.search')}
+        // 40 px, el alto de toda la barra de Actividades (ver `TOOLBAR_H`).
+        className="h-10 w-44 sm:w-56"
+      />
+
+      {people.length > 1 && (
+        <div role="group" aria-label={t('activity.filters.people')} className="flex items-center -space-x-1.5">
+          {people.slice(0, AVATAR_LIMIT).map((person) => {
+            const selected = filters.responsibles.includes(person.key);
+            return (
+              <button
+                key={person.key}
+                type="button"
+                title={person.name}
+                aria-label={person.name}
+                aria-pressed={selected}
+                onClick={() => onChange({ responsibles: toggle(filters.responsibles, person.key) })}
+                className={cn(
+                  'rounded-full outline-none transition-transform hover:z-10 hover:-translate-y-0.5 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring',
+                  selected && 'z-10 ring-2 ring-primary',
+                )}
+              >
+                <Avatar className="size-8 border-2 border-background">
+                  <AvatarFallback className="text-2xs">{initials(person.name)}</AvatarFallback>
+                </Avatar>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10"
+            data-testid="activity-filters-button"
+          >
+            <SlidersHorizontal className="size-4" />
+            {t('activity.filters.button')}
+            {active > 0 && (
+              <span className="rounded-full bg-primary px-1.5 text-2xs font-medium tabular-nums text-primary-foreground">
+                {active}
+              </span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="flex max-h-[70dvh] w-80 flex-col gap-5 overflow-y-auto">
+          <FilterGroups
+            filters={filters}
+            onChange={onChange}
+            onReset={onReset}
+            people={people}
+            canFilterMaterials={canFilterMaterials}
+            canFilterReview={canFilterReview}
+            active={active}
+          />
         </PopoverContent>
       </Popover>
     </>

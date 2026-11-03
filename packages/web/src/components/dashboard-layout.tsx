@@ -11,7 +11,6 @@ import {
 } from '@/components/dashboard/navigation/project-sidebar';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import { UserMenu } from '@/components/dashboard/user-menu';
-import { LanguageSelector } from '@/components/language-selector';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { SpecialtyLabelProvider } from '@/hooks/activities/use-specialty-label';
@@ -83,11 +82,12 @@ export function DashboardLayout() {
       <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground supports-[height:100dvh]:h-dvh">
         <header className="surface-dark flex h-14 bg-background text-foreground shrink-0 items-center justify-between gap-4 border-b border-border px-4">
           <div className="flex min-w-0 items-center gap-3">
-            <AppLogo />
+            {/* Mobile: sólo el isotipo, para que el título de la sección se lea entero. */}
+            <AppLogo className="max-md:hidden" />
+            <AppLogo isotypeOnly className="md:hidden" />
             <HeaderTitle />
           </div>
           <div className="flex shrink-0 items-center gap-3">
-            <LanguageSelector />
             <NotificationCenter />
             <UserMenu />
           </div>

@@ -112,6 +112,15 @@ import {
 } from '@/lib/materials';
 import { downloadBlob } from '@/lib/download-blob';
 import { cn } from '@/lib/utils';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
+import { useIsMobile } from '@/components/ui/use-mobile';
+import { MOBILE_ROW, MOBILE_ROW_LIST, MOBILE_SECTION, MOBILE_SECTIONS } from '@/lib/mobile-list-density';
 
 const MATERIAL_STATUSES: MaterialStatus[] = ['pendiente', 'solicitado', 'comprado', 'en_obra'];
 
@@ -152,16 +161,10 @@ const EXPORT_COPY: Record<PurchaseListKind, { title: string; tag: string; filePr
   bought: { title: 'material.pdf.titleBought', tag: 'material.list.onSiteTag', filePrefix: 'comprados' },
 };
 
-/** Descargar (PDF o CSV), Copiar y Compartir: los mismos en las dos pestañas. */
-function ExportActions({
-  generatingPdf,
-  canShare,
-  onDownloadPdf,
-  onDownloadCsv,
-  onCopy,
-  onShare,
-  onWarm,
-}: {
+/** Pestañas más compactas en mobile: con texto y conteo, pero sin salirse de la pantalla. */
+const TAB_COMPACT = 'max-md:gap-1 max-md:px-2 max-md:text-xs max-md:[&_svg]:size-4';
+
+interface ExportActionsProps {
   generatingPdf: boolean;
   canShare: boolean;
   onDownloadPdf: () => void;
@@ -170,7 +173,105 @@ function ExportActions({
   onShare: () => void;
   /** Hay señal de que se va a exportar: que se vayan bajando las fotos. */
   onWarm: () => void;
-}) {
+}
+
+/**
+ * Mobile: un solo botón con ícono que abre un drawer con las cuatro salidas
+ * (PDF, CSV, copiar, compartir) apiladas. Reemplaza dos filas de botones sueltos
+ * que empujaban la lista hacia abajo.
+ */
+function ExportDrawer({
+  generatingPdf,
+  canShare,
+  onDownloadPdf,
+  onDownloadCsv,
+  onCopy,
+  onShare,
+  onWarm,
+}: ExportActionsProps) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  // Tocar una salida cierra el drawer: lo que viene (descarga, hoja de compartir) va encima.
+  const run = (action: () => void) => () => {
+    setOpen(false);
+    action();
+  };
+
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) onWarm();
+      }}
+    >
+      <DrawerTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-11"
+          disabled={generatingPdf}
+          aria-busy={generatingPdf}
+          aria-label={t('material.list.exportTitle')}
+        >
+          {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent aria-describedby={undefined}>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>{t('material.list.exportTitle')}</DrawerTitle>
+        </DrawerHeader>
+        <div className="flex flex-col gap-2 px-4 pb-6">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto min-h-11 justify-start py-2 text-left"
+            onClick={run(onDownloadPdf)}
+          >
+            <FileDown className="size-4" />
+            <ExportFormat label={t('material.export.pdf')} hint={t('material.export.pdfHint')} />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto min-h-11 justify-start py-2 text-left"
+            onClick={run(onDownloadCsv)}
+          >
+            <FileSpreadsheet className="size-4" />
+            <ExportFormat label={t('material.export.csv')} hint={t('material.export.csvHint')} />
+          </Button>
+          <Button type="button" variant="outline" className="min-h-11 justify-start" onClick={run(onCopy)}>
+            <Copy className="size-4" />
+            {t('material.list.copyList')}
+          </Button>
+          {canShare && (
+            <Button type="button" variant="outline" className="min-h-11 justify-start" onClick={run(onShare)}>
+              <Share2 className="size-4" />
+              {t('material.list.share')}
+            </Button>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+/** Descargar (PDF o CSV), Copiar y Compartir: los mismos en las dos pestañas. */
+function ExportActions(props: ExportActionsProps) {
+  const isMobile = useIsMobile();
+  return isMobile ? <ExportDrawer {...props} /> : <ExportButtons {...props} />;
+}
+
+function ExportButtons({
+  generatingPdf,
+  canShare,
+  onDownloadPdf,
+  onDownloadCsv,
+  onCopy,
+  onShare,
+  onWarm,
+}: ExportActionsProps) {
   const { t } = useTranslation();
   return (
     <>
@@ -248,13 +349,19 @@ function ExportFormat({ label, hint }: { label: string; hint: string }) {
  */
 function NewMaterialButton({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        <Plus className="size-4" />
-        {t('material.list.newTitle')}
+      {/* Mobile: sólo el "+", redondo; desktop: ícono y texto. */}
+      <Button
+        size={isMobile ? 'icon-lg' : 'default'}
+        aria-label={t('material.list.newTitle')}
+        onClick={() => setOpen(true)}
+      >
+        <Plus className={isMobile ? 'size-5' : 'size-4'} />
+        {!isMobile && t('material.list.newTitle')}
       </Button>
       <MaterialDrawer projectId={projectId} open={open} onOpenChange={setOpen} />
     </>
@@ -367,7 +474,7 @@ function MaterialRow({
   }, [highlighted]);
 
   return (
-    <RowCard ref={rowRef} highlighted={highlighted} className="justify-between">
+    <RowCard ref={rowRef} highlighted={highlighted} className={cn('justify-between', MOBILE_ROW)}>
       <div className="flex min-w-0 flex-1 basis-56 items-center gap-3">
         {selection && (
           <SelectCheckbox
@@ -693,6 +800,7 @@ function ToBuyGroup({
   return (
     <ListSection
       label={groupName}
+      className={MOBILE_SECTION}
       leading={
         selection && (
           <GroupCheckbox
@@ -740,7 +848,7 @@ function ToBuyGroup({
         )
       }
     >
-      <RowCardList>
+      <RowCardList className={MOBILE_ROW_LIST}>
         {materials.map((material) => (
           <MaterialRow
             key={material.id}
@@ -796,6 +904,7 @@ function BoughtGroup({
   return (
     <ListSection
       label={title}
+      className={MOBILE_SECTION}
       meta={materials.length}
       leading={
         selection && (
@@ -808,7 +917,7 @@ function BoughtGroup({
         )
       }
     >
-      <RowCardList>
+      <RowCardList className={MOBILE_ROW_LIST}>
         {materials.map((material) => (
           <MaterialRow
             key={material.id}
@@ -1033,6 +1142,12 @@ export function ProjectMaterialsPage() {
   const panelRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [pendingBulk, setPendingBulk] = useState<PendingBulk | null>(null);
+  const isMobile = useIsMobile();
+  // La pestaña activa la necesita la barra de arriba (qué lista se exporta). Se elige una sola
+  // vez, al llegar (`initialTabRef`): si el material pedido cambia de estado y pasa a la otra
+  // pestaña, la pantalla no salta detrás de él.
+  const [chosenTab, setChosenTab] = useState<'toBuy' | 'bought' | null>(null);
+  const initialTabRef = useRef<'toBuy' | 'bought' | null>(null);
   const [bulkProviderId, setBulkProviderId] = useState<string | null>(null);
 
   // Gerente y supervisor gestionan las compras; lo decide la grilla.
@@ -1325,6 +1440,11 @@ export function ProjectMaterialsPage() {
   const total = materialsData.materials.length;
   const toBuyUnrequested = countUnrequested(toBuy);
   const highlighted = materialsData.materials.find((m) => m.id === highlightedId);
+  if (initialTabRef.current === null) {
+    initialTabRef.current = highlighted ? (materialTab(highlighted.status) as 'toBuy' | 'bought') : 'toBuy';
+  }
+  const activeTab = chosenTab ?? initialTabRef.current;
+  const activeRows = activeTab === 'toBuy' ? purchaseRows : boughtRows;
   const selectedMaterials = selectedToBuy.length > 0 ? selectedToBuy : selectedBought;
 
   function selectionBar() {
@@ -1379,12 +1499,16 @@ export function ProjectMaterialsPage() {
       */}
       <div ref={panelRef} tabIndex={-1} className={cn('outline-none', hasSelection && 'max-sm:pb-24')}>
       <Tabs
-        defaultValue={highlighted ? materialTab(highlighted.status) : 'toBuy'}
-        onValueChange={clearSelection}
-        className="gap-4"
+        value={activeTab}
+        onValueChange={(value) => {
+          setChosenTab(value as 'toBuy' | 'bought');
+          clearSelection();
+        }}
+        className="gap-3 md:gap-4"
       >
-        <TabsList>
-          <TabsTrigger value="toBuy" icon={ShoppingCart}>
+        <div className="flex items-center gap-2">
+        <TabsList className="min-w-0 flex-1 md:flex-none">
+          <TabsTrigger value="toBuy" icon={ShoppingCart} className={TAB_COMPACT}>
             {t('material.list.toBuy')} ({toBuy.length})
             {/* El total de lo que nadie pidió, visible desde cualquier pestaña. */}
             {toBuyUnrequested > 0 && (
@@ -1397,10 +1521,23 @@ export function ProjectMaterialsPage() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="bought" icon={PackageCheck}>
+          <TabsTrigger value="bought" icon={PackageCheck} className={TAB_COMPACT}>
             {t('material.list.bought')} ({bought.length})
           </TabsTrigger>
         </TabsList>
+        {/* Mobile: «Exportar lista» al lado de las pestañas, sobre la lista de la pestaña activa. */}
+        {isMobile && !hasSelection && activeRows.length > 0 && (
+          <ExportActions
+            generatingPdf={generatingPdf}
+            canShare={canShare}
+            onDownloadPdf={() => void handleDownloadPdf(activeRows, activeTab)}
+            onDownloadCsv={() => void handleDownloadCsv(activeRows, activeTab)}
+            onCopy={() => void handleCopy(activeRows, activeTab)}
+            onShare={() => void handleShare(activeRows, activeTab)}
+            onWarm={() => warmPhotos(activeRows)}
+          />
+        )}
+        </div>
 
         <TabsContent value="toBuy" className="flex flex-col gap-4">
           {toBuy.length > 0 && hasSelection && (
@@ -1412,7 +1549,7 @@ export function ProjectMaterialsPage() {
           {toBuy.length > 0 && !hasSelection && (
             <div className="flex flex-wrap items-center justify-end gap-2">
               <div className="mr-auto">{selectAll(toBuy)}</div>
-              <ExportActions
+              {!isMobile && <ExportActions
                 generatingPdf={generatingPdf}
                 canShare={canShare}
                 onDownloadPdf={() => void handleDownloadPdf(purchaseRows, 'toBuy')}
@@ -1420,14 +1557,14 @@ export function ProjectMaterialsPage() {
                 onCopy={() => void handleCopy(purchaseRows, 'toBuy')}
                 onShare={() => void handleShare(purchaseRows, 'toBuy')}
                 onWarm={() => warmPhotos(purchaseRows)}
-              />
+              />}
             </div>
           )}
 
           {toBuyGroups.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('material.list.toBuyEmpty')}</p>
           ) : (
-            <ListSections>
+            <ListSections className={MOBILE_SECTIONS}>
               {toBuyGroups.map((group) => (
                 <ToBuyGroup
                   key={group.activityId ?? 'none'}
@@ -1463,7 +1600,7 @@ export function ProjectMaterialsPage() {
               ) : (
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <div className="mr-auto">{selectAll(bought)}</div>
-                  <ExportActions
+                  {!isMobile && <ExportActions
                     generatingPdf={generatingPdf}
                     canShare={canShare}
                     onDownloadPdf={() => void handleDownloadPdf(boughtRows, 'bought')}
@@ -1471,10 +1608,10 @@ export function ProjectMaterialsPage() {
                     onCopy={() => void handleCopy(boughtRows, 'bought')}
                     onShare={() => void handleShare(boughtRows, 'bought')}
                     onWarm={() => warmPhotos(boughtRows)}
-                  />
+                  />}
                 </div>
               )}
-              <ListSections>
+              <ListSections className={MOBILE_SECTIONS}>
               <BoughtGroup
                 title={t('material.list.onTheWay')}
                 materials={onTheWay}

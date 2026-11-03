@@ -13,13 +13,22 @@
  */
 
 import {
+  CalendarDays,
   CalendarRange,
+  ClipboardCheck,
   Eye,
   FireExtinguisher,
   Flag,
   FolderTree,
+  Languages,
+  ListPlus,
+  MessageCircle,
+  SlidersHorizontal,
+  Smartphone,
   Sparkles,
   Users,
+  UserRoundCog,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -42,6 +51,27 @@ export interface ReleaseNote {
 }
 
 export const RELEASE_NOTES: readonly ReleaseNote[] = [
+  {
+    id: '2026-11-03',
+    date: '2026-11-03',
+    items: [
+      { kind: 'new', key: 'customSpecialties', icon: ListPlus },
+      { kind: 'new', key: 'paymentMethods', icon: Wallet },
+      { kind: 'new', key: 'designRoles', icon: UserRoundCog },
+      { kind: 'new', key: 'mobileAgenda', icon: CalendarDays },
+      { kind: 'new', key: 'mobileDrawers', icon: SlidersHorizontal },
+      { kind: 'new', key: 'languageInAccount', icon: Languages },
+      { kind: 'fix', key: 'mobileHeader', icon: Smartphone },
+    ],
+  },
+  {
+    id: '2026-11-02',
+    date: '2026-11-02',
+    items: [
+      { kind: 'new', key: 'productivitySurvey', icon: ClipboardCheck },
+      { kind: 'new', key: 'assistantChat', icon: MessageCircle },
+    ],
+  },
   {
     id: '2026-10-29',
     date: '2026-10-29',
