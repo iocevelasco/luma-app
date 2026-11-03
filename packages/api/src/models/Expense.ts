@@ -1,5 +1,11 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import { EXPENSE_CATEGORIES, roundMoney, type ExpenseCategory } from '@luma/shared';
+import {
+  EXPENSE_CATEGORIES,
+  PAYMENT_METHODS,
+  roundMoney,
+  type ExpenseCategory,
+  type PaymentMethod,
+} from '@luma/shared';
 
 /** Comprobante: factura o remito. Mismo storage que documentos y evidencia. */
 export interface IExpenseReceipt {
@@ -34,6 +40,7 @@ export interface IExpense extends Document {
   exchangeRate: number;
   /** `YYYY-MM-DD`. */
   spentOn: string;
+  method?: PaymentMethod;
   provider?: mongoose.Types.ObjectId | null;
   activity?: mongoose.Types.ObjectId | null;
   receipt?: IExpenseReceipt | null;
@@ -63,6 +70,7 @@ const expenseSchema = new Schema<IExpense>(
     currency: { type: String, required: true, uppercase: true, trim: true },
     exchangeRate: { type: Number, required: true, min: 0, default: 1 },
     spentOn: { type: String, required: true },
+    method: { type: String, enum: [...PAYMENT_METHODS] },
     provider: { type: Schema.Types.ObjectId, ref: 'Provider', default: null, index: true },
     activity: { type: Schema.Types.ObjectId, ref: 'Activity', default: null, index: true },
     receipt: { type: expenseReceiptSchema, default: null },

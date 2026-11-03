@@ -3,6 +3,7 @@ import type { CreateCrewMemberInput, CrewMemberKind } from '@luma/shared';
 import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { PROVIDER_SPECIALTIES } from '@/components/providers/provider-form-fields';
+import { OptionPicker } from '@/components/common/option-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -73,18 +74,13 @@ export function CrewMemberFormFields({
             control={control}
             name="specialty"
             render={({ field }) => (
-              <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                <SelectTrigger id={`${idPrefix}-specialty`}>
-                  <SelectValue placeholder={t('crew.fields.specialtyPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROVIDER_SPECIALTIES.map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {t(`provider.specialty.${value}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <OptionPicker
+                id={`${idPrefix}-specialty`}
+                value={field.value}
+                onChange={field.onChange}
+                options={PROVIDER_SPECIALTIES.map((value) => ({ value, label: t(`provider.specialty.${value}`) }))}
+                placeholder={t('crew.fields.specialtyPlaceholder')}
+              />
             )}
           />
         </div>

@@ -112,6 +112,20 @@ export const updateProjectSchema = z.object({
   purchasesVisibleToClient: z.boolean().optional(),
 });
 
+const specialtyLabelSchema = z
+  .string()
+  .trim()
+  .min(2, 'Escribí al menos 2 letras')
+  .max(40, 'Es demasiado largo (máximo 40)');
+
+export const createCustomSpecialtySchema = z.object({ label: specialtyLabelSchema });
+
+export const updateCustomSpecialtySchema = z
+  .object({ label: specialtyLabelSchema.optional(), archived: z.boolean().optional() })
+  .refine((data) => data.label !== undefined || data.archived !== undefined, {
+    message: 'No hay nada para actualizar',
+  });
+
 export const inviteClientSchema = z.object({
   email: z
     .string()
@@ -158,6 +172,8 @@ export type UpdateOrganizationInput = z.infer<typeof updateOrganizationSchema>;
 export type UpdateOrganizationMemberInput = z.infer<typeof updateOrganizationMemberSchema>;
 export type SetAssignedProjectsInput = z.infer<typeof setAssignedProjectsSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type CreateCustomSpecialtyInput = z.infer<typeof createCustomSpecialtySchema>;
+export type UpdateCustomSpecialtyInput = z.infer<typeof updateCustomSpecialtySchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type InviteClientInput = z.infer<typeof inviteClientSchema>;
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;

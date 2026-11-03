@@ -1,4 +1,30 @@
 {
+  "optionPicker": {
+    "searchPlaceholder": "Buscar…",
+    "empty": "No encontramos nada con ese texto.",
+    "suggested": "Sugeridas",
+    "all": "Todas",
+    "create": "Presioná Enter para crear «{{name}}»"
+  },
+  "specialty": {
+    "created": "Especialidad agregada.",
+    "saved": "Especialidad guardada.",
+    "unknown": "Especialidad",
+    "manage": {
+      "open": "Ver y editar las especialidades de la obra",
+      "title": "Especialidades propias",
+      "hint": "Sumá las que tu obra necesita además de las de siempre. Las ves al crear una tarea.",
+      "name": "Nombre de la especialidad",
+      "placeholder": "Ej. Yesería",
+      "add": "Agregar",
+      "empty": "Todavía no agregaste ninguna.",
+      "archived": "Archivada",
+      "actions": "Acciones de {{name}}",
+      "rename": "Renombrar",
+      "archive": "Archivar",
+      "restore": "Restaurar"
+    }
+  },
   "common": {
     "appName": "Luma",
     "save": "Guardar",
@@ -765,6 +791,9 @@
       "pisos_revestimientos": "Pisos y revestimientos",
       "jardineria": "Jardinería",
       "demolicion": "Demolición",
+      "arquitectura": "Arquitectura",
+      "diseno": "Diseño",
+      "drywall": "Drywall",
       "materiales": "Venta de materiales",
       "otra": "Otra"
     },
@@ -1378,6 +1407,12 @@
     },
     "method": {
       "transferencia": "Transferencia",
+      "transferencia_ves": "Transferencia en bolívares",
+      "transferencia_usd": "Transferencia en dólares",
+      "transferencia_eur": "Transferencia en euros",
+      "pago_movil": "Pago móvil",
+      "zelle": "Zelle",
+      "binance": "Binance",
       "efectivo": "Efectivo",
       "cheque": "Cheque",
       "otro": "Otro"
@@ -1398,6 +1433,8 @@
       "dueOn": "Vencimiento",
       "paidOn": "Fecha del cobro",
       "method": "Forma de pago",
+      "methodOptional": "Método de pago (opcional)",
+      "methodPlaceholder": "Sin especificar",
       "scheduleItem": "Imputar a",
       "scheduleItemPlaceholder": "A cuenta, sin cuota",
       "reference": "Referencia",

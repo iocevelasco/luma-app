@@ -1,5 +1,10 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { ActivityStatus, TradeSpecialty } from '@luma/shared';
+import {
+  activitySpecialtySchema,
+  type ActivityStatus,
+  type CustomSpecialtyKey,
+  type TradeSpecialty,
+} from '@luma/shared';
 
 /**
  * Actividad de la planificación semanal de una obra (RF-01). Borrado DURO
@@ -39,7 +44,7 @@ export interface IActivity extends Document {
   endDate: string;
   responsible: IActivityResponsible;
   status: ActivityStatus;
-  specialty?: TradeSpecialty;
+  specialty?: TradeSpecialty | CustomSpecialtyKey;
   review?: IActivityReview | null;
   notes?: string;
   evidence: mongoose.Types.DocumentArray<IActivityEvidence>;
@@ -87,29 +92,14 @@ const activitySchema = new Schema<IActivity>(
       enum: ['pendiente', 'en_curso', 'en_revision', 'completada', 'cancelada'],
       default: 'pendiente',
     },
+    // Una de base o una propia de la obra (`custom_…`): ya no es un enum cerrado.
+    // Que la propia exista en la obra lo comprueba el controller.
     specialty: {
       type: String,
-      enum: [
-        'electricidad',
-        'plomeria',
-        'gas',
-        'carpinteria',
-        'cristaleria',
-        'albanileria',
-        'herreria',
-        'redes',
-        'mecanicas',
-        'estructura',
-        'acabados',
-        'pintura',
-        'climatizacion',
-        'fire_protection',
-        'techos',
-        'pisos_revestimientos',
-        'jardineria',
-        'demolicion',
-        'otra',
-      ],
+      validate: {
+        validator: (value: string) => activitySpecialtySchema.safeParse(value).success,
+        message: 'Especialidad inválida',
+      },
     },
     review: { type: activityReviewSchema, default: null },
     notes: { type: String, trim: true },

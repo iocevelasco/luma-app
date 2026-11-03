@@ -3,6 +3,8 @@ import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
 import {
   createProject,
+  createProjectSpecialty,
+  updateProjectSpecialty,
   deleteProject,
   getProject,
   getProjectDeletionSummary,
@@ -36,6 +38,18 @@ projectRouter.get('/papelera', listDeletedProjects);
 projectRouter.post('/papelera/:projectId/restaurar', restoreProject);
 projectRouter.get('/:projectId', requireProjectAccess, getProject);
 projectRouter.patch('/:projectId', requireProjectAccess, requireCapability('project.update'), updateProject);
+projectRouter.post(
+  '/:projectId/specialties',
+  requireProjectAccess,
+  requireCapability('specialty.manage'),
+  createProjectSpecialty,
+);
+projectRouter.patch(
+  '/:projectId/specialties/:key',
+  requireProjectAccess,
+  requireCapability('specialty.manage'),
+  updateProjectSpecialty,
+);
 projectRouter.get(
   '/:projectId/deletion-summary',
   requireProjectAccess,

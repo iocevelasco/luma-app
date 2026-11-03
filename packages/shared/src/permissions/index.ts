@@ -109,6 +109,8 @@ export type Capability =
   | 'project.read'
   | 'project.update'
   | 'project.invite'
+  // Agregar, renombrar o archivar las especialidades propias de la obra.
+  | 'specialty.manage'
   // Mandar la obra a la papelera y sacarla de ahí. Sólo el gerente: es la
   // única acción que hace desaparecer una obra para todo el equipo.
   | 'project.delete'
@@ -205,6 +207,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
   gerente: [
     'project.read',
     'project.update',
+    'specialty.manage',
     'project.invite',
     'project.delete',
     'project.manager.write',

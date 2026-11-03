@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createPaymentSchema,
   createPaymentScheduleItemSchema,
-  PAYMENT_METHODS,
+  PAYMENT_METHOD_OPTIONS,
   type CreatePaymentInput,
   type CreatePaymentScheduleItemInput,
   type Payment,
@@ -258,7 +258,7 @@ function NewPaymentDrawer({
       currency: projectCurrency,
       exchangeRate: 1,
       paidOn: toDayKey(new Date()),
-      method: 'transferencia',
+      method: 'transferencia_ves',
     },
   });
 
@@ -313,7 +313,7 @@ function NewPaymentDrawer({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_METHODS.map((option) => (
+                  {PAYMENT_METHOD_OPTIONS.map((option) => (
                     <SelectItem key={option} value={option}>
                       {t(`finance.method.${option}`)}
                     </SelectItem>

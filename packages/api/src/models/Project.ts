@@ -44,6 +44,8 @@ export interface IProject extends Document {
   trashedPeriods: Array<{ from: Date; to: Date }>;
   providersVisibleToClient: boolean;
   purchasesVisibleToClient: boolean;
+  /** Especialidades que el gerente agregó a esta obra. Ver `ProjectCustomSpecialty`. */
+  customSpecialties: Array<{ key: string; label: string; archived: boolean }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +81,19 @@ const projectSchema = new Schema<IProject>(
     providersVisibleToClient: { type: Boolean, default: false },
     // Mismo criterio: cerrado por defecto, el gerente lo abre.
     purchasesVisibleToClient: { type: Boolean, default: false },
+    customSpecialties: {
+      type: [
+        new Schema(
+          {
+            key: { type: String, required: true },
+            label: { type: String, required: true, trim: true },
+            archived: { type: Boolean, default: false },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+    },
   },
   { timestamps: true },
 );

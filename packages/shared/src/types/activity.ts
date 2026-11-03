@@ -1,4 +1,5 @@
 import type { TradeSpecialty } from './provider.js';
+import type { CustomSpecialtyKey } from './project.js';
 
 /**
  * Planificación semanal de una obra (RF-01). Cuelga de `Project`; no hay
@@ -70,7 +71,7 @@ export interface Activity {
    * repetía lo mismo con otras palabras. Obligatoria al crear; queda opcional
    * en el tipo porque las actividades anteriores a este cambio no la tienen.
    */
-  specialty?: TradeSpecialty;
+  specialty?: TradeSpecialty | CustomSpecialtyKey;
   notes?: string;
   review?: ActivityReview;
   evidence: ActivityEvidencePhoto[];

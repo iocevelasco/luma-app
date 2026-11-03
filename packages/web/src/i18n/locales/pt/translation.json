@@ -1,4 +1,30 @@
 {
+  "optionPicker": {
+    "searchPlaceholder": "Buscar…",
+    "empty": "Não encontramos nada com esse texto.",
+    "suggested": "Sugeridas",
+    "all": "Todas",
+    "create": "Pressione Enter para criar «{{name}}»"
+  },
+  "specialty": {
+    "created": "Especialidade adicionada.",
+    "saved": "Especialidade salva.",
+    "unknown": "Especialidade",
+    "manage": {
+      "open": "Ver e editar as especialidades da obra",
+      "title": "Especialidades próprias",
+      "hint": "Adicione as que a sua obra precisa além das de sempre. Você as vê ao criar uma tarefa.",
+      "name": "Nome da especialidade",
+      "placeholder": "Ex. Gesso",
+      "add": "Adicionar",
+      "empty": "Você ainda não adicionou nenhuma.",
+      "archived": "Arquivada",
+      "actions": "Ações de {{name}}",
+      "rename": "Renomear",
+      "archive": "Arquivar",
+      "restore": "Restaurar"
+    }
+  },
   "common": {
     "appName": "Luma",
     "save": "Salvar",
@@ -765,6 +791,9 @@
       "pisos_revestimientos": "Pisos e revestimentos",
       "jardineria": "Jardinagem",
       "demolicion": "Demolição",
+      "arquitectura": "Arquitetura",
+      "diseno": "Design",
+      "drywall": "Drywall",
       "materiales": "Venda de materiais",
       "otra": "Outra"
     },
@@ -1378,6 +1407,12 @@
     },
     "method": {
       "transferencia": "Transferência",
+      "transferencia_ves": "Transferência em bolívares",
+      "transferencia_usd": "Transferência em dólares",
+      "transferencia_eur": "Transferência em euros",
+      "pago_movil": "Pago Móvil",
+      "zelle": "Zelle",
+      "binance": "Binance",
       "efectivo": "Dinheiro",
       "cheque": "Cheque",
       "otro": "Outro"
@@ -1398,6 +1433,8 @@
       "dueOn": "Vencimento",
       "paidOn": "Data do recebimento",
       "method": "Forma de pagamento",
+      "methodOptional": "Forma de pagamento (opcional)",
+      "methodPlaceholder": "Não especificada",
       "scheduleItem": "Vincular a",
       "scheduleItemPlaceholder": "Por conta, sem parcela",
       "reference": "Referência",

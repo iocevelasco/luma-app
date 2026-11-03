@@ -42,6 +42,7 @@ import { Switch } from '@/components/ui/switch';
 import { activitiesOnDay, summarizeDayAttendance } from '@/lib/attendance';
 import { formatMoney } from '@/lib/format-money';
 import { organizeMaterials } from '@/lib/materials';
+import { CustomSpecialtiesSection } from '@/components/projects/custom-specialties-section';
 import { iconForSpecialty } from '@/lib/specialty-icons';
 import { cn } from '@/lib/utils';
 import { isOpenTask, tasksForWeek, weightedProgress } from '@/lib/task-board';
@@ -718,6 +719,13 @@ export function ProjectDetailPage() {
                   checked={project.purchasesVisibleToClient}
                 />
               </div>
+            )}
+
+            {can('specialty.manage') && (
+              <CustomSpecialtiesSection
+                projectId={project.id}
+                specialties={project.customSpecialties}
+              />
             )}
 
           </CardContent>

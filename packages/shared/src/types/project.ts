@@ -39,6 +39,27 @@ export interface OrganizationMember {
   createdAt: string;
 }
 
+/** La clave de una especialidad propia de la obra. */
+export type CustomSpecialtyKey = `custom_${string}`;
+
+/** Tope de especialidades propias por obra. */
+export const MAX_CUSTOM_SPECIALTIES = 100;
+
+/** Las claves de una especialidad propia empiezan así; ninguna de la base lo hace. */
+export const CUSTOM_SPECIALTY_PREFIX = 'custom_';
+
+/**
+ * Una especialidad que el gerente agregó a SU obra, además de las de base.
+ * Vive en la obra y se guarda por `key`: renombrarla cambia `label` y todas las
+ * tareas que la usan la muestran con el nombre nuevo. Quitarla la **archiva**:
+ * deja de ofrecerse, pero las tareas ya cargadas siguen mostrándola.
+ */
+export interface ProjectCustomSpecialty {
+  key: string;
+  label: string;
+  archived: boolean;
+}
+
 export interface Project {
   id: string;
   organizationId: string;
@@ -66,6 +87,7 @@ export interface Project {
    * tiene derecho a ver en qué se gasta. Lo cambia sólo el gerente.
    */
   purchasesVisibleToClient: boolean;
+  customSpecialties: ProjectCustomSpecialty[];
   createdAt: string;
   updatedAt: string;
 }

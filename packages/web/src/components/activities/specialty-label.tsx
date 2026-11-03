@@ -1,5 +1,5 @@
-import type { ProviderSpecialty } from '@luma/shared';
 import { useTranslation } from 'react-i18next';
+import { useSpecialtyLabel } from '@/hooks/activities/use-specialty-label';
 
 /**
  * La especialidad de una actividad, o "Sin especialidad" si no la tiene.
@@ -9,9 +9,8 @@ import { useTranslation } from 'react-i18next';
  * anterior al cambio (que no la tiene): antes cada una mostraba el área, y
  * dejarlas elegir su propio texto vacío las desincroniza.
  */
-export function SpecialtyLabel({ specialty }: { specialty?: ProviderSpecialty | null }) {
+export function SpecialtyLabel({ specialty }: { specialty?: string | null }) {
   const { t } = useTranslation();
-  return (
-    <>{specialty ? t(`provider.specialty.${specialty}`) : t('activity.detail.noSpecialty')}</>
-  );
+  const label = useSpecialtyLabel();
+  return <>{specialty ? label(specialty) : t('activity.detail.noSpecialty')}</>;
 }

@@ -1,4 +1,5 @@
 import type { ActivityStatus } from './activity.js';
+import type { CustomSpecialtyKey } from './project.js';
 
 /**
  * Directorio de proveedores/subcontratistas (electricidad, plomería,
@@ -39,6 +40,9 @@ export type TradeSpecialty =
   | 'pisos_revestimientos'
   | 'jardineria'
   | 'demolicion'
+  | 'arquitectura'
+  | 'diseno'
+  | 'drywall'
   | 'otra';
 
 /**
@@ -113,7 +117,8 @@ export interface ActivityProvidersResponse {
 export interface ProviderActivitySummary {
   id: string;
   name: string;
-  specialty?: ProviderSpecialty;
+  /** La de una actividad puede ser una propia de la obra (`custom_…`). */
+  specialty?: ProviderSpecialty | CustomSpecialtyKey;
   startDate: string;
   endDate: string;
   status: ActivityStatus;

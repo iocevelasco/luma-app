@@ -30,7 +30,18 @@ const exchangeRateSchema = z
   .positive('La cotización tiene que ser mayor a cero')
   .default(1);
 
-export const paymentMethodSchema = z.enum(['transferencia', 'efectivo', 'cheque', 'otro']);
+export const paymentMethodSchema = z.enum([
+  'transferencia',
+  'transferencia_ves',
+  'transferencia_usd',
+  'transferencia_eur',
+  'pago_movil',
+  'zelle',
+  'binance',
+  'efectivo',
+  'cheque',
+  'otro',
+]);
 
 export const expenseCategorySchema = z.enum([
   'material',
@@ -97,6 +108,7 @@ export const createExpenseSchema = z.object({
     .min(1, 'La descripción es obligatoria')
     .max(300, 'La descripción es demasiado larga'),
   spentOn: dayKeySchema,
+  method: paymentMethodSchema.optional(),
   providerId: z.string().trim().optional(),
   activityId: z.string().trim().optional(),
   notes: z.string().trim().max(1000).optional(),
@@ -143,6 +155,7 @@ export const updateExpenseSchema = z
     category: expenseCategorySchema.optional(),
     description: z.string().trim().min(1).max(300).optional(),
     spentOn: dayKeySchema.optional(),
+    method: paymentMethodSchema.optional(),
     providerId: z.string().trim().optional(),
     activityId: z.string().trim().optional(),
     notes: z.string().trim().max(1000).optional(),

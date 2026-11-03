@@ -1,4 +1,4 @@
-import type { ActivityStatus, ProviderSpecialty } from '@luma/shared';
+import type { ActivityStatus, CustomSpecialtyKey, ProviderSpecialty } from '@luma/shared';
 
 /**
  * Cómo una meta semanal se convierte en tarea. Lógica pura y aparte del
@@ -41,7 +41,7 @@ export interface GoalOwner {
 
 export interface LinkedActivity {
   name: string;
-  specialty?: ProviderSpecialty;
+  specialty?: ProviderSpecialty | CustomSpecialtyKey;
 }
 
 /**
