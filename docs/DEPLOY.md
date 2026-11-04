@@ -166,7 +166,7 @@ archivo a actualizar.
 
 ## Tarea programada: recordatorios de la suscripción
 
-Mails de "tu plan Gratis termina en 7/3/1 días" y "tu suscripción venció". En
+Mails de "tu plan Gratis termina en 7/3/1 días", "tu plan Pro vence en 2 días / hoy" y "tu suscripción venció" (o "no se renovó", si ya había pagado). En
 Coolify → `app` → **Scheduled Tasks**:
 
 | Campo | Valor |

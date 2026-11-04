@@ -1,6 +1,7 @@
 /**
  * Manda los recordatorios de la suscripción que tocan hoy: fin del plan
- * Gratis (a 7, 3 y 1 día) y suscripción vencida. Lo corre una tarea
+ * Gratis (a 7, 3 y 1 día), plan pago (a 2 días y el mismo día) y suscripción
+ * vencida. Lo corre una tarea
  * programada de Coolify una vez por día:
  *
  *   node dist/scripts/send-subscription-reminders.js

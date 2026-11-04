@@ -229,7 +229,9 @@ Requiere 2.4 funcionando (`stripe listen` corriendo).
 | Aprobamos tu pago / No pudimos aprobarlo (con motivo) | dueño | al revisar el pago |
 | No pudimos cobrar tu tarjeta | dueño | primer intento fallido de Stripe (no en cada reintento) |
 | Tu plan Gratis termina en 7 / 3 / 1 días | dueño | tarea diaria, si no dejó pago lo que sigue |
-| Tu suscripción venció | dueño | tarea diaria, una vez por vencimiento |
+| Tu plan Pro vence en 2 días / vence hoy | dueño que ya pagó, sin tarjeta que renueve sola | tarea diaria, en el calendario de Caracas |
+| Tu suscripción no se renovó | dueño que ya pagó | tarea diaria, una vez por vencimiento, invita a reactivar |
+| Tu suscripción venció | dueño del mes gratis | tarea diaria, una vez por vencimiento |
 
 En local: sin `RESEND_API_KEY` no sale ningún mail (la app sigue andando y lo
 loguea). Con la clave pero sin dominio verificado, Resend sólo entrega a la

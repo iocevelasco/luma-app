@@ -14,6 +14,8 @@ vi.mock('../../services/email.service.js', () => ({
     sendSubscriptionPaymentRejected: vi.fn().mockResolvedValue(true),
     sendSubscriptionPaymentToReview: vi.fn().mockResolvedValue(true),
     sendTrialEnding: vi.fn().mockResolvedValue(true),
+    sendPaidPlanEnding: vi.fn().mockResolvedValue(true),
+    sendPaidSubscriptionLapsed: vi.fn().mockResolvedValue(true),
     sendSubscriptionExpired: vi.fn().mockResolvedValue(true),
     sendCardPaymentFailed: vi.fn().mockResolvedValue(true),
   },
@@ -133,6 +135,52 @@ describe('sendDueReminders', () => {
     expect(EmailService.sendSubscriptionExpired).toHaveBeenCalled();
     expect(Subscription.updateOne).not.toHaveBeenCalled();
     expect(run.failed).toBe(1);
+  });
+
+  it('a quien ya pagó le manda el aviso de dos días y, vencido, el de reactivar', async () => {
+    const periodEnd = d('2026-11-30T23:00:00Z');
+    const facts = {
+      trialStartedAt: d('2026-01-01T00:00:00Z'),
+      trialEndsAt: d('2026-01-31T00:00:00Z'),
+      trialEndedEarlyAt: null,
+      periods: [
+        {
+          start: d('2026-10-01T00:00:00Z'),
+          end: periodEnd,
+          status: 'aprobado',
+          submittedAt: d('2026-10-01T00:00:00Z'),
+        },
+      ],
+      stripe: null,
+    };
+    vi.mocked(Subscription.find).mockReturnValue({
+      select: () => Promise.resolve([{ _id: 's1', organization: 'org-1', remindersSent: [] }]),
+    } as never);
+    vi.mocked(loadFacts).mockResolvedValue(facts);
+
+    await notify.sendDueReminders(d('2026-11-28T13:00:00Z'));
+
+    expect(EmailService.sendPaidPlanEnding).toHaveBeenCalledWith(
+      'ana@obra.test',
+      'Ana',
+      2,
+      periodEnd,
+      expect.any(Boolean),
+    );
+    expect(Subscription.updateOne).toHaveBeenCalledWith(
+      { _id: 's1' },
+      { $addToSet: { remindersSent: 'paid-2-2026-11-30' } },
+    );
+
+    vi.mocked(loadFacts).mockResolvedValue(facts);
+    await notify.sendDueReminders(d('2026-12-01T13:00:00Z'));
+
+    expect(EmailService.sendPaidSubscriptionLapsed).toHaveBeenCalledWith(
+      'ana@obra.test',
+      'Ana',
+      expect.any(Boolean),
+    );
+    expect(EmailService.sendSubscriptionExpired).not.toHaveBeenCalled();
   });
 
   it('lo que ya se mandó no se repite', async () => {
