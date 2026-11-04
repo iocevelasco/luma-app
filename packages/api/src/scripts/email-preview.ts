@@ -73,6 +73,9 @@ await EmailService.sendSubscriptionPaymentToReview('admin@ejemplo.com', {
   mismatch: false,
 });
 await EmailService.sendTrialEnding('ana@ejemplo.com', 'Ana', 3, inDays(3));
+await EmailService.sendPaidPlanEnding('ana@ejemplo.com', 'Ana', 2, inDays(2));
+await EmailService.sendPaidPlanEnding('ana@ejemplo.com', 'Ana', 0, inDays(0));
+await EmailService.sendPaidSubscriptionLapsed('ana@ejemplo.com', 'Ana');
 await EmailService.sendSubscriptionExpired('ana@ejemplo.com', 'Ana');
 await EmailService.sendCardPaymentFailed('ana@ejemplo.com', 'Ana');
 

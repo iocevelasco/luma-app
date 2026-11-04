@@ -99,8 +99,9 @@ export interface ReminderRun {
 
 /**
  * Recorre las suscripciones y manda el recordatorio que le toque a cada una
- * hoy (fin del plan Gratis a 7, 3 y 1 día; vencida). Lo corre una tarea
- * programada una vez por día; correrla de más no duplica nada.
+ * hoy (fin del plan Gratis a 7, 3 y 1 día; plan pago a 2 días y el mismo
+ * día; vencida). Lo corre una tarea programada una vez por día; correrla de
+ * más no duplica nada.
  *
  * La clave del aviso se guarda recién si el mail salió: sin Resend
  * configurado (desarrollo) no se marca nada y no se pierde ningún aviso.
@@ -128,7 +129,21 @@ export async function sendDueReminders(now: Date = new Date()): Promise<Reminder
               reminder.trialEndsAt,
               STRIPE_CONFIG.ENABLED,
             )
-          : await EmailService.sendSubscriptionExpired(owner.email, owner.name, STRIPE_CONFIG.ENABLED);
+          : reminder.kind === 'paid_ending'
+            ? await EmailService.sendPaidPlanEnding(
+                owner.email,
+                owner.name,
+                reminder.daysLeft,
+                reminder.periodEndsAt,
+                STRIPE_CONFIG.ENABLED,
+              )
+            : reminder.hadPaidPlan
+              ? await EmailService.sendPaidSubscriptionLapsed(
+                  owner.email,
+                  owner.name,
+                  STRIPE_CONFIG.ENABLED,
+                )
+              : await EmailService.sendSubscriptionExpired(owner.email, owner.name, STRIPE_CONFIG.ENABLED);
 
       if (sent) {
         await Subscription.updateOne(

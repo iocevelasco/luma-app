@@ -593,6 +593,77 @@ export class EmailService {
     );
   }
 
+  /**
+   * Plan ya pago que está por vencer. `daysLeft` es 2 o 0 (el mismo día),
+   * contado en el calendario de Caracas.
+   */
+  static async sendPaidPlanEnding(
+    to: string,
+    name: string,
+    daysLeft: 2 | 0,
+    periodEndsAt: Date,
+    cardEnabled = false,
+  ): Promise<boolean> {
+    const url = subscriptionUrl();
+    const date = longDate(periodEndsAt);
+    const today = daysLeft === 0;
+    const when = today ? 'hoy' : 'en 2 días';
+    const howToPay = cardEnabled ? 'con tarjeta o en bolívares' : 'en bolívares';
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `Tu plan Pro de ${APP_NAME} vence ${when}`,
+        html: layout({
+          heading: `Tu plan vence ${when}`,
+          preheader: today
+            ? 'Si no lo renuevas hoy, tus obras pasan a sólo lectura.'
+            : `Renueva antes del ${date} para seguir editando tus obras.`,
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>${
+              today
+                ? `Hoy, <strong>${date}</strong>, vence tu plan Pro.`
+                : `El <strong>${date}</strong> vence tu plan Pro.`
+            } Para seguir editando tus obras, renuévalo ${howToPay}.</p>
+            <p>Si no se renueva, tus obras quedan en sólo lectura. No se borra nada.</p>`,
+          cta: { label: 'Renovar suscripción', url },
+        }),
+        text: `Tu plan Pro vence ${when} - ${APP_NAME}\n\nHola ${name},\n\n${today ? 'Hoy' : `El ${date}`} vence tu plan Pro. Renueva aquí:\n${url}`,
+      },
+      today ? 'recordatorio de vencimiento hoy' : 'recordatorio a 2 días del vencimiento',
+    );
+  }
+
+  /**
+   * El plan pago venció y no se renovó. Distinto del aviso del mes gratis:
+   * acá ya fue cliente y se lo invita a reactivar.
+   */
+  static async sendPaidSubscriptionLapsed(to: string, name: string, cardEnabled = false): Promise<boolean> {
+    const url = subscriptionUrl();
+    const howToPay = cardEnabled ? 'con tarjeta o en bolívares' : 'en bolívares';
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `Tu suscripción de ${APP_NAME} no se renovó`,
+        html: layout({
+          heading: 'Tu suscripción ya no está activa',
+          preheader: 'Tus obras quedaron en sólo lectura. Puedes reactivar el plan cuando quieras.',
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Tu plan Pro venció y no se renovó. La suscripción ya no está activa: tus obras
+               quedaron en <strong>sólo lectura</strong>. Puedes verlas, pero no cambiarlas.
+               No se borró nada.</p>
+            <p>Reactívala ${howToPay} y vuelves a editar en cuanto quede el pago.</p>`,
+          cta: { label: 'Reactivar suscripción', url },
+        }),
+        text: `Tu suscripción no se renovó - ${APP_NAME}\n\nHola ${name},\n\nTu plan Pro venció y ya no está activo. Tus obras quedaron en sólo lectura. Reactívala aquí:\n${url}`,
+      },
+      'aviso de suscripción no renovada',
+    );
+  }
+
   /** Venció: sus obras quedan en sólo lectura. */
   static async sendSubscriptionExpired(to: string, name: string, cardEnabled = false): Promise<boolean> {
     const url = subscriptionUrl();
