@@ -303,7 +303,7 @@ export function validateConfig(): void {
     for (const issue of result.error.issues) {
       console.error(`   - ${issue.path.join('.') || '(raíz)'}: ${issue.message}`);
     }
-    throw new Error('Configuración inválida. Revisá las variables de entorno.');
+    throw new Error('Configuración inválida. Revisa las variables de entorno.');
   }
 
   // Avisos que no justifican abortar: la app funciona, sólo que sin esa pieza.

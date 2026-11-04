@@ -305,7 +305,7 @@ async function main() {
   console.log(`Cuotas: ${counts.schedule} · Cobros: ${counts.payments} · Gastos: ${counts.expenses}`);
   console.log(`Hitos: ${counts.milestones}`);
   console.log('');
-  console.log(`Listo. Entrá con ${email} para recorrer todos los módulos.`);
+  console.log(`Listo. Entra con ${email} para recorrer todos los módulos.`);
 }
 
 main()

@@ -50,7 +50,7 @@ export async function submitFeedback(req: Request, res: Response, next: NextFunc
     const id = userId(req);
     const input = submitFeedbackSchema.parse(req.body);
     if (!canSubmitFeedback(await lastResponseAt(id))) {
-      throw conflict('Ya nos respondiste hace poco. ¡Gracias! Volvé a contarnos en unos días.');
+      throw conflict('Ya nos respondiste hace poco. ¡Gracias! Vuelve a contarnos en unos días.');
     }
     await FeedbackResponse.create({ ...input, change: input.change || undefined,
       comment: input.comment || undefined, user: id });

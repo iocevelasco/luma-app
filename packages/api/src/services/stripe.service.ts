@@ -153,10 +153,10 @@ export async function createCheckoutSession(params: {
     throw badRequest('Tu mes gratis arranca con tu primera obra: todavía no hay nada que pagar.');
   }
   if (subscription.stripeStatus && LIVE_STRIPE_STATUSES.includes(subscription.stripeStatus)) {
-    throw conflict('Ya tenés el pago con tarjeta activo. Gestionalo desde "Administrar tarjeta".');
+    throw conflict('Ya tienes el pago con tarjeta activo. Gestiónalo desde "Administrar tarjeta".');
   }
   if (state.status === 'en_revision') {
-    throw conflict('Tenés un pago en bolívares en revisión. Esperá a que lo revisemos.');
+    throw conflict('Tienes un pago en bolívares en revisión. Espera a que lo revisemos.');
   }
   if (params.activateNow && state.status !== 'prueba') {
     throw badRequest('Activar el plan antes de tiempo sólo tiene sentido durante el mes gratis.');
@@ -226,7 +226,7 @@ export async function createCheckoutSession(params: {
 export async function createPortalSession(organizationId: OrgId): Promise<{ url: string }> {
   ensureEnabled();
   const subscription = await Subscription.findOne({ organization: organizationId });
-  if (!subscription?.stripeCustomerId) throw notFound('Todavía no cargaste una tarjeta.');
+  if (!subscription?.stripeCustomerId) throw notFound('Todavía no hay una tarjeta cargada.');
 
   const session = await stripeRequest<{ url: string }>('POST', '/billing_portal/sessions', {
     customer: subscription.stripeCustomerId,

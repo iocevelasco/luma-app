@@ -57,7 +57,7 @@ test.describe('empresa, obra e invitación del cliente', () => {
     // Primera obra, desde el estado vacío de la home: el vacío lo dice y la
     // acción es la misma de siempre, el botón de "Nueva obra".
     await page.getByTestId('nav-home').click();
-    await expect(page.getByText(/todavía no tenés obras/i)).toBeVisible();
+    await expect(page.getByText(/todavía no tienes obras/i)).toBeVisible();
     await page.getByRole('link', { name: /nueva obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/nuevo/);
 

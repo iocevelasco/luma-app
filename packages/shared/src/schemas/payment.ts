@@ -41,7 +41,7 @@ export const paymentMethodSchema = z.enum([
   'efectivo',
   'cheque',
   'otro',
-], { required_error: 'Elegí el método de pago', invalid_type_error: 'Elegí el método de pago' });
+], { required_error: 'Elige el método de pago', invalid_type_error: 'Elige el método de pago' });
 
 export const expenseCategorySchema = z.enum([
   'material',
@@ -119,7 +119,7 @@ const idListSchema = z.preprocess(
   (value) => (typeof value === 'string' ? value.split(',').filter(Boolean) : value),
   z
     .array(z.string().regex(/^[a-f0-9]{24}$/i, 'Identificador inválido'))
-    .min(1, 'Elegí al menos un material')
+    .min(1, 'Elige al menos un material')
     .max(200, 'Son demasiados: hasta 200 por factura')
     .transform((ids) => [...new Set(ids)]),
 );

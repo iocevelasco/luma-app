@@ -78,7 +78,7 @@ export async function createBolivaresPayment(req: Request, res: Response, next: 
     if (file) {
       const extension = RECEIPT_MIME_TO_EXTENSION[file.mimetype];
       if (!extension) {
-        throw badRequest('Comprobante no soportado. Subí un PDF o una imagen .jpg, .png o .webp');
+        throw badRequest('Comprobante no soportado. Sube un PDF o una imagen .jpg, .png o .webp');
       }
       uploadReceipt = async () => {
         const { key } = await uploadSubscriptionReceipt({

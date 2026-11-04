@@ -17,7 +17,7 @@ i18n
         translation: esESTranslations, // Español de España: tuteo y vocabulario peninsular
       },
       es: {
-        translation: esTranslations, // Fallback para español genérico
+        translation: esESTranslations, // Español genérico: el de España
       },
       'pt-BR': {
         translation: ptTranslations,
@@ -26,7 +26,7 @@ i18n
         translation: ptTranslations, // Fallback para portugués genérico
       },
     },
-    fallbackLng: 'es-AR', // Idioma por defecto: Español Latinoamericano (Argentina)
+    fallbackLng: 'es-ES', // Idioma por defecto: español de España
     supportedLngs: ['es-AR', 'es-ES', 'es', 'pt-BR', 'pt'], // Idiomas soportados
     debug: false,
     interpolation: {
@@ -37,21 +37,19 @@ i18n
       caches: ['localStorage'],
       // Normalizar idiomas detectados a nuestras variantes
       convertDetectedLanguage: (lng: string) => {
-        // Español de España sólo si el navegador lo pide explícitamente; el
-        // resto del español (es, es-419, es-MX…) va a es-AR.
-        if (lng === 'es-ES') {
-          return 'es-ES';
-        }
-        // Si detecta español, usar es-AR
-        if (lng.startsWith('es')) {
+        const code = lng.toLowerCase();
+        // El argentino sólo si el navegador lo pide. El resto del español
+        // (es, es-ES, es-419, es-MX, es-VE…) va al de España.
+        if (code === 'es-ar') {
           return 'es-AR';
         }
-        // Si detecta portugués, usar pt-BR
-        if (lng.startsWith('pt')) {
+        if (code.startsWith('es')) {
+          return 'es-ES';
+        }
+        if (code.startsWith('pt')) {
           return 'pt-BR';
         }
-        // Por defecto, usar es-AR
-        return 'es-AR';
+        return 'es-ES';
       },
     },
   });

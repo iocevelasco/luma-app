@@ -94,9 +94,9 @@ export async function updateProject(req: Request, res: Response) {
 
 /** Lo que se le dice a quien choca con un límite de la suscripción al crear una obra. */
 const CREATE_PROJECT_BLOCKED: Record<'SUBSCRIPTION_REQUIRED' | 'PAID_PLAN_REQUIRED', string> = {
-  SUBSCRIPTION_REQUIRED: 'Tu suscripción venció. Renová el plan para crear obras.',
+  SUBSCRIPTION_REQUIRED: 'Tu suscripción venció. Renueva el plan para crear obras.',
   PAID_PLAN_REQUIRED:
-    'En el mes gratis podés tener hasta 3 obras activas. Activá el plan para crear la cuarta.',
+    'En el mes gratis puedes tener hasta 3 obras activas. Activa el plan para crear la cuarta.',
 };
 
 export async function createProject(req: Request, res: Response, next: NextFunction) {
@@ -114,7 +114,7 @@ export async function createProject(req: Request, res: Response, next: NextFunct
 
     const organizationId = await findMyOrganizationId(req.user.sub);
     if (!organizationId) {
-      return res.status(404).json({ success: false, error: 'No tenés una empresa todavía' });
+      return res.status(404).json({ success: false, error: 'No tienes una empresa todavía' });
     }
 
     // Límite de la suscripción: 3 activas en la prueba, vencida no crea nada.
@@ -342,7 +342,7 @@ export async function inviteProjectMember(req: Request, res: Response, next: Nex
 
     const inviter = await User.findById(req.user.sub);
     if (inviter && email === inviter.email) {
-      return res.status(400).json({ success: false, error: 'No podés invitarte a vos mismo' });
+      return res.status(400).json({ success: false, error: 'No puedes invitarte a ti mismo' });
     }
 
     let user = await User.findOne({ email });

@@ -159,8 +159,8 @@ export async function register(req: Request, res: Response) {
     return res.status(201).json({
       success: true,
       message: REQUIRE_EMAIL_VERIFICATION
-        ? 'Cuenta creada. Revisá tu correo para confirmarla.'
-        : 'Cuenta creada. Ya podés entrar.',
+        ? 'Cuenta creada. Revisa tu correo para confirmarla.'
+        : 'Cuenta creada. Ya puedes entrar.',
       data: { user: toAuthUser(user) },
     });
   } catch (error) {

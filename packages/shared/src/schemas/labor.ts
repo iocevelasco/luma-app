@@ -20,7 +20,7 @@ export const laborRecordSchema = z.object({
 
 /** Asignar o quitar a alguien de la cuadrilla fija de una actividad. */
 export const assignCrewToActivitySchema = z.object({
-  crewMemberId: z.string().trim().min(1, 'Elegí a quién asignar'),
+  crewMemberId: z.string().trim().min(1, 'Elige a quién asignar'),
 });
 
 export type LaborRecordInput = z.infer<typeof laborRecordSchema>;

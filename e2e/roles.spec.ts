@@ -89,7 +89,7 @@ test.describe('cuentas sin acceso a la obra', () => {
 
     test('ve el estado vacío y no la obra de otro', async ({ page }) => {
       await openProjectList(page);
-      await expect(page.getByText(/todavía no tenés obras/i)).toBeVisible();
+      await expect(page.getByText(/todavía no tienes obras/i)).toBeVisible();
       await expect(page.getByRole('link', { name: E2E_PROJECT_NAME })).toHaveCount(0);
     });
   });

@@ -243,9 +243,10 @@ más se rompe:
 
 Ningún string visible se escribe inline en el JSX: `t('layout.emptyHomeTitle')`.
 
-- `packages/web`: `src/i18n/locales/{es,es-ES,pt}/translation.json` (`es-AR`
-  default; `es-ES` es el español de España: tuteo y vocabulario peninsular —
-  "jefe de obra", "contable", "añadir", "justificante").
+- `packages/web`: `src/i18n/locales/{es,es-ES,pt}/translation.json`. El default
+  es `es-ES` (tuteo y vocabulario peninsular: "jefe de obra", "contable",
+  "añadir", "justificante"). `locales/es` es el argentino y sólo se carga
+  como `es-AR`.
 - `packages/landing`: `src/i18n/locales/{es,pt}/translation.json` (`es` default).
 - **Toda clave nueva va a TODOS los archivos de su paquete al mismo tiempo.** Hay
   un test de paridad en CI.

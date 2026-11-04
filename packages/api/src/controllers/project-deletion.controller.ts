@@ -15,9 +15,9 @@ import { toProjectDTO } from './project.controller.js';
 
 /** Lo que se le dice a quien intenta restaurar una obra y choca con la suscripción. */
 const RESTORE_BLOCKED: Record<'SUBSCRIPTION_REQUIRED' | 'PAID_PLAN_REQUIRED', string> = {
-  SUBSCRIPTION_REQUIRED: 'Tu suscripción venció. Renová el plan para restaurar la obra.',
+  SUBSCRIPTION_REQUIRED: 'Tu suscripción venció. Renueva el plan para restaurar la obra.',
   PAID_PLAN_REQUIRED:
-    'En el mes gratis podés tener hasta 3 obras activas. Activá el plan para restaurar esta obra.',
+    'En el mes gratis puedes tener hasta 3 obras activas. Activa el plan para restaurar esta obra.',
 };
 
 /** El conteo de obras cambió: la cantidad de extras en Stripe se corrige sin frenar la respuesta. */
@@ -54,7 +54,7 @@ export async function deleteProject(req: Request, res: Response, next: NextFunct
     if (!req.user) throw unauthenticated();
 
     const parsed = deleteProjectSchema.safeParse(req.body);
-    if (!parsed.success) throw badRequest('Escribí el nombre de la obra para confirmar.');
+    if (!parsed.success) throw badRequest('Escribe el nombre de la obra para confirmar.');
 
     const project = req.project as IProject;
     if (parsed.data.confirmName !== project.name.trim()) {

@@ -114,7 +114,7 @@ export const createMaterialInvoice = wrap(async (req, res) => {
   const file = req.file;
   if (!file) throw badRequest('Adjuntá la factura: un PDF o una foto.');
   const extension = RECEIPT_MIME_TO_EXTENSION[file.mimetype];
-  if (!extension) throw badRequest('Formato no soportado. Subí un PDF o una imagen .jpg, .png o .webp.');
+  if (!extension) throw badRequest('Formato no soportado. Sube un PDF o una imagen .jpg, .png o .webp.');
 
   const project = req.project as IProject;
   const { materialIds, providerId, markBought, ...money } = parsed.data;
@@ -204,7 +204,7 @@ export const deleteMaterialInvoice = wrap(async (req, res) => {
   });
   if (!expense) throw notFound('No encontramos esa factura.');
   if (!canDeleteInvoice(req, expense)) {
-    throw forbidden('Sólo podés eliminar las facturas que cargaste vos.');
+    throw forbidden('Sólo puedes eliminar las facturas que subiste tú.');
   }
 
   if (expense.receipt) await deleteObject(expense.receipt.key);

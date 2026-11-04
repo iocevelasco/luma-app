@@ -13,7 +13,7 @@ import { conflict } from '../utils/errors.js';
 
 const FULL_MESSAGE =
   `La obra ya tiene ${MAX_PROJECT_MANAGERS} gerentes, que es el máximo. ` +
-  'Sacá a uno para sumar otro.';
+  'Quita a uno para sumar otro.';
 
 /** Cuántos gerentes tiene la obra hoy, el dueño incluido. */
 export async function countProjectManagers(project: IProject): Promise<number> {

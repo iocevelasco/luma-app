@@ -342,7 +342,7 @@ export const uploadMaterialPhoto = wrap(async (req, res) => {
   const file = req.file;
   if (!file) throw badRequest('Falta la foto.');
   const extension = MATERIAL_PHOTO_MIME_TO_EXTENSION[file.mimetype];
-  if (!extension) throw badRequest('Formato no soportado. Subí una foto .jpg, .png o .webp.');
+  if (!extension) throw badRequest('Formato no soportado. Sube una foto .jpg, .png o .webp.');
 
   const project = req.project as IProject;
   // Antes de subir: al revés, un material que no existe deja un archivo huérfano.

@@ -81,7 +81,7 @@ await sendCampaignEmail({
   to: 'ana@ejemplo.com',
   name: 'Ana',
   title: 'Novedades de Luma',
-  body: 'Ya podés registrar tus gastos con foto.\n\nProbalo desde la obra y contanos qué te parece.',
+  body: 'Ya puedes registrar tus gastos con foto.\n\nPruébalo desde la obra y cuéntanos qué te parece.',
   imageUrl: null,
   unsubscribeUrl: 'https://luma.app/api/public/unsubscribe?u=1&s=firma',
 });

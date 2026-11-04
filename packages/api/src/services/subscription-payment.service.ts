@@ -104,7 +104,7 @@ export async function bolivaresQuote(
   const rate = await ensureCurrentRate(now);
   if (!rate) {
     throw serviceUnavailable(
-      'No tenemos una tasa BCV actualizada en este momento. Probá en unas horas o pagá con tarjeta.',
+      'No tenemos una tasa BCV actualizada en este momento. Prueba en unas horas o paga con tarjeta.',
     );
   }
 
@@ -146,7 +146,7 @@ export async function submitBolivaresPayment(params: {
     status: 'pendiente',
   });
   if (pending) {
-    throw conflict('Ya tenés un pago en revisión. Esperá a que lo revisemos antes de mandar otro.');
+    throw conflict('Ya tienes un pago en revisión. Espera a que lo revisemos antes de enviar otro.');
   }
 
   const { quote, rate, amountBs } = await bolivaresQuote(

@@ -28,7 +28,7 @@ function handleUploadError(err: unknown, _req: Request, _res: Response, next: Ne
     return next(
       err.code === 'LIMIT_FILE_SIZE'
         ? new AppError('PAYLOAD_TOO_LARGE', 'El archivo es demasiado grande (máximo 20MB).')
-        : new AppError('VALIDATION', 'Subí un archivo por vez.'),
+        : new AppError('VALIDATION', 'Sube un archivo por vez.'),
     );
   }
   next(err);

@@ -52,7 +52,7 @@ test.describe('directorio de proveedores', () => {
     const projectDetailUrl = page.url();
 
     // Resumen: sin proveedores todavía, la card muestra el vacío.
-    await expect(page.getByText(/todavía no cargaste proveedores/i)).toBeVisible();
+    await expect(page.getByText(/todavía no has añadido proveedores/i)).toBeVisible();
 
     // --- CRUD: crear ---
     await page.getByRole('link', { name: /^proveedores$/i }).click();

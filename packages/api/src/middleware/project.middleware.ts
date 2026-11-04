@@ -170,7 +170,7 @@ export function requireCapability(capability: Capability) {
 
     return res.status(403).json({
       success: false,
-      error: 'No tenés permiso para hacer esto en esta obra',
+      error: 'No tienes permiso para hacer esto en esta obra',
       code: 'FORBIDDEN_CAPABILITY',
       details: { capability },
     });

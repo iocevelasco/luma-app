@@ -145,7 +145,7 @@ const ACCOUNTS: DemoAccount[] = [
         paidOn: caracasDayKey(submittedAt),
         submittedAt,
         reviewedAt: new Date(submittedAt.getTime() + DAY),
-        rejectionReason: 'La referencia no aparece en el banco. Revisá el número y volvé a mandarlo.',
+        rejectionReason: 'La referencia no aparece en el banco. Revisa el número y vuelve a enviarlo.',
       });
     },
   },

@@ -410,7 +410,7 @@ export async function uploadActivityEvidence(req: Request, res: Response) {
   if (!extension) {
     return res
       .status(400)
-      .json({ success: false, error: 'Formato no soportado. Subí una foto .jpg, .png o .webp' });
+      .json({ success: false, error: 'Formato no soportado. Sube una foto .jpg, .png o .webp' });
   }
 
   try {

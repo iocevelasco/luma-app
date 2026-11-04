@@ -51,7 +51,7 @@ function wrap(handler: Handler) {
 
 async function myOrganizationId(req: Request): Promise<string> {
   const organizationId = req.user ? await findMyOrganizationId(req.user.sub) : null;
-  if (!organizationId) throw notFound('No tenés una empresa todavía.');
+  if (!organizationId) throw notFound('No tienes una empresa todavía.');
   return organizationId;
 }
 
