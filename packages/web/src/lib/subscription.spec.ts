@@ -63,6 +63,10 @@ describe('nextProjectState', () => {
   it('un invitado que nunca creó obras: libre', () => {
     expect(nextProjectState(overview({ status: 'sin_iniciar', activeProjects: 0 }))).toBe('free');
   });
+
+  it('ilimitado no cobra la obra siguiente, aunque pase de 3', () => {
+    expect(nextProjectState(overview({ status: 'ilimitado', activeProjects: 12 }))).toBe('free');
+  });
 });
 
 describe('hasLiveCard', () => {

@@ -28,6 +28,11 @@ export const platformUsersApi = {
     if (q) params.set('q', q);
     return unwrap<PlatformUsersPage>(apiClient.get(`/api/admin/users?${params.toString()}`));
   },
+
+  setUnlimited: (userId: string, unlimited: boolean) =>
+    unwrap<{ unlimited: boolean }>(
+      apiClient.post(`/api/admin/users/${userId}/unlimited`, { unlimited }),
+    ),
 };
 
 export const platformActivityApi = {

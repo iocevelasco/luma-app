@@ -37,6 +37,7 @@ const STATUS_CLASSES: Partial<Record<SubscriptionStatus, string>> = {
   en_revision: 'bg-warning text-warning-foreground',
   pago_fallido: 'bg-warning text-warning-foreground',
   vencida: 'bg-destructive text-destructive-foreground',
+  ilimitado: 'bg-primary text-primary-foreground',
 };
 
 /** Cuánto esperar el webhook de Stripe después de volver del pago. */
@@ -80,14 +81,20 @@ function StatusCard({
         {hasPendingPayment && subscription.status !== 'en_revision' && (
           <p>{t('subscription.pendingPayment')}</p>
         )}
-        {subscription.status !== 'sin_iniciar' && (
+        {subscription.status === 'ilimitado' ? (
           <p className="text-muted-foreground">
-            {t('subscription.projects', {
-              active: subscription.activeProjects,
-              included: subscription.includedProjects,
-            })}
-            {extras > 0 && ` · ${t('subscription.extraProjects', { count: extras })}`}
+            {t('subscription.unlimitedProjects', { active: subscription.activeProjects })}
           </p>
+        ) : (
+          subscription.status !== 'sin_iniciar' && (
+            <p className="text-muted-foreground">
+              {t('subscription.projects', {
+                active: subscription.activeProjects,
+                included: subscription.includedProjects,
+              })}
+              {extras > 0 && ` · ${t('subscription.extraProjects', { count: extras })}`}
+            </p>
+          )
         )}
       </CardContent>
     </Card>
@@ -438,24 +445,25 @@ export function SubscriptionPage() {
             {subscription.nextCharge && (
               <NextChargeCard charge={subscription.nextCharge} auto={hasLiveCard(subscription)} />
             )}
-            {subscription.status === 'prueba' &&
-            !hasLiveCard(subscription) &&
-            !hasPendingPayment ? (
-              <UpgradeCard
-                subscription={subscription}
-                onPayInBolivares={(activateNow) => setBolivaresMode({ activateNow })}
-                cardPayment={cardPayment}
-              />
-            ) : (
-              subscription.status !== 'sin_iniciar' && (
-                <PayCard
+            {subscription.status !== 'ilimitado' &&
+              (subscription.status === 'prueba' &&
+              !hasLiveCard(subscription) &&
+              !hasPendingPayment ? (
+                <UpgradeCard
                   subscription={subscription}
-                  hasPendingPayment={hasPendingPayment}
-                  onPayInBolivares={() => setBolivaresMode({ activateNow: false })}
+                  onPayInBolivares={(activateNow) => setBolivaresMode({ activateNow })}
                   cardPayment={cardPayment}
                 />
-              )
-            )}
+              ) : (
+                subscription.status !== 'sin_iniciar' && (
+                  <PayCard
+                    subscription={subscription}
+                    hasPendingPayment={hasPendingPayment}
+                    onPayInBolivares={() => setBolivaresMode({ activateNow: false })}
+                    cardPayment={cardPayment}
+                  />
+                )
+              ))}
             <HistoryCard payments={payments} />
           </div>
         )}

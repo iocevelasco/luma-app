@@ -28,8 +28,8 @@ const SEARCH_DELAY_MS = 300;
 
 /**
  * Las cuentas de Luma, para el admin de la plataforma: cuántas hay, cuántas
- * confirmaron el mail y quién se registró hace poco. Sólo lectura. La ruta va
- * detrás de `AdminLayout` y la API lo vuelve a exigir.
+ * confirmaron el mail, quién se registró hace poco y a quién se le asigna el
+ * plan ilimitado. La ruta va detrás de `AdminLayout` y la API lo vuelve a exigir.
  */
 /** El ícono de cada subconjunto de cuentas de las pestañas. */
 const FILTER_ICON: Record<PlatformUsersFilter, LucideIcon> = {

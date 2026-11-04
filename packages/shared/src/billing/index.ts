@@ -124,6 +124,11 @@ export interface SubscriptionFacts {
   trialEndedEarlyAt?: Date | null;
   periods: PaidPeriodFact[];
   stripe?: StripeFact | null;
+  /**
+   * Plan ilimitado, asignado por un admin de la plataforma. Hecho guardado,
+   * no un estado: si está, no vence, no se cobra y no tiene tope de obras.
+   */
+  unlimited?: boolean;
 }
 
 /** Fin efectivo de la prueba: el original, o antes si se cortó por la regla 4. */
@@ -178,6 +183,10 @@ function coveredByPaidPeriod(facts: SubscriptionFacts, now: Date): boolean {
 
 /** El estado de la suscripción en este momento. Derivado, nunca guardado. */
 export function subscriptionState(facts: SubscriptionFacts, now: Date): SubscriptionState {
+  if (facts.unlimited) {
+    return { status: 'ilimitado', canWrite: true, accessUntil: null, trialDaysLeft: null };
+  }
+
   const trialEnd = effectiveTrialEnd(facts);
   const paid = paidUntil(facts);
 
@@ -324,12 +333,14 @@ export type CreateProjectDecision =
  * - En prueba con 3 activas → no hasta activar el plan (`PAID_PLAN_REQUIRED`):
  *   la cuarta obra es lo que corta la prueba (regla 4).
  * - Con plan, la cuarta en adelante sí, y se marca como extra.
+ * - Ilimitado: siempre, y ninguna obra es extra.
  */
 export function canCreateProject(state: SubscriptionState, activeProjects: number): CreateProjectDecision {
   if (!state.canWrite) return { allowed: false, code: 'SUBSCRIPTION_REQUIRED' };
 
   const atLimit = activeProjects >= PLAN.includedProjects;
 
+  if (state.status === 'ilimitado') return { allowed: true, startsTrial: false, isExtra: false };
   if (state.status === 'sin_iniciar') return { allowed: true, startsTrial: true, isExtra: false };
   if (state.status === 'prueba' && atLimit) return { allowed: false, code: 'PAID_PLAN_REQUIRED' };
 
