@@ -444,6 +444,61 @@ describe('dueReminder', () => {
   it('activa o sin iniciar: nada', () => {
     expect(dueReminder({ trialStartedAt: null, trialEndsAt: null, periods: [] }, d('2026-10-01T00:00:00Z'), [])).toBeNull();
   });
+
+  // El plan vence el 30/11 a las 19:00 de Caracas. La tarea corre a las 9:00.
+  const paidEnd = '2026-11-30T23:00:00Z';
+  const paid = trialFacts('2026-01-01T00:00:00Z', {
+    periods: [
+      {
+        start: d('2026-10-01T00:00:00Z'),
+        end: d(paidEnd),
+        status: 'aprobado',
+        submittedAt: d('2026-10-01T00:00:00Z'),
+      },
+    ],
+  });
+
+  it('a un plan pago le avisa dos días antes, una vez', () => {
+    const now = d('2026-11-28T13:00:00Z');
+    expect(dueReminder(paid, now, [])).toMatchObject({
+      kind: 'paid_ending',
+      key: 'paid-2-2026-11-30',
+      daysLeft: 2,
+    });
+    expect(dueReminder(paid, now, ['paid-2-2026-11-30'])).toBeNull();
+  });
+
+  it('el día de en medio no manda el aviso de dos días atrasado', () => {
+    expect(dueReminder(paid, d('2026-11-29T13:00:00Z'), [])).toBeNull();
+  });
+
+  it('el mismo día del vencimiento avisa mientras el plan sigue activo', () => {
+    expect(dueReminder(paid, d('2026-11-30T13:00:00Z'), ['paid-2-2026-11-30'])).toMatchObject({
+      kind: 'paid_ending',
+      key: 'paid-0-2026-11-30',
+      daysLeft: 0,
+    });
+  });
+
+  it('con tarjeta que renueva sola no avisa que el plan vence', () => {
+    const withCard = trialFacts('2026-01-01T00:00:00Z', {
+      periods: paid.periods,
+      stripe: {
+        status: 'active',
+        currentPeriodStart: d('2026-10-30T23:00:00Z'),
+        currentPeriodEnd: d(paidEnd),
+      },
+    });
+    expect(dueReminder(withCard, d('2026-11-28T13:00:00Z'), [])).toBeNull();
+  });
+
+  it('si el plan pago no se renovó, el aviso de vencida pide reactivarlo', () => {
+    expect(dueReminder(paid, d('2026-12-01T13:00:00Z'), ['paid-2-2026-11-30', 'paid-0-2026-11-30'])).toMatchObject({
+      kind: 'expired',
+      key: 'expired-2026-11-30',
+      hadPaidPlan: true,
+    });
+  });
 });
 
 describe('billableWindows: eliminar y restaurar', () => {

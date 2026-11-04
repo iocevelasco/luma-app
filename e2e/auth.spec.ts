@@ -29,7 +29,7 @@ test.describe('login', () => {
 
   test('llega a recuperar contraseña desde el login', async ({ page }) => {
     await page.goto(appUrl('/login'));
-    await page.getByRole('link', { name: /olvidaste/i }).click();
+    await page.getByRole('link', { name: /has olvidado/i }).click();
 
     await expect(page).toHaveURL(/\/forgot-password/);
     await expect(page.locator('#email')).toBeVisible();
@@ -37,7 +37,7 @@ test.describe('login', () => {
 
   test('llega al registro desde el login', async ({ page }) => {
     await page.goto(appUrl('/login'));
-    await page.getByRole('link', { name: /creá una/i }).click();
+    await page.getByRole('link', { name: /crea una/i }).click();
 
     await expect(page).toHaveURL(/\/register/);
     await expect(page.locator('#name')).toBeVisible();
@@ -47,7 +47,7 @@ test.describe('login', () => {
 test.describe('reset de contraseña', () => {
   test('avisa cuando el enlace no trae token', async ({ page }) => {
     await page.goto(appUrl('/reset-password'));
-    await expect(page.getByText(/inválido o venció/i)).toBeVisible();
+    await expect(page.getByText(/no es válido o ha caducado/i)).toBeVisible();
   });
 
   test('con token muestra el formulario', async ({ page }) => {
