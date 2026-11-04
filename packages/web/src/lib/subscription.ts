@@ -58,6 +58,7 @@ export type NextProjectState = 'free' | 'extra' | 'trialLimit' | 'expired';
 
 export function nextProjectState(subscription: SubscriptionOverview | undefined): NextProjectState {
   if (!subscription) return 'free';
+  if (subscription.status === 'ilimitado') return 'free';
   if (!subscription.canWrite) return 'expired';
   const atLimit = subscription.activeProjects >= subscription.includedProjects;
   if (!atLimit || subscription.status === 'sin_iniciar') return 'free';

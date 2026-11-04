@@ -165,6 +165,17 @@ describe('subscriptionState', () => {
     });
     expect(subscriptionState(facts, d('2026-10-10T00:00:00Z')).status).toBe('prueba');
   });
+
+  it('el plan ilimitado escribe siempre, aunque la prueba haya vencido', () => {
+    const facts = trialFacts('2026-08-01T00:00:00Z', { unlimited: true });
+    const state = subscriptionState(facts, d('2026-12-01T00:00:00Z'));
+    expect(state).toEqual({
+      status: 'ilimitado',
+      canWrite: true,
+      accessUntil: null,
+      trialDaysLeft: null,
+    });
+  });
 });
 
 describe('canCreateProject', () => {
@@ -201,6 +212,11 @@ describe('canCreateProject', () => {
   it('vencida no crea nada', () => {
     const state = subscriptionState(trialFacts('2026-08-01T00:00:00Z'), now);
     expect(canCreateProject(state, 0)).toEqual({ allowed: false, code: 'SUBSCRIPTION_REQUIRED' });
+  });
+
+  it('ilimitado crea todas las obras y ninguna es extra', () => {
+    const state = subscriptionState(trialFacts('2026-08-01T00:00:00Z', { unlimited: true }), now);
+    expect(canCreateProject(state, 40)).toEqual({ allowed: true, startsTrial: false, isExtra: false });
   });
 });
 
@@ -369,6 +385,12 @@ describe('bolívares', () => {
 
 describe('dueReminder', () => {
   const start = '2026-10-01T00:00:00Z'; // la prueba termina el 31/10
+
+  it('el plan ilimitado no recibe recordatorios', () => {
+    const facts = trialFacts(start, { unlimited: true });
+    expect(dueReminder(facts, d('2026-10-24T12:00:00Z'), [])).toBeNull();
+    expect(dueReminder(facts, d('2026-12-01T00:00:00Z'), [])).toBeNull();
+  });
 
   it('a 7 días del fin avisa una vez', () => {
     const facts = trialFacts(start);

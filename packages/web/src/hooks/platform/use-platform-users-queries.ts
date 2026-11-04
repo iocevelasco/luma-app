@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PlatformUsersQuery } from '@luma/shared';
 import { platformUsersApi } from '@/api/platform';
 import { QueryKeys } from '@/lib/query-keys';
@@ -34,5 +34,18 @@ export function usePlatformUsers(query: PlatformUsersQuery) {
     // Al pasar de página o escribir en el buscador la lista no se vacía: se
     // queda la anterior hasta que llega la nueva.
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useSetUnlimitedPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, unlimited }: { userId: string; unlimited: boolean }) =>
+      platformUsersApi.setUnlimited(userId, unlimited),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.platformUsers] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.subscription] });
+    },
   });
 }

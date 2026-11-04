@@ -67,6 +67,9 @@ export async function chargeFor(
   ]);
   const state = subscriptionState(facts, now);
 
+  if (state.status === 'ilimitado') {
+    throw conflict('Tu plan es ilimitado: no tienes que pagar una suscripción.');
+  }
   if (state.status === 'sin_iniciar') {
     throw badRequest('Tu mes gratis arranca con tu primera obra: todavía no hay nada que pagar.');
   }

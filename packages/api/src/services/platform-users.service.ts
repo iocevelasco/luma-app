@@ -7,6 +7,8 @@ import type {
   PlatformUsersPage,
   PlatformUsersQuery,
 } from '@luma/shared';
+import { OrganizationMember } from '../models/OrganizationMember.js';
+import { Subscription } from '../models/Subscription.js';
 import { User, type IUser } from '../models/User.js';
 
 /** Cuántas semanas muestra la curva de altas, la actual incluida. */
@@ -104,7 +106,7 @@ function escapeRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function toRow(user: IUser): PlatformUserRow {
+function toRow(user: IUser, unlimited: boolean): PlatformUserRow {
   return {
     id: String(user._id),
     name: user.name,
@@ -113,7 +115,27 @@ function toRow(user: IUser): PlatformUserRow {
     emailVerified: user.email_verified,
     accountStatus: user.account_status,
     createdAt: user.createdAt.toISOString(),
+    unlimited,
   };
+}
+
+/** Cuentas dueñas de una empresa con plan ilimitado, de este listado. */
+async function unlimitedOwnerIds(userIds: IUser['_id'][]): Promise<Set<string>> {
+  if (userIds.length === 0) return new Set();
+  const memberships = await OrganizationMember.find({ user: { $in: userIds }, role: 'owner' }).select(
+    'user organization',
+  );
+  if (memberships.length === 0) return new Set();
+  const subscriptions = await Subscription.find({
+    organization: { $in: memberships.map((membership) => membership.organization) },
+    unlimited: true,
+  }).select('organization');
+  const orgs = new Set(subscriptions.map((subscription) => String(subscription.organization)));
+  return new Set(
+    memberships
+      .filter((membership) => orgs.has(String(membership.organization)))
+      .map((membership) => String(membership.user)),
+  );
 }
 
 export async function listPlatformUsers(query: PlatformUsersQuery): Promise<PlatformUsersPage> {
@@ -132,8 +154,10 @@ export async function listPlatformUsers(query: PlatformUsersQuery): Promise<Plat
       .limit(query.pageSize),
   ]);
 
+  const unlimited = await unlimitedOwnerIds(users.map((user) => user._id));
+
   return {
-    users: users.map(toRow),
+    users: users.map((user) => toRow(user, unlimited.has(String(user._id)))),
     total,
     page: query.page,
     pageSize: query.pageSize,

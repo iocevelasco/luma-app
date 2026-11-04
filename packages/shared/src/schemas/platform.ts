@@ -20,3 +20,10 @@ export const platformUsersQuerySchema = z.object({
 
 export type PlatformUsersFilter = z.infer<typeof platformUsersFilterSchema>;
 export type PlatformUsersQuery = z.infer<typeof platformUsersQuerySchema>;
+
+/** Asignar o quitar el plan ilimitado. Sólo lo manda el admin de la plataforma. */
+export const setUnlimitedPlanSchema = z.object({
+  unlimited: z.boolean(),
+});
+
+export type SetUnlimitedPlanInput = z.infer<typeof setUnlimitedPlanSchema>;

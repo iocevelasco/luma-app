@@ -1649,7 +1649,8 @@
       "activa": "Pro",
       "en_revision": "Pago en revisión",
       "pago_fallido": "Cobro fallido",
-      "vencida": "Vencida"
+      "vencida": "Vencida",
+      "ilimitado": "Ilimitado"
     },
     "statusDetail": {
       "sin_iniciar": "Tu plan Gratis de 30 días arranca cuando crees tu primera obra.",
@@ -1658,9 +1659,11 @@
       "activa": "Plan Pro, al día hasta el {{date}}.",
       "en_revision": "Tu pago está en revisión. Mientras tanto seguís con acceso completo hasta el {{date}}.",
       "pago_fallido": "No pudimos cobrar la renovación. Stripe lo vuelve a intentar; seguís con acceso hasta el {{date}}.",
-      "vencida": "Tus obras están en sólo lectura. Pagá para volver a editar: no se perdió nada."
+      "vencida": "Tus obras están en sólo lectura. Pagá para volver a editar: no se perdió nada.",
+      "ilimitado": "Plan ilimitado. No pagás suscripción y podés crear todas las obras que necesites."
     },
     "projects": "{{active}} obras activas · {{included}} incluidas en el plan",
+    "unlimitedProjects": "{{active}} obras activas · sin límite",
     "extraProjects_one": "{{count}} obra extra a $8 por mes",
     "extraProjects_other": "{{count}} obras extra a $8 por mes",
     "nextCharge": {
@@ -1866,6 +1869,18 @@
       "verified": "Confirmada",
       "unverified": "Sin confirmar",
       "joined": "Alta el {{date}}",
+      "unlimited": "Ilimitado",
+      "grantUnlimited": "Dar plan ilimitado",
+      "revokeUnlimited": "Quitar plan ilimitado",
+      "unlimitedGranted": "Plan ilimitado asignado",
+      "unlimitedRevoked": "Plan ilimitado quitado",
+      "unlimitedError": "No se pudo cambiar el plan.",
+      "grantTitle": "¿Dar el plan ilimitado?",
+      "grantBody": "{{name}} no va a pagar suscripción y no va a tener límite de obras.",
+      "revokeTitle": "¿Quitar el plan ilimitado?",
+      "revokeBody": "{{name}} vuelve a las reglas del plan: prueba, tope de obras y pago.",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
       "empty": "No hay cuentas para mostrar.",
       "emptyFiltered": "Probá con otro filtro o con otra búsqueda.",
       "pagination": {
