@@ -10,6 +10,7 @@ import type {
 import { activitiesApi } from '@/api/activities';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { POLLED_LIST } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
@@ -22,6 +23,7 @@ export function useAllActivities(projectId: string | undefined) {
     queryKey: [QueryKeys.activities, projectId, 'all'],
     queryFn: () => activitiesApi.list(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...POLLED_LIST,
   });
 }
 

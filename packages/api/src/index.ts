@@ -17,6 +17,8 @@ import {
 } from './config/app.config.js';
 import { connectDatabase, isDatabaseConnected } from './config/database.js';
 import { startBcvRateRefresh } from './services/bcv.service.js';
+import { liveHub } from './services/live-hub.service.js';
+import { compressionFilter } from './middleware/compression-filter.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { normalizeErrors } from './middleware/normalizeErrors.js';
 import { CACHE_REVALIDATE, setSpaCacheHeaders } from './middleware/spaCache.js';
@@ -159,7 +161,9 @@ app.use(
   }),
 );
 
-app.use(compression());
+// El stream de tiempo real no se comprime: `compression` retiene los bytes hasta
+// llenar un buffer, y un aviso de dos líneas llegaría tarde o nunca.
+app.use(compression({ filter: compressionFilter }));
 
 app.use(
   cors({
@@ -332,14 +336,16 @@ async function startServer() {
   startBcvRateRefresh();
 }
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM recibido, cerrando...');
-  process.exit(0);
-});
+// Cada deploy corta las conexiones en vivo. Avisarles (`bye`) deja que la SPA
+// reconecte enseguida en vez de esperar a que el watchdog note el silencio.
+function shutdown(signal: string) {
+  console.log(`${signal} recibido, cerrando...`);
+  liveHub.closeAll('shutdown');
+  // Margen para que el `bye` salga del socket antes de matar el proceso.
+  setTimeout(() => process.exit(0), 250);
+}
 
-process.on('SIGINT', () => {
-  console.log('SIGINT recibido, cerrando...');
-  process.exit(0);
-});
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 startServer();

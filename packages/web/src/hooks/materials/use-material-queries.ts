@@ -14,6 +14,7 @@ import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { prepareUploadPhoto } from '@/lib/material-photo-export';
 import { QueryKeys } from '@/lib/query-keys';
+import { POLLED_LIST } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
@@ -26,6 +27,7 @@ export function useMaterials(projectId: string | undefined) {
     queryKey: [QueryKeys.materials, projectId],
     queryFn: () => materialsApi.list(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...POLLED_LIST,
   });
 }
 
