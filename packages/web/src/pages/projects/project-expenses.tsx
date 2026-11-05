@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { format } from 'date-fns';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createExpenseSchema,
@@ -8,18 +9,19 @@ import {
   DOCUMENT_MIME_TYPES,
   type CreateExpenseInput,
   type Expense,
-  type ExpenseCategory,
 } from '@luma/shared';
-import { Download, Plus, Receipt, Trash2, TrendingUp, Upload, Users } from 'lucide-react';
+import { Download, FileDown, Plus, Receipt, SearchX, Trash2, TrendingUp, Upload, Users, X } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Can } from '@/components/permissions/can';
 import { EmptyState } from '@/components/common/empty-state';
 import { ExpenseMaterials } from '@/components/finance/expense-materials';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
+import { SearchField } from '@/components/common/search-field';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +46,7 @@ import {
 } from '@/components/common/row-card-list';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Select,
   SelectContent,
@@ -62,6 +65,18 @@ import {
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { downloadBlob } from '@/lib/download-blob';
+import {
+  countActiveExpenseFilters,
+  EXPENSE_GROUP_BY,
+  filterExpenses,
+  groupExpenses,
+  NO_EXPENSE_FILTERS,
+  sumExpenses,
+  type ExpenseFilters,
+  type ExpenseGroup,
+  type ExpenseGroupBy,
+} from '@/lib/expenses-view';
 import { formatMoney } from '@/lib/format-money';
 import { cn, formatFileSize } from '@/lib/utils';
 
@@ -430,16 +445,24 @@ export function ProjectExpensesPage() {
   const { data: summaryData } = useFinanceSummary(projectId);
   const deleteExpense = useDeleteExpense(projectId!);
   const [deleting, setDeleting] = useState<Expense | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const hasExpenses = (data?.expenses.length ?? 0) > 0;
 
-  const byCategory = useMemo(() => {
-    const map = new Map<ExpenseCategory, typeof data extends undefined ? never : NonNullable<typeof data>['expenses']>();
-    for (const expense of data?.expenses ?? []) {
-      const list = map.get(expense.category) ?? [];
-      list.push(expense);
-      map.set(expense.category, list);
-    }
-    return map;
-  }, [data]);
+  // `jspdf` pesa: se baja apenas hay algo que descargar y no al apretar el botón.
+  useEffect(() => {
+    if (!hasExpenses) return;
+    void import('@/lib/expenses-pdf');
+    void import('jspdf');
+    void import('jspdf-autotable');
+  }, [hasExpenses]);
+
+  const [filters, setFilters] = useState<ExpenseFilters>(NO_EXPENSE_FILTERS);
+  const [groupBy, setGroupBy] = useState<ExpenseGroupBy>('category');
+  const activeFilters = countActiveExpenseFilters(filters);
+
+  // Lo visible: filtrado y agrupado en el cliente, sobre la lista que ya llegó.
+  const visible = useMemo(() => filterExpenses(data?.expenses ?? [], filters), [data, filters]);
+  const groups = useMemo(() => groupExpenses(visible, groupBy), [visible, groupBy]);
 
   if (isError) return <PageLayout isError />;
   if (isLoading || !data || !projectData) return <PageLayout isLoading />;
@@ -447,8 +470,145 @@ export function ProjectExpensesPage() {
   const currency = projectData.project.currency;
   const summary = summaryData?.summary;
 
+  async function handleDownloadPdf() {
+    if (generatingPdf || visible.length === 0) return;
+    setGeneratingPdf(true);
+    try {
+      const { buildExpensesPdf, expensesFileName } = await import('@/lib/expenses-pdf');
+      const now = new Date();
+      // Lo que la pantalla muestra, en su mismo orden.
+      const expenses = groups.flatMap((group) => group.expenses);
+      const blob = await buildExpensesPdf({
+        projectName: projectData?.project.name ?? '',
+        expenses,
+        total: sumExpenses(expenses),
+        labels: {
+          title: t('finance.expenses.pdf.title'),
+          filtered: activeFilters > 0 ? t('finance.expenses.pdf.filtered') : null,
+          summary: `${t('finance.expenses.pdf.summary', { count: expenses.length })} · ${format(now, 'PPPP', { locale: dateLocale })}`,
+          columns: {
+            date: t('finance.expenses.pdf.columnDate'),
+            description: t('finance.fields.description'),
+            category: t('finance.fields.category'),
+            detail: t('finance.expenses.pdf.columnDetail'),
+            amount: t('finance.expenses.pdf.columnAmount'),
+          },
+          total: t('finance.expenses.pdf.total'),
+          generated: t('finance.expenses.pdf.generated', { date: format(now, 'Pp', { locale: dateLocale }) }),
+          page: (page, total) => t('finance.expenses.pdf.page', { page, total }),
+          category: (category) => t(`finance.category.${category}`),
+          method: (method) => t(`finance.method.${method}`),
+          day: (dayKey) => format(fromDayKey(dayKey), 'P', { locale: dateLocale }),
+          money: (amount) => formatMoney(amount, currency, i18n.language),
+        },
+      });
+      downloadBlob(blob, expensesFileName(projectData?.project.name ?? '', now));
+      toast.success(t('finance.expenses.pdf.downloaded'));
+    } catch {
+      toast.error(t('finance.expenses.pdf.error'));
+    } finally {
+      setGeneratingPdf(false);
+    }
+  }
+
+  const groupLabel = (group: ExpenseGroup) => {
+    if (group.name === null) return t(`finance.expenses.group.none.${groupBy}`);
+    if (groupBy === 'category') return t(`finance.category.${group.name}`);
+    if (groupBy === 'month') return format(fromDayKey(`${group.key}-01`), 'LLLL yyyy', { locale: dateLocale });
+    return group.name;
+  };
+
   return (
     <PageLayout
+      toolbar={
+        hasExpenses ? (
+          <>
+            <SearchField
+              wrapperClassName="w-full sm:w-60"
+              className="h-10"
+              value={filters.search}
+              onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
+              placeholder={t('finance.expenses.filters.search')}
+              aria-label={t('finance.expenses.filters.search')}
+            />
+            <Select
+              value={filters.category}
+              onValueChange={(value) =>
+                setFilters((prev) => ({ ...prev, category: value as ExpenseFilters['category'] }))
+              }
+            >
+              <SelectTrigger
+                className="h-10 w-full sm:w-44"
+                aria-label={t('finance.expenses.filters.category')}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('finance.expenses.filters.allCategories')}</SelectItem>
+                {EXPENSE_CATEGORIES.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {t(`finance.category.${option}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="date"
+              className="h-10 w-[calc(50%-0.25rem)] sm:w-40"
+              value={filters.from}
+              max={filters.to || undefined}
+              onChange={(event) => setFilters((prev) => ({ ...prev, from: event.target.value }))}
+              aria-label={t('finance.expenses.filters.from')}
+            />
+            <Input
+              type="date"
+              className="h-10 w-[calc(50%-0.25rem)] sm:w-40"
+              value={filters.to}
+              min={filters.from || undefined}
+              onChange={(event) => setFilters((prev) => ({ ...prev, to: event.target.value }))}
+              aria-label={t('finance.expenses.filters.to')}
+            />
+            <Select value={groupBy} onValueChange={(value) => setGroupBy(value as ExpenseGroupBy)}>
+              <SelectTrigger className="h-10 w-full sm:w-48" aria-label={t('finance.expenses.groupBy.label')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {EXPENSE_GROUP_BY.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {t(`finance.expenses.groupBy.${option}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {activeFilters > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-10 max-sm:min-h-11"
+                onClick={() => setFilters(NO_EXPENSE_FILTERS)}
+              >
+                <X className="size-4" />
+                {t('finance.expenses.filters.clear')}
+              </Button>
+            )}
+          </>
+        ) : undefined
+      }
+      secondaryActions={
+        hasExpenses ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="max-sm:min-h-11"
+            disabled={generatingPdf || visible.length === 0}
+            aria-busy={generatingPdf}
+            onClick={() => void handleDownloadPdf()}
+          >
+            {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+            {generatingPdf ? t('finance.expenses.pdf.generating') : t('finance.expenses.pdf.button')}
+          </Button>
+        ) : undefined
+      }
       action={
         <Can I="expense.write">
           <NewExpenseDrawer projectId={projectId!} projectCurrency={currency} />
@@ -507,46 +667,55 @@ export function ProjectExpensesPage() {
           title={t('finance.expenses.emptyTitle')}
           description={t('finance.expenses.emptyDescription')}
         />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon={SearchX}
+          title={t('finance.expenses.filters.emptyTitle')}
+          description={t('finance.expenses.filters.emptyDescription')}
+          action={
+            <Button type="button" variant="outline" onClick={() => setFilters(NO_EXPENSE_FILTERS)}>
+              <X className="size-4" />
+              {t('finance.expenses.filters.clear')}
+            </Button>
+          }
+        />
       ) : (
         <ListSections>
-          {EXPENSE_CATEGORIES.map((category) => {
-            const expenses = byCategory.get(category);
-            if (!expenses || expenses.length === 0) return null;
-
-            return (
-              <ListSection
-                key={category}
-                label={t(`finance.category.${category}`)}
-                meta={
-                  <span className="tabular-nums">
-                    {formatMoney(
-                      summary?.expensesByCategory[category] ?? 0,
-                      currency,
-                      i18n.language,
-                    )}
-                  </span>
-                }
-              >
-                <RowCardList>
-                  {expenses.map((expense) => (
+          {groups.map((group) => (
+            <ListSection
+              key={group.key}
+              label={groupLabel(group)}
+              meta={
+                <>
+                  {activeFilters > 0 || groupBy !== 'category' ? (
+                    <span>{t('finance.expenses.pdf.summary', { count: group.expenses.length })}</span>
+                  ) : null}
+                  <span className="tabular-nums">{formatMoney(group.total, currency, i18n.language)}</span>
+                </>
+              }
+            >
+              <RowCardList>
+                {group.expenses.map((expense) => {
+                  // La fila no repite lo que ya dice el rótulo del grupo.
+                  const detail = [
+                    groupBy !== 'category' && t(`finance.category.${expense.category}`),
+                    expense.method && t(`finance.method.${expense.method}`),
+                    groupBy !== 'provider' && expense.providerName,
+                    groupBy !== 'activity' && expense.activityName,
+                  ].filter(Boolean);
+                  return (
                     <RowCard key={expense.id}>
                       {/* La fecha es el bloque de la izquierda: la línea 2 ya no la repite. */}
                       <RowCardDate date={fromDayKey(expense.spentOn)} locale={dateLocale} />
                       <RowCardBody
                         title={<p className="truncate">{expense.description}</p>}
                         meta={
-                          (expense.method || expense.providerName || expense.activityName || expense.materials) && (
+                          (detail.length > 0 || expense.materials) && (
                             <p>
-                              {[
-                                expense.method && t(`finance.method.${expense.method}`),
-                                expense.providerName,
-                                expense.activityName,
-                              ]
-                                .filter(Boolean)
-                                .join(' · ')}
+                              {detail.join(' · ')}
                               {expense.materials && (
                                 <>
-                                  {(expense.method || expense.providerName || expense.activityName) && ' · '}
+                                  {detail.length > 0 && ' · '}
                                   <ExpenseMaterials projectId={projectId!} materials={expense.materials} />
                                 </>
                               )}
@@ -563,11 +732,7 @@ export function ProjectExpensesPage() {
 
                       <RowCardEnd>
                         <span className="text-sm tabular-nums">
-                          {formatMoney(
-                            expense.amountInProjectCurrency,
-                            currency,
-                            i18n.language,
-                          )}
+                          {formatMoney(expense.amountInProjectCurrency, currency, i18n.language)}
                         </span>
                         {expense.receipt?.url && (
                           <Button
@@ -576,11 +741,7 @@ export function ProjectExpensesPage() {
                             asChild
                             aria-label={t('finance.expenses.openReceipt')}
                           >
-                            <a
-                              href={expense.receipt.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
+                            <a href={expense.receipt.url} target="_blank" rel="noopener noreferrer">
                               <Download className="size-4" />
                             </a>
                           </Button>
@@ -597,11 +758,11 @@ export function ProjectExpensesPage() {
                         </Can>
                       </RowCardEnd>
                     </RowCard>
-                  ))}
-                </RowCardList>
-              </ListSection>
-            );
-          })}
+                  );
+                })}
+              </RowCardList>
+            </ListSection>
+          ))}
         </ListSections>
       )}
 

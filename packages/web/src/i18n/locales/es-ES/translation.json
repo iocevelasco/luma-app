@@ -1439,7 +1439,46 @@
       "delete": "Eliminar gasto",
       "openReceipt": "Abrir justificante",
       "deleteTitle": "¿Eliminar este gasto?",
-      "deleteBody": "Vas a eliminar «{{description}}» por {{amount}}. El resultado de la obra se recalcula. No se puede deshacer."
+      "deleteBody": "Vas a eliminar «{{description}}» por {{amount}}. El resultado de la obra se recalcula. No se puede deshacer.",
+      "pdf": {
+        "button": "Descargar PDF",
+        "generating": "Generando PDF…",
+        "title": "Gastos",
+        "summary_one": "{{count}} gasto",
+        "summary_other": "{{count}} gastos",
+        "columnDate": "Fecha",
+        "columnDetail": "Detalle",
+        "columnAmount": "Importe",
+        "total": "Total",
+        "generated": "Generado el {{date}}",
+        "page": "Página {{page}} de {{total}}",
+        "downloaded": "PDF descargado.",
+        "error": "No hemos podido generar el PDF. Inténtalo de nuevo.",
+        "filtered": "Con filtros aplicados: no es la lista completa."
+      },
+      "filters": {
+        "search": "Buscar gastos",
+        "category": "Categoría",
+        "allCategories": "Todas las categorías",
+        "from": "Desde",
+        "to": "Hasta",
+        "clear": "Quitar filtros",
+        "emptyTitle": "Ningún gasto coincide",
+        "emptyDescription": "Prueba con otra búsqueda o quita algún filtro."
+      },
+      "groupBy": {
+        "label": "Agrupar por",
+        "category": "Agrupar por categoría",
+        "provider": "Agrupar por proveedor",
+        "activity": "Agrupar por actividad",
+        "month": "Agrupar por mes"
+      },
+      "group": {
+        "none": {
+          "provider": "Sin proveedor",
+          "activity": "Sin actividad"
+        }
+      }
     },
     "payroll": {
       "title": "Nómina",
