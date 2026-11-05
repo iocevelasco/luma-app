@@ -58,7 +58,7 @@ export function LiveChat() {
         onOpenChange={setOpen}
         store={store}
         title={t('secureChat.liveTitle')}
-        description={t('secureChat.liveDescription')}
+        typedPlaceholder={t('secureChat.liveDescription')}
       />
     </>
   );
