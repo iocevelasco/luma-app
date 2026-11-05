@@ -8,6 +8,8 @@ import { LiveChat } from './live-chat';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
+vi.mock('@/providers/auth-provider', () => ({ useAuth: () => ({ user: { name: 'Ana Pérez' } }) }));
+
 const api = vi.hoisted(() => ({ createSession: vi.fn() }));
 vi.mock('@/api/chat', () => ({ chatApi: { createSession: api.createSession } }));
 
@@ -27,7 +29,7 @@ function renderLive() {
 }
 
 async function openAndSend(text: string) {
-  await userEvent.click(screen.getByRole('button', { name: 'secureChat.open' }));
+  await userEvent.click(screen.getByRole('button', { name: 'secureChat.openLive' }));
   await userEvent.type(await screen.findByLabelText('secureChat.inputLabel'), text);
   await userEvent.click(screen.getByRole('button', { name: 'secureChat.send' }));
 }
@@ -58,9 +60,22 @@ describe('LiveChat', () => {
     expect(net.stream).toHaveBeenCalledWith(expect.objectContaining({ sessionToken: 'tok', message: 'hola' }));
   });
 
+  it('saluda a la persona y un iniciador abre la sesión y envía su frase', async () => {
+    renderLive();
+    await userEvent.click(screen.getByRole('button', { name: 'secureChat.openLive' }));
+    expect(await screen.findByTestId('chat-welcome')).toHaveTextContent('secureChat.greeting');
+    expect(screen.getAllByRole('button', { name: /^secureChat\.starters\./ })).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'secureChat.send' })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'secureChat.starters.createProject' }));
+    await waitFor(() =>
+      expect(net.stream).toHaveBeenCalledWith(expect.objectContaining({ message: 'secureChat.starters.createProject' })),
+    );
+  });
+
   it('no ofrece adjuntos: NexusBot sólo recibe texto', async () => {
     renderLive();
-    await userEvent.click(screen.getByRole('button', { name: 'secureChat.open' }));
+    await userEvent.click(screen.getByRole('button', { name: 'secureChat.openLive' }));
     await screen.findByLabelText('secureChat.inputLabel');
 
     expect(screen.queryByTestId('file-input')).toBeNull();
@@ -70,7 +85,7 @@ describe('LiveChat', () => {
 
   it('un archivo soltado se frena (no navega) y no se adjunta', async () => {
     renderLive();
-    await userEvent.click(screen.getByRole('button', { name: 'secureChat.open' }));
+    await userEvent.click(screen.getByRole('button', { name: 'secureChat.openLive' }));
     const zone = await screen.findByTestId('chat-conversation');
     const drop = new Event('drop', { bubbles: true, cancelable: true });
     Object.defineProperty(drop, 'dataTransfer', {
@@ -112,7 +127,7 @@ describe('LiveChat', () => {
     renderLive();
     await openAndSend('uno');
     await screen.findByTestId('message-assistant');
-    await waitFor(() => expect(screen.getByRole('button', { name: 'secureChat.send' })).toBeEnabled());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'secureChat.stop' })).toBeNull());
     const first = api.createSession.mock.calls[0][0];
 
     await userEvent.click(screen.getByRole('button', { name: /secureChat.newConversation/ }));

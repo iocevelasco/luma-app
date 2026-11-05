@@ -8,7 +8,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
-import { Check,CheckCheck, Copy, ImagePlus, Paperclip, RotateCcw, SendHorizontal, Square, User, X } from 'lucide-react';
+import { Check, CheckCheck, Copy, ImagePlus, Paperclip, RotateCcw, SendHorizontal, Square, User, X, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,13 @@ import { clampTitle } from '@/lib/chat/content';
 import { cn } from '@/lib/utils';
 import { ChatMarkdown } from './chat-markdown';
 import { SafeImage } from './safe-image';
+
+/** Saludo y frases para arrancar, ya traducidos: el componente no sabe de i18n ni de usuarios. */
+export interface ChatWelcome {
+  title: string;
+  subtitle: string;
+  starters: { id: string; icon: LucideIcon; text: string }[];
+}
 
 /** Los códigos son kebab-case; las claves i18n, camelCase. */
 const camel = (code: string) => code.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
@@ -148,10 +155,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 export function ChatConversation({
   store: useStore = useChatStore,
   typedPlaceholder,
+  welcome,
 }: {
   store?: ChatStoreHook;
   /** Si viene, el placeholder se escribe letra por letra en vez de ser fijo. */
   typedPlaceholder?: string;
+  /** Si viene, la conversación vacía saluda y ofrece iniciadores en vez del aviso genérico. */
+  welcome?: ChatWelcome;
 }) {
   const { t } = useTranslation();
   const store = useStore();
@@ -175,9 +185,11 @@ export function ChatConversation({
   }
 
   const busy = store.isStreaming || store.isAttaching;
+  // Sin texto ni imagen no hay nada que enviar: el botón queda apagado y Enter no hace nada.
+  const empty = draft.trim() === '' && store.draftAttachments.length === 0;
 
   async function submit() {
-    if (busy) return;
+    if (busy || empty) return;
     const text = draft;
     // Se limpia sólo si el envío es válido; si no, la persona conserva lo escrito.
     const trimmed = text.trim();
@@ -259,7 +271,30 @@ export function ChatConversation({
             <AlertDescription>{t('secureChat.restoredDiscarded', { count: store.discarded })}</AlertDescription>
           </Alert>
         )}
-        {store.messages.length === 0 ? (
+        {store.messages.length === 0 && welcome ? (
+          <div data-testid="chat-welcome" className="flex min-h-full flex-col justify-center gap-6 py-6">
+            <div className="space-y-1">
+              <p className="text-xl text-foreground">{welcome.title}</p>
+              <p className="text-sm text-muted-foreground">{welcome.subtitle}</p>
+            </div>
+            <ul className="m-0 grid list-none gap-2 p-0">
+              {welcome.starters.map(({ id, icon: Icon, text }) => (
+                <li key={id}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto w-full justify-start whitespace-normal py-3 text-start"
+                    disabled={busy}
+                    onClick={() => void store.send(text)}
+                  >
+                    <Icon aria-hidden className="text-primary" />
+                    {text}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : store.messages.length === 0 ? (
           <div className="py-10 text-center">
             <p className="text-sm">{t('secureChat.emptyTitle')}</p>
             <p className="mt-1 text-xs text-muted-foreground">{t('secureChat.emptyHint')}</p>
@@ -330,7 +365,7 @@ export function ChatConversation({
             // Límite duro del control; el store lo vuelve a comprobar.
             maxLength={CHAT_LIMITS.maxUserChars}
             className={cn(
-              'field-sizing-content max-h-40 w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-foreground/70 md:text-sm',
+              'field-sizing-content max-h-40 w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-foreground/40 md:text-sm',
               attachments ? 'min-h-12' : 'min-h-9 flex-1 py-[7px]',
             )}
           />
@@ -368,7 +403,7 @@ export function ChatConversation({
                 size="icon"
                 className="border-transparent shadow-none active:shadow-none"
                 aria-label={t('secureChat.send')}
-                disabled={busy}
+                disabled={busy || empty}
               >
                 <SendHorizontal aria-hidden />
               </Button>

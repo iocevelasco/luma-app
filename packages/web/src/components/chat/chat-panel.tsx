@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import type { ChatStoreHook } from '@/lib/chat/chat-store';
 import { cn } from '@/lib/utils';
-import { ChatConversation } from './chat-conversation';
+import { ChatConversation, type ChatWelcome } from './chat-conversation';
 
 /**
  * Panel lateral del chat. Al cerrarlo se desmonta la vista, no la
@@ -15,6 +15,7 @@ export function ChatPanel({
   title,
   description,
   typedPlaceholder,
+  welcome,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -24,6 +25,8 @@ export function ChatPanel({
   description?: string;
   /** Si viene, esa frase se escribe como placeholder del campo y en el encabezado queda sólo para lectores de pantalla. */
   typedPlaceholder?: string;
+  /** Saludo e iniciadores de la conversación vacía. */
+  welcome?: ChatWelcome;
 }) {
   const { t } = useTranslation();
   return (
@@ -36,7 +39,7 @@ export function ChatPanel({
           </SheetDescription>
         </div>
         <div className="min-h-0 flex-1">
-          <ChatConversation store={store} typedPlaceholder={typedPlaceholder} />
+          <ChatConversation store={store} typedPlaceholder={typedPlaceholder} welcome={welcome} />
         </div>
       </SheetContent>
     </Sheet>

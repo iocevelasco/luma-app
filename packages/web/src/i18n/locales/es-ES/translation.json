@@ -2180,7 +2180,17 @@
     "inputHint": "Enter envía, Mayús+Enter hace un salto de línea",
     "sent": "Enviado",
     "attachFile": "Adjuntar archivo",
-    "liveTitle": "Asistente de Luma",
-    "liveDescription": "Resuelve dudas sobre cómo usar Luma."
+    "liveTitle": "Luma IA",
+    "liveDescription": "Resuelve dudas sobre cómo usar Luma.",
+    "openLive": "Abrir Luma IA",
+    "greeting": "Hola, {{name}}",
+    "greetingAnonymous": "Hola",
+    "greetingHint": "¿En qué te ayudo hoy?",
+    "starters": {
+      "createProject": "¿Cómo creo una obra?",
+      "roles": "¿Qué puede hacer cada rol en una obra?",
+      "advisor": "¿Qué le puedo preguntar al Consultor IA?",
+      "money": "¿Qué diferencia hay entre gastado y cobrado?"
+    }
   }
 }
