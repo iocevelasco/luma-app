@@ -492,6 +492,50 @@ select:-webkit-autofill {
 }
 
 /*
+  Botón de Luma IA: un aro que se expande tres veces y la estrella que titila,
+  una sola vez cuando carga la vista. No es un loop: avisa que hay ayuda y se calla.
+*/
+@keyframes ai-attention-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes ai-attention-sparkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0);
+  }
+  40% {
+    transform: scale(1.25) rotate(-14deg);
+  }
+  70% {
+    transform: scale(0.95) rotate(8deg);
+  }
+}
+
+.ai-attention-ring {
+  opacity: 0;
+  animation: ai-attention-ring 1.4s ease-out 1.2s 3 both;
+}
+
+.ai-attention-sparkle {
+  animation: ai-attention-sparkle 1.4s ease-in-out 1.2s 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-attention-ring,
+  .ai-attention-sparkle {
+    animation: none;
+  }
+}
+
+/*
   Explorador de la documentación (`DocumentFileManager`). Fuera de `@layer` por lo
   mismo que `.luma-gantt`: el CSS de la librería no está en una capa y le gana.
   `all.css` trae `@font-face` de `cdn.svar.dev` para Open Sans; con la tipografía
@@ -729,22 +773,4 @@ select:-webkit-autofill {
 /* El fondo de la lista del celular y el de las canceladas: el mismo gris que las columnas. */
 .luma-board-canvas {
   background: var(--board-canvas);
-}
-
-/*
-  El chat flota en la misma esquina que la acción principal (Nueva obra y el
-  resto de los FAB). Estas variables las lee el widget, dentro de su shadow:
-  el botón queda encima del FAB, alineado a su derecha. En mobile el FAB sube
-  para dejar la barra inferior; el chat sube con él.
-*/
-nexus-chat {
-  --nexus-inset-end: 1rem;
-  --nexus-inset-bottom: calc(5rem + 2.25rem + 0.75rem + env(safe-area-inset-bottom));
-}
-
-@media (min-width: 768px) {
-  nexus-chat {
-    --nexus-inset-end: 2rem;
-    --nexus-inset-bottom: calc(2rem + 2.25rem + 0.75rem);
-  }
 }

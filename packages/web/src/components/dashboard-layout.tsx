@@ -17,7 +17,7 @@ import { SpecialtyLabelProvider } from '@/hooks/activities/use-specialty-label';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { ContentAreaContext } from '@/components/layout/content-area-context';
 import { SubscriptionNotice } from '@/components/subscription/subscription-notice';
-import { NexusChat } from '@/components/nexus-chat';
+import { LiveChat } from '@/components/chat/live-chat';
 
 /**
  * Chrome del panel: header, navegación lateral en desktop, barra inferior en
@@ -147,7 +147,7 @@ export function DashboardLayout() {
           </div>
         )}
       </div>
-      <NexusChat />
+      <LiveChat />
     </TooltipProvider>
   );
 }

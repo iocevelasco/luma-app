@@ -26,7 +26,8 @@
     "subscription:reminders": "tsx src/scripts/send-subscription-reminders.ts",
     "projects:purge": "tsx src/scripts/purge-deleted-projects.ts",
     "accounts:purge": "tsx src/scripts/purge-deactivated-accounts.ts",
-    "email:preview": "tsx src/scripts/email-preview.ts"
+    "email:preview": "tsx src/scripts/email-preview.ts",
+    "chat:scope": "tsx src/scripts/chat-scope/run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

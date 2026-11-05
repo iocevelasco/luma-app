@@ -130,24 +130,34 @@ export async function currentChatPrompt(): Promise<ChatPromptView> {
   return { systemPrompt: stored.systemPrompt, updatedAt: stored.updatedAt.toISOString() };
 }
 
+/** Lo que tarda NexusBot en contestar antes de darlo por caído. */
+const NEXUSBOT_TIMEOUT_MS = 10_000;
+
 /**
- * Publica el prompt en NexusBot y, si lo acepta, lo guarda.
- * Si NexusBot rechaza el cambio, la base queda como estaba.
+ * Deja el prompt en el proyecto de NexusBot. Es **configuración del proyecto**:
+ * NexusBot lo antepone como mensaje `system` en cada petición; el navegador
+ * nunca lo manda. Lanza si NexusBot no lo acepta.
  */
-export async function saveChatPrompt(systemPrompt: string, adminId: string): Promise<ChatPromptView> {
+async function publishChatPrompt(systemPrompt: string): Promise<void> {
   const { API_URL, ADMIN_KEY, PROJECT_ID } = NEXUSBOT_CONFIG;
   if (!API_URL || !ADMIN_KEY || !PROJECT_ID) {
     throw serviceUnavailable('Falta la clave de administración de NexusBot.');
   }
 
-  const response = await fetch(`${API_URL}/api/v1/admin/projects/${PROJECT_ID}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Admin-Key': ADMIN_KEY,
-    },
-    body: JSON.stringify({ systemPrompt }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/api/v1/admin/projects/${PROJECT_ID}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': ADMIN_KEY,
+      },
+      body: JSON.stringify({ systemPrompt }),
+      signal: AbortSignal.timeout(NEXUSBOT_TIMEOUT_MS),
+    });
+  } catch {
+    throw serviceUnavailable('NexusBot no respondió.');
+  }
 
   if (!response.ok) {
     let detail = '';
@@ -160,6 +170,14 @@ export async function saveChatPrompt(systemPrompt: string, adminId: string): Pro
     }
     throw serviceUnavailable(`NexusBot no aceptó el prompt (${response.status})${detail}.`);
   }
+}
+
+/**
+ * Publica el prompt en NexusBot y, si lo acepta, lo guarda.
+ * Si NexusBot rechaza el cambio, la base queda como estaba.
+ */
+export async function saveChatPrompt(systemPrompt: string, adminId: string): Promise<ChatPromptView> {
+  await publishChatPrompt(systemPrompt);
 
   const stored = await ChatPrompt.findOneAndUpdate(
     { singleton: 'chat' },

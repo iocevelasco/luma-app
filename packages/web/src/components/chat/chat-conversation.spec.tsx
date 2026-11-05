@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Building2 } from 'lucide-react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '@/lib/chat/chat-store';
 import { CHAT_LIMITS } from '@/lib/chat/limits';
@@ -255,11 +256,17 @@ describe('adjuntos en la conversación', () => {
 });
 
 describe('límites del mensaje, privacidad y estado', () => {
-  it('no envía mensajes vacíos', async () => {
+  it('con el campo vacío el botón de enviar está apagado y no hay aviso', async () => {
     render(<ChatConversation />);
-    await userEvent.click(screen.getByRole('button', { name: /secureChat.send/ }));
-    expect(screen.getByTestId('chat-notices')).toHaveTextContent('secureChat.errors.empty');
+    const send = screen.getByRole('button', { name: /secureChat.send/ });
+    expect(send).toBeDisabled();
+    await userEvent.type(screen.getByLabelText('secureChat.inputLabel'), '   ');
+    expect(send).toBeDisabled();
+    expect(screen.queryByTestId('chat-notices')).toBeNull();
     expect(useChatStore.getState().messages).toEqual([]);
+
+    await userEvent.type(screen.getByLabelText('secureChat.inputLabel'), 'hola');
+    expect(send).toBeEnabled();
   });
 
   it('rechaza un mensaje que pasa el máximo (el store lo vuelve a comprobar)', async () => {
@@ -316,10 +323,21 @@ describe('copiar, pegar, arrastrar y enviar con Enter', () => {
     expect((textbox() as HTMLTextAreaElement).value).toBe('');
   });
 
-  it('Enter con el campo vacío no envía y avisa', async () => {
+  it('Enter con el campo vacío no envía ni avisa', async () => {
     render(<ChatConversation />);
     await userEvent.type(textbox(), '{Enter}');
-    expect(screen.getByTestId('chat-notices')).toHaveTextContent('secureChat.errors.empty');
+    expect(useChatStore.getState().messages).toEqual([]);
+    expect(screen.queryByTestId('chat-notices')).toBeNull();
+  });
+
+  it('un iniciador de la bienvenida envía su frase y deja paso a la conversación', async () => {
+    const welcome = { title: 'Hola, Ana', subtitle: '¿En qué te ayudo?', starters: [{ id: 'a', icon: Building2, text: '¿Cómo creo una obra?' }] };
+    render(<ChatConversation welcome={welcome} />);
+    expect(screen.getByTestId('chat-welcome')).toHaveTextContent('Hola, Ana');
+
+    await userEvent.click(screen.getByRole('button', { name: '¿Cómo creo una obra?' }));
+    await waitFor(() => expect(useChatStore.getState().messages[0]?.content).toBe('¿Cómo creo una obra?'));
+    expect(screen.queryByTestId('chat-welcome')).toBeNull();
   });
 
   it('copia el texto original de la respuesta, no el HTML renderizado', async () => {
@@ -384,14 +402,18 @@ describe('botón de enviar', () => {
 
   it('está deshabilitado mientras se envía y vuelve cuando termina la respuesta', async () => {
     render(<ChatConversation />);
+    await userEvent.type(screen.getByLabelText('secureChat.inputLabel'), 'hola');
     expect(sendButton()).toBeEnabled();
-    await sendMessage('hola');
+    await userEvent.click(sendButton());
     await waitFor(() => expect(sendButton()).toBeDisabled());
     expect(screen.getByRole('button', { name: 'secureChat.stop' })).toBeEnabled();
 
     await act(async () => control.push(null));
-    await waitFor(() => expect(sendButton()).toBeEnabled());
-    expect(screen.queryByRole('button', { name: 'secureChat.stop' })).toBeNull();
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'secureChat.stop' })).toBeNull());
+    // Terminó la respuesta, pero el campo quedó vacío: el envío vuelve cuando hay algo escrito.
+    expect(sendButton()).toBeDisabled();
+    await userEvent.type(screen.getByLabelText('secureChat.inputLabel'), 'otra');
+    expect(sendButton()).toBeEnabled();
   });
 
   it('Enter no envía mientras hay una respuesta en curso', async () => {
