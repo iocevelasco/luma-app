@@ -341,7 +341,9 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 - **Comandos y agentes**: `/feature <qué>` implementa en el orden shared → api →
   capa 1 → capa 2 → UI → i18n. `criterio` es el agente de producto (sólo lectura):
   afila un pedido vago antes de codear; para revisar algo hecho, el diff va en el
-  prompt.
+  prompt. Para un trabajo que cruza api y web, `/equipo <qué>` pone a la sesión
+  como coordinadora de `backend`, `frontend` y `revisor`: roles, contrato, handoff
+  y límites de autoridad en `docs/AGENTES.md`. Un cambio chico no lo necesita.
 - **Code review de un PR**: si el cambio toca una pantalla (`packages/web/src/pages`,
   `components` o la landing), quien revisa **deja evidencia en el PR**: una captura
   por pantalla modificada, tomada en Chromium con la cuenta fija del rol que la ve
