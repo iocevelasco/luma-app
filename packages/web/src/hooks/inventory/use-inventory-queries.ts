@@ -8,11 +8,19 @@ import type {
   StockMovementQuery,
 } from '@luma/shared';
 import { inventoryApi } from '@/api/inventory';
-import { FRESH_30S, POLLED_LIST } from '@/lib/query-freshness';
+import { POLLED_LIST } from '@/lib/query-freshness';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
-/** Capa 2: mismo patrón que `use-material-queries.ts`. */
+/**
+ * Capa 2: mismo patrón que `use-material-queries.ts`.
+ *
+ * Todas las lecturas van con `POLLED_LIST` (`lib/query-freshness.ts`): vencen a
+ * los 30 s y, mientras la pantalla está a la vista, se vuelven a pedir cada 30 s,
+ * como el resto de las listas de obra. El inventario no usa el canal en vivo (ADR
+ * 002: lo ven pocas personas a la vez y el Depósito lleva costos), así que el
+ * polling es su único camino: no se baja ni se quita.
+ */
 
 
 export function useStock(projectId: string | undefined) {
@@ -65,7 +73,7 @@ export function useDepositForImport(projectId: string | undefined, enabled: bool
     queryKey: [QueryKeys.deposit, projectId],
     queryFn: () => inventoryApi.deposit(projectId!),
     enabled: isAuthenticated && !!projectId && enabled,
-    ...FRESH_30S,
+    ...POLLED_LIST,
   });
 }
 
@@ -77,7 +85,7 @@ export function useMyDeposit() {
     queryKey: [QueryKeys.myDeposit],
     queryFn: () => inventoryApi.myDeposit(),
     enabled: isAuthenticated,
-    ...FRESH_30S,
+    ...POLLED_LIST,
   });
 }
 
