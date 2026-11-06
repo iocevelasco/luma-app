@@ -24,6 +24,7 @@ vi.mock('../../services/storage.service.js', () => ({
 const { projectRouter } = await import('../../routes/project.js');
 const { publishLiveChanges } = await import('../../middleware/live.middleware.js');
 const { liveHub } = await import('../../services/live-hub.service.js');
+const { openLimiterKey } = await import('../../routes/live.js');
 
 type Layer = {
   handle: unknown;
@@ -69,13 +70,16 @@ describe('projectRouter — tiempo real', () => {
   });
 
   it.each([
-    ['post', '/:projectId/members'],
     ['patch', '/:projectId/members/:membershipId'],
     ['delete', '/:projectId/members/:membershipId'],
     ['delete', '/:projectId'],
     ['patch', '/:projectId'],
   ])('%s %s corta las conexiones de la obra al cambiar el acceso', (method, path) => {
     expect(closeLayersOf(method, path)).toHaveLength(1);
+  });
+
+  it('invitar a un miembro nuevo no corta a nadie: no cambia el acceso de los conectados', () => {
+    expect(closeLayersOf('post', '/:projectId/members')).toHaveLength(0);
   });
 
   it('PATCH de la obra sólo corta si cambia un flag de visibilidad', () => {
@@ -97,5 +101,20 @@ describe('projectRouter — tiempo real', () => {
     run({ providersVisibleToClient: true });
     expect(close).toHaveBeenCalledWith('p1', 'access-changed');
     close.mockRestore();
+  });
+});
+
+describe('límite de aperturas del stream', () => {
+  // Una oficina o un operador móvil comparten IP, y un corte masivo hace
+  // reconectar a todos a la vez: con la IP como llave, los últimos quedarían
+  // con 429 y varios minutos sin canal.
+  it('cuenta por persona y no por IP', () => {
+    expect(openLimiterKey({ user: { sub: 'u1' }, ip: '10.0.0.1' } as unknown as Request)).toBe('u1');
+    expect(openLimiterKey({ user: { sub: 'u2' }, ip: '10.0.0.1' } as unknown as Request)).toBe('u2');
+  });
+
+  it('sin sesión cae a la IP', () => {
+    expect(openLimiterKey({ ip: '10.0.0.1' } as unknown as Request)).toBe('10.0.0.1');
+    expect(openLimiterKey({} as unknown as Request)).toBe('anonymous');
   });
 });

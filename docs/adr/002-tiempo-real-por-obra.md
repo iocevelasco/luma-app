@@ -54,15 +54,23 @@ Restricciones que mandan:
 6. **Un cambio de quién puede qué corta las conexiones de la obra** (miembros, roles,
    papelera, y los flags `purchasesVisibleToClient` / `providersVisibleToClient`:
    `closeLiveOnAccessChange`). Reconectan y se autoriza de nuevo. Cortar cuesta (cada
-   cliente se vuelve a autorizar y hace un resync), así que editar el nombre o las fechas
-   de la obra **no** corta: sólo lo que mueve permisos.
+   cliente se vuelve a autorizar y hace un resync), así que **no** corta editar el nombre
+   o las fechas de la obra ni invitar a alguien nuevo (invitar a quien ya es miembro es un
+   conflicto): sólo lo que mueve permisos de quienes ya están conectados.
 7. **Acotado por diseño** (`LIVE_CONFIG`): 4 conexiones por persona (se cierra la más
    vieja), 500 en el proceso (después 503 y la SPA hace polling), vida máxima de
    20 min con jitter, latido de 20 s, buffer de 64 KiB por cliente, y el contador
-   (sin lectura de obra) recibe 204 y no abre conexión.
+   (sin lectura de obra) recibe 204 y no abre conexión. El límite de aperturas (60
+   por minuto, sólo en producción) cuenta **por persona y no por IP**: una oficina o un
+   operador móvil comparten IP y un corte masivo hace reconectar a todos a la vez. El
+   proceso loguea cada 5 min cuántas conexiones tiene (`liveHub.stats()`), que es lo que
+   permite calibrar estos números.
 8. **El cliente asume que la conexión se cae**: watchdog por silencio, `ready` de una
    reconexión dispara un resync de todo lo vivo, cierre en segundo plano pasados 30 s,
-   backoff exponencial con jitter, y degradación a polling sin intervención.
+   backoff exponencial con jitter, y degradación a polling sin intervención. Sólo se da
+   por vencido ante un error **de la API** (trae `code`: 400/401/403/404): un 404 sin `code`
+   es del proxy —Traefik, mientras el contenedor nuevo no tiene ruta tras un deploy— y se
+   reintenta.
 
 ## Qué NO se hizo, y por qué
 

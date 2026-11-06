@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import {
   CORS_CONFIG,
+  LIVE_CONFIG,
   NEXUSBOT_CONFIG,
   SERVER_CONFIG,
   isDevelopment,
@@ -334,6 +335,15 @@ async function startServer() {
   }
   // Con o sin base todavía: cuando Mongo conecte, lee el BCV y guarda la tasa.
   startBcvRateRefresh();
+
+  // Sin esto los límites de `LIVE_CONFIG` no se pueden calibrar: es la única
+  // forma de ver cuántas conexiones en vivo hay abiertas.
+  setInterval(() => {
+    const { connections, users, projects } = liveHub.stats();
+    if (connections > 0) {
+      console.log(`📡 [LIVE] ${connections} conexiones · ${users} personas · ${projects} obras`);
+    }
+  }, LIVE_CONFIG.STATS_LOG_MS).unref();
 }
 
 // Cada deploy corta las conexiones en vivo. Avisarles (`bye`) deja que la SPA

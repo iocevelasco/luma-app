@@ -45,7 +45,11 @@ export const streamProjectLive = wrapAsync(async (req, res) => {
   // ido (un iPhone que reconecta, una pestaña que cambia rápido). Su `close` ya
   // se emitió y no va a volver a salir: registrarlo dejaría una conexión
   // fantasma contando contra los límites hasta que venciera su vida máxima.
-  if (res.destroyed || req.destroyed) return;
+  //
+  // Sólo `res` y su socket, **no** `req.destroyed`: desde Node 16 el request se
+  // autodestruye cuando terminó de llegar, con la conexión viva, y salir acá sin
+  // contestar dejaría el pedido colgado.
+  if (res.destroyed || res.socket?.destroyed) return;
 
   // Conexión larga: ni timeout de inactividad del socket, ni Nagle.
   req.socket.setTimeout(0);

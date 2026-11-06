@@ -78,7 +78,8 @@ projectRouter.delete(
 );
 projectRouter.post(
   '/:projectId/members',
-  closeLiveOnAccessChange(),
+  // Invitar no corta a nadie: la invitación a quien ya es miembro es un
+  // conflicto, así que nunca cambia el acceso de alguien ya conectado.
   requireProjectAccess,
   requireCapability('project.invite'),
   inviteProjectMember,

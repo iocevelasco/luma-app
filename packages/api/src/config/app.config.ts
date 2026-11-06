@@ -279,6 +279,8 @@ export const LIVE_CONFIG = {
   MAX_LIFETIME_MS: positiveInt(process.env.LIVE_MAX_LIFETIME_MS, 20 * 60 * 1000),
   /** Ventana en que se juntan los avisos de una ráfaga (una importación de 50 filas es un solo aviso). */
   COALESCE_MS: positiveInt(process.env.LIVE_COALESCE_MS, 150),
+  /** Cada cuánto el proceso loguea cuántas conexiones en vivo tiene (sólo si hay alguna). */
+  STATS_LOG_MS: positiveInt(process.env.LIVE_STATS_LOG_MS, 5 * 60 * 1000),
   /** Si el socket acumula más que esto sin vaciarse, el cliente es demasiado lento y se lo corta. */
   MAX_BUFFERED_BYTES: 64 * 1024,
 } as const;

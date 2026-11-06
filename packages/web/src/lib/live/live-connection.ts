@@ -82,9 +82,20 @@ export function backoffMs(attempt: number, random: () => number = Math.random, b
   return Math.round(exponential * (0.5 + random() * 0.5));
 }
 
-/** Errores del servidor que dicen "no insistas": no hay acceso o la ruta no existe. */
+/**
+ * Errores de la API que dicen "no insistas": no hay acceso o la obra no existe.
+ *
+ * Sólo si traen `code`: la API lo manda en **todos** sus errores. Un 404 sin
+ * `code` no lo dijo ella sino el proxy —Traefik contesta 404 en texto plano
+ * mientras el contenedor nuevo todavía no tiene ruta, justo después de un
+ * deploy—, y darse por vencido ahí dejaría a todos sin canal hasta recargar.
+ */
 function isGiveUp(error: unknown): boolean {
-  return error instanceof ApiError && [400, 401, 403, 404].includes(error.status);
+  return (
+    error instanceof ApiError &&
+    typeof error.code === 'string' &&
+    [400, 401, 403, 404].includes(error.status)
+  );
 }
 
 function isBusy(error: unknown): boolean {

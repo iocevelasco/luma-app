@@ -250,6 +250,7 @@ en `config/app.config.ts`):
 | `LIVE_HEARTBEAT_MS` | latido | `20000` |
 | `LIVE_MAX_LIFETIME_MS` | vida máxima de una conexión (obliga a revalidar el acceso) | `1200000` |
 | `LIVE_COALESCE_MS` | ventana en que se juntan los avisos de una ráfaga | `150` |
+| `LIVE_STATS_LOG_MS` | cada cuánto se loguea cuántas conexiones en vivo hay (sólo si hay alguna) | `300000` |
 
 Cambiar una variable exige redesplegar.
 

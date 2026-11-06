@@ -23,13 +23,30 @@ describe('tiempo real: cobertura de la grilla', () => {
     // Si este test falla, una capacidad nueva de `activity.*` o `material.*`
     // no avisaría a nadie. Agregala a `LIVE_WRITE_EFFECTS` (o decidí que no
     // cambia nada en vivo y sumala con `[]`).
+    //
+    // Los prefijos salen de la capacidad de lectura de cada recurso en vivo
+    // (`activity.read` → `activity.`): sumar un recurso a `LIVE_RESOURCES` hace
+    // que este test también le exija sus escrituras, sin tocarlo.
+    const prefixes = LIVE_RESOURCES.map(
+      (resource) => `${LIVE_RESOURCE_READ_CAPABILITY[resource].split('.')[0]}.`,
+    );
     const missing = [...ALL_CAPABILITIES].filter(
       (capability) =>
-        /^(activity|material)\./.test(capability) &&
+        prefixes.some((prefix) => capability.startsWith(prefix)) &&
         !capability.endsWith('.read') &&
         !(capability in LIVE_WRITE_EFFECTS),
     );
     expect(missing).toEqual([]);
+  });
+
+  it('los prefijos cubren al menos las escrituras que hoy se avisan', () => {
+    // Si esto falla, el cálculo de prefijos dejó de ver las capacidades reales.
+    const prefixes = LIVE_RESOURCES.map(
+      (resource) => `${LIVE_RESOURCE_READ_CAPABILITY[resource].split('.')[0]}.`,
+    );
+    for (const capability of Object.keys(LIVE_WRITE_EFFECTS)) {
+      expect(prefixes.some((prefix) => capability.startsWith(prefix))).toBe(true);
+    }
   });
 
   it('ninguna capacidad de lectura publica nada', () => {

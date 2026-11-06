@@ -30,6 +30,7 @@ function run(role: ProjectRole = 'supervisor') {
     flushHeaders: vi.fn(),
     once: vi.fn(),
     destroyed: false,
+    socket: { destroyed: false },
   } as unknown as Response;
   const req = {
     user: { sub: 'u-1' },
@@ -138,5 +139,26 @@ describe('streamProjectLive', () => {
     expect(liveHub.open).not.toHaveBeenCalled();
     expect(res.flushHeaders).not.toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it('si el socket de la respuesta ya se cerró, tampoco registra la conexión', async () => {
+    const { req, res, next } = run();
+    (res.socket as { destroyed: boolean }).destroyed = true;
+
+    await streamProjectLive(req, res, next);
+
+    expect(liveHub.open).not.toHaveBeenCalled();
+  });
+
+  // Desde Node 16 el request se autodestruye cuando terminó de llegar, con la
+  // conexión viva. Salir sin contestar en ese caso dejaría el pedido colgado.
+  it('un request ya consumido (`req.destroyed`) con la conexión viva igual abre el stream', async () => {
+    const { req, res, next } = run();
+    (req as { destroyed: boolean }).destroyed = true;
+
+    await streamProjectLive(req, res, next);
+
+    expect(res.flushHeaders).toHaveBeenCalled();
+    expect(liveHub.open).toHaveBeenCalled();
   });
 });

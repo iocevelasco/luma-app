@@ -169,15 +169,35 @@ describe('createLiveConnection', () => {
     connection.stop();
   });
 
-  it.each([400, 401, 403, 404])('con un %i no reintenta: no hay acceso', async (status) => {
+  it.each([400, 401, 403, 404])('con un %i de la API no reintenta: no hay acceso', async (status) => {
     const s = next();
     const connection = make();
     connection.start();
-    s.push(new ApiError('no', status));
+    s.push(new ApiError('no', status, 'NOT_FOUND'));
     await tick(120_000);
 
     expect(open).toHaveBeenCalledTimes(1);
     expect(statuses.at(-1)).toBe('stopped');
+  });
+
+  // Traefik contesta 404 en texto plano mientras el contenedor nuevo no tiene
+  // ruta, justo después de un deploy. No lo dijo la API (no trae `code`): darse
+  // por vencido ahí dejaría a todos sin canal hasta recargar.
+  it.each([400, 401, 403, 404])('un %i sin `code` (el proxy, no la API) se reintenta', async (status) => {
+    const first = next();
+    const second = next();
+    const connection = make();
+    connection.start();
+    first.push(new ApiError('404 page not found', status));
+    await tick(1000);
+
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(statuses.at(-1)).not.toBe('stopped');
+
+    second.push(ready());
+    await tick();
+    expect(statuses.at(-1)).toBe('live');
+    connection.stop();
   });
 
   it('con un 503 sigue reintentando, más espaciado', async () => {
