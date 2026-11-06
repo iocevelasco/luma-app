@@ -32,7 +32,7 @@ export async function requireWritableSubscription(
 
     return res.status(402).json({
       success: false,
-      error: 'Tu suscripción venció: tu Empresa está en sólo lectura. Renová el plan para editar.',
+      error: 'Tu suscripción venció: tu Empresa está en sólo lectura. Renueva el plan para editar.',
       code: 'SUBSCRIPTION_REQUIRED',
     });
   } catch (error) {

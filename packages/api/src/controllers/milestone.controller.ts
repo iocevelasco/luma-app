@@ -246,7 +246,7 @@ export async function updateMilestone(req: Request, res: Response) {
     if (milestone.audience === 'cliente' && !req.can?.('milestone.publish')) {
       return res
         .status(403)
-        .json({ success: false, error: 'No podés editar un hito publicado al cliente' });
+        .json({ success: false, error: 'No puedes editar un hito publicado al cliente' });
     }
 
     // El schema no puede ver el tipo guardado: si el body trae asistentes y no
@@ -307,7 +307,7 @@ export async function deleteMilestone(req: Request, res: Response) {
     if (milestone.audience === 'cliente' && !req.can?.('milestone.publish')) {
       return res
         .status(403)
-        .json({ success: false, error: 'No podés borrar un hito publicado al cliente' });
+        .json({ success: false, error: 'No puedes borrar un hito publicado al cliente' });
     }
 
     await Milestone.findByIdAndDelete(milestone._id);

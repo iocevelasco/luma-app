@@ -1736,7 +1736,8 @@
       "activa": "Pro",
       "en_revision": "Pagamento em análise",
       "pago_fallido": "Cobrança falhou",
-      "vencida": "Vencida"
+      "vencida": "Vencida",
+      "ilimitado": "Ilimitado"
     },
     "statusDetail": {
       "sin_iniciar": "Seu plano Grátis de 30 dias começa quando você criar sua primeira obra.",
@@ -1745,9 +1746,11 @@
       "activa": "Plano Pro, em dia até {{date}}.",
       "en_revision": "Seu pagamento está em análise. Enquanto isso, você continua com acesso completo até {{date}}.",
       "pago_fallido": "Não conseguimos cobrar a renovação. O Stripe tenta de novo; você continua com acesso até {{date}}.",
-      "vencida": "Suas obras estão somente para leitura. Pague para voltar a editar: nada foi perdido."
+      "vencida": "Suas obras estão somente para leitura. Pague para voltar a editar: nada foi perdido.",
+      "ilimitado": "Plano ilimitado. Você não paga assinatura e pode criar todas as obras que precisar."
     },
     "projects": "{{active}} obras ativas · {{included}} incluídas no plano",
+    "unlimitedProjects": "{{active}} obras ativas · sem limite",
     "extraProjects_one": "{{count}} obra extra a $8 por mês",
     "extraProjects_other": "{{count}} obras extras a $8 por mês",
     "nextCharge": {
@@ -1953,6 +1956,18 @@
       "verified": "Confirmada",
       "unverified": "Não confirmada",
       "joined": "Cadastro em {{date}}",
+      "unlimited": "Ilimitado",
+      "grantUnlimited": "Dar plano ilimitado",
+      "revokeUnlimited": "Remover plano ilimitado",
+      "unlimitedGranted": "Plano ilimitado atribuído",
+      "unlimitedRevoked": "Plano ilimitado removido",
+      "unlimitedError": "Não foi possível alterar o plano.",
+      "grantTitle": "Dar o plano ilimitado?",
+      "grantBody": "{{name}} não paga assinatura e não tem limite de obras.",
+      "revokeTitle": "Remover o plano ilimitado?",
+      "revokeBody": "{{name}} volta às regras do plano: teste, limite de obras e pagamento.",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
       "empty": "Não há contas para mostrar.",
       "emptyFiltered": "Tente outro filtro ou outra busca.",
       "pagination": {
@@ -2246,7 +2261,11 @@
       "empty": "Escreva uma mensagem ou anexe uma imagem.",
       "tooLong": "A mensagem é longa demais ou a conversa chegou ao limite.",
       "busy": "Espere a resposta terminar ou pare-a.",
-      "stream": "Não conseguimos obter a resposta. Tente novamente."
+      "stream": "Não conseguimos obter a resposta. Tente novamente.",
+      "network": "Problema de conexão. Verifique sua internet e tente novamente.",
+      "rateLimited": "Você está enviando mensagens rápido demais. Aguarde um momento.",
+      "session": "Não conseguimos abrir a conversa. Tente novamente.",
+      "unavailable": "O assistente não está disponível no momento. Tente mais tarde."
     },
     "rejections": {
       "tooMany": "{{name}}: você já atingiu o máximo de imagens por mensagem.",
@@ -2262,6 +2281,18 @@
     "dropHere": "Solte as imagens para anexá-las",
     "inputHint": "Enter envia, Shift+Enter quebra a linha",
     "sent": "Enviado",
-    "attachFile": "Anexar arquivo"
+    "attachFile": "Anexar arquivo",
+    "liveTitle": "Luma IA",
+    "liveDescription": "Tira dúvidas sobre como usar o Luma.",
+    "openLive": "Abrir Luma IA",
+    "greeting": "Olá, {{name}}",
+    "greetingAnonymous": "Olá",
+    "greetingHint": "Em que posso ajudar hoje?",
+    "starters": {
+      "createProject": "Como crio uma obra?",
+      "roles": "O que cada papel pode fazer em uma obra?",
+      "advisor": "O que posso perguntar ao Consultor IA?",
+      "money": "Qual a diferença entre gasto e recebido?"
+    }
   }
 }

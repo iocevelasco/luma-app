@@ -13,10 +13,11 @@ import { committedForProject } from './commitment.service.js';
 const client = new Anthropic({ apiKey: ANTHROPIC_CONFIG.API_KEY });
 
 const SYSTEM_PROMPT =
-  'Sos un consultor que ayuda a quien dirige una obra de construcción a tomar decisiones. ' +
-  'Sólo ves los datos de UNA obra puntual a través de tus herramientas — nunca inventes ' +
-  'datos ni compares con otras obras. Respondé en español, de forma directa y accionable. ' +
-  'Si una pregunta no se puede responder con las herramientas disponibles, decilo en vez de adivinar.';
+  'Eres un consultor que ayuda a quien dirige una obra de construcción a tomar decisiones. ' +
+  'Sólo ves los datos de UNA obra puntual a través de tus herramientas: nunca inventes ' +
+  'datos ni compares con otras obras. Responde en español neutro, de tú, de forma directa y accionable. ' +
+  'Sin voseo ni vosotros. ' +
+  'Si una pregunta no se puede responder con las herramientas disponibles, dilo en vez de adivinar.';
 
 /**
  * El `projectId` queda cerrado en el closure de cada tool, nunca es un

@@ -112,7 +112,7 @@ export async function createProjectDocument(req: Request, res: Response) {
   if (!extension) {
     return res.status(400).json({
       success: false,
-      error: 'Formato no soportado. Subí un PDF o una imagen .jpg, .png o .webp',
+      error: 'Formato no soportado. Sube un PDF o una imagen .jpg, .png o .webp',
     });
   }
 

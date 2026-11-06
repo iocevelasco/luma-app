@@ -31,7 +31,7 @@ function toDTO(rate: IExchangeRate) {
 export async function getCurrentRate(_req: Request, res: Response, next: NextFunction) {
   try {
     const rate = await currentRate();
-    if (!rate) throw serviceUnavailable('Todavía no tenemos la tasa del BCV. Probá más tarde.');
+    if (!rate) throw serviceUnavailable('Todavía no tenemos la tasa del BCV. Prueba más tarde.');
     return res.json({ success: true, data: { rate } });
   } catch (error) {
     next(error);
@@ -65,7 +65,7 @@ export async function createManualExchangeRate(req: Request, res: Response, next
       data: { rate: toDTO(rate), plausible },
       ...(plausible
         ? {}
-        : { message: 'Guardada, pero salta más de un 20% contra la última tasa. Revisala.' }),
+        : { message: 'Guardada, pero salta más de un 20% contra la última tasa. Revísala.' }),
     });
   } catch (error) {
     next(error);

@@ -40,7 +40,7 @@ function collidesWithBase(label: string): boolean {
 }
 
 function assertValidName(label: string) {
-  if (!slug(label)) throw badRequest('Escribí un nombre con letras o números.');
+  if (!slug(label)) throw badRequest('Escribe un nombre con letras o números.');
   if (collidesWithBase(label)) throw conflict('Ya existe una especialidad con ese nombre.');
 }
 

@@ -8,6 +8,7 @@ import type {
 import { providersApi } from '@/api/providers';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { POLLED_LIST } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2 de la contratación del proveedor. Archivo aparte de
@@ -24,6 +25,7 @@ export function useProviderEngagements(
     queryKey: [QueryKeys.providerEngagements, projectId, providerId],
     queryFn: () => providersApi.listEngagements(projectId!, providerId!),
     enabled: isAuthenticated && !!projectId && !!providerId,
+    ...POLLED_LIST,
   });
 }
 

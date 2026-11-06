@@ -165,6 +165,17 @@ describe('subscriptionState', () => {
     });
     expect(subscriptionState(facts, d('2026-10-10T00:00:00Z')).status).toBe('prueba');
   });
+
+  it('el plan ilimitado escribe siempre, aunque la prueba haya vencido', () => {
+    const facts = trialFacts('2026-08-01T00:00:00Z', { unlimited: true });
+    const state = subscriptionState(facts, d('2026-12-01T00:00:00Z'));
+    expect(state).toEqual({
+      status: 'ilimitado',
+      canWrite: true,
+      accessUntil: null,
+      trialDaysLeft: null,
+    });
+  });
 });
 
 describe('canCreateProject', () => {
@@ -201,6 +212,11 @@ describe('canCreateProject', () => {
   it('vencida no crea nada', () => {
     const state = subscriptionState(trialFacts('2026-08-01T00:00:00Z'), now);
     expect(canCreateProject(state, 0)).toEqual({ allowed: false, code: 'SUBSCRIPTION_REQUIRED' });
+  });
+
+  it('ilimitado crea todas las obras y ninguna es extra', () => {
+    const state = subscriptionState(trialFacts('2026-08-01T00:00:00Z', { unlimited: true }), now);
+    expect(canCreateProject(state, 40)).toEqual({ allowed: true, startsTrial: false, isExtra: false });
   });
 });
 
@@ -370,6 +386,12 @@ describe('bolívares', () => {
 describe('dueReminder', () => {
   const start = '2026-10-01T00:00:00Z'; // la prueba termina el 31/10
 
+  it('el plan ilimitado no recibe recordatorios', () => {
+    const facts = trialFacts(start, { unlimited: true });
+    expect(dueReminder(facts, d('2026-10-24T12:00:00Z'), [])).toBeNull();
+    expect(dueReminder(facts, d('2026-12-01T00:00:00Z'), [])).toBeNull();
+  });
+
   it('a 7 días del fin avisa una vez', () => {
     const facts = trialFacts(start);
     const now = d('2026-10-24T12:00:00Z'); // quedan 7 días
@@ -443,6 +465,61 @@ describe('dueReminder', () => {
 
   it('activa o sin iniciar: nada', () => {
     expect(dueReminder({ trialStartedAt: null, trialEndsAt: null, periods: [] }, d('2026-10-01T00:00:00Z'), [])).toBeNull();
+  });
+
+  // El plan vence el 30/11 a las 19:00 de Caracas. La tarea corre a las 9:00.
+  const paidEnd = '2026-11-30T23:00:00Z';
+  const paid = trialFacts('2026-01-01T00:00:00Z', {
+    periods: [
+      {
+        start: d('2026-10-01T00:00:00Z'),
+        end: d(paidEnd),
+        status: 'aprobado',
+        submittedAt: d('2026-10-01T00:00:00Z'),
+      },
+    ],
+  });
+
+  it('a un plan pago le avisa dos días antes, una vez', () => {
+    const now = d('2026-11-28T13:00:00Z');
+    expect(dueReminder(paid, now, [])).toMatchObject({
+      kind: 'paid_ending',
+      key: 'paid-2-2026-11-30',
+      daysLeft: 2,
+    });
+    expect(dueReminder(paid, now, ['paid-2-2026-11-30'])).toBeNull();
+  });
+
+  it('el día de en medio no manda el aviso de dos días atrasado', () => {
+    expect(dueReminder(paid, d('2026-11-29T13:00:00Z'), [])).toBeNull();
+  });
+
+  it('el mismo día del vencimiento avisa mientras el plan sigue activo', () => {
+    expect(dueReminder(paid, d('2026-11-30T13:00:00Z'), ['paid-2-2026-11-30'])).toMatchObject({
+      kind: 'paid_ending',
+      key: 'paid-0-2026-11-30',
+      daysLeft: 0,
+    });
+  });
+
+  it('con tarjeta que renueva sola no avisa que el plan vence', () => {
+    const withCard = trialFacts('2026-01-01T00:00:00Z', {
+      periods: paid.periods,
+      stripe: {
+        status: 'active',
+        currentPeriodStart: d('2026-10-30T23:00:00Z'),
+        currentPeriodEnd: d(paidEnd),
+      },
+    });
+    expect(dueReminder(withCard, d('2026-11-28T13:00:00Z'), [])).toBeNull();
+  });
+
+  it('si el plan pago no se renovó, el aviso de vencida pide reactivarlo', () => {
+    expect(dueReminder(paid, d('2026-12-01T13:00:00Z'), ['paid-2-2026-11-30', 'paid-0-2026-11-30'])).toMatchObject({
+      kind: 'expired',
+      key: 'expired-2026-11-30',
+      hadPaidPlan: true,
+    });
   });
 });
 

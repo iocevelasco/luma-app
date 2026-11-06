@@ -17,6 +17,7 @@ import {
   getPlatformUsersOverview,
   listExchangeRates,
   listPlatformUsersPage,
+  setPlatformUserUnlimited,
   listSubscriptionPaymentsForAdmin,
   refreshExchangeRateNow,
   reviewSubscriptionPayment,
@@ -27,7 +28,8 @@ import {
  * Lo que sólo hace el admin de la plataforma (`role: 'admin'`): no es un rol
  * de obra ni de Empresa, es quien opera Luma: la tasa del BCV, la cola de
  * pagos de la suscripción en bolívares, el prompt del asistente, la
- * actividad por rol y, sólo lectura, las cuentas registradas.
+ * actividad por rol y las cuentas registradas. Desde las cuentas asigna
+ * el plan ilimitado; el resto de esa pantalla es de consulta.
  */
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -54,6 +56,7 @@ adminRouter.post('/exchange-rates/refresh', refreshExchangeRateNow);
 
 adminRouter.get('/users/overview', getPlatformUsersOverview);
 adminRouter.get('/users', listPlatformUsersPage);
+adminRouter.post('/users/:userId/unlimited', setPlatformUserUnlimited);
 
 adminRouter.get('/chat-prompt', getChatPrompt);
 adminRouter.put('/chat-prompt', updateChatPrompt);

@@ -50,7 +50,7 @@ export async function getMyOrganization(req: Request, res: Response) {
     const organizationId = await findMyOrganizationId(req.user.sub);
     const organization = organizationId ? await Organization.findById(organizationId) : null;
     if (!organization) {
-      return res.status(404).json({ success: false, error: 'No tenés una empresa todavía' });
+      return res.status(404).json({ success: false, error: 'No tienes una empresa todavía' });
     }
 
     return res.json({ success: true, data: { organization: toOrganizationDTO(organization) } });
@@ -101,7 +101,7 @@ export async function renameMyOrganization(req: Request, res: Response) {
       : null;
 
     if (!organization) {
-      return res.status(404).json({ success: false, error: 'No tenés una empresa todavía' });
+      return res.status(404).json({ success: false, error: 'No tienes una empresa todavía' });
     }
 
     return res.json({ success: true, data: { organization: toOrganizationDTO(organization) } });
@@ -120,7 +120,7 @@ export async function listMembers(req: Request, res: Response) {
   try {
     const organizationId = await findMyOrganizationId(req.user.sub);
     if (!organizationId) {
-      return res.status(404).json({ success: false, error: 'No tenés una empresa todavía' });
+      return res.status(404).json({ success: false, error: 'No tienes una empresa todavía' });
     }
 
     const memberRows = await OrganizationMember.find({
@@ -174,14 +174,14 @@ export async function inviteMember(req: Request, res: Response) {
 
     const organizationId = await findMyOrganizationId(req.user.sub);
     if (!organizationId) {
-      return res.status(404).json({ success: false, error: 'No tenés una empresa todavía' });
+      return res.status(404).json({ success: false, error: 'No tienes una empresa todavía' });
     }
 
     const { email, name, staffRole, phone } = parsed.data;
 
     const inviter = await User.findById(req.user.sub);
     if (inviter && email === inviter.email) {
-      return res.status(400).json({ success: false, error: 'No podés invitarte a vos mismo' });
+      return res.status(400).json({ success: false, error: 'No puedes invitarte a ti mismo' });
     }
 
     let user = await User.findOne({ email });
@@ -264,7 +264,7 @@ async function findTeamMember(req: Request, res: Response) {
   }
   const organizationId = await findMyOrganizationId(req.user.sub);
   if (!organizationId) {
-    res.status(404).json({ success: false, error: 'No tenés una empresa todavía' });
+    res.status(404).json({ success: false, error: 'No tienes una empresa todavía' });
     return null;
   }
   const row = await OrganizationMember.findOne({

@@ -451,7 +451,7 @@ async function main() {
   console.log(`Partes de mano de obra: ${totalLabor}`);
   console.log(`Líneas de presupuesto: ${totalBudgetLines} (en ${PROJECT_TEMPLATES.length} presupuestos)`);
   console.log('');
-  console.log(`Listo. Entrá con ${email} para ver las 10 obras en el panel.`);
+  console.log(`Listo. Entra con ${email} para ver las 10 obras en el panel.`);
 }
 
 main()

@@ -25,11 +25,11 @@ export const milestoneTypeSchema = z.enum(
     'reunion',
     'otro',
   ],
-  { required_error: 'Elegí un tipo' },
+  { required_error: 'Elige un tipo' },
 );
 
 export const milestoneAudienceSchema = z.enum(['cliente', 'interno'], {
-  required_error: 'Elegí quién se entera',
+  required_error: 'Elige quién se entera',
 });
 
 export const milestoneSeveritySchema = z.enum(['info', 'atencion', 'critico']);

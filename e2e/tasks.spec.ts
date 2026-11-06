@@ -100,7 +100,7 @@ test.describe('tareas', () => {
 
     // --- La card ofrece cargar personal, y después dice que no hay tareas ---
     const card = tasksCard(page);
-    await expect(card.getByText(/todavía no cargaste personal de obra/i)).toBeVisible();
+    await expect(card.getByText(/todavía no has añadido personal de obra/i)).toBeVisible();
     await card.getByRole('button', { name: /^agregar personal$/i }).click();
     const drawer = page.getByRole('dialog');
     await drawer.locator('#add-crew-name').fill(worker);

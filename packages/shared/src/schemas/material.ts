@@ -30,7 +30,7 @@ const objectIdSchema = z.string().regex(/^[a-f0-9]{24}$/i, 'Identificador invál
 const oneSupplierSource = (value: { providerId?: string | null; supplier?: string | null }) =>
   !(value.providerId && value.supplier);
 const ONE_SUPPLIER_SOURCE = {
-  message: 'Elegí un proveedor de la lista o escribí uno, no los dos',
+  message: 'Elige un proveedor de la lista o escribe uno, no los dos',
   path: ['supplier'],
 };
 
@@ -81,7 +81,7 @@ export const MATERIAL_BULK_MAX = 200;
 
 const materialIdsSchema = z
   .array(objectIdSchema)
-  .min(1, 'Elegí al menos un material')
+  .min(1, 'Elige al menos un material')
   .max(MATERIAL_BULK_MAX, `Son demasiados: hasta ${MATERIAL_BULK_MAX} por vez`)
   // Un id repetido no cambia lo que se hace, pero rompe la cuenta de "¿son
   // todos de esta obra?" del controller.

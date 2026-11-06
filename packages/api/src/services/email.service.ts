@@ -176,7 +176,7 @@ const PROJECT_NOTIFICATION_COPY: Record<
     subject: (subject, project) => `Para revisar: "${subject}" en ${project}`,
     heading: 'Hay una actividad para revisar',
     body: (_subject, project) =>
-      `Reportaron terminada una actividad de <strong>${escapeHtml(project)}</strong>. Revisala y aprobala, o devolvela si falta algo.`,
+      `Reportaron terminada una actividad de <strong>${escapeHtml(project)}</strong>. Revísala y apruébala, o devuélvela si falta algo.`,
     cta: 'Revisar la actividad',
     detailLabel: 'Actividad',
   },
@@ -240,19 +240,19 @@ export class EmailService {
         to: email,
         subject: context?.projectName
           ? `Te invitaron a ${context.projectName} en ${APP_NAME}`
-          : `Activá tu cuenta en ${APP_NAME}`,
+          : `Activa tu cuenta en ${APP_NAME}`,
         html: layout({
-          heading: 'Activá tu cuenta',
-          preheader: 'Elegí tu contraseña para entrar. El enlace vence en 72 horas.',
+          heading: 'Activa tu cuenta',
+          preheader: 'Elige tu contraseña para entrar. El enlace vence en 72 horas.',
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
-            <p>${intro} Para entrar, elegí tu contraseña.</p>`,
+            <p>${intro} Para entrar, elige tu contraseña.</p>`,
           details,
           cta: { label: 'Elegir mi contraseña', url },
-          note: 'El enlace vence en 72 horas. Si no esperabas este correo, podés ignorarlo.',
+          note: 'El enlace vence en 72 horas. Si no esperabas este correo, puedes ignorarlo.',
           showFallbackLink: true,
         }),
-        text: `Activá tu cuenta - ${APP_NAME}\n\nHola ${name},\n\n${introText} Elegí tu contraseña acá:\n${url}\n\nEl enlace vence en 72 horas.`,
+        text: `Activa tu cuenta - ${APP_NAME}\n\nHola ${name},\n\n${introText} Elige tu contraseña aquí:\n${url}\n\nEl enlace vence en 72 horas.`,
       },
       'mail de activación',
     );
@@ -271,19 +271,19 @@ export class EmailService {
       {
         from: FROM_EMAIL,
         to: email,
-        subject: `Confirmá tu cuenta en ${APP_NAME}`,
+        subject: `Confirma tu cuenta en ${APP_NAME}`,
         html: layout({
-          heading: 'Confirmá tu correo',
+          heading: 'Confirma tu correo',
           preheader: 'Un clic y tu cuenta queda lista. El enlace vence en 24 horas.',
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
-            <p>Gracias por registrarte en <strong>${escapeHtml(APP_NAME)}</strong>. Confirmá
+            <p>Gracias por registrarte en <strong>${escapeHtml(APP_NAME)}</strong>. Confirma
                que este correo es tuyo y tu cuenta queda lista para usar.</p>`,
           cta: { label: 'Confirmar mi correo', url },
-          note: 'El enlace vence en 24 horas. Si no creaste esta cuenta, podés ignorar este correo.',
+          note: 'El enlace vence en 24 horas. Si no creaste esta cuenta, puedes ignorar este correo.',
           showFallbackLink: true,
         }),
-        text: `Confirmá tu cuenta - ${APP_NAME}\n\nHola ${name},\n\nConfirmá tu correo acá:\n${url}\n\nEl enlace vence en 24 horas.`,
+        text: `Confirma tu cuenta - ${APP_NAME}\n\nHola ${name},\n\nConfirma tu correo aquí:\n${url}\n\nEl enlace vence en 24 horas.`,
       },
       'mail de verificación',
     );
@@ -298,14 +298,14 @@ export class EmailService {
         to: email,
         subject: `Restablecer contraseña - ${APP_NAME}`,
         html: layout({
-          heading: 'Restablecé tu contraseña',
+          heading: 'Restablece tu contraseña',
           preheader: 'Pediste una contraseña nueva. El enlace vence en 1 hora.',
           bodyHtml: `
             <p>Hola,</p>
             <p>Recibimos un pedido para restablecer la contraseña de tu cuenta en
                ${escapeHtml(APP_NAME)}.</p>`,
           cta: { label: 'Elegir una contraseña nueva', url },
-          note: 'El enlace vence en 1 hora. Si no lo pediste vos, ignorá este correo: tu contraseña no cambia.',
+          note: 'El enlace vence en 1 hora. Si no lo pediste, ignora este correo: tu contraseña no cambia.',
           showFallbackLink: true,
         }),
         text: `Restablecer contraseña - ${APP_NAME}\n\n${url}\n\nEl enlace vence en 1 hora.`,
@@ -327,19 +327,19 @@ export class EmailService {
       {
         from: FROM_EMAIL,
         to: newEmail,
-        subject: `Confirmá tu nuevo correo en ${APP_NAME}`,
+        subject: `Confirma tu nuevo correo en ${APP_NAME}`,
         html: layout({
-          heading: 'Confirmá tu nuevo correo',
+          heading: 'Confirma tu nuevo correo',
           preheader: 'Falta un paso para cambiar el correo de tu cuenta.',
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
             <p>Pediste cambiar el correo de tu cuenta en ${escapeHtml(APP_NAME)} a esta
-               dirección. Confirmalo para completar el cambio.</p>`,
+               dirección. Confírmalo para completar el cambio.</p>`,
           cta: { label: 'Confirmar mi correo', url },
-          note: 'El enlace vence en 24 horas. Si no pediste este cambio, ignorá este correo: tu cuenta sigue con el correo anterior.',
+          note: 'El enlace vence en 24 horas. Si no pediste este cambio, ignora este correo: tu cuenta sigue con el correo anterior.',
           showFallbackLink: true,
         }),
-        text: `Confirmá tu nuevo correo - ${APP_NAME}\n\n${url}\n\nEl enlace vence en 24 horas.`,
+        text: `Confirma tu nuevo correo - ${APP_NAME}\n\n${url}\n\nEl enlace vence en 24 horas.`,
       },
       'mail de cambio de correo',
     );
@@ -368,10 +368,10 @@ export class EmailService {
         subject: `Te sumaron a la obra ${params.projectName}`,
         html: layout({
           heading: 'Te sumaron a una obra',
-          preheader: `Ya podés ver ${params.projectName} en ${APP_NAME}.`,
+          preheader: `Ya puedes ver ${params.projectName} en ${APP_NAME}.`,
           bodyHtml: `
             <p>Hola ${escapeHtml(params.name)},</p>
-            <p>${who} te sumó a una obra en ${escapeHtml(APP_NAME)}. Ya la tenés en tu lista de obras.</p>`,
+            <p>${who} te sumó a una obra en ${escapeHtml(APP_NAME)}. Ya la tienes en tu lista de obras.</p>`,
           details: [
             { label: 'Obra', value: params.projectName },
             { label: 'Rol', value: roleLabel(params.role) },
@@ -401,7 +401,7 @@ export class EmailService {
         subject: `Te sumaron al equipo de ${params.organizationName}`,
         html: layout({
           heading: 'Te sumaron a un equipo',
-          preheader: `Ahora sos parte de ${params.organizationName} en ${APP_NAME}.`,
+          preheader: `Ahora eres parte de ${params.organizationName} en ${APP_NAME}.`,
           bodyHtml: `
             <p>Hola ${escapeHtml(params.name)},</p>
             <p>${who} te sumó al equipo de una Empresa en ${escapeHtml(APP_NAME)}. Vas a ver
@@ -472,13 +472,13 @@ export class EmailService {
       {
         from: FROM_EMAIL,
         to,
-        subject: `Aprobamos tu pago: ya tenés ${APP_NAME} Pro`,
+        subject: `Aprobamos tu pago: ya tienes ${APP_NAME} Pro`,
         html: layout({
           heading: 'Aprobamos tu pago',
           preheader: `Tu plan Pro está activo hasta el ${until}.`,
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
-            <p>Revisamos tu pago en bolívares y está todo bien. Ya tenés el plan
+            <p>Revisamos tu pago en bolívares y está todo bien. Ya tienes el plan
                <strong>Pro</strong>.</p>`,
           details: [
             { label: 'Plan', value: 'Pro' },
@@ -506,15 +506,15 @@ export class EmailService {
         subject: `No pudimos aprobar tu pago - ${APP_NAME}`,
         html: layout({
           heading: 'No pudimos aprobar tu pago',
-          preheader: 'Revisá el motivo y mandalo de nuevo.',
+          preheader: 'Revisa el motivo y envíalo de nuevo.',
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
             <p>Revisamos tu pago en bolívares y no lo pudimos aprobar.</p>`,
           details: [{ label: 'Motivo', value: reason }],
           cta: { label: 'Ir a mi suscripción', url },
-          note: 'Podés mandarlo de nuevo desde tu suscripción, con la misma referencia si fue un error de carga.',
+          note: 'Puedes enviarlo de nuevo desde tu suscripción, con la misma referencia si fue un error de carga.',
         }),
-        text: `No pudimos aprobar tu pago - ${APP_NAME}\n\nHola ${name},\n\nMotivo: ${reason}\n\nPodés mandarlo de nuevo acá:\n${url}`,
+        text: `No pudimos aprobar tu pago - ${APP_NAME}\n\nHola ${name},\n\nMotivo: ${reason}\n\nPuedes enviarlo de nuevo aquí:\n${url}`,
       },
       'mail de pago rechazado',
     );
@@ -538,7 +538,7 @@ export class EmailService {
             <p>Entró un pago en bolívares de la suscripción.</p>
             ${
               details.mismatch
-                ? '<p><strong>Ojo:</strong> lo que declaró pagar no coincide con lo cotizado. Revisalo en el banco.</p>'
+                ? '<p><strong>Ojo:</strong> lo que declaró pagar no coincide con lo cotizado. Revísalo en el banco.</p>'
                 : ''
             }`,
           details: [
@@ -577,19 +577,90 @@ export class EmailService {
         subject: `Tu plan Gratis de ${APP_NAME} termina ${when}`,
         html: layout({
           heading: `Tu plan Gratis termina ${when}`,
-          preheader: `Pasá a Pro antes del ${date} para seguir editando tus obras.`,
+          preheader: `Pasa a Pro antes del ${date} para seguir editando tus obras.`,
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
             <p>El <strong>${date}</strong> termina tu plan Gratis. Para seguir editando tus
-               obras, pasá a <strong>Pro</strong>: $39 por mes con 3 obras incluidas.</p>
-            <p>Podés pagar ${howToPay}. Si pagás ahora, Pro arranca cuando termine el
-               plan Gratis: no perdés ningún día.</p>`,
+               obras, pasa a <strong>Pro</strong>: $39 por mes con 3 obras incluidas.</p>
+            <p>Puedes pagar ${howToPay}. Si pagas ahora, Pro arranca cuando termine el
+               plan Gratis: no pierdes ningún día.</p>`,
           cta: { label: 'Pasar a Pro', url },
-          note: 'Si no pasás a Pro no se borra nada: tus obras quedan en sólo lectura hasta que pagues.',
+          note: 'Si no pasas a Pro no se borra nada: tus obras quedan en sólo lectura hasta que pagues.',
         }),
-        text: `Tu plan Gratis termina ${when} - ${APP_NAME}\n\nHola ${name},\n\nEl ${date} termina tu plan Gratis. Pasá a Pro para seguir editando:\n${url}`,
+        text: `Tu plan Gratis termina ${when} - ${APP_NAME}\n\nHola ${name},\n\nEl ${date} termina tu plan Gratis. Pasa a Pro para seguir editando:\n${url}`,
       },
       'recordatorio de fin de prueba',
+    );
+  }
+
+  /**
+   * Plan ya pago que está por vencer. `daysLeft` es 2 o 0 (el mismo día),
+   * contado en el calendario de Caracas.
+   */
+  static async sendPaidPlanEnding(
+    to: string,
+    name: string,
+    daysLeft: 2 | 0,
+    periodEndsAt: Date,
+    cardEnabled = false,
+  ): Promise<boolean> {
+    const url = subscriptionUrl();
+    const date = longDate(periodEndsAt);
+    const today = daysLeft === 0;
+    const when = today ? 'hoy' : 'en 2 días';
+    const howToPay = cardEnabled ? 'con tarjeta o en bolívares' : 'en bolívares';
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `Tu plan Pro de ${APP_NAME} vence ${when}`,
+        html: layout({
+          heading: `Tu plan vence ${when}`,
+          preheader: today
+            ? 'Si no lo renuevas hoy, tus obras pasan a sólo lectura.'
+            : `Renueva antes del ${date} para seguir editando tus obras.`,
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>${
+              today
+                ? `Hoy, <strong>${date}</strong>, vence tu plan Pro.`
+                : `El <strong>${date}</strong> vence tu plan Pro.`
+            } Para seguir editando tus obras, renuévalo ${howToPay}.</p>
+            <p>Si no se renueva, tus obras quedan en sólo lectura. No se borra nada.</p>`,
+          cta: { label: 'Renovar suscripción', url },
+        }),
+        text: `Tu plan Pro vence ${when} - ${APP_NAME}\n\nHola ${name},\n\n${today ? 'Hoy' : `El ${date}`} vence tu plan Pro. Renueva aquí:\n${url}`,
+      },
+      today ? 'recordatorio de vencimiento hoy' : 'recordatorio a 2 días del vencimiento',
+    );
+  }
+
+  /**
+   * El plan pago venció y no se renovó. Distinto del aviso del mes gratis:
+   * acá ya fue cliente y se lo invita a reactivar.
+   */
+  static async sendPaidSubscriptionLapsed(to: string, name: string, cardEnabled = false): Promise<boolean> {
+    const url = subscriptionUrl();
+    const howToPay = cardEnabled ? 'con tarjeta o en bolívares' : 'en bolívares';
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `Tu suscripción de ${APP_NAME} no se renovó`,
+        html: layout({
+          heading: 'Tu suscripción ya no está activa',
+          preheader: 'Tus obras quedaron en sólo lectura. Puedes reactivar el plan cuando quieras.',
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Tu plan Pro venció y no se renovó. La suscripción ya no está activa: tus obras
+               quedaron en <strong>sólo lectura</strong>. Puedes verlas, pero no cambiarlas.
+               No se borró nada.</p>
+            <p>Reactívala ${howToPay} y vuelves a editar en cuanto quede el pago.</p>`,
+          cta: { label: 'Reactivar suscripción', url },
+        }),
+        text: `Tu suscripción no se renovó - ${APP_NAME}\n\nHola ${name},\n\nTu plan Pro venció y ya no está activo. Tus obras quedaron en sólo lectura. Reactívala aquí:\n${url}`,
+      },
+      'aviso de suscripción no renovada',
     );
   }
 
@@ -603,19 +674,19 @@ export class EmailService {
         subject: `Tus obras en ${APP_NAME} quedaron en sólo lectura`,
         html: layout({
           heading: 'Tu suscripción venció',
-          preheader: 'No se borró nada: pagá Pro y volvés a editar.',
+          preheader: 'No se borró nada: paga Pro y vuelves a editar.',
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
-            <p>Tus obras quedaron en <strong>sólo lectura</strong>: podés verlas, pero no
+            <p>Tus obras quedaron en <strong>sólo lectura</strong>: puedes verlas, pero no
                cambiarlas. No se borró nada.</p>
             <p>${
               cardEnabled
-                ? 'Pagá el plan Pro y volvés a editar en el momento (con tarjeta) o apenas aprobemos tu pago (en bolívares).'
-                : 'Pagá el plan Pro en bolívares y volvés a editar apenas aprobemos tu pago.'
+                ? 'Paga el plan Pro y vuelves a editar en el momento (con tarjeta) o apenas aprobemos tu pago (en bolívares).'
+                : 'Paga el plan Pro en bolívares y vuelves a editar apenas aprobemos tu pago.'
             }</p>`,
           cta: { label: 'Renovar', url },
         }),
-        text: `Tu suscripción venció - ${APP_NAME}\n\nHola ${name},\n\nTus obras quedaron en sólo lectura. Renová acá:\n${url}`,
+        text: `Tu suscripción venció - ${APP_NAME}\n\nHola ${name},\n\nTus obras quedaron en sólo lectura. Renueva aquí:\n${url}`,
       },
       'aviso de suscripción vencida',
     );
@@ -631,16 +702,16 @@ export class EmailService {
         subject: `No pudimos cobrar tu tarjeta - ${APP_NAME}`,
         html: layout({
           heading: 'No pudimos cobrar tu tarjeta',
-          preheader: 'Revisá tu tarjeta para no perder el acceso.',
+          preheader: 'Revisa tu tarjeta para no perder el acceso.',
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
             <p>Intentamos cobrar la renovación de tu plan Pro y la tarjeta la rechazó.
                Vamos a reintentar en los próximos días.</p>
-            <p>Para no perder el acceso, revisá o cambiá la tarjeta desde tu
+            <p>Para no perder el acceso, revisa o cambia la tarjeta desde tu
                suscripción ("Administrar tarjeta").</p>`,
           cta: { label: 'Revisar mi tarjeta', url },
         }),
-        text: `No pudimos cobrar tu tarjeta - ${APP_NAME}\n\nHola ${name},\n\nRevisá o cambiá tu tarjeta acá:\n${url}`,
+        text: `No pudimos cobrar tu tarjeta - ${APP_NAME}\n\nHola ${name},\n\nRevisa o cambia tu tarjeta aquí:\n${url}`,
       },
       'aviso de cobro fallido',
     );

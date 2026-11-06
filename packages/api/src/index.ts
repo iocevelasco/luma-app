@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import {
   CORS_CONFIG,
+  LIVE_CONFIG,
   NEXUSBOT_CONFIG,
   SERVER_CONFIG,
   isDevelopment,
@@ -17,6 +18,8 @@ import {
 } from './config/app.config.js';
 import { connectDatabase, isDatabaseConnected } from './config/database.js';
 import { startBcvRateRefresh } from './services/bcv.service.js';
+import { liveHub } from './services/live-hub.service.js';
+import { compressionFilter } from './middleware/compression-filter.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { normalizeErrors } from './middleware/normalizeErrors.js';
 import { CACHE_REVALIDATE, setSpaCacheHeaders } from './middleware/spaCache.js';
@@ -107,7 +110,7 @@ if (isProduction) {
   });
 }
 
-/** Origen de NexusBot, si está configurado. El widget y el stream salen del navegador. */
+/** Origen de NexusBot, si está configurado. El stream de mensajes sale del navegador. */
 function nexusbotOrigin(): string | null {
   const raw = NEXUSBOT_CONFIG.API_URL;
   if (!raw) return null;
@@ -128,14 +131,9 @@ app.use(
           directives: {
             defaultSrc: ["'self'"],
             // Stripe: Stripe.js y el checkout embebido de la suscripción.
-            // NexusBot: el script del botón y el stream de mensajes.
-            scriptSrc: [
-              "'self'",
-              'https://www.google.com',
-              'https://www.gstatic.com',
-              'https://js.stripe.com',
-              ...(chatOrigin ? [chatOrigin] : []),
-            ],
+            // NexusBot ya no carga ningún script: el chat es un componente de la
+            // SPA y sólo necesita `connectSrc` para el stream de mensajes.
+            scriptSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://js.stripe.com'],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
             imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://*.stripe.com'],
@@ -164,7 +162,9 @@ app.use(
   }),
 );
 
-app.use(compression());
+// El stream de tiempo real no se comprime: `compression` retiene los bytes hasta
+// llenar un buffer, y un aviso de dos líneas llegaría tarde o nunca.
+app.use(compression({ filter: compressionFilter }));
 
 app.use(
   cors({
@@ -335,16 +335,27 @@ async function startServer() {
   }
   // Con o sin base todavía: cuando Mongo conecte, lee el BCV y guarda la tasa.
   startBcvRateRefresh();
+
+  // Sin esto los límites de `LIVE_CONFIG` no se pueden calibrar: es la única
+  // forma de ver cuántas conexiones en vivo hay abiertas.
+  setInterval(() => {
+    const { connections, users, projects } = liveHub.stats();
+    if (connections > 0) {
+      console.log(`📡 [LIVE] ${connections} conexiones · ${users} personas · ${projects} obras`);
+    }
+  }, LIVE_CONFIG.STATS_LOG_MS).unref();
 }
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM recibido, cerrando...');
-  process.exit(0);
-});
+// Cada deploy corta las conexiones en vivo. Avisarles (`bye`) deja que la SPA
+// reconecte enseguida en vez de esperar a que el watchdog note el silencio.
+function shutdown(signal: string) {
+  console.log(`${signal} recibido, cerrando...`);
+  liveHub.closeAll('shutdown');
+  // Margen para que el `bye` salga del socket antes de matar el proceso.
+  setTimeout(() => process.exit(0), 250);
+}
 
-process.on('SIGINT', () => {
-  console.log('SIGINT recibido, cerrando...');
-  process.exit(0);
-});
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 startServer();

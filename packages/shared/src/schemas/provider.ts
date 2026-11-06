@@ -46,7 +46,7 @@ export const providerSpecialtySchema = z.enum(
     'materiales',
     'otra',
   ],
-  { required_error: 'Elegí una especialidad', invalid_type_error: 'Elegí una especialidad' },
+  { required_error: 'Elige una especialidad', invalid_type_error: 'Elige una especialidad' },
 );
 
 export const providerScopeSchema = z.enum(['organization', 'project']);
@@ -113,12 +113,12 @@ export const updateProviderSchema = z
   );
 
 export const assignProviderSchema = z.object({
-  providerId: z.string().trim().min(1, 'Elegí un proveedor'),
+  providerId: z.string().trim().min(1, 'Elige un proveedor'),
 });
 
 /** Misma asignación N:N, vista desde el lado del proveedor. */
 export const assignActivitySchema = z.object({
-  activityId: z.string().trim().min(1, 'Elegí una actividad'),
+  activityId: z.string().trim().min(1, 'Elige una actividad'),
 });
 
 // --- Contratación del proveedor ---

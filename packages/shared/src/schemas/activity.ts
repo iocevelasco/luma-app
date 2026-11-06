@@ -45,7 +45,7 @@ export const activityBaseSpecialtySchema = z.enum([
 ]);
 
 /** Clave de una especialidad propia de la obra: el servidor la genera, nunca el cliente. */
-export const customSpecialtyKeySchema = z.string().regex(/^custom_[a-z0-9_]{1,60}$/, 'Elegí una especialidad');
+export const customSpecialtyKeySchema = z.string().regex(/^custom_[a-z0-9_]{1,60}$/, 'Elige una especialidad');
 
 /**
  * Una de base o una propia de la obra. Que la propia exista y no esté archivada
@@ -58,7 +58,7 @@ export const rejectActivitySchema = z.object({
   reason: z
     .string()
     .trim()
-    .min(1, 'Escribí por qué lo devolvés')
+    .min(1, 'Escribe por qué lo devuelves')
     .max(500, 'Es demasiado largo'),
 });
 

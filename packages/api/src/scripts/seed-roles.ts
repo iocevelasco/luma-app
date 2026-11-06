@@ -170,7 +170,7 @@ async function main() {
   }
 
   console.log('\n────────────────────────────────────────');
-  console.log('Entrá con cualquiera de estas cuentas:\n');
+  console.log('Entra con cualquiera de estas cuentas:\n');
   for (const person of people) {
     console.log(`  ${person.email.padEnd(24)} ${person.role ?? 'gerente'}`);
   }

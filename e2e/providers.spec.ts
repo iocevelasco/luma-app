@@ -52,7 +52,7 @@ test.describe('directorio de proveedores', () => {
     const projectDetailUrl = page.url();
 
     // Resumen: sin proveedores todavía, la card muestra el vacío.
-    await expect(page.getByText(/todavía no cargaste proveedores/i)).toBeVisible();
+    await expect(page.getByText(/todavía no has añadido proveedores/i)).toBeVisible();
 
     // --- CRUD: crear ---
     await page.getByRole('link', { name: /^proveedores$/i }).click();
@@ -107,9 +107,9 @@ test.describe('directorio de proveedores', () => {
     await page.getByRole('gridcell', { name: ACTIVITY_NAME, exact: true }).click();
     let detailDialog = page.getByRole('dialog');
     await expect(detailDialog.getByText(ACTIVITY_NAME)).toBeVisible();
-    await detailDialog.getByText(/todavía no asignaste proveedores/i).waitFor();
+    await detailDialog.getByText(/todavía no has asignado proveedores/i).waitFor();
     // El detalle también tiene el selector de estado: se pide el de proveedores por su texto.
-    await detailDialog.getByRole('combobox').filter({ hasText: /elegí un proveedor/i }).click();
+    await detailDialog.getByRole('combobox').filter({ hasText: /elige un proveedor/i }).click();
     await page.getByRole('option', { name: PROVIDER_NAME }).click();
     await detailDialog.getByRole('button', { name: /^asignar$/i }).click();
     await expect(detailDialog.getByText(PROVIDER_NAME)).toBeVisible();
@@ -121,9 +121,9 @@ test.describe('directorio de proveedores', () => {
     await page.getByRole('gridcell', { name: ACTIVITY_NAME_2, exact: true }).click();
     detailDialog = page.getByRole('dialog');
     await expect(detailDialog.getByText(ACTIVITY_NAME_2)).toBeVisible();
-    await detailDialog.getByText(/todavía no asignaste proveedores/i).waitFor();
+    await detailDialog.getByText(/todavía no has asignado proveedores/i).waitFor();
     // El detalle también tiene el selector de estado: se pide el de proveedores por su texto.
-    await detailDialog.getByRole('combobox').filter({ hasText: /elegí un proveedor/i }).click();
+    await detailDialog.getByRole('combobox').filter({ hasText: /elige un proveedor/i }).click();
     await page.getByRole('option', { name: PROVIDER_NAME }).click();
     await detailDialog.getByRole('button', { name: /^asignar$/i }).click();
     await expect(detailDialog.getByText(PROVIDER_NAME)).toBeVisible();
@@ -136,7 +136,7 @@ test.describe('directorio de proveedores', () => {
     detailDialog = page.getByRole('dialog');
     await expect(detailDialog.getByText(PROVIDER_NAME)).toBeVisible();
     await detailDialog.getByRole('button', { name: /quitar proveedor/i }).click();
-    await expect(detailDialog.getByText(/todavía no asignaste proveedores/i)).toBeVisible();
+    await expect(detailDialog.getByText(/todavía no has asignado proveedores/i)).toBeVisible();
     await detailDialog.getByRole('button', { name: /atrás/i }).click();
     await expect(detailDialog).toBeHidden();
 
@@ -266,7 +266,7 @@ test.describe('directorio de proveedores', () => {
     await expect(page).toHaveURL(/\/actividades$/);
     await page.getByRole('gridcell', { name: activityA, exact: true }).click();
     activityDetail = page.getByRole('dialog');
-    await expect(activityDetail.getByText(/todavía no asignaste proveedores/i)).toBeVisible();
+    await expect(activityDetail.getByText(/todavía no has asignado proveedores/i)).toBeVisible();
     await activityDetail.getByRole('button', { name: /atrás/i }).click();
     await expect(activityDetail).toBeHidden();
 
@@ -395,7 +395,7 @@ test.describe('directorio de proveedores', () => {
       .first()
       .click();
     const dialog = page.getByRole('dialog');
-    await expect(dialog.getByText(/todavía no registraste una contratación/i)).toBeVisible();
+    await expect(dialog.getByText(/todavía no has registrado una contratación/i)).toBeVisible();
     await dialog.getByRole('button', { name: /nueva contratación/i }).click();
 
     // El adelanto no puede superar lo cotizado: el error se tiene que VER.
@@ -436,6 +436,6 @@ test.describe('directorio de proveedores', () => {
 
     await dialog.getByRole('button', { name: /eliminar contratación/i }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: /eliminar contratación/i }).click();
-    await expect(dialog.getByText(/todavía no registraste una contratación/i)).toBeVisible();
+    await expect(dialog.getByText(/todavía no has registrado una contratación/i)).toBeVisible();
   });
 });

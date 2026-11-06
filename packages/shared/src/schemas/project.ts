@@ -115,7 +115,7 @@ export const updateProjectSchema = z.object({
 const specialtyLabelSchema = z
   .string()
   .trim()
-  .min(2, 'Escribí al menos 2 letras')
+  .min(2, 'Escribe al menos 2 letras')
   .max(40, 'Es demasiado largo (máximo 40)');
 
 export const createCustomSpecialtySchema = z.object({ label: specialtyLabelSchema });
@@ -198,7 +198,7 @@ export const PROJECT_TRASH_RETENTION_DAYS = 90;
  * separa "toqué el botón sin querer" de "sé qué estoy mandando a la papelera".
  */
 export const deleteProjectSchema = z.object({
-  confirmName: z.string().trim().min(1, 'Escribí el nombre de la obra para confirmar'),
+  confirmName: z.string().trim().min(1, 'Escribe el nombre de la obra para confirmar'),
 });
 
 export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;

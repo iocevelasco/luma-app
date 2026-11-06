@@ -18,11 +18,11 @@ export function LanguageSelector({ variant = 'header' }: { variant?: 'header' | 
 
   const current = i18n.language.startsWith('pt')
     ? 'pt-BR'
-    : i18n.language === 'es-ES'
-      ? 'es-ES'
-      : 'es-AR';
+    : i18n.language === 'es-AR'
+      ? 'es-AR'
+      : 'es-ES';
   const selected = LANGUAGES.find((l) => l.value === current);
-  const short = selected?.short ?? 'ES-AR';
+  const short = selected?.short ?? 'ES-ES';
 
   return (
     <Select value={current} onValueChange={(lang) => i18n.changeLanguage(lang)}>

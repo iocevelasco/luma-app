@@ -14,6 +14,8 @@ import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { prepareUploadPhoto } from '@/lib/material-photo-export';
 import { QueryKeys } from '@/lib/query-keys';
+import { useLiveStatus } from '@/lib/live/live-status';
+import { polledList } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
@@ -21,11 +23,14 @@ import { useAuth } from '@/providers/auth-provider';
 
 export function useMaterials(projectId: string | undefined) {
   const { isAuthenticated } = useAuth();
+  // Con el canal en vivo sano el polling pasa a ser sólo respaldo.
+  const live = useLiveStatus() === 'live';
 
   return useQuery({
     queryKey: [QueryKeys.materials, projectId],
     queryFn: () => materialsApi.list(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...polledList(live),
   });
 }
 

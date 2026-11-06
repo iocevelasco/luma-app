@@ -15,9 +15,10 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { SpecialtyLabelProvider } from '@/hooks/activities/use-specialty-label';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
+import { useProjectLive } from '@/hooks/live/use-project-live';
 import { ContentAreaContext } from '@/components/layout/content-area-context';
 import { SubscriptionNotice } from '@/components/subscription/subscription-notice';
-import { NexusChat } from '@/components/nexus-chat';
+import { LiveChat } from '@/components/chat/live-chat';
 
 /**
  * Chrome del panel: header, navegación lateral en desktop, barra inferior en
@@ -34,6 +35,9 @@ import { NexusChat } from '@/components/nexus-chat';
  */
 export function DashboardLayout() {
   const projectId = useCurrentProjectId();
+  // Avisos en vivo de la obra abierta (Actividades y Materiales). Una sola vez
+  // acá, junto al `projectId`: cambiar de sección no reabre la conexión.
+  useProjectLive(projectId);
   const insideProject = Boolean(projectId);
   const { pathname } = useLocation();
   // Mi cuenta: un formulario, más angosto que un listado.
@@ -147,7 +151,7 @@ export function DashboardLayout() {
           </div>
         )}
       </div>
-      <NexusChat />
+      <LiveChat />
     </TooltipProvider>
   );
 }

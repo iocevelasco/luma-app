@@ -73,6 +73,9 @@ await EmailService.sendSubscriptionPaymentToReview('admin@ejemplo.com', {
   mismatch: false,
 });
 await EmailService.sendTrialEnding('ana@ejemplo.com', 'Ana', 3, inDays(3));
+await EmailService.sendPaidPlanEnding('ana@ejemplo.com', 'Ana', 2, inDays(2));
+await EmailService.sendPaidPlanEnding('ana@ejemplo.com', 'Ana', 0, inDays(0));
+await EmailService.sendPaidSubscriptionLapsed('ana@ejemplo.com', 'Ana');
 await EmailService.sendSubscriptionExpired('ana@ejemplo.com', 'Ana');
 await EmailService.sendCardPaymentFailed('ana@ejemplo.com', 'Ana');
 
@@ -81,7 +84,7 @@ await sendCampaignEmail({
   to: 'ana@ejemplo.com',
   name: 'Ana',
   title: 'Novedades de Luma',
-  body: 'Ya podés registrar tus gastos con foto.\n\nProbalo desde la obra y contanos qué te parece.',
+  body: 'Ya puedes registrar tus gastos con foto.\n\nPruébalo desde la obra y cuéntanos qué te parece.',
   imageUrl: null,
   unsubscribeUrl: 'https://luma.app/api/public/unsubscribe?u=1&s=firma',
 });

@@ -67,6 +67,7 @@ function toFacts(
             currentPeriodEnd: subscription.stripeCurrentPeriodEnd,
           }
         : null,
+    unlimited: subscription.unlimited === true,
   };
 }
 
@@ -242,7 +243,7 @@ export async function summaryFor(
   }
 
   let nextCharge = null;
-  if (state.status !== 'sin_iniciar') {
+  if (state.status !== 'sin_iniciar' && state.status !== 'ilimitado') {
     const periodStart = nextPeriodStart(facts, now);
     nextCharge = quoteCharge({
       periodStart,

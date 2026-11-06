@@ -29,7 +29,7 @@ describe('createProviderSchema', () => {
     expect(result.success).toBe(false);
     const issue = !result.success ? result.error.issues[0] : undefined;
     expect(issue?.path).toEqual(['specialty']);
-    expect(issue?.message).toBe('Elegí una especialidad');
+    expect(issue?.message).toBe('Elige una especialidad');
   });
 
   it('rechaza sin teléfono', () => {

@@ -31,7 +31,7 @@ const authLimiter =
     ? rateLimit({
         windowMs: 15 * 60 * 1000,
         max: 10,
-        message: 'Demasiados intentos. Probá de nuevo en unos minutos.',
+        message: 'Demasiados intentos. Prueba de nuevo en unos minutos.',
         standardHeaders: true,
         legacyHeaders: false,
       })

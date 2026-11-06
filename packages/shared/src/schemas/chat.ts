@@ -32,3 +32,26 @@ export const chatSystemPromptSchema = z.object({
 });
 
 export type ChatSystemPromptInput = z.infer<typeof chatSystemPromptSchema>;
+
+/**
+ * Abrir una sesión del chat. `conversationId` lo genera el navegador: cada
+ * conversación nueva tiene el suyo, y NexusBot guarda la memoria por sesión,
+ * así que "Nueva conversación" empieza de cero también en el servidor.
+ */
+export const createChatSessionSchema = z.object({
+  conversationId: z
+    .string()
+    .regex(/^[A-Za-z0-9-]{8,64}$/, 'Identificador de conversación inválido')
+    .optional(),
+});
+
+export type CreateChatSessionInput = z.infer<typeof createChatSessionSchema>;
+
+/** Lo que recibe el navegador para hablar con NexusBot. El token es efímero. */
+export interface ChatSession {
+  sessionToken: string;
+  /** ISO 8601. */
+  expiresAt: string;
+  /** Segundos de vida del token. */
+  expiresIn: number;
+}

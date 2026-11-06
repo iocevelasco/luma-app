@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
-import { platformUsersQuerySchema } from '@luma/shared';
+import { platformUsersQuerySchema, setUnlimitedPlanSchema } from '@luma/shared';
 import { listPlatformUsers, platformUsersOverview } from '../services/platform-users.service.js';
+import { setAccountUnlimited } from '../services/unlimited-plan.service.js';
 import { badRequest } from '../utils/errors.js';
 
 /** `GET /api/admin/users/overview` — totales de cuentas y altas por semana. */
@@ -19,6 +20,23 @@ export async function listPlatformUsersPage(req: Request, res: Response, next: N
     if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
 
     return res.json({ success: true, data: await listPlatformUsers(parsed.data) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** `POST /api/admin/users/:userId/unlimited` — asigna o quita el plan ilimitado. */
+export async function setPlatformUserUnlimited(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = String(req.params.userId);
+    if (!/^[a-f0-9]{24}$/i.test(userId)) throw badRequest('Identificador inválido');
+    const parsed = setUnlimitedPlanSchema.safeParse(req.body);
+    if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
+
+    return res.json({
+      success: true,
+      data: await setAccountUnlimited(userId, parsed.data.unlimited),
+    });
   } catch (error) {
     next(error);
   }

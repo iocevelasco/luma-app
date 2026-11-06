@@ -7,7 +7,7 @@ import { User } from '../models/User.js';
  */
 export const LINK_HELD_BY_ANOTHER_MESSAGE =
   'No pudimos sumar a esa persona todavía: su cuenta necesita confirmar el correo. ' +
-  'Pedile que use «Olvidé mi contraseña» y volvé a intentarlo.';
+  'Pídele que use «Olvidé mi contraseña» y vuelve a intentarlo.';
 
 /**
  * Deja asentado qué pasó con el enlace de activación de una cuenta que acaba

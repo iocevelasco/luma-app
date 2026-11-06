@@ -32,6 +32,12 @@ export interface ISubscription extends Document {
    * mismo aviso si la tarea corre más de una vez por día.
    */
   remindersSent: string[];
+  /**
+   * Plan ilimitado, asignado sólo por un admin de la plataforma. Hecho: el
+   * estado `ilimitado` se deriva de acá y gana sobre la prueba, el pago y
+   * el vencimiento.
+   */
+  unlimited: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +60,7 @@ const subscriptionSchema = new Schema<ISubscription>(
     stripeCurrentPeriodStart: { type: Date, default: null },
     stripeCurrentPeriodEnd: { type: Date, default: null },
     remindersSent: { type: [String], default: [] },
+    unlimited: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

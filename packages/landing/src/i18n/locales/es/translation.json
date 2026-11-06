@@ -46,15 +46,15 @@
   },
   "problem": {
     "label": "¿Te suena?",
-    "title": "Y dos más que seguro te hiciste.",
+    "title": "Y dos más que seguro te has hecho.",
     "items": [
       {
         "q": "¿Ya fuiste a comprar lo mismo, de nuevo?",
-        "a": "Nadie sabía que el material ya había llegado. Acá cada ingreso queda anotado."
+        "a": "Nadie sabía que el material ya había llegado. Aquí cada ingreso queda anotado."
       },
       {
         "q": "¿Ya les dijiste a todos lo que tienen que hacer?",
-        "a": "Entre chats y planillas siempre se pierde algo. Acá cada actividad tiene su responsable y todos la ven."
+        "a": "Entre chats y planillas siempre se pierde algo. Aquí cada actividad tiene su responsable y todos la ven."
       }
     ]
   },
@@ -73,7 +73,7 @@
       {
         "name": "Supervisor",
         "does": "Reporta avances con fotos, anota asistencia e ingreso de materiales, y le avisa al gerente si pasa algo.",
-        "never": "La plata: ni presupuesto, ni cobros, ni gastos."
+        "never": "El dinero: ni presupuesto, ni cobros, ni gastos."
       },
       {
         "name": "Contador",
@@ -93,11 +93,11 @@
     "items": [
       {
         "title": "Cronograma y avances",
-        "body": "Planificá las actividades con responsable y especialidad, mirá todo en un Gantt y seguí cada una con fotos de evidencia."
+        "body": "Planifica las actividades con responsable y especialidad, mira todo en un Gantt y sigue cada una con fotos de evidencia."
       },
       {
         "title": "Presupuesto",
-        "body": "Importá tu planilla, mapeá las columnas y mirá la vista previa antes de confirmar. Cada versión queda guardada."
+        "body": "Importa tu planilla, mapea las columnas y mira la vista previa antes de confirmar. Cada versión queda guardada."
       },
       {
         "title": "Cobros y gastos",
@@ -118,12 +118,12 @@
     "title": "Tres pasos y listo.",
     "steps": [
       {
-        "title": "Creás la obra",
-        "body": "Cargás los datos básicos, el presupuesto y las actividades que ya tenés."
+        "title": "Creas la obra",
+        "body": "Cargas los datos básicos, el presupuesto y las actividades que ya tienes."
       },
       {
-        "title": "Invitás al equipo",
-        "body": "Sumás a supervisor, contador y cliente. Cada uno entra con lo suyo."
+        "title": "Invitas al equipo",
+        "body": "Sumas a supervisor, contador y cliente. Cada uno entra con lo suyo."
       },
       {
         "title": "Todos ven lo mismo",
@@ -138,7 +138,7 @@
     "items": [
       {
         "title": "Confidencial",
-        "body": "Tus obras y todo lo que cargás son privados. Nadie entra si no lo invitás."
+        "body": "Tus obras y todo lo que cargas son privados. Nadie entra si no lo invitas."
       },
       {
         "title": "Tus datos no se venden",
@@ -146,20 +146,20 @@
       },
       {
         "title": "Backups todos los días",
-        "body": "Hacemos una copia de respaldo a diario, así no perdés nada."
+        "body": "Hacemos una copia de respaldo a diario, así no pierdes nada."
       }
     ]
   },
   "pricing": {
     "label": "Precio",
-    "title": "Empezá gratis, seguí con Pro.",
+    "title": "Empieza gratis, sigue con Pro.",
     "amount": "$39",
     "period": "por mes",
     "perks": [
       "30 días gratis, sin tarjeta, con hasta 3 obras",
       "Plan Pro: 3 obras incluidas",
       "$8 por mes por cada obra extra",
-      "Pagás en bolívares a la tasa BCV"
+      "Pagas en bolívares a la tasa BCV"
     ]
   },
   "faq": {
@@ -172,7 +172,7 @@
       },
       {
         "q": "¿Qué pasa si no pago cuando terminan los 30 días?",
-        "a": "No se borra nada: tus obras quedan en sólo lectura hasta que pases a Pro. Podés pasarte cuando quieras, también antes de que termine el mes gratis."
+        "a": "No se borra nada: tus obras quedan en sólo lectura hasta que pases a Pro. Puedes pasarte cuando quieras, también antes de que termine el mes gratis."
       },
       {
         "q": "¿Mi cliente puede ver cuánto gasto?",
@@ -180,7 +180,7 @@
       },
       {
         "q": "¿Mis proveedores necesitan una cuenta?",
-        "a": "No. Los cargás en tu directorio y los asignás a cada obra. Por ahora no tienen acceso propio a la app."
+        "a": "No. Los cargas en tu directorio y los asignas a cada obra. Por ahora no tienen acceso propio a la app."
       },
       {
         "q": "¿Cómo me entero de lo que pasa en la obra?",
@@ -188,13 +188,13 @@
       },
       {
         "q": "¿En qué idiomas está?",
-        "a": "Español y portugués. Cambiás de uno a otro cuando quieras."
+        "a": "Español y portugués. Cambias de uno a otro cuando quieras."
       }
     ]
   },
   "finalCta": {
-    "title": "Probalo en tu próxima obra.",
-    "subtitle": "Creá la cuenta, cargá la obra e invitá al equipo.",
+    "title": "Pruébalo en tu próxima obra.",
+    "subtitle": "Crea la cuenta, carga la obra e invita al equipo.",
     "cta": "Probar gratis"
   },
   "footer": {

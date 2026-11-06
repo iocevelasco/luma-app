@@ -243,9 +243,10 @@ más se rompe:
 
 Ningún string visible se escribe inline en el JSX: `t('layout.emptyHomeTitle')`.
 
-- `packages/web`: `src/i18n/locales/{es,es-ES,pt}/translation.json` (`es-AR`
-  default; `es-ES` es el español de España: tuteo y vocabulario peninsular —
-  "jefe de obra", "contable", "añadir", "justificante").
+- `packages/web`: `src/i18n/locales/{es,es-ES,pt}/translation.json`. El default
+  es `es-ES` (tuteo y vocabulario peninsular: "jefe de obra", "contable",
+  "añadir", "justificante"). `locales/es` es el argentino y sólo se carga
+  como `es-AR`.
 - `packages/landing`: `src/i18n/locales/{es,pt}/translation.json` (`es` default).
 - **Toda clave nueva va a TODOS los archivos de su paquete al mismo tiempo.** Hay
   un test de paridad en CI.
@@ -340,7 +341,9 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 - **Comandos y agentes**: `/feature <qué>` implementa en el orden shared → api →
   capa 1 → capa 2 → UI → i18n. `criterio` es el agente de producto (sólo lectura):
   afila un pedido vago antes de codear; para revisar algo hecho, el diff va en el
-  prompt.
+  prompt. Para un trabajo que cruza api y web, `/equipo <qué>` pone a la sesión
+  como coordinadora de `backend`, `frontend` y `revisor`: roles, contrato, handoff
+  y límites de autoridad en `docs/AGENTES.md`. Un cambio chico no lo necesita.
 - **Code review de un PR**: si el cambio toca una pantalla (`packages/web/src/pages`,
   `components` o la landing), quien revisa **deja evidencia en el PR**: una captura
   por pantalla modificada, tomada en Chromium con la cuenta fija del rol que la ve

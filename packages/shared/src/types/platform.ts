@@ -1,8 +1,9 @@
 import type { AccountStatus, UserRole } from './index.js';
 
 /**
- * Lo que ve el admin de la plataforma sobre las cuentas de Luma. Sólo lectura.
- * Las cuentas de prueba (`@luma.test`) no entran en ninguna cifra.
+ * Lo que ve el admin de la plataforma sobre las cuentas de Luma. Las cuentas
+ * de prueba (`@luma.test`) no entran en ninguna cifra. El único cambio que
+ * puede hacer desde acá es asignar o quitar el plan ilimitado.
  */
 
 /** Totales de cuentas. `verified` y `unverified` cuentan sólo cuentas activas. */
@@ -37,6 +38,8 @@ export interface PlatformUserRow {
   emailVerified: boolean;
   accountStatus: AccountStatus;
   createdAt: string;
+  /** La empresa que esta cuenta es dueña tiene el plan ilimitado. */
+  unlimited: boolean;
 }
 
 export interface PlatformUsersPage {

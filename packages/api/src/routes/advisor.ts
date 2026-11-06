@@ -19,7 +19,7 @@ const advisorLimiter =
     ? rateLimit({
         windowMs: 15 * 60 * 1000,
         max: 20,
-        message: 'Demasiadas preguntas al Consultor IA. Probá de nuevo en unos minutos.',
+        message: 'Demasiadas preguntas al Consultor IA. Prueba de nuevo en unos minutos.',
         standardHeaders: true,
         legacyHeaders: false,
       })

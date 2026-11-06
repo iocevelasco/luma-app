@@ -55,7 +55,7 @@ function toErrorBody(error: unknown): ApiErrorBody {
   if (error instanceof ZodError) {
     return {
       success: false,
-      error: 'Revisá los datos: hay campos con errores.',
+      error: 'Revisa los datos: hay campos con errores.',
       code: 'VALIDATION',
       // El detalle por campo es lo que deja al formulario marcar cuál falló.
       details: error.issues,
@@ -71,7 +71,7 @@ function toErrorBody(error: unknown): ApiErrorBody {
   if (error instanceof mongoose.Error.ValidationError) {
     return {
       success: false,
-      error: 'Revisá los datos: hay campos con errores.',
+      error: 'Revisa los datos: hay campos con errores.',
       code: 'VALIDATION',
       details: Object.values(error.errors).map((issue) => issue.message),
     };
@@ -104,7 +104,7 @@ function toErrorBody(error: unknown): ApiErrorBody {
   };
 }
 
-const GENERIC_MESSAGE = 'Algo falló de nuestro lado. Probá de nuevo en un momento.';
+const GENERIC_MESSAGE = 'Algo falló de nuestro lado. Prueba de nuevo en un momento.';
 
 function asMessage(error: unknown): string {
   return error instanceof Error && error.message ? error.message : GENERIC_MESSAGE;

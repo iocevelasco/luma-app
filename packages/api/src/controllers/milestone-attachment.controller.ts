@@ -49,7 +49,7 @@ async function findEditableMilestone(req: Request): Promise<IMilestone> {
   if (!milestone) throw notFound('No encontramos ese hito.');
 
   if (milestone.audience === 'cliente' && !req.can?.('milestone.publish')) {
-    throw forbidden('No podés cambiar los adjuntos de un hito que ya se publicó al cliente.');
+    throw forbidden('No puedes cambiar los adjuntos de un hito que ya se publicó al cliente.');
   }
   return milestone;
 }
@@ -76,7 +76,7 @@ export const addMilestoneAttachment = wrap(async (req, res) => {
   const extension = EXTENSION_BY_MIME[file.mimetype];
   if (!extension || !DOCUMENT_MIME_TYPES.includes(file.mimetype)) {
     throw badRequest(
-      'Ese formato no se puede adjuntar. Subí un PDF o una imagen .jpg, .png o .webp.',
+      'Ese formato no se puede adjuntar. Sube un PDF o una imagen .jpg, .png o .webp.',
     );
   }
 

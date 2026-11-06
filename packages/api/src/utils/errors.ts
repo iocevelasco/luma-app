@@ -60,7 +60,7 @@ export const conflict = (message: string, details?: unknown) =>
 export const termsRequired = () =>
   new AppError(
     'TERMS_REQUIRED',
-    'Para seguir tenés que aceptar los Términos y la Política de Privacidad.',
+    'Para seguir tienes que aceptar los Términos y la Política de Privacidad.',
   );
 
 export const serviceUnavailable =(message: string) =>

@@ -11,12 +11,12 @@ import {
 import { STRIPE_CONFIG } from '../config/app.config.js';
 import { Organization } from '../models/Organization.js';
 import { StripeEvent } from '../models/StripeEvent.js';
-import { Subscription } from '../models/Subscription.js';
+import { Subscription, type ISubscription } from '../models/Subscription.js';
 import { SubscriptionPayment } from '../models/SubscriptionPayment.js';
 import { User } from '../models/User.js';
 import { appUrl } from '../utils/app-url.js';
 import { badRequest, conflict, notFound, serviceUnavailable } from '../utils/errors.js';
-import { stripeRequest } from './stripe.client.js';
+import { StripeApiError, stripeRequest } from './stripe.client.js';
 import { billableProjects, loadFacts } from './subscription.service.js';
 import { notifyCardPaymentFailed } from './subscription-notify.service.js';
 
@@ -149,14 +149,17 @@ export async function createCheckoutSession(params: {
   ]);
   const state = subscriptionState(facts, now);
 
+  if (state.status === 'ilimitado') {
+    throw conflict('Tu plan es ilimitado: no tienes que pagar una suscripción.');
+  }
   if (state.status === 'sin_iniciar' || !subscription) {
     throw badRequest('Tu mes gratis arranca con tu primera obra: todavía no hay nada que pagar.');
   }
   if (subscription.stripeStatus && LIVE_STRIPE_STATUSES.includes(subscription.stripeStatus)) {
-    throw conflict('Ya tenés el pago con tarjeta activo. Gestionalo desde "Administrar tarjeta".');
+    throw conflict('Ya tienes el pago con tarjeta activo. Gestiónalo desde "Administrar tarjeta".');
   }
   if (state.status === 'en_revision') {
-    throw conflict('Tenés un pago en bolívares en revisión. Esperá a que lo revisemos.');
+    throw conflict('Tienes un pago en bolívares en revisión. Espera a que lo revisemos.');
   }
   if (params.activateNow && state.status !== 'prueba') {
     throw badRequest('Activar el plan antes de tiempo sólo tiene sentido durante el mes gratis.');
@@ -226,7 +229,7 @@ export async function createCheckoutSession(params: {
 export async function createPortalSession(organizationId: OrgId): Promise<{ url: string }> {
   ensureEnabled();
   const subscription = await Subscription.findOne({ organization: organizationId });
-  if (!subscription?.stripeCustomerId) throw notFound('Todavía no cargaste una tarjeta.');
+  if (!subscription?.stripeCustomerId) throw notFound('Todavía no hay una tarjeta cargada.');
 
   const session = await stripeRequest<{ url: string }>('POST', '/billing_portal/sessions', {
     customer: subscription.stripeCustomerId,
@@ -256,6 +259,33 @@ interface StripeSubscriptionObject {
 }
 
 /**
+ * Da de baja el cobro con tarjeta para que un plan ilimitado no siga
+ * pagando la renovación. Si Stripe no está configurado en este entorno, no
+ * hay un cobro remoto que cancelar.
+ */
+export async function cancelStripeBilling(subscription: ISubscription): Promise<void> {
+  const id = subscription.stripeSubscriptionId;
+  if (!id || !STRIPE_CONFIG.ENABLED) return;
+  if (subscription.stripeStatus === 'canceled' || subscription.stripeStatus === 'incomplete_expired') {
+    return;
+  }
+
+  try {
+    await stripeRequest('DELETE', `/subscriptions/${id}`);
+  } catch (error) {
+    if (error instanceof StripeApiError && error.status === 404) {
+      subscription.stripeStatus = 'canceled';
+      await subscription.save();
+      return;
+    }
+    throw serviceUnavailable('No se pudo cancelar el cobro con tarjeta. Inténtalo de nuevo.');
+  }
+
+  subscription.stripeStatus = 'canceled';
+  await subscription.save();
+}
+
+/**
  * Lleva la cantidad de obras extra de Stripe a las activas de hoy. Se llama
  * después de crear una obra.
  *
@@ -268,6 +298,7 @@ export async function syncStripeExtras(organizationId: OrgId, now: Date = new Da
   const subscription = await Subscription.findOne({ organization: organizationId });
   if (
     !subscription?.stripeSubscriptionId ||
+    subscription.unlimited ||
     !subscription.stripeStatus ||
     !['active', 'trialing', 'past_due'].includes(subscription.stripeStatus)
   ) {

@@ -124,6 +124,11 @@ export interface SubscriptionFacts {
   trialEndedEarlyAt?: Date | null;
   periods: PaidPeriodFact[];
   stripe?: StripeFact | null;
+  /**
+   * Plan ilimitado, asignado por un admin de la plataforma. Hecho guardado,
+   * no un estado: si está, no vence, no se cobra y no tiene tope de obras.
+   */
+  unlimited?: boolean;
 }
 
 /** Fin efectivo de la prueba: el original, o antes si se cortó por la regla 4. */
@@ -178,6 +183,10 @@ function coveredByPaidPeriod(facts: SubscriptionFacts, now: Date): boolean {
 
 /** El estado de la suscripción en este momento. Derivado, nunca guardado. */
 export function subscriptionState(facts: SubscriptionFacts, now: Date): SubscriptionState {
+  if (facts.unlimited) {
+    return { status: 'ilimitado', canWrite: true, accessUntil: null, trialDaysLeft: null };
+  }
+
   const trialEnd = effectiveTrialEnd(facts);
   const paid = paidUntil(facts);
 
@@ -324,12 +333,14 @@ export type CreateProjectDecision =
  * - En prueba con 3 activas → no hasta activar el plan (`PAID_PLAN_REQUIRED`):
  *   la cuarta obra es lo que corta la prueba (regla 4).
  * - Con plan, la cuarta en adelante sí, y se marca como extra.
+ * - Ilimitado: siempre, y ninguna obra es extra.
  */
 export function canCreateProject(state: SubscriptionState, activeProjects: number): CreateProjectDecision {
   if (!state.canWrite) return { allowed: false, code: 'SUBSCRIPTION_REQUIRED' };
 
   const atLimit = activeProjects >= PLAN.includedProjects;
 
+  if (state.status === 'ilimitado') return { allowed: true, startsTrial: false, isExtra: false };
   if (state.status === 'sin_iniciar') return { allowed: true, startsTrial: true, isExtra: false };
   if (state.status === 'prueba' && atLimit) return { allowed: false, code: 'PAID_PLAN_REQUIRED' };
 
@@ -442,9 +453,39 @@ export function isPlausibleRate(next: number, previous: number | null, maxChange
 /** Días antes del fin del plan Gratis en que se avisa por mail. */
 export const TRIAL_REMINDER_DAYS = [7, 3, 1] as const;
 
+/**
+ * Días de calendario (Caracas) antes del fin de un plan ya pago.
+ * `0` es el mismo día del vencimiento, mientras el plan sigue activo.
+ */
+export const PAID_REMINDER_DAYS = [2, 0] as const;
+
 export type SubscriptionReminder =
   | { kind: 'trial_ending'; key: string; daysLeft: number; trialEndsAt: Date }
-  | { kind: 'expired'; key: string; expiredAt: Date };
+  | { kind: 'paid_ending'; key: string; daysLeft: 2 | 0; periodEndsAt: Date }
+  | { kind: 'expired'; key: string; expiredAt: Date; hadPaidPlan: boolean };
+
+/** Día civil en Caracas, `YYYY-MM-DD`. Los recordatorios se cuentan así: la tarea corre a las 9 de allá. */
+function caracasDay(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Caracas',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+/** Días de calendario en Caracas desde `now` hasta `end`. Negativo si `end` ya pasó. */
+function calendarDaysUntil(now: Date, end: Date): number {
+  const startMs = Date.parse(`${caracasDay(now)}T00:00:00Z`);
+  const endMs = Date.parse(`${caracasDay(end)}T00:00:00Z`);
+  return Math.round((endMs - startMs) / DAY_MS);
+}
+
+/** La tarjeta va a renovar sola: avisar "tu plan vence" sería ruido. */
+function cardWillRenew(facts: SubscriptionFacts): boolean {
+  const status = facts.stripe?.status;
+  return status === 'active' || status === 'trialing';
+}
 
 /**
  * ¿Qué mail de recordatorio le toca hoy a esta suscripción? `null` si ninguno.
@@ -456,8 +497,13 @@ export type SubscriptionReminder =
  *   sale sólo el que corresponde hoy, no los atrasados de golpe. No se avisa a
  *   quien ya dejó pago lo que sigue (período pago o tarjeta cargada): ya
  *   resolvió, el mail sería ruido.
- * - **Vencida**: una vez por vencimiento. La clave lleva la fecha en que
- *   venció, así si renueva y vuelve a vencer meses después, se avisa de nuevo.
+ * - **Plan ya pago** (bolívares, o una tarjeta que no va a renovar): dos días
+ *   antes y el mismo día del vencimiento, en el calendario de Caracas. La
+ *   clave lleva la fecha de ese vencimiento, así el mes siguiente se avisa
+ *   de nuevo. Con tarjeta activa no se avisa: Stripe cobra solo.
+ * - **Vencida**: una vez por vencimiento. Si había un plan pago, el mail pide
+ *   reactivarlo; si sólo era el mes gratis, el de siempre. La clave lleva la
+ *   fecha en que venció, así si renueva y vuelve a vencer, se avisa de nuevo.
  */
 export function dueReminder(
   facts: SubscriptionFacts,
@@ -467,6 +513,17 @@ export function dueReminder(
   const state = subscriptionState(facts, now);
   const trialEnd = effectiveTrialEnd(facts);
   const paid = paidUntil(facts);
+
+  if (state.status === 'activa' && paid && !cardWillRenew(facts)) {
+    const daysLeft = calendarDaysUntil(now, paid);
+    if (daysLeft === 2 || daysLeft === 0) {
+      const key = `paid-${daysLeft}-${caracasDay(paid)}`;
+      if (!sentKeys.includes(key)) {
+        return { kind: 'paid_ending', key, daysLeft, periodEndsAt: paid };
+      }
+    }
+    return null;
+  }
 
   if (state.status === 'prueba' && trialEnd && state.trialDaysLeft !== null) {
     const alreadyPaidAhead =
@@ -491,7 +548,7 @@ export function dueReminder(
     if (!expiredAt) return null;
     const key = `expired-${expiredAt.toISOString().slice(0, 10)}`;
     if (sentKeys.includes(key)) return null;
-    return { kind: 'expired', key, expiredAt };
+    return { kind: 'expired', key, expiredAt, hadPaidPlan: paid !== null };
   }
 
   return null;

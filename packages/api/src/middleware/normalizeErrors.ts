@@ -53,7 +53,7 @@ export function normalizeErrors(_req: Request, res: Response, next: NextFunction
   next();
 }
 
-const GENERIC_SERVER_ERROR = 'Algo falló de nuestro lado. Probá de nuevo en un momento.';
+const GENERIC_SERVER_ERROR = 'Algo falló de nuestro lado. Prueba de nuevo en un momento.';
 
 interface ErrorEnvelope {
   success: false;

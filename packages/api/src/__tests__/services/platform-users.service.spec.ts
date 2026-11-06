@@ -8,13 +8,38 @@ vi.mock('../../models/User.js', () => ({
   User: { countDocuments: vi.fn(), find: vi.fn() },
 }));
 
+vi.mock('../../models/OrganizationMember.js', () => ({
+  OrganizationMember: { find: vi.fn() },
+}));
+
+vi.mock('../../models/Subscription.js', () => ({
+  Subscription: { find: vi.fn() },
+}));
+
 const { User } = await import('../../models/User.js');
+const { OrganizationMember } = await import('../../models/OrganizationMember.js');
+const { Subscription } = await import('../../models/Subscription.js');
 const { bucketSignups, listPlatformUsers, platformUsersOverview, weekStartOf } = await import(
   '../../services/platform-users.service.js'
 );
 
 const countDocuments = vi.mocked(User.countDocuments);
 const find = vi.mocked(User.find);
+const findMemberships = vi.mocked(OrganizationMember.find);
+const findSubscriptions = vi.mocked(Subscription.find);
+
+function mockUnlimited(ownerIds: string[] = []) {
+  findMemberships.mockReturnValue({
+    select: vi.fn().mockResolvedValue(
+      ownerIds.map((id) => ({ user: id, organization: `org-${id}` })),
+    ),
+  } as never);
+  findSubscriptions.mockReturnValue({
+    select: vi.fn().mockResolvedValue(
+      ownerIds.map((id) => ({ organization: `org-${id}` })),
+    ),
+  } as never);
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -107,6 +132,7 @@ describe('listPlatformUsers', () => {
   it('pagina, ordena por alta descendente y devuelve las filas sin campos internos', async () => {
     const { sort, skip, limit } = mockPage([user]);
     countDocuments.mockResolvedValue(41);
+    mockUnlimited(['u1']);
 
     const page = await listPlatformUsers({ filter: 'all', q: '', page: 3, pageSize: 20 });
 
@@ -122,12 +148,14 @@ describe('listPlatformUsers', () => {
       emailVerified: false,
       accountStatus: 'active',
       createdAt: '2026-10-20T10:00:00.000Z',
+      unlimited: true,
     });
   });
 
   it('"sin confirmar" son las activas sin mail confirmado', async () => {
     mockPage([]);
     countDocuments.mockResolvedValue(0);
+    mockUnlimited();
 
     await listPlatformUsers({ filter: 'unverified', q: '', page: 1, pageSize: 20 });
 
@@ -138,6 +166,7 @@ describe('listPlatformUsers', () => {
   it('escapa la búsqueda: un punto o un paréntesis no son un patrón', async () => {
     mockPage([]);
     countDocuments.mockResolvedValue(0);
+    mockUnlimited();
 
     await listPlatformUsers({ filter: 'all', q: 'a.(b', page: 1, pageSize: 20 });
 
@@ -149,6 +178,7 @@ describe('listPlatformUsers', () => {
   it('con 0 resultados informa 1 página, no 0', async () => {
     mockPage([]);
     countDocuments.mockResolvedValue(0);
+    mockUnlimited();
 
     const page = await listPlatformUsers({ filter: 'all', q: '', page: 1, pageSize: 20 });
 

@@ -23,6 +23,8 @@
  * - `pago_fallido`: Stripe no pudo cobrar la renovación. Misma gracia
  *   mientras Stripe reintenta.
  * - `vencida`: nada lo cubre. Las obras quedan en sólo lectura.
+ * - `ilimitado`: se lo asignó un admin de la plataforma. No vence, no se
+ *   cobra y no tiene tope de obras.
  */
 export type SubscriptionStatus =
   | 'sin_iniciar'
@@ -30,7 +32,8 @@ export type SubscriptionStatus =
   | 'activa'
   | 'en_revision'
   | 'pago_fallido'
-  | 'vencida';
+  | 'vencida'
+  | 'ilimitado';
 
 export type SubscriptionPaymentMethod = 'stripe' | 'pago_movil' | 'transferencia';
 

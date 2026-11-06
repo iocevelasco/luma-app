@@ -39,7 +39,7 @@ test.describe('presupuesto (carga manual)', () => {
 
     await page.getByRole('link', { name: /^presupuesto$/i }).click();
     await expect(page).toHaveURL(/\/presupuesto$/);
-    await expect(page.getByText(/todavía no cargaste el presupuesto/i)).toBeVisible();
+    await expect(page.getByText(/todavía no has cargado el presupuesto/i)).toBeVisible();
 
     // "Importar planilla" es la pestaña por defecto — la carga manual queda
     // como alternativa, hay que pasar a esa pestaña primero.

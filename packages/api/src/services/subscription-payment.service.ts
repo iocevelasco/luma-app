@@ -67,6 +67,9 @@ export async function chargeFor(
   ]);
   const state = subscriptionState(facts, now);
 
+  if (state.status === 'ilimitado') {
+    throw conflict('Tu plan es ilimitado: no tienes que pagar una suscripción.');
+  }
   if (state.status === 'sin_iniciar') {
     throw badRequest('Tu mes gratis arranca con tu primera obra: todavía no hay nada que pagar.');
   }
@@ -104,7 +107,7 @@ export async function bolivaresQuote(
   const rate = await ensureCurrentRate(now);
   if (!rate) {
     throw serviceUnavailable(
-      'No tenemos una tasa BCV actualizada en este momento. Probá en unas horas o pagá con tarjeta.',
+      'No tenemos una tasa BCV actualizada en este momento. Prueba en unas horas o paga con tarjeta.',
     );
   }
 
@@ -146,7 +149,7 @@ export async function submitBolivaresPayment(params: {
     status: 'pendiente',
   });
   if (pending) {
-    throw conflict('Ya tenés un pago en revisión. Esperá a que lo revisemos antes de mandar otro.');
+    throw conflict('Ya tienes un pago en revisión. Espera a que lo revisemos antes de enviar otro.');
   }
 
   const { quote, rate, amountBs } = await bolivaresQuote(

@@ -8,18 +8,26 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
-import { Bot, Check, CheckCheck, Copy, ImagePlus, Paperclip, RotateCcw, SendHorizontal, Square, User, X } from 'lucide-react';
+import { Check, CheckCheck, Copy, ImagePlus, Paperclip, RotateCcw, SendHorizontal, Square, User, X, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useChatStore } from '@/lib/chat/chat-store';
+import { useChatStore, type ChatStoreHook } from '@/lib/chat/chat-store';
+import { useTypewriter } from '@/lib/chat/use-typewriter';
 import { ALLOWED_IMAGE_TYPES, CHAT_LIMITS } from '@/lib/chat/limits';
 import type { ChatMessage } from '@/lib/chat/types';
 import { clampTitle } from '@/lib/chat/content';
 import { cn } from '@/lib/utils';
 import { ChatMarkdown } from './chat-markdown';
 import { SafeImage } from './safe-image';
+
+/** Saludo y frases para arrancar, ya traducidos: el componente no sabe de i18n ni de usuarios. */
+export interface ChatWelcome {
+  title: string;
+  subtitle: string;
+  starters: { id: string; icon: LucideIcon; text: string }[];
+}
 
 /** Los códigos son kebab-case; las claves i18n, camelCase. */
 const camel = (code: string) => code.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
@@ -77,18 +85,17 @@ function formatTime(ms: number): string {
   return ms > 0 ? new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
 }
 
-/** Quién habla: avatar + nombre, arriba de cada burbuja. */
-function Sender({ mine }: { mine: boolean }) {
+/** Quién habla, arriba de la burbuja de la persona. El asistente no lleva avatar ni nombre. */
+function Sender() {
   const { t } = useTranslation();
-  const Icon = mine ? User : Bot;
   return (
-    <div className={cn('mb-1 flex items-center gap-2 text-xs text-muted-foreground', mine && 'flex-row-reverse')}>
+    <div className="mb-1 flex flex-row-reverse items-center gap-2 text-xs text-muted-foreground">
       <Avatar className="size-6">
         <AvatarFallback className="bg-secondary text-secondary-foreground">
-          <Icon className="size-3.5" aria-hidden />
+          <User className="size-3.5" aria-hidden />
         </AvatarFallback>
       </Avatar>
-      <span>{t(mine ? 'secureChat.you' : 'secureChat.assistant')}</span>
+      <span>{t('secureChat.you')}</span>
     </div>
   );
 }
@@ -100,13 +107,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   const streaming = message.status === 'streaming';
   return (
     <li className={cn('flex flex-col', mine ? 'items-end' : 'items-start')}>
-      <Sender mine={mine} />
+      {mine && <Sender />}
       <div
         data-testid={`message-${message.role}`}
         aria-busy={streaming}
         className={cn(
-          'max-w-[88%] space-y-2 rounded-xl border px-4 py-3 text-sm',
-          mine ? 'border-transparent bg-primary text-primary-foreground' : 'border-border bg-card text-foreground',
+          'space-y-2 text-sm',
+          mine ? 'max-w-[88%] rounded-xl border border-transparent bg-primary px-4 py-3 text-primary-foreground' : 'w-full text-foreground',
         )}
       >
         {message.attachments.length > 0 && (
@@ -142,12 +149,25 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
 /**
  * El contenido del chat, sin el contenedor: así vive igual en un panel lateral
- * que en una página. El estado está en `useChatStore`, no acá, por eso cerrar
- * el panel no pierde la conversación.
+ * que en una página. El estado está en el store, no acá, por eso cerrar el
+ * panel no pierde la conversación. Sin `store` usa el del prototipo.
  */
-export function ChatConversation() {
+export function ChatConversation({
+  store: useStore = useChatStore,
+  typedPlaceholder,
+  welcome,
+}: {
+  store?: ChatStoreHook;
+  /** Si viene, el placeholder se escribe letra por letra en vez de ser fijo. */
+  typedPlaceholder?: string;
+  /** Si viene, la conversación vacía saluda y ofrece iniciadores en vez del aviso genérico. */
+  welcome?: ChatWelcome;
+}) {
   const { t } = useTranslation();
-  const store = useChatStore();
+  const store = useStore();
+  const typed = useTypewriter(typedPlaceholder ?? '', Boolean(typedPlaceholder));
+  const placeholder = typedPlaceholder ? `${typed.visible}${typed.typing ? '|' : ''}` : t('secureChat.inputPlaceholder');
+  const attachments = store.capabilities.attachments;
   const [draft, setDraft] = useState('');
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -165,9 +185,11 @@ export function ChatConversation() {
   }
 
   const busy = store.isStreaming || store.isAttaching;
+  // Sin texto ni imagen no hay nada que enviar: el botón queda apagado y Enter no hace nada.
+  const empty = draft.trim() === '' && store.draftAttachments.length === 0;
 
   async function submit() {
-    if (busy) return;
+    if (busy || empty) return;
     const text = draft;
     // Se limpia sólo si el envío es válido; si no, la persona conserva lo escrito.
     const trimmed = text.trim();
@@ -191,7 +213,7 @@ export function ChatConversation() {
   /** Pegar una imagen la adjunta (pasa por la misma validación). El texto pegado sigue su camino normal. */
   function onPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
     const files = Array.from(e.clipboardData?.files ?? []);
-    if (files.length === 0) return;
+    if (!attachments || files.length === 0) return;
     e.preventDefault();
     void store.addFiles(files);
   }
@@ -200,8 +222,9 @@ export function ChatConversation() {
 
   function onDragOver(e: DragEvent) {
     if (!hasFiles(e)) return;
+    // Siempre se frena: un archivo soltado fuera de un destino navega a él y tira la app.
     e.preventDefault();
-    setDragging(true);
+    if (attachments) setDragging(true);
   }
 
   function onDragLeave(e: DragEvent) {
@@ -213,7 +236,7 @@ export function ChatConversation() {
     e.preventDefault();
     setDragging(false);
     // Sólo archivos: texto o URLs arrastrados desde otra página se ignoran.
-    void store.addFiles(Array.from(e.dataTransfer.files));
+    if (attachments) void store.addFiles(Array.from(e.dataTransfer.files));
   }
 
   const title = clampTitle(store.title);
@@ -248,7 +271,30 @@ export function ChatConversation() {
             <AlertDescription>{t('secureChat.restoredDiscarded', { count: store.discarded })}</AlertDescription>
           </Alert>
         )}
-        {store.messages.length === 0 ? (
+        {store.messages.length === 0 && welcome ? (
+          <div data-testid="chat-welcome" className="flex min-h-full flex-col justify-center gap-6 py-6">
+            <div className="space-y-1">
+              <p className="text-xl text-foreground">{welcome.title}</p>
+              <p className="text-sm text-muted-foreground">{welcome.subtitle}</p>
+            </div>
+            <ul className="m-0 grid list-none gap-2 p-0">
+              {welcome.starters.map(({ id, icon: Icon, text }) => (
+                <li key={id}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto w-full justify-start whitespace-normal py-3 text-start"
+                    disabled={busy}
+                    onClick={() => void store.send(text)}
+                  >
+                    <Icon aria-hidden className="text-primary" />
+                    {text}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : store.messages.length === 0 ? (
           <div className="py-10 text-center">
             <p className="text-sm">{t('secureChat.emptyTitle')}</p>
             <p className="mt-1 text-xs text-muted-foreground">{t('secureChat.emptyHint')}</p>
@@ -300,7 +346,13 @@ export function ChatConversation() {
           </ul>
         )}
 
-        <div className="flex flex-col gap-2 rounded-2xl bg-card px-4 pb-2 pt-3 shadow-surface ring-1 ring-border focus-within:ring-2 focus-within:ring-ring/50">
+        {/* Sin acciones de adjuntar el campo es de una sola fila: texto y enviar en la misma línea. */}
+        <div
+          className={cn(
+            'rounded-2xl bg-card shadow-surface ring-1 ring-border focus-within:ring-2 focus-within:ring-ring/50',
+            attachments ? 'flex flex-col gap-2 px-4 pb-2 pt-3' : 'flex items-end gap-2 py-2 pe-2 ps-4',
+          )}
+        >
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -308,33 +360,38 @@ export function ChatConversation() {
             onPaste={onPaste}
             aria-label={t('secureChat.inputLabel')}
             aria-describedby="chat-input-hint"
-            placeholder={t('secureChat.inputPlaceholder')}
-            rows={2}
+            placeholder={placeholder}
+            rows={attachments ? 2 : 1}
             // Límite duro del control; el store lo vuelve a comprobar.
             maxLength={CHAT_LIMITS.maxUserChars}
-            className="field-sizing-content max-h-40 min-h-12 w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
+            className={cn(
+              'field-sizing-content max-h-40 w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-foreground/40 md:text-sm',
+              attachments ? 'min-h-12' : 'min-h-9 flex-1 py-[7px]',
+            )}
           />
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            // Sólo orienta al selector del sistema; la validación real está en `validateAttachments`.
-            accept={ALLOWED_IMAGE_TYPES.join(',')}
-            className="hidden"
-            data-testid="file-input"
-            onChange={onFiles}
-          />
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1">
-              {/* Los dos abren el mismo selector: sólo se aceptan imágenes. */}
-              <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attach')} onClick={() => fileRef.current?.click()}>
-                <ImagePlus aria-hidden />
-              </Button>
-              <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attachFile')} onClick={() => fileRef.current?.click()}>
-                <Paperclip aria-hidden />
-              </Button>
-            </div>
-            <div className="flex items-center gap-1">
+          <div className={cn('flex items-center gap-2', attachments ? 'justify-between' : 'shrink-0')}>
+            {attachments && (
+              <div className="flex items-center gap-1">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  multiple
+                  // Sólo orienta al selector del sistema; la validación real está en `validateAttachments`.
+                  accept={ALLOWED_IMAGE_TYPES.join(',')}
+                  className="hidden"
+                  data-testid="file-input"
+                  onChange={onFiles}
+                />
+                {/* Los dos abren el mismo selector: sólo se aceptan imágenes. */}
+                <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attach')} onClick={() => fileRef.current?.click()}>
+                  <ImagePlus aria-hidden />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.attachFile')} onClick={() => fileRef.current?.click()}>
+                  <Paperclip aria-hidden />
+                </Button>
+              </div>
+            )}
+            <div className="ms-auto flex items-center gap-1">
               {store.isStreaming && (
                 <Button type="button" variant="ghost" size="icon" aria-label={t('secureChat.stop')} onClick={store.stop}>
                   <Square aria-hidden />
@@ -346,7 +403,7 @@ export function ChatConversation() {
                 size="icon"
                 className="border-transparent shadow-none active:shadow-none"
                 aria-label={t('secureChat.send')}
-                disabled={busy}
+                disabled={busy || empty}
               >
                 <SendHorizontal aria-hidden />
               </Button>
