@@ -43,6 +43,9 @@ const ChatPrototypePage = lazy(() =>
 const EmployeesPage = lazy(() =>
   import('./pages/employees').then((m) => ({ default: m.EmployeesPage })),
 );
+const DepositPage = lazy(() =>
+  import('./pages/deposit').then((m) => ({ default: m.DepositPage })),
+);
 const ProvidersDirectoryPage = lazy(() =>
   import('./pages/providers-directory').then((m) => ({ default: m.ProvidersDirectoryPage })),
 );
@@ -177,6 +180,7 @@ export function AppRoutes() {
           />
           {/* Empresa se unificó con Empleados; los datos de la Empresa están en la cuenta. */}
           <Route path={ROUTES.COMPANY} element={<Navigate to={ROUTES.CREW} replace />} />
+          <Route path={ROUTES.DEPOSIT} element={<LazyRoute><DepositPage /></LazyRoute>} />
           <Route
             path={ROUTES.PROVIDERS}
             element={<LazyRoute><ProvidersDirectoryPage /></LazyRoute>}

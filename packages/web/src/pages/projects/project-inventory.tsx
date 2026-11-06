@@ -1,13 +1,21 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { ArrowRightLeft, ClipboardList, MoreHorizontal, PackageMinus, Warehouse } from 'lucide-react';
+import {
+  ArrowRightLeft,
+  ClipboardList,
+  Download,
+  MoreHorizontal,
+  PackageMinus,
+  Upload,
+  Warehouse,
+} from 'lucide-react';
 import {
   stockDirection,
-  STOCK_MOVEMENT_KINDS,
+  PROJECT_STOCK_MOVEMENT_KINDS,
   type ManualStockMovementKind,
   type StockItem,
   type StockMovement,
-  type StockMovementKind,
+  type ProjectStockMovementKind,
   type StockMovementQuery,
 } from '@luma/shared';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +27,8 @@ import {
   StockMovementDrawer,
   type StockMovementDrawerInitial,
 } from '@/components/inventory/stock-movement-drawer';
+import { ImportFromDepositDrawer } from '@/components/inventory/import-from-deposit-drawer';
+import { SendToDepositDrawer } from '@/components/inventory/send-to-deposit-drawer';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +49,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useStock, useStockMovements } from '@/hooks/inventory/use-inventory-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
+import { useProject } from '@/hooks/projects/use-project-queries';
 
 const ALL = '__all__';
 /** Inventario de la obra: lo que hay en el patio y el kardex de cada movimiento. */
@@ -50,6 +61,9 @@ export function ProjectInventoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'kardex' ? 'kardex' : 'stock';
   const [drawer, setDrawer] = useState<StockMovementDrawerInitial | null>(null);
+  const [sendItem, setSendItem] = useState<StockItem | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const { data: projectData } = useProject(projectId);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<StockMovementQuery>({});
 
@@ -66,6 +80,8 @@ export function ProjectInventoryPage() {
   if (stockQuery.isLoading || !stockQuery.data) return <PageLayout isLoading />;
 
   const canWrite = can('inventory.write');
+  const canUseDeposit = can('inventory.deposit.write');
+  const currency = projectData?.project.currency ?? '';
   const setFilter = (patch: Partial<StockMovementQuery>) =>
     setFilters((current) => ({ ...current, ...patch }));
 
@@ -73,6 +89,14 @@ export function ProjectInventoryPage() {
     <>
       <PageLayout
         width="default"
+        secondaryActions={
+          canUseDeposit ? (
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Download className="size-4" />
+              {t('inventory.deposit.import')}
+            </Button>
+          ) : undefined
+        }
         action={
           canWrite && items.length > 0 ? (
             <Button onClick={() => setDrawer({ kind: 'consumo' })}>
@@ -133,7 +157,9 @@ export function ProjectInventoryPage() {
                     key={item.itemKey}
                     item={item}
                     canWrite={canWrite}
+                    canUseDeposit={canUseDeposit}
                     onRegister={(kind) => setDrawer({ kind, itemKey: item.itemKey })}
+                    onSendToDeposit={() => setSendItem(item)}
                   />
                 ))}
               </RowCardList>
@@ -166,6 +192,22 @@ export function ProjectInventoryPage() {
           if (!open) setDrawer(null);
         }}
       />
+      <SendToDepositDrawer
+        projectId={projectId!}
+        currency={currency}
+        // Sin la moneda de la obra el costo de referencia no tendría unidad.
+        item={currency ? sendItem : null}
+        onOpenChange={(open) => {
+          if (!open) setSendItem(null);
+        }}
+      />
+      <ImportFromDepositDrawer
+        projectId={projectId!}
+        currency={currency}
+        canChargeFreight={can('expense.write')}
+        open={importOpen && Boolean(currency)}
+        onOpenChange={setImportOpen}
+      />
     </>
   );
 }
@@ -173,11 +215,15 @@ export function ProjectInventoryPage() {
 function StockRow({
   item,
   canWrite,
+  canUseDeposit,
   onRegister,
+  onSendToDeposit,
 }: {
   item: StockItem;
   canWrite: boolean;
+  canUseDeposit: boolean;
   onRegister: (kind: ManualStockMovementKind) => void;
+  onSendToDeposit: () => void;
 }) {
   const { t } = useTranslation();
   const unit = t(`material.unit.${item.unit}`);
@@ -186,11 +232,16 @@ function StockRow({
     <RowCard>
       <RowCardBody
         title={<span className="truncate">{item.name}</span>}
-        meta={t('inventory.stock.meta', {
-          received: item.received,
-          consumed: item.consumed,
-          wasted: item.wasted,
-        })}
+        meta={[
+          t('inventory.stock.meta', {
+            received: item.received,
+            consumed: item.consumed,
+            wasted: item.wasted,
+          }),
+          item.transferred > 0 && t('inventory.stock.transferred', { quantity: item.transferred }),
+        ]
+          .filter(Boolean)
+          .join(' · ')}
       />
       <RowCardEnd>
         <StockLevelBadge level={item.level} />
@@ -204,7 +255,7 @@ function StockRow({
             {t('inventory.stock.deliver')}
           </Button>
         )}
-        {canWrite && (
+        {(canWrite || (canUseDeposit && item.stock > 0)) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -217,13 +268,21 @@ function StockRow({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onRegister('devolucion')}>
-                <ArrowRightLeft className="size-4" />
-                {t('inventory.kind.devolucion')}
-              </DropdownMenuItem>
-              {item.stock > 0 && (
+              {canWrite && (
+                <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onRegister('devolucion')}>
+                  <ArrowRightLeft className="size-4" />
+                  {t('inventory.kind.devolucion')}
+                </DropdownMenuItem>
+              )}
+              {canWrite && item.stock > 0 && (
                 <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onRegister('merma')}>
                   {t('inventory.kind.merma')}
+                </DropdownMenuItem>
+              )}
+              {canUseDeposit && item.stock > 0 && (
+                <DropdownMenuItem className="max-sm:min-h-11" onSelect={onSendToDeposit}>
+                  <Upload className="size-4" />
+                  {t('inventory.deposit.send')}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -307,7 +366,7 @@ function KardexFilters({
       <Select
         value={filters.kind ?? ALL}
         onValueChange={(value) =>
-          onChange({ kind: value === ALL ? undefined : (value as StockMovementKind) })
+          onChange({ kind: value === ALL ? undefined : (value as ProjectStockMovementKind) })
         }
       >
         <SelectTrigger aria-label={t('inventory.kardex.kind')}>
@@ -315,7 +374,7 @@ function KardexFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={ALL}>{t('inventory.kardex.allKinds')}</SelectItem>
-          {STOCK_MOVEMENT_KINDS.map((kind) => (
+          {PROJECT_STOCK_MOVEMENT_KINDS.map((kind) => (
             <SelectItem key={kind} value={kind}>
               {t(`inventory.kind.${kind}`)}
             </SelectItem>

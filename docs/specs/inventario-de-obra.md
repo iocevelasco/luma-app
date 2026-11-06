@@ -1,6 +1,6 @@
 # Inventario de obra y Kardex
 
-**Estado:** Fase 1 implementada · Fase 2 (Depósito General) pendiente · **Fecha:** 2026-11-06 · **Pantalla:** `/admin/proyectos/:projectId/inventario`
+**Estado:** Fases 1 y 2 implementadas · **Fecha:** 2026-11-06 · **Pantallas:** `/admin/proyectos/:projectId/inventario` y `/admin/deposito`
 
 ## Qué resuelve
 
@@ -40,17 +40,60 @@ esa cuenta corriente.
 
 Una salida que dejaría el stock en negativo responde `409`.
 
+## Fase 2: Depósito General
+
+El material sobrante viaja entre obras de la misma Empresa.
+
+- **Un traspaso son dos filas** de `StockMovement` unidas por `transfer`: la de
+  la obra (`desincorporacion` / `importacion`) y la del Depósito
+  (`deposito_ingreso` / `deposito_egreso`), **sin `project`** y con
+  `organization`. Así el stock del Depósito no se va cuando se purga la obra que
+  lo mandó. No hay transacciones: si falla la segunda escritura se borra la
+  primera, que es del mismo request.
+- **Costo de referencia**: se escribe al desincorporar (la pantalla lo sugiere
+  con el costo estimado de la compra ÷ su cantidad) y se congela, con su
+  moneda, en la fila del Depósito. Se promedia por cantidad entre lo que entró
+  y cada egreso congela ese promedio. Una línea del Depósito es material **por
+  moneda**: no se promedian monedas.
+- **Importar es costo $0**: sin factura, sin proveedor, sin cuenta por pagar. El
+  flete opcional es un `Expense` (categoría «otro») de la obra destino, en su
+  moneda, con cotización 1; pide además `expense.write`.
+- **Ahorro por reutilización**: cantidad × costo congelado de cada egreso, por
+  obra destino y moneda. Nunca se suma entre monedas ni entre unidades
+  (`summarizeSavings`). Se ve sólo en la pantalla del Depósito.
+- **Permisos**: `inventory.deposit.write` es del **dueño de la obra**
+  (`OWNER_ONLY`): el Depósito es de la Empresa y otro gerente puede ser de otra.
+  La pantalla del Depósito (`GET /api/organizations/me/deposit`) es de los
+  dueños de la Empresa.
+- **Cotización**: el costo de referencia va en la moneda de la obra de origen y
+  nunca se convierte, así que no guarda cotización (el ahorro se informa por
+  moneda).
+
 ## Fuera de esta fase
 
-- **Depósito General** (desincorporar a la Empresa, importar a una obra nueva a
-  costo $0, flete como gasto, "Ahorro por reutilización"). Pide ubicación en
-  `StockMovement` (obra o Empresa) y decidir cómo se congela el costo de
-  referencia (moneda y cotización).
 - **Costos por movimiento** ("imputa el costo real a esa etapa").
+- **Flete en otra moneda** que la de la obra destino: se carga a mano en Gastos.
 - **Foto de remisión** adjunta al movimiento.
 - **Exportar el kardex a PDF/Excel.**
 - **Tiempo real por SSE**: hoy el inventario no usa el hub; se vuelve a pedir
   al abrir la pantalla (`staleTime: 0`).
+
+## Límites conocidos de la Fase 2
+
+- **Dos importaciones simultáneas** de la misma línea del Depósito podrían dejarla
+  apenas en negativo (la validación y la escritura no son atómicas, igual que en
+  el patio). Si el borrado de compensación falla, queda un traspaso a medias que
+  se ve en el kardex de la obra y no en el Depósito.
+- **El flete no queda atado al traspaso**: es un gasto común de la obra
+  destino (categoría «otro»); no se descuenta solo del ahorro.
+- **El ahorro cuenta materiales distintos** (`items`), no unidades: una bolsa y
+  un metro no se suman. El monto es la suma de cantidad × costo congelado.
+- **Obra purgada**: el Depósito conserva su stock; el historial y el ahorro
+  muestran «Obra eliminada» en vez del nombre.
+- **El menú «Depósito» lo ve todo usuario del panel**, como Proveedores y
+  Empleados; quien no es dueño de una Empresa ve una explicación en vez del
+  Depósito.
+- **`spentOn` del flete** usa la fecha del servidor, no la del usuario.
 
 ## Límite conocido
 

@@ -17,6 +17,10 @@ const KIND_VARIANT: Record<StockMovementKind, BadgeVariant> = {
   devolucion: 'success',
   consumo: 'neutral',
   merma: 'danger',
+  desincorporacion: 'warning',
+  importacion: 'success',
+  deposito_ingreso: 'info',
+  deposito_egreso: 'neutral',
 };
 
 export function StockLevelBadge({ level }: { level: StockLevel }) {

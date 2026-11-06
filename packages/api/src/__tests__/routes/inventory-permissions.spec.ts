@@ -17,7 +17,13 @@ type RouteLayer = {
   };
 };
 
-function allows(router: Router, method: string, path: string, role: ProjectRole): boolean {
+function allows(
+  router: Router,
+  method: string,
+  path: string,
+  role: ProjectRole,
+  isOwner = false,
+): boolean {
   const layer = (router.stack as unknown as RouteLayer[]).find(
     (l) => l.route?.path === path && l.route.methods[method],
   );
@@ -30,7 +36,8 @@ function allows(router: Router, method: string, path: string, role: ProjectRole)
     project,
     projectRole: role,
     projectReadOnly: false,
-    can: (capability: never) => canInProject(role, capability, project),
+    can: (capability: never) => canInProject(role, capability, project, { isOwner }),
+    isProjectOwner: isOwner,
   } as unknown as Request;
   const res = { status: vi.fn().mockReturnThis(), json: vi.fn().mockReturnThis() } as unknown as Response;
   const next = vi.fn();
@@ -69,5 +76,33 @@ describe('inventario — quién entra', () => {
     expect(methods).not.toContain('patch');
     expect(methods).not.toContain('put');
     expect(methods).not.toContain('delete');
+  });
+});
+
+describe('Depósito General — quién mueve material', () => {
+  const routes = [
+    ['get', '/deposit'],
+    ['post', '/deposit/send'],
+    ['post', '/deposit/import'],
+  ] as const;
+
+  it('sólo el gerente dueño de la obra', () => {
+    for (const [method, path] of routes) {
+      expect(allows(inventoryRouter, method, path, 'gerente', true), `${method} ${path}`).toBe(true);
+    }
+  });
+
+  it('otro gerente no: el Depósito es de la Empresa que es dueña de la obra', () => {
+    for (const [method, path] of routes) {
+      expect(allows(inventoryRouter, method, path, 'gerente', false), `${method} ${path}`).toBe(false);
+    }
+  });
+
+  it('ni el supervisor que despacha del patio, ni los demás roles', () => {
+    for (const [method, path] of routes) {
+      for (const role of ['supervisor', 'arquitecto', 'ingeniero', 'disenador', 'contador', 'cliente'] as const) {
+        expect(allows(inventoryRouter, method, path, role, true), `${role} ${method} ${path}`).toBe(false);
+      }
+    }
   });
 });

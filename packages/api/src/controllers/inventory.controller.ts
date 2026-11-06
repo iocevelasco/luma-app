@@ -29,7 +29,7 @@ function toMovementDTO(movement: Populated): StockMovementDTO {
     itemKey: movement.itemKey,
     name: movement.name,
     unit: movement.unit,
-    kind: movement.kind,
+    kind: movement.kind as StockMovementDTO['kind'],
     quantity: movement.quantity,
     activityId: activity ? String(activity._id ?? activity) : null,
     activityName: activity && typeof activity === 'object' ? activity.name : undefined,

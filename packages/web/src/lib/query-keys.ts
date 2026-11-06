@@ -18,6 +18,8 @@ export enum QueryKeys {
   materialPhoto = 'material-photo',
   stock = 'stock',
   stockMovements = 'stock-movements',
+  deposit = 'deposit',
+  myDeposit = 'my-deposit',
   laborRecords = 'labor-records',
   budget = 'budget',
   providers = 'providers',

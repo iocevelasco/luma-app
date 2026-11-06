@@ -165,6 +165,9 @@ export type Capability =
   // costos: el inventario cuenta unidades, no plata.
   | 'inventory.read'
   | 'inventory.write'
+  // Mandar material al Depósito General de la Empresa y traerlo de ahí. Es de la
+  // Empresa, no de una obra: sólo el dueño de la obra (ver `OWNER_ONLY`).
+  | 'inventory.deposit.write'
   // Personal en obra: sumar gente, administrar el roster y la asistencia.
   // Lo que cada uno tiene que hacer son tareas: `activity.*`.
   | 'crew.read'
@@ -296,6 +299,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'material.invoice.write',
     'inventory.read',
     'inventory.write',
+    'inventory.deposit.write',
     'milestone.read',
     'milestone.report',
     'milestone.publish',
@@ -373,6 +377,8 @@ const CLIENT_GATED_BY_PROJECT_FLAG: Partial<
  * - `crew.directory.write`: el jornal del personal de la Empresa lo lee la
  *   liquidación de todas sus obras; otro gerente cambiaría la plata de obras
  *   donde no está invitado.
+ * - `inventory.deposit.write`: el Depósito General es de la Empresa dueña de la
+ *   obra; otro gerente puede ser de otra Empresa y movería su stock.
  * - `provider.manage`: la libreta de proveedores es de la Empresa dueña de la
  *   obra, y otro gerente puede ser de otra Empresa: vería los proveedores de
  *   todas sus obras.
@@ -384,6 +390,7 @@ const OWNER_ONLY: readonly Capability[] = [
   'project.manager.write',
   'provider.manage',
   'crew.directory.write',
+  'inventory.deposit.write',
 ];
 
 /** Lo que de la obra necesita saber `canInProject` para resolver las excepciones. */

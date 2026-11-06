@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireWritableSubscription } from '../middleware/subscription.middleware.js';
+import { getMyDeposit } from '../controllers/deposit.controller.js';
 import {
   createOrganizationCrewMember,
   createOrganizationProvider,
@@ -54,6 +55,9 @@ organizationRouter.put(
   isAuthenticated,
   setOrganizationProviderProjects,
 );
+
+// Depósito General: lo que hay, su historial y el ahorro por reutilización. Del dueño.
+organizationRouter.get('/me/deposit', isAuthenticated, getMyDeposit);
 
 organizationRouter.get('/me/crew', isAuthenticated, listOrganizationCrew);
 organizationRouter.post('/me/crew', isAuthenticated, createOrganizationCrewMember);

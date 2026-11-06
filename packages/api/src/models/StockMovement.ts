@@ -1,5 +1,10 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { MaterialUnit, StockMovementKind } from '@luma/shared';
+import {
+  DEPOSIT_MOVEMENT_KINDS,
+  STOCK_MOVEMENT_KINDS,
+  type MaterialUnit,
+  type StockMovementKind,
+} from '@luma/shared';
 
 /**
  * Una línea del kardex de una obra: un hecho con fecha. NUNCA se edita ni se
@@ -14,11 +19,30 @@ import type { MaterialUnit, StockMovementKind } from '@luma/shared';
  * (`stockItemKey`: nombre normalizado + unidad). `name` es el texto con que
  * entró por primera vez, sólo para mostrarlo.
  *
+ * **Depósito General.** Un traspaso son dos filas unidas por `transfer`: la de la
+ * obra (`desincorporacion` o `importacion`) y la del Depósito
+ * (`deposito_ingreso` / `deposito_egreso`), que **no tiene `project`**: el
+ * stock del Depósito es de la Empresa, y no se va cuando se purga la obra que
+ * lo mandó. El costo de referencia (`unitCost` + `currency`, en la moneda de la
+ * obra de origen) se congela sólo en las filas del Depósito.
+ *
  * `receiver` es una persona física por nombre, sin referencia: quien retira
  * del patio muchas veces no tiene cuenta en Luma.
  */
 export interface IStockMovement extends Document {
-  project: mongoose.Types.ObjectId;
+  /** Ausente en las filas del Depósito General. */
+  project?: mongoose.Types.ObjectId;
+  /** La Empresa dueña del Depósito. Presente en traspasos y filas del Depósito. */
+  organization?: mongoose.Types.ObjectId;
+  /** Une las dos filas de un traspaso. */
+  transfer?: mongoose.Types.ObjectId;
+  /** `deposito_ingreso`: la obra que mandó el material. */
+  originProject?: mongoose.Types.ObjectId;
+  /** `deposito_egreso`: la obra que lo recibió. */
+  destinationProject?: mongoose.Types.ObjectId;
+  /** Costo de referencia congelado, en `currency`. Sólo filas del Depósito. */
+  unitCost?: number;
+  currency?: string;
   itemKey: string;
   name: string;
   unit: MaterialUnit;
@@ -38,7 +62,21 @@ export interface IStockMovement extends Document {
 
 const stockMovementSchema = new Schema<IStockMovement>(
   {
-    project: { type: Schema.Types.ObjectId, ref: 'Project', required: true, index: true },
+    project: {
+      type: Schema.Types.ObjectId,
+      ref: 'Project',
+      // Todo menos las filas del Depósito, que son de la Empresa.
+      required: function (this: IStockMovement) {
+        return !(DEPOSIT_MOVEMENT_KINDS as readonly string[]).includes(this.kind);
+      },
+      index: true,
+    },
+    organization: { type: Schema.Types.ObjectId, ref: 'Organization' },
+    transfer: { type: Schema.Types.ObjectId },
+    originProject: { type: Schema.Types.ObjectId, ref: 'Project' },
+    destinationProject: { type: Schema.Types.ObjectId, ref: 'Project' },
+    unitCost: { type: Number, min: 0 },
+    currency: { type: String, uppercase: true, trim: true },
     itemKey: { type: String, required: true },
     name: { type: String, required: true, trim: true },
     unit: {
@@ -46,7 +84,7 @@ const stockMovementSchema = new Schema<IStockMovement>(
       enum: ['un', 'm', 'm2', 'm3', 'kg', 'l', 'bolsa', 'rollo', 'global'],
       required: true,
     },
-    kind: { type: String, enum: ['compra', 'devolucion', 'consumo', 'merma'], required: true },
+    kind: { type: String, enum: [...STOCK_MOVEMENT_KINDS], required: true },
     quantity: { type: Number, required: true, min: 0.0001 },
     activity: { type: Schema.Types.ObjectId, ref: 'Activity', default: null },
     destination: { type: String, trim: true },
@@ -62,6 +100,8 @@ const stockMovementSchema = new Schema<IStockMovement>(
 
 stockMovementSchema.index({ project: 1, occurredAt: -1 });
 stockMovementSchema.index({ project: 1, itemKey: 1 });
+stockMovementSchema.index({ organization: 1, kind: 1, occurredAt: -1 });
+stockMovementSchema.index({ transfer: 1 });
 // Una compra por material de Compras: es lo que hace idempotente generar la
 // entrada, aunque dos requests lo intenten a la vez.
 stockMovementSchema.index(

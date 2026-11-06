@@ -1,6 +1,10 @@
 import type {
   ApiResponse,
   CreateStockMovementInput,
+  DepositOverviewResponse,
+  DepositResponse,
+  ImportFromDepositInput,
+  SendToDepositInput,
   StockListResponse,
   StockMovementListResponse,
   StockMovementQuery,
@@ -39,4 +43,21 @@ export const inventoryApi = {
     unwrap<StockMovementResponse>(
       apiClient.post(`/api/projects/${projectId}/inventory/movements`, payload),
     ),
+
+  /** Lo que hay en el Depósito General de la Empresa, para importar a esta obra. */
+  deposit: (projectId: string) =>
+    unwrap<DepositResponse>(apiClient.get(`/api/projects/${projectId}/inventory/deposit`)),
+
+  sendToDeposit: (projectId: string, payload: SendToDepositInput) =>
+    unwrap<StockMovementResponse>(
+      apiClient.post(`/api/projects/${projectId}/inventory/deposit/send`, payload),
+    ),
+
+  importFromDeposit: (projectId: string, payload: ImportFromDepositInput) =>
+    unwrap<{ movements: StockMovementListResponse['movements'] }>(
+      apiClient.post(`/api/projects/${projectId}/inventory/deposit/import`, payload),
+    ),
+
+  /** La pantalla de la Empresa: líneas, historial y ahorro por reutilización. */
+  myDeposit: () => unwrap<DepositOverviewResponse>(apiClient.get('/api/organizations/me/deposit')),
 };

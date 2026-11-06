@@ -55,8 +55,10 @@
     "hints": {
       "projects": "Todas tus obras. Entra en una para ver cómo va.",
       "providers": "El directorio de proveedores de la Empresa, compartido entre obras.",
-      "crew": "Los empleados de la Empresa: personal de obra y administrativo."
-    }
+      "crew": "Los empleados de la Empresa: personal de obra y administrativo.",
+      "deposit": "El material sobrante de la Empresa, listo para usarlo en otra obra."
+    },
+    "deposit": "Depósito"
   },
   "appUpdate": {
     "title": "Hay una versión nueva",
@@ -2224,7 +2226,8 @@
       "noResults": "No hay materiales con ese nombre.",
       "meta": "Entró {{received}} · Entregado {{consumed}} · Merma {{wasted}}",
       "deliver": "Entregar",
-      "moreActions": "Más acciones de {{name}}"
+      "moreActions": "Más acciones de {{name}}",
+      "transferred": "Enviado al Depósito {{quantity}}"
     },
     "level": {
       "ok": "En stock",
@@ -2235,7 +2238,11 @@
       "compra": "Compra",
       "devolucion": "Devolución",
       "consumo": "Entrega",
-      "merma": "Merma"
+      "merma": "Merma",
+      "desincorporacion": "Al depósito",
+      "importacion": "Del depósito",
+      "deposito_ingreso": "Ingreso",
+      "deposito_egreso": "Salida"
     },
     "movement": {
       "new": "Registrar salida",
@@ -2274,6 +2281,57 @@
       "empty": "Todavía no hay movimientos con estos filtros.",
       "error": "No se pudo cargar el kardex.",
       "by": "Registró {{name}}"
+    },
+    "deposit": {
+      "import": "Importar del Depósito",
+      "send": "Enviar al Depósito",
+      "sendTitle": "Enviar {{name}} al Depósito",
+      "sendHint": "Sale de esta obra y queda disponible para otra de la Empresa.",
+      "sendSubmit": "Enviar",
+      "sent": "Enviado al Depósito",
+      "imported": "Material importado",
+      "unitCost": "Costo unitario de referencia ({{currency}})",
+      "unitCostHint": "Lo que valía una unidad. Sirve para calcular el ahorro al reutilizarla; con 0 no cuenta.",
+      "importTitle": "Importar del Depósito",
+      "importHint": "Entra a esta obra a costo 0, sin factura ni proveedor. Deja en blanco lo que no quieras traer.",
+      "importSubmit": "Importar",
+      "importNothing": "El Depósito no tiene material disponible.",
+      "importEmpty": "Indica la cantidad de al menos un material.",
+      "importQuantity": "Cantidad de {{name}} a importar",
+      "lineMeta": "Disponible: {{stock}} {{unit}} · Costo de ref. {{cost}}",
+      "freight": "Flete ({{currency}}, opcional)",
+      "freightHint": "Si mover el material costó un camión, se carga como un gasto de esta obra.",
+      "freightNote": "Descripción del flete (opcional)"
+    }
+  },
+  "deposit": {
+    "tabs": {
+      "stock": "En el depósito",
+      "history": "Historial"
+    },
+    "empty": {
+      "title": "El Depósito está vacío",
+      "description": "Cuando una obra mande material sobrante, aparecerá aquí para usarlo en otra."
+    },
+    "savings": {
+      "title": "Ahorro por reutilización",
+      "reused_one": "Se reutilizó {{count}} material",
+      "reused_other": "Se reutilizaron {{count}} materiales",
+      "deletedProject": "Obra eliminada"
+    },
+    "stock": {
+      "title": "Material disponible",
+      "empty": "No hay material con ese nombre en el Depósito.",
+      "unitCost": "Costo de ref. {{cost}}",
+      "noCost": "Sin costo de referencia"
+    },
+    "history": {
+      "from": "Desde {{name}}",
+      "to": "Hacia {{name}}"
+    },
+    "notOwner": {
+      "title": "No tienes un Depósito",
+      "description": "El Depósito General es de la Empresa y lo ven sus dueños. Si trabajas en la obra de otra Empresa, el material sobrante lo gestiona su dueño."
     }
   }
 }

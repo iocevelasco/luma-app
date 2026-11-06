@@ -14,8 +14,31 @@ import type { MaterialUnit } from './material.js';
  * - `devolucion`: material que salió a un frente y volvió al patio.
  * - `consumo`: se entregó a un frente de trabajo.
  * - `merma`: roto, fraguado, vencido o extraviado. Pide motivo y responsable.
+ * - `desincorporacion`: sale de la obra hacia el Depósito General.
+ * - `importacion`: entra desde el Depósito General, a costo $0 para esta obra.
  */
-export const STOCK_MOVEMENT_KINDS = ['compra', 'devolucion', 'consumo', 'merma'] as const;
+export const PROJECT_STOCK_MOVEMENT_KINDS = [
+  'compra',
+  'devolucion',
+  'consumo',
+  'merma',
+  'desincorporacion',
+  'importacion',
+] as const;
+export type ProjectStockMovementKind = (typeof PROJECT_STOCK_MOVEMENT_KINDS)[number];
+
+/**
+ * El otro lado de un traspaso, en el Depósito General de la Empresa (fila sin
+ * obra): `deposito_ingreso` cuando una obra manda material, `deposito_egreso`
+ * cuando otra lo importa.
+ */
+export const DEPOSIT_MOVEMENT_KINDS = ['deposito_ingreso', 'deposito_egreso'] as const;
+export type DepositMovementKind = (typeof DEPOSIT_MOVEMENT_KINDS)[number];
+
+export const STOCK_MOVEMENT_KINDS = [
+  ...PROJECT_STOCK_MOVEMENT_KINDS,
+  ...DEPOSIT_MOVEMENT_KINDS,
+] as const;
 export type StockMovementKind = (typeof STOCK_MOVEMENT_KINDS)[number];
 
 /** Los que una persona registra a mano. `compra` la genera el sistema. */
@@ -31,7 +54,7 @@ export interface StockMovement {
   itemKey: string;
   name: string;
   unit: MaterialUnit;
-  kind: StockMovementKind;
+  kind: ProjectStockMovementKind;
   quantity: number;
   /** La tarea (partida) a la que fue el material, si se eligió una. */
   activityId: string | null;
@@ -64,6 +87,8 @@ export interface StockItem {
   received: number;
   consumed: number;
   wasted: number;
+  /** Lo que se mandó al Depósito General. */
+  transferred: number;
   level: StockLevel;
   lastMovementAt: string;
 }
@@ -78,4 +103,58 @@ export interface StockMovementListResponse {
 
 export interface StockMovementResponse {
   movement: StockMovement;
+}
+
+/** Una línea del Depósito General: un material en una moneda. */
+export interface DepositLine {
+  /** `itemKey|moneda`: lo que se elige al importar. */
+  lineKey: string;
+  itemKey: string;
+  name: string;
+  unit: MaterialUnit;
+  currency: string;
+  /** Lo que hay hoy en el Depósito. */
+  stock: number;
+  received: number;
+  sent: number;
+  /** Costo unitario de referencia: el promedio, por cantidad, de lo que entró. */
+  unitCost: number;
+}
+
+/** Un movimiento del Depósito, para su historial. */
+export interface DepositMovement {
+  id: string;
+  kind: DepositMovementKind;
+  itemKey: string;
+  name: string;
+  unit: MaterialUnit;
+  quantity: number;
+  unitCost: number;
+  currency: string;
+  /** La obra que mandó el material (ingreso) o la que lo recibió (egreso). */
+  projectId: string | null;
+  projectName?: string;
+  occurredAt: string;
+  createdBy: string;
+}
+
+/** Lo reutilizado y lo ahorrado en una obra destino, en una moneda. */
+export interface SavingsLine {
+  projectId: string | null;
+  projectName?: string;
+  currency: string;
+  /** Cuántos materiales distintos se reutilizaron: las unidades distintas no se suman. */
+  items: number;
+  /** Cantidad × costo de referencia congelado. Nunca se suma entre monedas. */
+  saved: number;
+}
+
+export interface DepositResponse {
+  lines: DepositLine[];
+}
+
+export interface DepositOverviewResponse {
+  lines: DepositLine[];
+  movements: DepositMovement[];
+  savings: SavingsLine[];
 }

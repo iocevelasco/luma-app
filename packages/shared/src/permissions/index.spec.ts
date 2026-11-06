@@ -354,6 +354,7 @@ describe('gerentes de una obra', () => {
     'project.manager.write',
     'provider.manage',
     'crew.directory.write',
+    'inventory.deposit.write',
   ];
 
   it('sin saber quién creó la obra se niega: el dueño pierde el botón, no otro gerente lo gana', () => {
@@ -474,5 +475,18 @@ describe('inventario de obra', () => {
     const caps = capabilitiesInProject('supervisor', undefined, { readOnly: true });
     expect(caps).toContain('inventory.read');
     expect(caps).not.toContain('inventory.write');
+  });
+});
+
+describe('Depósito General', () => {
+  it('sólo el dueño de la obra manda o trae material: otro gerente no', () => {
+    expect(canInProject('gerente', 'inventory.deposit.write', undefined, { isOwner: true })).toBe(true);
+    expect(canInProject('gerente', 'inventory.deposit.write')).toBe(false);
+  });
+
+  it('ningún otro rol lo tiene, ni el supervisor que despacha del patio', () => {
+    for (const role of ['supervisor', 'arquitecto', 'ingeniero', 'disenador', 'contador', 'cliente'] as const) {
+      expect(canInProject(role, 'inventory.deposit.write', undefined, { isOwner: true }), role).toBe(false);
+    }
   });
 });

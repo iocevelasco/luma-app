@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  summarizeDeposit,
+  summarizeSavings,
   stockDirection,
   stockItemKey,
   stockLevel,
   summarizeStock,
+  type DepositLedgerEntry,
   type StockLedgerEntry,
 } from './inventory.js';
 
@@ -93,5 +96,79 @@ describe('stockLevel', () => {
   it('con el 20% o menos de lo que entró está por agotarse', () => {
     expect(stockLevel({ stock: 8, received: 40 })).toBe('low');
     expect(stockLevel({ stock: 9, received: 40 })).toBe('ok');
+  });
+});
+
+describe('traspasos al Depósito en el stock de la obra', () => {
+  it('lo desincorporado resta del patio y se cuenta aparte; lo importado suma', () => {
+    const [item] = summarizeStock([
+      entry({ kind: 'compra', quantity: 40 }),
+      entry({ kind: 'desincorporacion', quantity: 10 }),
+      entry({ kind: 'importacion', quantity: 5 }),
+    ]);
+    expect(item).toMatchObject({ stock: 35, received: 45, transferred: 10 });
+  });
+
+  it('las direcciones de los cuatro tipos nuevos', () => {
+    expect(stockDirection('importacion')).toBe('in');
+    expect(stockDirection('deposito_ingreso')).toBe('in');
+    expect(stockDirection('desincorporacion')).toBe('out');
+    expect(stockDirection('deposito_egreso')).toBe('out');
+  });
+});
+
+const dep = (over: Partial<DepositLedgerEntry>): DepositLedgerEntry => ({
+  itemKey: 'cemento|bolsa',
+  name: 'Cemento',
+  unit: 'bolsa',
+  kind: 'deposito_ingreso',
+  quantity: 10,
+  unitCost: 9,
+  currency: 'USD',
+  projectId: 'obra-a',
+  occurredAt: '2026-11-01T10:00:00.000Z',
+  ...over,
+});
+
+describe('summarizeDeposit', () => {
+  it('stock = ingresos menos egresos, con el costo promedio de lo que entró', () => {
+    const [line] = summarizeDeposit([
+      dep({ quantity: 10, unitCost: 9 }),
+      dep({ quantity: 30, unitCost: 11 }),
+      dep({ kind: 'deposito_egreso', quantity: 15, unitCost: 10.5, projectId: 'obra-b' }),
+    ]);
+    expect(line).toMatchObject({ stock: 25, received: 40, sent: 15, unitCost: 10.5 });
+  });
+
+  it('el mismo material en otra moneda es otra línea: no se promedian monedas', () => {
+    const lines = summarizeDeposit([dep({ currency: 'USD' }), dep({ currency: 'ARS', unitCost: 9000 })]);
+    expect(lines.map((l) => l.currency).sort()).toEqual(['ARS', 'USD']);
+  });
+
+  it('un costo desconocido (0) pesa por cantidad en el promedio', () => {
+    const [line] = summarizeDeposit([dep({ quantity: 10, unitCost: 0 }), dep({ quantity: 10, unitCost: 10 })]);
+    expect(line!.unitCost).toBe(5);
+  });
+
+  it('sin movimientos no hay líneas', () => {
+    expect(summarizeDeposit([])).toEqual([]);
+  });
+});
+
+describe('summarizeSavings', () => {
+  it('suma cantidad por costo congelado, por obra destino y moneda', () => {
+    const savings = summarizeSavings([
+      dep({ kind: 'deposito_egreso', quantity: 40, unitCost: 9, projectId: 'obra-b' }),
+      dep({ kind: 'deposito_egreso', quantity: 10, unitCost: 9, projectId: 'obra-b' }),
+      dep({ kind: 'deposito_egreso', quantity: 2, unitCost: 100, currency: 'ARS', projectId: 'obra-b' }),
+      dep({ kind: 'deposito_ingreso', quantity: 99 }),
+    ]);
+    expect(savings).toEqual(
+      expect.arrayContaining([
+        { projectId: 'obra-b', currency: 'USD', items: 1, saved: 450 },
+        { projectId: 'obra-b', currency: 'ARS', items: 1, saved: 200 },
+      ]),
+    );
+    expect(savings).toHaveLength(2);
   });
 });
