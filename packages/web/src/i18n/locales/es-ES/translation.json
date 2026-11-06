@@ -1424,7 +1424,39 @@
       "onAccount": "A cuenta",
       "delete": "Eliminar cobro",
       "deleteTitle": "¿Eliminar este cobro?",
-      "deleteBody": "Vas a eliminar el cobro de {{amount}} del {{date}}. El saldo del cliente se recalcula sin él. No se puede deshacer."
+      "deleteBody": "Vas a eliminar el cobro de {{amount}} del {{date}}. El saldo del cliente se recalcula sin él. No se puede deshacer.",
+      "filters": {
+        "search": "Buscar cobros",
+        "method": "Forma de pago",
+        "allMethods": "Todas las formas de pago",
+        "from": "Desde",
+        "to": "Hasta",
+        "clear": "Quitar filtros",
+        "emptyTitle": "Ningún cobro coincide",
+        "emptyDescription": "Prueba con otra búsqueda o quita algún filtro."
+      },
+      "groupBy": {
+        "label": "Agrupar por",
+        "month": "Agrupar por mes",
+        "day": "Agrupar por día",
+        "method": "Agrupar por forma de pago"
+      },
+      "pdf": {
+        "button": "Descargar PDF",
+        "generating": "Generando PDF…",
+        "title": "Cobros",
+        "summary_one": "{{count}} cobro",
+        "summary_other": "{{count}} cobros",
+        "columnDate": "Fecha",
+        "columnConcept": "Concepto",
+        "columnAmount": "Importe",
+        "total": "Total",
+        "generated": "Generado el {{date}}",
+        "page": "Página {{page}} de {{total}}",
+        "downloaded": "PDF descargado.",
+        "error": "No hemos podido generar el PDF. Inténtalo de nuevo.",
+        "filtered": "Con filtros aplicados: no es la lista completa."
+      }
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1471,7 +1503,8 @@
         "category": "Agrupar por categoría",
         "provider": "Agrupar por proveedor",
         "activity": "Agrupar por actividad",
-        "month": "Agrupar por mes"
+        "month": "Agrupar por mes",
+        "day": "Agrupar por día"
       },
       "group": {
         "none": {
@@ -1565,6 +1598,16 @@
       "expenseDelete": "No hemos podido eliminar el gasto.",
       "receiptType": "Justificante no admitido. Sube un PDF o una imagen.",
       "receiptSize": "El justificante es demasiado grande (máximo 20MB)."
+    },
+    "detail": {
+      "originalAmount": "Importe original",
+      "rate": "cotización {{rate}}",
+      "notes": "Notas",
+      "registeredBy": "Registrado por",
+      "registeredAt": "Registrado el",
+      "status": "Estado",
+      "paidSoFar": "Cobrado hasta ahora",
+      "scheduleItem": "Cuota"
     }
   },
   "errors": {

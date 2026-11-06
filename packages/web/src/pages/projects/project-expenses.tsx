@@ -21,7 +21,8 @@ import { ExpenseMaterials } from '@/components/finance/expense-materials';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
-import { SearchField } from '@/components/common/search-field';
+import { MovementDetail, RowOpenButton } from '@/components/finance/movement-detail';
+import { MovementFilterBar } from '@/components/finance/movement-filter-bar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -445,6 +446,7 @@ export function ProjectExpensesPage() {
   const { data: summaryData } = useFinanceSummary(projectId);
   const deleteExpense = useDeleteExpense(projectId!);
   const [deleting, setDeleting] = useState<Expense | null>(null);
+  const [detail, setDetail] = useState<Expense | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const hasExpenses = (data?.expenses.length ?? 0) > 0;
 
@@ -515,6 +517,7 @@ export function ProjectExpensesPage() {
     if (group.name === null) return t(`finance.expenses.group.none.${groupBy}`);
     if (groupBy === 'category') return t(`finance.category.${group.name}`);
     if (groupBy === 'month') return format(fromDayKey(`${group.key}-01`), 'LLLL yyyy', { locale: dateLocale });
+    if (groupBy === 'day') return format(fromDayKey(group.key), 'PPPP', { locale: dateLocale });
     return group.name;
   };
 
@@ -522,76 +525,35 @@ export function ProjectExpensesPage() {
     <PageLayout
       toolbar={
         hasExpenses ? (
-          <>
-            <SearchField
-              wrapperClassName="w-full sm:w-60"
-              className="h-10"
-              value={filters.search}
-              onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
-              placeholder={t('finance.expenses.filters.search')}
-              aria-label={t('finance.expenses.filters.search')}
-            />
-            <Select
-              value={filters.category}
-              onValueChange={(value) =>
-                setFilters((prev) => ({ ...prev, category: value as ExpenseFilters['category'] }))
-              }
-            >
-              <SelectTrigger
-                className="h-10 w-full sm:w-44"
-                aria-label={t('finance.expenses.filters.category')}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('finance.expenses.filters.allCategories')}</SelectItem>
-                {EXPENSE_CATEGORIES.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {t(`finance.category.${option}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              type="date"
-              className="h-10 w-[calc(50%-0.25rem)] sm:w-40"
-              value={filters.from}
-              max={filters.to || undefined}
-              onChange={(event) => setFilters((prev) => ({ ...prev, from: event.target.value }))}
-              aria-label={t('finance.expenses.filters.from')}
-            />
-            <Input
-              type="date"
-              className="h-10 w-[calc(50%-0.25rem)] sm:w-40"
-              value={filters.to}
-              min={filters.from || undefined}
-              onChange={(event) => setFilters((prev) => ({ ...prev, to: event.target.value }))}
-              aria-label={t('finance.expenses.filters.to')}
-            />
-            <Select value={groupBy} onValueChange={(value) => setGroupBy(value as ExpenseGroupBy)}>
-              <SelectTrigger className="h-10 w-full sm:w-48" aria-label={t('finance.expenses.groupBy.label')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {EXPENSE_GROUP_BY.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {t(`finance.expenses.groupBy.${option}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {activeFilters > 0 && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-10 max-sm:min-h-11"
-                onClick={() => setFilters(NO_EXPENSE_FILTERS)}
-              >
-                <X className="size-4" />
-                {t('finance.expenses.filters.clear')}
-              </Button>
-            )}
-          </>
+          <MovementFilterBar
+            search={filters.search}
+            onSearchChange={(search) => setFilters((prev) => ({ ...prev, search }))}
+            kind={{
+              value: filters.category,
+              onChange: (category) => setFilters((prev) => ({ ...prev, category })),
+              options: EXPENSE_CATEGORIES.map((value) => ({ value, label: t(`finance.category.${value}`) })),
+              allLabel: t('finance.expenses.filters.allCategories'),
+              ariaLabel: t('finance.expenses.filters.category'),
+            }}
+            from={filters.from}
+            to={filters.to}
+            onFromChange={(from) => setFilters((prev) => ({ ...prev, from }))}
+            onToChange={(to) => setFilters((prev) => ({ ...prev, to }))}
+            groupBy={{
+              value: groupBy,
+              onChange: setGroupBy,
+              options: EXPENSE_GROUP_BY.map((value) => ({ value, label: t(`finance.expenses.groupBy.${value}`) })),
+              ariaLabel: t('finance.expenses.groupBy.label'),
+            }}
+            activeCount={activeFilters}
+            onClear={() => setFilters(NO_EXPENSE_FILTERS)}
+            labels={{
+              search: t('finance.expenses.filters.search'),
+              from: t('finance.expenses.filters.from'),
+              to: t('finance.expenses.filters.to'),
+              clear: t('finance.expenses.filters.clear'),
+            }}
+          />
         ) : undefined
       }
       secondaryActions={
@@ -704,11 +666,13 @@ export function ProjectExpensesPage() {
                     groupBy !== 'activity' && expense.activityName,
                   ].filter(Boolean);
                   return (
-                    <RowCard key={expense.id}>
+                    <RowCard key={expense.id} className="relative">
                       {/* La fecha es el bloque de la izquierda: la línea 2 ya no la repite. */}
                       <RowCardDate date={fromDayKey(expense.spentOn)} locale={dateLocale} />
                       <RowCardBody
-                        title={<p className="truncate">{expense.description}</p>}
+                        title={
+                          <RowOpenButton onClick={() => setDetail(expense)}>{expense.description}</RowOpenButton>
+                        }
                         meta={
                           (detail.length > 0 || expense.materials) && (
                             <p>
@@ -716,7 +680,9 @@ export function ProjectExpensesPage() {
                               {expense.materials && (
                                 <>
                                   {detail.length > 0 && ' · '}
-                                  <ExpenseMaterials projectId={projectId!} materials={expense.materials} />
+                                  <span className="relative z-10">
+                                    <ExpenseMaterials projectId={projectId!} materials={expense.materials} />
+                                  </span>
                                 </>
                               )}
                             </p>
@@ -739,6 +705,7 @@ export function ProjectExpensesPage() {
                             variant="ghost"
                             size="icon"
                             asChild
+                            className="relative z-10"
                             aria-label={t('finance.expenses.openReceipt')}
                           >
                             <a href={expense.receipt.url} target="_blank" rel="noopener noreferrer">
@@ -750,6 +717,7 @@ export function ProjectExpensesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="relative z-10"
                             onClick={() => setDeleting(expense)}
                             aria-label={t('finance.expenses.delete')}
                           >
@@ -764,6 +732,62 @@ export function ProjectExpensesPage() {
             </ListSection>
           ))}
         </ListSections>
+      )}
+
+      {detail && (
+        <MovementDetail
+          open
+          onOpenChange={(open) => !open && setDetail(null)}
+          title={detail.description}
+          caption={format(fromDayKey(detail.spentOn), 'PPPP', { locale: dateLocale })}
+          amount={formatMoney(detail.amountInProjectCurrency, currency, i18n.language)}
+          fields={[
+            {
+              label: t('finance.detail.originalAmount'),
+              value:
+                detail.currency !== currency
+                  ? `${formatMoney(detail.amount, detail.currency, i18n.language)} · ${t('finance.detail.rate', { rate: detail.exchangeRate })}`
+                  : undefined,
+            },
+            { label: t('finance.fields.category'), value: t(`finance.category.${detail.category}`) },
+            { label: t('finance.fields.methodOptional'), value: detail.method && t(`finance.method.${detail.method}`) },
+            { label: t('finance.fields.provider'), value: detail.providerName },
+            { label: t('finance.fields.activity'), value: detail.activityName },
+            {
+              label: t('finance.expenses.materialsTitle'),
+              value: detail.materials && (
+                <ul className="list-disc pl-4">
+                  {detail.materials.map((material) => (
+                    <li key={material.id}>{material.name}</li>
+                  ))}
+                </ul>
+              ),
+            },
+            { label: t('finance.detail.notes'), value: detail.notes },
+            {
+              label: t('finance.fields.receipt'),
+              value: detail.receipt?.url ? (
+                <a
+                  href={detail.receipt.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 underline underline-offset-2 max-sm:min-h-11"
+                >
+                  <Download aria-hidden className="size-4" />
+                  <span className="min-w-0 truncate">{detail.receipt.fileName}</span>
+                  <span className="text-xs text-muted-foreground">{formatFileSize(detail.receipt.sizeBytes)}</span>
+                </a>
+              ) : (
+                detail.receipt?.fileName
+              ),
+            },
+            { label: t('finance.detail.registeredBy'), value: detail.registeredByName },
+            {
+              label: t('finance.detail.registeredAt'),
+              value: format(new Date(detail.createdAt), 'Pp', { locale: dateLocale }),
+            },
+          ]}
+        />
       )}
 
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>

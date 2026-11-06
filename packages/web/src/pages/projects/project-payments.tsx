@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createPaymentSchema,
   createPaymentScheduleItemSchema,
   PAYMENT_METHOD_OPTIONS,
+  PAYMENT_METHODS,
   type CreatePaymentInput,
   type CreatePaymentScheduleItemInput,
   type Payment,
@@ -11,13 +12,17 @@ import {
   type PaymentScheduleStatus,
 } from '@luma/shared';
 import { format } from 'date-fns';
-import { Check, Clock, Plus, Trash2, Wallet, X, type LucideIcon } from 'lucide-react';
+import { Check, Clock, FileDown, Plus, SearchX, Trash2, Wallet, X, type LucideIcon } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import type { FieldErrors, FieldValues, Path, UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Can } from '@/components/permissions/can';
+import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
+import { MovementDetail, RowOpenButton } from '@/components/finance/movement-detail';
+import { MovementFilterBar } from '@/components/finance/movement-filter-bar';
 import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
 import {
@@ -45,6 +50,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Select,
   SelectContent,
@@ -62,7 +68,19 @@ import {
 } from '@/hooks/finance/use-finance-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { downloadBlob } from '@/lib/download-blob';
 import { formatMoney } from '@/lib/format-money';
+import {
+  countActivePaymentFilters,
+  filterPayments,
+  groupPayments,
+  NO_PAYMENT_FILTERS,
+  PAYMENT_GROUP_BY,
+  sumPayments,
+  type PaymentFilters,
+  type PaymentGroup,
+  type PaymentGroupBy,
+} from '@/lib/payments-view';
 import { cn } from '@/lib/utils';
 
 /**
@@ -374,12 +392,81 @@ export function ProjectPaymentsPage() {
     { kind: 'item'; item: PaymentScheduleItem } | { kind: 'payment'; payment: Payment } | null
   >(null);
 
+  const [detail, setDetail] = useState<
+    { kind: 'item'; item: PaymentScheduleItem } | { kind: 'payment'; payment: Payment } | null
+  >(null);
+  const [filters, setFilters] = useState<PaymentFilters>(NO_PAYMENT_FILTERS);
+  const [groupBy, setGroupBy] = useState<PaymentGroupBy>('month');
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const activeFilters = countActivePaymentFilters(filters);
+  const allPayments = useMemo(() => paymentsData?.payments ?? [], [paymentsData]);
+  const hasPayments = allPayments.length > 0;
+
+  // Lo visible: filtrado y agrupado en el cliente, sobre la lista que ya llegó.
+  const visible = useMemo(() => filterPayments(allPayments, filters), [allPayments, filters]);
+  const groups = useMemo(() => groupPayments(visible, groupBy), [visible, groupBy]);
+
+  // `jspdf` pesa: se baja apenas hay algo que descargar y no al apretar el botón.
+  useEffect(() => {
+    if (!hasPayments) return;
+    void import('@/lib/payments-pdf');
+    void import('jspdf');
+    void import('jspdf-autotable');
+  }, [hasPayments]);
+
   if (isError) return <PageLayout isError />;
   if (isLoading || !data || !projectData) return <PageLayout isLoading />;
 
   const currency = projectData.project.currency;
   const { summary, items } = data;
-  const payments = paymentsData?.payments ?? [];
+  const payments = allPayments;
+
+  const groupLabel = (group: PaymentGroup) => {
+    if (groupBy === 'method') return t(`finance.method.${group.key}`);
+    if (groupBy === 'day') return format(fromDayKey(group.key), 'PPPP', { locale: dateLocale });
+    return format(fromDayKey(`${group.key}-01`), 'LLLL yyyy', { locale: dateLocale });
+  };
+
+  async function handleDownloadPdf() {
+    if (generatingPdf || visible.length === 0) return;
+    setGeneratingPdf(true);
+    try {
+      const { buildPaymentsPdf, paymentsFileName } = await import('@/lib/payments-pdf');
+      const now = new Date();
+      // Lo que la pantalla muestra, en su mismo orden.
+      const rows = groups.flatMap((group) => group.payments);
+      const blob = await buildPaymentsPdf({
+        projectName: projectData?.project.name ?? '',
+        payments: rows,
+        total: sumPayments(rows),
+        labels: {
+          title: t('finance.payments.pdf.title'),
+          summary: `${t('finance.payments.pdf.summary', { count: rows.length })} · ${format(now, 'PPPP', { locale: dateLocale })}`,
+          filtered: activeFilters > 0 ? t('finance.payments.pdf.filtered') : null,
+          columns: {
+            date: t('finance.payments.pdf.columnDate'),
+            concept: t('finance.payments.pdf.columnConcept'),
+            method: t('finance.fields.method'),
+            reference: t('finance.fields.reference'),
+            amount: t('finance.payments.pdf.columnAmount'),
+          },
+          onAccount: t('finance.payments.onAccount'),
+          total: t('finance.payments.pdf.total'),
+          generated: t('finance.payments.pdf.generated', { date: format(now, 'Pp', { locale: dateLocale }) }),
+          page: (page, total) => t('finance.payments.pdf.page', { page, total }),
+          method: (method) => t(`finance.method.${method}`),
+          day: (dayKey) => format(fromDayKey(dayKey), 'P', { locale: dateLocale }),
+          money: (amount) => formatMoney(amount, currency, i18n.language),
+        },
+      });
+      downloadBlob(blob, paymentsFileName(projectData?.project.name ?? '', now));
+      toast.success(t('finance.payments.pdf.downloaded'));
+    } catch {
+      toast.error(t('finance.payments.pdf.error'));
+    } finally {
+      setGeneratingPdf(false);
+    }
+  }
 
   const paidPercent =
     summary.scheduledTotal > 0
@@ -415,7 +502,60 @@ export function ProjectPaymentsPage() {
   }
 
   return (
-    <PageLayout {...actions}>
+    <PageLayout
+      {...actions}
+      toolbar={
+        hasPayments ? (
+          <MovementFilterBar
+            search={filters.search}
+            onSearchChange={(search) => setFilters((prev) => ({ ...prev, search }))}
+            kind={{
+              value: filters.method,
+              onChange: (method) => setFilters((prev) => ({ ...prev, method })),
+              options: PAYMENT_METHODS.map((value) => ({ value, label: t(`finance.method.${value}`) })),
+              allLabel: t('finance.payments.filters.allMethods'),
+              ariaLabel: t('finance.payments.filters.method'),
+            }}
+            from={filters.from}
+            to={filters.to}
+            onFromChange={(from) => setFilters((prev) => ({ ...prev, from }))}
+            onToChange={(to) => setFilters((prev) => ({ ...prev, to }))}
+            groupBy={{
+              value: groupBy,
+              onChange: setGroupBy,
+              options: PAYMENT_GROUP_BY.map((value) => ({ value, label: t(`finance.payments.groupBy.${value}`) })),
+              ariaLabel: t('finance.payments.groupBy.label'),
+            }}
+            activeCount={activeFilters}
+            onClear={() => setFilters(NO_PAYMENT_FILTERS)}
+            labels={{
+              search: t('finance.payments.filters.search'),
+              from: t('finance.payments.filters.from'),
+              to: t('finance.payments.filters.to'),
+              clear: t('finance.payments.filters.clear'),
+            }}
+          />
+        ) : undefined
+      }
+      secondaryActions={
+        <>
+          {hasPayments && (
+            <Button
+              type="button"
+              variant="outline"
+              className="max-sm:min-h-11"
+              disabled={generatingPdf || visible.length === 0}
+              aria-busy={generatingPdf}
+              onClick={() => void handleDownloadPdf()}
+            >
+              {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+              {generatingPdf ? t('finance.payments.pdf.generating') : t('finance.payments.pdf.button')}
+            </Button>
+          )}
+          {actions.secondaryActions}
+        </>
+      }
+    >
       <Card>
         <CardHeader className="flex flex-row items-center gap-3">
           <Wallet className="size-4 text-muted-foreground" />
@@ -471,7 +611,7 @@ export function ProjectPaymentsPage() {
         ) : (
           <RowCardList>
             {items.map((item) => (
-              <RowCard key={item.id}>
+              <RowCard key={item.id} className="relative">
                 <RowCardDate
                   date={fromDayKey(item.dueOn)}
                   locale={dateLocale}
@@ -480,7 +620,7 @@ export function ProjectPaymentsPage() {
                   })}
                 />
                 <RowCardBody
-                  title={item.concept}
+                  title={<RowOpenButton onClick={() => setDetail({ kind: 'item', item })}>{item.concept}</RowOpenButton>}
                   meta={
                     item.paidAmount > 0 && (
                       // El texto venía después de un " · "; ahora abre la línea.
@@ -505,6 +645,7 @@ export function ProjectPaymentsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="relative z-10"
                       onClick={() => setDeleting({ kind: 'item', item })}
                       aria-label={t('finance.schedule.delete')}
                     >
@@ -521,42 +662,133 @@ export function ProjectPaymentsPage() {
       <ListSection label={t('finance.payments.title')} meta={payments.length > 0 ? payments.length : undefined}>
         {payments.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('finance.payments.empty')}</p>
+        ) : visible.length === 0 ? (
+          <EmptyState
+            icon={SearchX}
+            title={t('finance.payments.filters.emptyTitle')}
+            description={t('finance.payments.filters.emptyDescription')}
+            action={
+              <Button type="button" variant="outline" onClick={() => setFilters(NO_PAYMENT_FILTERS)}>
+                <X className="size-4" />
+                {t('finance.payments.filters.clear')}
+              </Button>
+            }
+          />
         ) : (
-          <RowCardList>
-            {payments.map((payment) => (
-              <RowCard key={payment.id}>
-                <RowCardDate date={fromDayKey(payment.paidOn)} locale={dateLocale} tone="success" />
-                <RowCardBody
-                  title={payment.scheduleItemConcept ?? t('finance.payments.onAccount')}
-                  meta={
-                    <>
-                      {t(`finance.method.${payment.method}`)}
-                      {payment.reference && ` · ${payment.reference}`}
-                    </>
-                  }
-                />
+          <ListSections>
+            {groups.map((group) => (
+              <ListSection
+                key={group.key}
+                label={groupLabel(group)}
+                className="gap-3"
+                meta={
+                  <>
+                    <span>{t('finance.payments.pdf.summary', { count: group.payments.length })}</span>
+                    <span className="tabular-nums">{formatMoney(group.total, currency, i18n.language)}</span>
+                  </>
+                }
+              >
+                <RowCardList>
+                  {group.payments.map((payment) => (
+                    <RowCard key={payment.id} className="relative">
+                      <RowCardDate date={fromDayKey(payment.paidOn)} locale={dateLocale} tone="success" />
+                      <RowCardBody
+                        title={
+                          <RowOpenButton onClick={() => setDetail({ kind: 'payment', payment })}>
+                            {payment.scheduleItemConcept ?? t('finance.payments.onAccount')}
+                          </RowOpenButton>
+                        }
+                        meta={
+                          // La fila no repite lo que ya dice el rótulo del grupo.
+                          <>
+                            {groupBy !== 'method' && t(`finance.method.${payment.method}`)}
+                            {payment.reference && `${groupBy !== 'method' ? ' · ' : ''}${payment.reference}`}
+                          </>
+                        }
+                      />
 
-                <RowCardEnd>
-                  <span className="text-sm tabular-nums">
-                    {formatMoney(payment.amountInProjectCurrency, currency, i18n.language)}
-                  </span>
-                  <Can I="payment.write">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleting({ kind: 'payment', payment })}
-                      aria-label={t('finance.payments.delete')}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </Can>
-                </RowCardEnd>
-              </RowCard>
+                      <RowCardEnd>
+                        <span className="text-sm tabular-nums">
+                          {formatMoney(payment.amountInProjectCurrency, currency, i18n.language)}
+                        </span>
+                        <Can I="payment.write">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="relative z-10"
+                            onClick={() => setDeleting({ kind: 'payment', payment })}
+                            aria-label={t('finance.payments.delete')}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </Can>
+                      </RowCardEnd>
+                    </RowCard>
+                  ))}
+                </RowCardList>
+              </ListSection>
             ))}
-          </RowCardList>
+          </ListSections>
         )}
       </ListSection>
       </ListSections>
+
+      {detail?.kind === 'payment' && (
+        <MovementDetail
+          open
+          onOpenChange={(open) => !open && setDetail(null)}
+          title={detail.payment.scheduleItemConcept ?? t('finance.payments.onAccount')}
+          caption={format(fromDayKey(detail.payment.paidOn), 'PPPP', { locale: dateLocale })}
+          amount={formatMoney(detail.payment.amountInProjectCurrency, currency, i18n.language)}
+          fields={[
+            {
+              label: t('finance.detail.originalAmount'),
+              value:
+                detail.payment.currency !== currency
+                  ? `${formatMoney(detail.payment.amount, detail.payment.currency, i18n.language)} · ${t('finance.detail.rate', { rate: detail.payment.exchangeRate })}`
+                  : undefined,
+            },
+            { label: t('finance.fields.method'), value: t(`finance.method.${detail.payment.method}`) },
+            { label: t('finance.fields.reference'), value: detail.payment.reference },
+            { label: t('finance.detail.scheduleItem'), value: detail.payment.scheduleItemConcept ?? t('finance.payments.onAccount') },
+            { label: t('finance.detail.notes'), value: detail.payment.notes },
+            { label: t('finance.detail.registeredBy'), value: detail.payment.registeredByName },
+            {
+              label: t('finance.detail.registeredAt'),
+              value: format(new Date(detail.payment.createdAt), 'Pp', { locale: dateLocale }),
+            },
+          ]}
+        />
+      )}
+
+      {detail?.kind === 'item' && (
+        <MovementDetail
+          open
+          onOpenChange={(open) => !open && setDetail(null)}
+          title={detail.item.concept}
+          caption={t('finance.schedule.dueOn', { date: format(fromDayKey(detail.item.dueOn), 'PPPP', { locale: dateLocale }) })}
+          amount={formatMoney(detail.item.scheduledAmount, currency, i18n.language)}
+          fields={[
+            {
+              label: t('finance.detail.originalAmount'),
+              value:
+                detail.item.currency !== currency
+                  ? `${formatMoney(detail.item.amount, detail.item.currency, i18n.language)} · ${t('finance.detail.rate', { rate: detail.item.exchangeRate })}`
+                  : undefined,
+            },
+            { label: t('finance.detail.status'), value: t(`finance.status.${detail.item.status}`) },
+            {
+              label: t('finance.detail.paidSoFar'),
+              value: detail.item.paidAmount > 0 ? formatMoney(detail.item.paidAmount, currency, i18n.language) : undefined,
+            },
+            { label: t('finance.detail.notes'), value: detail.item.notes },
+            {
+              label: t('finance.detail.registeredAt'),
+              value: format(new Date(detail.item.createdAt), 'Pp', { locale: dateLocale }),
+            },
+          ]}
+        />
+      )}
 
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>

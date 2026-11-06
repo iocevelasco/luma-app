@@ -66,3 +66,9 @@ describe('groupExpenses', () => {
     expect(groupExpenses(sample, 'month').map((g) => g.key)).toEqual(['2026-10', '2026-09']);
   });
 });
+
+describe('groupExpenses por día', () => {
+  it('del día más reciente al más viejo', () => {
+    expect(groupExpenses(sample, 'day').map((g) => g.key)).toEqual(['2026-10-21', '2026-10-02', '2026-09-30']);
+  });
+});

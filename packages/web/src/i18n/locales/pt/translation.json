@@ -1424,7 +1424,39 @@
       "onAccount": "Por conta",
       "delete": "Excluir recebimento",
       "deleteTitle": "Excluir este recebimento?",
-      "deleteBody": "Você vai excluir o recebimento de {{amount}} de {{date}}. O saldo do cliente é recalculado sem ele. Não é possível desfazer."
+      "deleteBody": "Você vai excluir o recebimento de {{amount}} de {{date}}. O saldo do cliente é recalculado sem ele. Não é possível desfazer.",
+      "filters": {
+        "search": "Buscar recebimentos",
+        "method": "Forma de pagamento",
+        "allMethods": "Todas as formas de pagamento",
+        "from": "De",
+        "to": "Até",
+        "clear": "Limpar filtros",
+        "emptyTitle": "Nenhum recebimento corresponde",
+        "emptyDescription": "Tente outra busca ou remova algum filtro."
+      },
+      "groupBy": {
+        "label": "Agrupar por",
+        "month": "Agrupar por mês",
+        "day": "Agrupar por dia",
+        "method": "Agrupar por forma de pagamento"
+      },
+      "pdf": {
+        "button": "Baixar PDF",
+        "generating": "Gerando PDF…",
+        "title": "Recebimentos",
+        "summary_one": "{{count}} recebimento",
+        "summary_other": "{{count}} recebimentos",
+        "columnDate": "Data",
+        "columnConcept": "Descrição",
+        "columnAmount": "Valor",
+        "total": "Total",
+        "generated": "Gerado em {{date}}",
+        "page": "Página {{page}} de {{total}}",
+        "downloaded": "PDF baixado.",
+        "error": "Não conseguimos gerar o PDF. Tente de novo.",
+        "filtered": "Com filtros aplicados: não é a lista completa."
+      }
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1471,7 +1503,8 @@
         "category": "Agrupar por categoria",
         "provider": "Agrupar por fornecedor",
         "activity": "Agrupar por atividade",
-        "month": "Agrupar por mês"
+        "month": "Agrupar por mês",
+        "day": "Agrupar por dia"
       },
       "group": {
         "none": {
@@ -1565,6 +1598,16 @@
       "expenseDelete": "Não foi possível excluir a despesa.",
       "receiptType": "Comprovante não suportado. Envie um PDF ou uma imagem.",
       "receiptSize": "O comprovante é muito grande (máximo 20MB)."
+    },
+    "detail": {
+      "originalAmount": "Valor original",
+      "rate": "cotação {{rate}}",
+      "notes": "Observações",
+      "registeredBy": "Registrado por",
+      "registeredAt": "Registrado em",
+      "status": "Status",
+      "paidSoFar": "Recebido até agora",
+      "scheduleItem": "Parcela"
     }
   },
   "errors": {

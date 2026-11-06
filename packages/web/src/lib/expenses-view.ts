@@ -8,9 +8,9 @@ import { EXPENSE_CATEGORIES, type Expense, type ExpenseCategory } from '@luma/sh
  * total de un grupo filtrado diría una cifra que la pantalla no muestra.
  */
 
-export type ExpenseGroupBy = 'category' | 'provider' | 'activity' | 'month';
+export type ExpenseGroupBy = 'category' | 'provider' | 'activity' | 'month' | 'day';
 
-export const EXPENSE_GROUP_BY: readonly ExpenseGroupBy[] = ['category', 'provider', 'activity', 'month'];
+export const EXPENSE_GROUP_BY: readonly ExpenseGroupBy[] = ['category', 'provider', 'activity', 'month', 'day'];
 
 export interface ExpenseFilters {
   search: string;
@@ -95,6 +95,10 @@ export function groupExpenses(expenses: Expense[], by: ExpenseGroupBy): ExpenseG
         key = expense.spentOn.slice(0, 7);
         name = key;
         break;
+      case 'day':
+        key = expense.spentOn;
+        name = key;
+        break;
     }
     const group = groups.get(key) ?? { key, name, expenses: [], total: 0 };
     group.expenses.push(expense);
@@ -113,6 +117,7 @@ export function groupExpenses(expenses: Expense[], by: ExpenseGroupBy): ExpenseG
           EXPENSE_CATEGORIES.indexOf(b.name as ExpenseCategory)
         );
       case 'month':
+      case 'day':
         return b.key.localeCompare(a.key);
       default:
         return a.name.localeCompare(b.name);
