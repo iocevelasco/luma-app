@@ -161,6 +161,7 @@ describe('buildCensus', () => {
     id,
     segment,
     membership: null,
+    subscription: null,
     staffRole: null,
     createdAt: new Date('2026-11-04T10:00:00.000Z'),
     ...extra,

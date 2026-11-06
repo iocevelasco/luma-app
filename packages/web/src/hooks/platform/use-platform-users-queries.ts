@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { PlatformUsersQuery } from '@luma/shared';
+import type { PlatformFollowUpQuery, PlatformUsersQuery } from '@luma/shared';
 import { platformUsersApi } from '@/api/platform';
 import { QueryKeys } from '@/lib/query-keys';
 import { isAdmin } from '@/lib/roles';
@@ -35,6 +35,28 @@ export function usePlatformCensus(active: boolean) {
   });
 }
 
+/** El embudo recorre las acciones de todas las cuentas con membresía: solo se pide al mirarlo. */
+export function usePlatformFunnel(active: boolean) {
+  const isAdminSession = useIsPlatformAdmin();
+
+  return useQuery({
+    queryKey: [QueryKeys.platformFunnel],
+    queryFn: () => platformUsersApi.funnel(),
+    enabled: isAdminSession && active,
+  });
+}
+
+export function usePlatformFollowUp(query: PlatformFollowUpQuery, active: boolean) {
+  const isAdminSession = useIsPlatformAdmin();
+
+  return useQuery({
+    queryKey: [QueryKeys.platformFollowUp, query],
+    queryFn: () => platformUsersApi.followUp(query),
+    enabled: isAdminSession && active,
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function usePlatformUsers(query: PlatformUsersQuery, active = true) {
   const isAdminSession = useIsPlatformAdmin();
   const enabled = isAdminSession && active;
@@ -58,6 +80,8 @@ export function useSetUnlimitedPlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QueryKeys.platformUsers] });
       queryClient.invalidateQueries({ queryKey: [QueryKeys.platformCensus] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.platformFollowUp] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.platformFunnel] });
       queryClient.invalidateQueries({ queryKey: [QueryKeys.subscription] });
     },
   });

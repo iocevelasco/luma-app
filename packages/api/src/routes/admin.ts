@@ -15,8 +15,10 @@ import {
   getPlatformFeedback,
   getPlatformActivity,
   getPlatformCensus,
+  getPlatformFunnel,
   getPlatformUsersOverview,
   listExchangeRates,
+  listPlatformFollowUp,
   listPlatformUsersPage,
   setPlatformUserUnlimited,
   listSubscriptionPaymentsForAdmin,
@@ -57,6 +59,8 @@ adminRouter.post('/exchange-rates/refresh', refreshExchangeRateNow);
 
 adminRouter.get('/users/overview', getPlatformUsersOverview);
 adminRouter.get('/users/census', getPlatformCensus);
+adminRouter.get('/users/funnel', getPlatformFunnel);
+adminRouter.get('/users/follow-up', listPlatformFollowUp);
 adminRouter.get('/users', listPlatformUsersPage);
 adminRouter.post('/users/:userId/unlimited', setPlatformUserUnlimited);
 

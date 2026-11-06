@@ -1,3 +1,5 @@
+export * from './progress.js';
+
 import type { ProjectRole } from '../permissions/index.js';
 import { MIN_PEOPLE_PER_CELL } from '../platform-activity/index.js';
 import type { SubscriptionStatus } from '../types/subscription.js';

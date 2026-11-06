@@ -1,5 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { platformUsersQuerySchema } from './platform.js';
+import { platformFollowUpQuerySchema, platformUsersQuerySchema } from './platform.js';
+
+describe('platformFollowUpQuerySchema', () => {
+  it('completa los valores por defecto', () => {
+    expect(platformFollowUpQuerySchema.parse({})).toEqual({
+      filter: 'all',
+      q: '',
+      page: 1,
+      pageSize: 20,
+    });
+  });
+
+  it('acepta cada filtro y rechaza uno que no existe', () => {
+    for (const filter of ['all', 'risk', 'trial', 'paying', 'expired']) {
+      expect(platformFollowUpQuerySchema.parse({ filter }).filter).toBe(filter);
+    }
+    expect(platformFollowUpQuerySchema.safeParse({ filter: 'ilimitado' }).success).toBe(false);
+    expect(platformFollowUpQuerySchema.safeParse({ pageSize: '500' }).success).toBe(false);
+  });
+});
 
 describe('platformUsersQuerySchema', () => {
   it('completa los valores por defecto', () => {

@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
-  BarChart3,
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  CircleDollarSign,
+  Clock,
+  Lock,
   MailQuestion,
   UserCheck,
   Users,
@@ -11,19 +14,24 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
+  PLATFORM_FOLLOW_UP_FILTERS,
   PLATFORM_USERS_FILTERS,
   PLATFORM_USERS_SEGMENTS,
+  type PlatformFollowUpFilter,
   type PlatformUsersFilter,
   type PlatformUsersSegment,
 } from '@luma/shared';
 import { EmptyState } from '@/components/common/empty-state';
 import { RowCardList } from '@/components/common/row-card-list';
+import { SearchField } from '@/components/common/search-field';
 import { PageLayout } from '@/components/layout/page-layout';
 import { AccountsCensus } from '@/components/platform/accounts-census';
+import { AccountsFollowUp } from '@/components/platform/accounts-follow-up';
+import { AccountsFunnel } from '@/components/platform/accounts-funnel';
 import { UserRowCard } from '@/components/platform/user-row-card';
 import { UsersOverview } from '@/components/platform/users-overview';
+import { UsersViewTabs, type UsersView } from '@/components/platform/users-view-tabs';
 import { Button } from '@/components/ui/button';
-import { SearchField } from '@/components/common/search-field';
 import {
   Select,
   SelectContent,
@@ -32,31 +40,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDebouncedSearch } from '@/hooks/platform/use-debounced-search';
 import {
   usePlatformCensus,
+  usePlatformFollowUp,
+  usePlatformFunnel,
   usePlatformUsers,
   usePlatformUsersOverview,
 } from '@/hooks/platform/use-platform-users-queries';
 
 const PAGE_SIZE = 20;
-const SEARCH_DELAY_MS = 300;
 
-/** Las dos vistas de la pantalla: el censo por segmento y el listado de cuentas. */
-const VIEWS = ['census', 'directory'] as const;
-type View = (typeof VIEWS)[number];
-
-const VIEW_ICON: Record<View, LucideIcon> = {
-  census: BarChart3,
-  directory: Users,
-};
-
-/**
- * Las cuentas de Luma, para el admin de la plataforma. El **censo** dice cuántas
- * hay de cada tipo (solo las que tienen membresía importan) y el **directorio**
- * es el listado: confirmadas, altas recientes, segmento y el plan ilimitado. La
- * ruta va detrás de `AdminLayout` y la API lo vuelve a exigir.
- */
-/** El ícono de cada subconjunto de cuentas de las pestañas. */
+/** El ícono de cada subconjunto de cuentas de las pestañas del directorio. */
 const FILTER_ICON: Record<PlatformUsersFilter, LucideIcon> = {
   all: Users,
   active: UserCheck,
@@ -64,101 +59,196 @@ const FILTER_ICON: Record<PlatformUsersFilter, LucideIcon> = {
   inactive: UserX,
 };
 
+/** Y el de cada filtro del seguimiento. */
+const FOLLOW_UP_ICON: Record<PlatformFollowUpFilter, LucideIcon> = {
+  all: Users,
+  risk: AlertTriangle,
+  trial: Clock,
+  paying: CircleDollarSign,
+  expired: Lock,
+};
+
+/**
+ * Las cuentas de Luma, para el admin de la plataforma. Cuatro vistas:
+ *
+ * - **Censo**: cuántas cuentas hay de cada tipo. Solo las que tienen membresía
+ *   importan; clientes, empleados y cuentas de prueba se cuentan aparte.
+ * - **Embudo**: dónde se caen las cuentas con membresía, por cohorte semanal.
+ * - **Seguimiento**: una fila por cuenta con membresía y a quién escribirle.
+ * - **Directorio**: el listado de todas las cuentas, con segmento y plan ilimitado.
+ *
+ * La ruta va detrás de `AdminLayout` y la API lo vuelve a exigir.
+ */
 export function PlatformUsersPage() {
+  const [view, setView] = useState<UsersView>('census');
+
+  switch (view) {
+    case 'census':
+      return <CensusView onView={setView} />;
+    case 'funnel':
+      return <FunnelView onView={setView} />;
+    case 'followUp':
+      return <FollowUpView onView={setView} />;
+    case 'directory':
+      return <DirectoryView onView={setView} />;
+  }
+}
+
+interface ViewProps {
+  onView: (view: UsersView) => void;
+}
+
+function CensusView({ onView }: ViewProps) {
+  const census = usePlatformCensus(true);
+
+  return (
+    <PageLayout
+      width="default"
+      toolbar={<UsersViewTabs value="census" onChange={onView} />}
+      isLoading={census.isLoading}
+      isError={census.isError}
+    >
+      {census.data && <AccountsCensus census={census.data} />}
+    </PageLayout>
+  );
+}
+
+function FunnelView({ onView }: ViewProps) {
+  const funnel = usePlatformFunnel(true);
+
+  return (
+    <PageLayout
+      width="default"
+      toolbar={<UsersViewTabs value="funnel" onChange={onView} />}
+      isLoading={funnel.isLoading}
+      isError={funnel.isError}
+    >
+      {funnel.data && <AccountsFunnel funnel={funnel.data} />}
+    </PageLayout>
+  );
+}
+
+function FollowUpView({ onView }: ViewProps) {
   const { t, i18n } = useTranslation();
-  const [view, setView] = useState<View>('census');
-  const [filter, setFilter] = useState<PlatformUsersFilter>('all');
-  const [segment, setSegment] = useState<PlatformUsersSegment>('all');
-  const [search, setSearch] = useState('');
-  const [q, setQ] = useState('');
+  const [filter, setFilter] = useState<PlatformFollowUpFilter>('all');
   const [page, setPage] = useState(1);
+  const { search, setSearch, q } = useDebouncedSearch(() => setPage(1));
 
-  // La búsqueda espera a que la persona deje de escribir: una consulta por
-  // letra es una consulta que nadie va a leer.
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setQ(search.trim());
-      setPage(1);
-    }, SEARCH_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [search]);
-
-  const inDirectory = view === 'directory';
-  const census = usePlatformCensus(!inDirectory);
-  const overview = usePlatformUsersOverview();
-  const users = usePlatformUsers({ filter, segment, q, page, pageSize: PAGE_SIZE }, inDirectory);
-  const data = users.data;
+  const followUp = usePlatformFollowUp({ filter, q, page, pageSize: PAGE_SIZE }, true);
+  const data = followUp.data;
 
   const toolbar = (
     <>
-      <Tabs value={view} onValueChange={(value) => setView(value as View)}>
+      <UsersViewTabs value="followUp" onChange={onView} />
+      <Tabs
+        value={filter}
+        onValueChange={(value) => {
+          setFilter(value as PlatformFollowUpFilter);
+          setPage(1);
+        }}
+      >
         <TabsList>
-          {VIEWS.map((value) => (
-            <TabsTrigger key={value} value={value} icon={VIEW_ICON[value]}>
-              {t(`platform.users.views.${value}`)}
+          {PLATFORM_FOLLOW_UP_FILTERS.map((value) => (
+            <TabsTrigger key={value} value={value} icon={FOLLOW_UP_ICON[value]}>
+              {t(`platform.followUp.filters.${value}`)}
+              {data && (
+                <span className="font-mono text-xs tabular-nums opacity-70">
+                  {data.counts[value].toLocaleString(i18n.language)}
+                </span>
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
-      {inDirectory && (
-        <>
-          <Tabs
-            value={filter}
-            onValueChange={(value) => {
-              setFilter(value as PlatformUsersFilter);
-              setPage(1);
-            }}
-          >
-            <TabsList>
-              {PLATFORM_USERS_FILTERS.map((value) => (
-                <TabsTrigger key={value} value={value} icon={FILTER_ICON[value]}>
-                  {t(`platform.users.filters.${value}`)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-          <Select
-            value={segment}
-            onValueChange={(value) => {
-              setSegment(value as PlatformUsersSegment);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger aria-label={t('platform.users.segment.label')} className="w-full sm:w-52">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PLATFORM_USERS_SEGMENTS.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {t(`platform.users.segment.${value}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <SearchField
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t('platform.users.searchPlaceholder')}
-            aria-label={t('platform.users.searchPlaceholder')}
-            wrapperClassName="w-full sm:w-64"
-          />
-        </>
-      )}
+      <SearchField
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder={t('platform.users.searchPlaceholder')}
+        aria-label={t('platform.users.searchPlaceholder')}
+        wrapperClassName="w-full sm:w-64"
+      />
     </>
   );
 
-  if (!inDirectory) {
-    return (
-      <PageLayout
-        width="default"
-        toolbar={toolbar}
-        isLoading={census.isLoading}
-        isError={census.isError}
+  return (
+    <PageLayout
+      width="default"
+      toolbar={toolbar}
+      isLoading={followUp.isLoading}
+      isError={followUp.isError}
+    >
+      {data && (
+        <div className="flex flex-col gap-6">
+          <AccountsFollowUp page={data} filtered={Boolean(q) || filter !== 'all'} />
+          <PaginationNav
+            page={data.page}
+            pages={data.pages}
+            total={data.total}
+            locale={i18n.language}
+            onPage={setPage}
+          />
+        </div>
+      )}
+    </PageLayout>
+  );
+}
+
+function DirectoryView({ onView }: ViewProps) {
+  const { t, i18n } = useTranslation();
+  const [filter, setFilter] = useState<PlatformUsersFilter>('all');
+  const [segment, setSegment] = useState<PlatformUsersSegment>('all');
+  const [page, setPage] = useState(1);
+  const { search, setSearch, q } = useDebouncedSearch(() => setPage(1));
+
+  const overview = usePlatformUsersOverview();
+  const users = usePlatformUsers({ filter, segment, q, page, pageSize: PAGE_SIZE });
+  const data = users.data;
+
+  const toolbar = (
+    <>
+      <UsersViewTabs value="directory" onChange={onView} />
+      <Tabs
+        value={filter}
+        onValueChange={(value) => {
+          setFilter(value as PlatformUsersFilter);
+          setPage(1);
+        }}
       >
-        {census.data && <AccountsCensus census={census.data} />}
-      </PageLayout>
-    );
-  }
+        <TabsList>
+          {PLATFORM_USERS_FILTERS.map((value) => (
+            <TabsTrigger key={value} value={value} icon={FILTER_ICON[value]}>
+              {t(`platform.users.filters.${value}`)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+      <Select
+        value={segment}
+        onValueChange={(value) => {
+          setSegment(value as PlatformUsersSegment);
+          setPage(1);
+        }}
+      >
+        <SelectTrigger aria-label={t('platform.users.segment.label')} className="w-full sm:w-52">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {PLATFORM_USERS_SEGMENTS.map((value) => (
+            <SelectItem key={value} value={value}>
+              {t(`platform.users.segment.${value}`)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <SearchField
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder={t('platform.users.searchPlaceholder')}
+        aria-label={t('platform.users.searchPlaceholder')}
+        wrapperClassName="w-full sm:w-64"
+      />
+    </>
+  );
 
   return (
     <PageLayout
@@ -188,40 +278,58 @@ export function PlatformUsersPage() {
           </RowCardList>
         )}
 
-        {data && data.pages > 1 && (
-          <nav
-            aria-label={t('platform.users.pagination.label')}
-            className="flex items-center justify-between gap-3"
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((current) => current - 1)}
-            >
-              <ChevronLeft className="size-4" />
-              {t('platform.users.pagination.previous')}
-            </Button>
-            <p className="text-sm text-muted-foreground" aria-live="polite">
-              {t('platform.users.pagination.status', {
-                page: data.page,
-                pages: data.pages,
-                total: data.total.toLocaleString(i18n.language),
-              })}
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= data.pages}
-              onClick={() => setPage((current) => current + 1)}
-            >
-              {t('platform.users.pagination.next')}
-              <ChevronRight className="size-4" />
-            </Button>
-          </nav>
+        {data && (
+          <PaginationNav
+            page={data.page}
+            pages={data.pages}
+            total={data.total}
+            locale={i18n.language}
+            onPage={setPage}
+          />
         )}
       </div>
     </PageLayout>
+  );
+}
+
+/** Anterior / siguiente. No se dibuja con una sola página. */
+function PaginationNav({
+  page,
+  pages,
+  total,
+  locale,
+  onPage,
+}: {
+  page: number;
+  pages: number;
+  total: number;
+  locale: string;
+  onPage: (page: number) => void;
+}) {
+  const { t } = useTranslation();
+  if (pages <= 1) return null;
+
+  return (
+    <nav
+      aria-label={t('platform.users.pagination.label')}
+      className="flex items-center justify-between gap-3"
+    >
+      <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+        <ChevronLeft className="size-4" />
+        {t('platform.users.pagination.previous')}
+      </Button>
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        {t('platform.users.pagination.status', {
+          page,
+          pages,
+          total: total.toLocaleString(locale),
+        })}
+      </p>
+      <Button variant="outline" size="sm" disabled={page >= pages} onClick={() => onPage(page + 1)}>
+        {t('platform.users.pagination.next')}
+        <ChevronRight className="size-4" />
+      </Button>
+    </nav>
   );
 }
 

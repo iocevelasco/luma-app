@@ -30,7 +30,7 @@ const { Activity } = await import('../../models/Activity.js');
 const { Project } = await import('../../models/Project.js');
 const { ProjectMembership } = await import('../../models/ProjectMembership.js');
 const { User } = await import('../../models/User.js');
-const { buildActivityReport, platformActivityReport, resolveRole } = await import(
+const { actorActivityStats, buildActivityReport, platformActivityReport, resolveRole } = await import(
   '../../services/platform-activity.service.js'
 );
 type Facts = Parameters<typeof resolveRole>[2];
@@ -176,5 +176,44 @@ describe('platformActivityReport', () => {
     expect(Project.find).toHaveBeenCalledTimes(1);
     expect(ProjectMembership.find).toHaveBeenCalledTimes(1);
     expect(User.find).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('actorActivityStats', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Los tests de arriba dejan agregaciones armadas: cada fuente arranca vacía.
+    vi.mocked(Activity.aggregate).mockResolvedValue([]);
+    vi.mocked(Project.aggregate).mockResolvedValue([]);
+    vi.mocked(Expense.aggregate).mockResolvedValue([]);
+  });
+
+  it('suma por persona las acciones de todas las fuentes y se queda con la última fecha', async () => {
+    vi.mocked(Project.aggregate).mockResolvedValue([
+      { _id: 'ana', count: 2, last: new Date('2026-11-01T10:00:00.000Z') },
+    ]);
+    vi.mocked(Expense.aggregate).mockResolvedValue([
+      { _id: 'ana', count: 3, last: new Date('2026-11-04T10:00:00.000Z') },
+      { _id: 'beto', count: 1, last: new Date('2026-10-20T10:00:00.000Z') },
+      // Un documento sin autor no es de nadie.
+      { _id: null, count: 9, last: new Date('2026-11-05T10:00:00.000Z') },
+    ]);
+
+    const stats = await actorActivityStats();
+
+    expect(stats.get('ana')).toMatchObject({
+      counts: { projectCreated: 2, expenseRegistered: 3, memberInvited: 0 },
+      last: new Date('2026-11-04T10:00:00.000Z'),
+    });
+    expect(stats.get('beto')?.counts.expenseRegistered).toBe(1);
+    expect(stats.size).toBe(2);
+  });
+
+  it('una sola agregación por colección, agrupada por autor: no una consulta por persona', async () => {
+    await actorActivityStats();
+
+    expect(Project.aggregate).toHaveBeenCalledTimes(1);
+    const pipeline = vi.mocked(Project.aggregate).mock.calls[0][0] as Array<{ $group?: { _id: string } }>;
+    expect(pipeline.find((stage) => stage.$group)?.$group?._id).toBe('$createdBy');
   });
 });
