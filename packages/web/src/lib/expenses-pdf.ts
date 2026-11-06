@@ -9,8 +9,8 @@ import { purchaseFileName } from './materials-pdf';
  */
 
 /** `gastos-casa-rivera-2026-10-24.pdf`: sin espacios ni acentos, que viajan mal por chat. */
-export function expensesFileName(projectName: string, date: Date): string {
-  return purchaseFileName(projectName, date, 'gastos');
+export function expensesFileName(projectName: string, date: Date, extension: 'pdf' | 'csv' = 'pdf'): string {
+  return purchaseFileName(projectName, date, 'gastos', extension);
 }
 
 export interface ExpensesPdfLabels {

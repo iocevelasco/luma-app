@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createPaymentSchema,
@@ -12,7 +12,7 @@ import {
   type PaymentScheduleStatus,
 } from '@luma/shared';
 import { format } from 'date-fns';
-import { Check, Clock, FileDown, Plus, SearchX, Trash2, Wallet, X, type LucideIcon } from 'lucide-react';
+import { Check, Clock, Plus, SearchX, Trash2, Wallet, X, type LucideIcon } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import type { FieldErrors, FieldValues, Path, UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,7 @@ import { Can } from '@/components/permissions/can';
 import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { MovementDetail, RowOpenButton } from '@/components/finance/movement-detail';
+import { MovementExport } from '@/components/finance/movement-export';
 import { MovementFilterBar } from '@/components/finance/movement-filter-bar';
 import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -50,7 +51,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Spinner } from '@/components/ui/spinner';
 import {
   Select,
   SelectContent,
@@ -70,6 +70,7 @@ import { useProject } from '@/hooks/projects/use-project-queries';
 import { useCompactToolbar } from '@/hooks/use-compact-toolbar';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { downloadBlob } from '@/lib/download-blob';
+import { FINANCE_LIST_LIMIT } from '@/lib/finance-limits';
 import { formatMoney } from '@/lib/format-money';
 import {
   countActivePaymentFilters,
@@ -382,6 +383,11 @@ function NewPaymentDrawer({
   );
 }
 
+/** Sobre qué cuota o cobro actúa un diálogo o el panel de detalle. */
+type PaymentsTarget =
+  | { kind: 'item'; item: PaymentScheduleItem }
+  | { kind: 'payment'; payment: Payment };
+
 export function ProjectPaymentsPage() {
   const { t, i18n } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
@@ -393,13 +399,11 @@ export function ProjectPaymentsPage() {
   const deletePayment = useDeletePayment(projectId!);
   // Un solo diálogo para las dos bajas de la pantalla. El cobro pesa más: no
   // se edita, así que borrarlo es la única forma de corregirlo.
-  const [deleting, setDeleting] = useState<
-    { kind: 'item'; item: PaymentScheduleItem } | { kind: 'payment'; payment: Payment } | null
-  >(null);
+  const [deleting, setDeleting] = useState<PaymentsTarget | null>(null);
 
-  const [detail, setDetail] = useState<
-    { kind: 'item'; item: PaymentScheduleItem } | { kind: 'payment'; payment: Payment } | null
-  >(null);
+  // `detail` se conserva al cerrar: el panel sale con su animación y devuelve el foco.
+  const [detail, setDetail] = useState<PaymentsTarget | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [filters, setFilters] = useState<PaymentFilters>(NO_PAYMENT_FILTERS);
   const [groupBy, setGroupBy] = useState<PaymentGroupBy>('month');
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -411,15 +415,11 @@ export function ProjectPaymentsPage() {
 
   // Lo visible: filtrado y agrupado en el cliente, sobre la lista que ya llegó.
   const visible = useMemo(() => filterPayments(allPayments, filters), [allPayments, filters]);
-  const groups = useMemo(() => groupPayments(visible, groupBy), [visible, groupBy]);
+  const groups = useMemo(
+    () => groupPayments(visible, groupBy, (method) => t(`finance.method.${method}`)),
+    [visible, groupBy, t],
+  );
 
-  // `jspdf` pesa: se baja apenas hay algo que descargar y no al apretar el botón.
-  useEffect(() => {
-    if (!hasPayments) return;
-    void import('@/lib/payments-pdf');
-    void import('jspdf');
-    void import('jspdf-autotable');
-  }, [hasPayments]);
 
   if (isError) return <PageLayout isError />;
   if (isLoading || !data || !projectData) return <PageLayout isLoading />;
@@ -427,12 +427,58 @@ export function ProjectPaymentsPage() {
   const currency = projectData.project.currency;
   const { summary, items } = data;
   const payments = allPayments;
+  const truncated = allPayments.length >= FINANCE_LIST_LIMIT.payments;
 
   const groupLabel = (group: PaymentGroup) => {
     if (groupBy === 'method') return t(`finance.method.${group.key}`);
     if (groupBy === 'day') return format(fromDayKey(group.key), 'PPPP', { locale: dateLocale });
     return format(fromDayKey(`${group.key}-01`), 'LLLL yyyy', { locale: dateLocale });
   };
+
+  // `jspdf` pesa: se empieza a bajar cuando la persona se acerca al botón, no en cada visita.
+  function warmPdf() {
+    void import('@/lib/payments-pdf');
+    void import('jspdf');
+    void import('jspdf-autotable');
+  }
+
+  async function handleDownloadCsv() {
+    if (visible.length === 0) return;
+    try {
+      const [{ buildPaymentsCsv }, { paymentsFileName }] = await Promise.all([
+        import('@/lib/movements-csv'),
+        import('@/lib/payments-pdf'),
+      ]);
+      const now = new Date();
+      // Lo que la pantalla muestra, en su mismo orden.
+      const rows = groups.flatMap((group) => group.payments);
+      const numberFormat = new Intl.NumberFormat(i18n.language, { useGrouping: false, maximumFractionDigits: 6 });
+      const csv = buildPaymentsCsv(rows, currency, {
+        number: (value) => numberFormat.format(value),
+        header: {
+          date: t('finance.export.columnDate'),
+          concept: t('finance.export.columnConcept'),
+          method: t('finance.fields.method'),
+          reference: t('finance.fields.reference'),
+          amount: t('finance.export.columnAmount'),
+          currency: t('finance.export.columnCurrency'),
+          originalAmount: t('finance.export.columnOriginalAmount'),
+          originalCurrency: t('finance.export.columnOriginalCurrency'),
+          rate: t('finance.export.columnRate'),
+          notes: t('finance.export.columnNotes'),
+        },
+        onAccount: t('finance.payments.onAccount'),
+        method: (method) => t(`finance.method.${method}`),
+      });
+      downloadBlob(
+        new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+        paymentsFileName(projectData?.project.name ?? '', now, 'csv'),
+      );
+      toast.success(t('finance.export.csvDownloaded'));
+    } catch {
+      toast.error(t('finance.export.csvError'));
+    }
+  }
 
   async function handleDownloadPdf() {
     if (generatingPdf || visible.length === 0) return;
@@ -500,18 +546,23 @@ export function ProjectPaymentsPage() {
       />
     </Can>
   );
-  const pdfButton = (
-    <Button
-      type="button"
-      variant="outline"
-      className="max-sm:min-h-11"
-      disabled={generatingPdf || visible.length === 0}
-      aria-busy={generatingPdf}
-      onClick={() => void handleDownloadPdf()}
-    >
-      {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
-      {generatingPdf ? t('finance.payments.pdf.generating') : t('finance.payments.pdf.button')}
-    </Button>
+  const exportControl = (
+    <MovementExport
+      compact={compact}
+      generatingPdf={generatingPdf}
+      disabled={visible.length === 0}
+      onPdf={() => void handleDownloadPdf()}
+      onCsv={() => void handleDownloadCsv()}
+      onWarm={warmPdf}
+      labels={{
+        download: t('finance.export.download'),
+        generating: t('finance.payments.pdf.generating'),
+        pdf: t('finance.export.pdf'),
+        csv: t('finance.export.csv'),
+        pdfButton: t('finance.payments.pdf.button'),
+        csvButton: t('finance.export.csvButton'),
+      }}
+    />
   );
 
   const actions = {
@@ -571,7 +622,7 @@ export function ProjectPaymentsPage() {
             compact={compact}
             actions={
               <>
-                {pdfButton}
+                {exportControl}
                 {scheduleButton}
               </>
             }
@@ -591,7 +642,7 @@ export function ProjectPaymentsPage() {
         // En el modo compacto las acciones viven en el panel de filtros.
         hasPayments && compact ? undefined : (
           <>
-            {hasPayments && pdfButton}
+            {hasPayments && exportControl}
             {scheduleButton}
           </>
         )
@@ -662,7 +713,14 @@ export function ProjectPaymentsPage() {
                   })}
                 />
                 <RowCardBody
-                  title={<RowOpenButton onClick={() => setDetail({ kind: 'item', item })}>{item.concept}</RowOpenButton>}
+                  title={<RowOpenButton
+                      onClick={() => {
+                        setDetail({ kind: 'item', item });
+                        setDetailOpen(true);
+                      }}
+                    >
+                      {item.concept}
+                    </RowOpenButton>}
                   meta={
                     item.paidAmount > 0 && (
                       // El texto venía después de un " · "; ahora abre la línea.
@@ -701,10 +759,12 @@ export function ProjectPaymentsPage() {
         )}
       </ListSection>
 
-      <ListSection label={t('finance.payments.title')} meta={payments.length > 0 ? payments.length : undefined}>
-        {payments.length === 0 ? (
+      {payments.length === 0 ? (
+        <ListSection label={t('finance.payments.title')}>
           <p className="text-sm text-muted-foreground">{t('finance.payments.empty')}</p>
-        ) : visible.length === 0 ? (
+        </ListSection>
+      ) : visible.length === 0 ? (
+        <ListSection label={t('finance.payments.title')}>
           <EmptyState
             icon={SearchX}
             title={t('finance.payments.filters.emptyTitle')}
@@ -716,69 +776,79 @@ export function ProjectPaymentsPage() {
               </Button>
             }
           />
-        ) : (
-          <ListSections>
-            {groups.map((group) => (
-              <ListSection
-                key={group.key}
-                label={groupLabel(group)}
-                className="gap-3"
-                meta={
-                  <>
-                    <span>{t('finance.payments.pdf.summary', { count: group.payments.length })}</span>
-                    <span className="tabular-nums">{formatMoney(group.total, currency, i18n.language)}</span>
-                  </>
-                }
-              >
-                <RowCardList>
-                  {group.payments.map((payment) => (
-                    <RowCard key={payment.id} className="relative">
-                      <RowCardDate date={fromDayKey(payment.paidOn)} locale={dateLocale} tone="success" />
-                      <RowCardBody
-                        title={
-                          <RowOpenButton onClick={() => setDetail({ kind: 'payment', payment })}>
-                            {payment.scheduleItemConcept ?? t('finance.payments.onAccount')}
-                          </RowOpenButton>
-                        }
-                        meta={
-                          // La fila no repite lo que ya dice el rótulo del grupo.
-                          <>
-                            {groupBy !== 'method' && t(`finance.method.${payment.method}`)}
-                            {payment.reference && `${groupBy !== 'method' ? ' · ' : ''}${payment.reference}`}
-                          </>
-                        }
-                      />
+        </ListSection>
+      ) : (
+        <>
+          {truncated && (
+            <p role="status" className="-mb-4 text-xs text-muted-foreground">
+              {t('finance.listTruncated', { count: FINANCE_LIST_LIMIT.payments })}
+            </p>
+          )}
+          {groups.map((group) => (
+            <ListSection
+              key={group.key}
+              label={`${t('finance.payments.title')} · ${groupLabel(group)}`}
+              className="gap-3"
+              meta={
+                <>
+                  <span>{t('finance.payments.groupCount', { count: group.payments.length })}</span>
+                  <span className="tabular-nums">{formatMoney(group.total, currency, i18n.language)}</span>
+                </>
+              }
+            >
+              <RowCardList>
+                {group.payments.map((payment) => (
+                  <RowCard key={payment.id} className="relative">
+                    <RowCardDate date={fromDayKey(payment.paidOn)} locale={dateLocale} tone="success" />
+                    <RowCardBody
+                      title={
+                        <RowOpenButton
+                          onClick={() => {
+                            setDetail({ kind: 'payment', payment });
+                            setDetailOpen(true);
+                          }}
+                        >
+                          {payment.scheduleItemConcept ?? t('finance.payments.onAccount')}
+                        </RowOpenButton>
+                      }
+                      meta={
+                        // La fila no repite lo que ya dice el rótulo del grupo.
+                        <>
+                          {groupBy !== 'method' && t(`finance.method.${payment.method}`)}
+                          {payment.reference && `${groupBy !== 'method' ? ' · ' : ''}${payment.reference}`}
+                        </>
+                      }
+                    />
 
-                      <RowCardEnd>
-                        <span className="text-sm tabular-nums">
-                          {formatMoney(payment.amountInProjectCurrency, currency, i18n.language)}
-                        </span>
-                        <Can I="payment.write">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="relative z-10"
-                            onClick={() => setDeleting({ kind: 'payment', payment })}
-                            aria-label={t('finance.payments.delete')}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </Can>
-                      </RowCardEnd>
-                    </RowCard>
-                  ))}
-                </RowCardList>
-              </ListSection>
-            ))}
-          </ListSections>
-        )}
-      </ListSection>
+                    <RowCardEnd>
+                      <span className="text-sm tabular-nums">
+                        {formatMoney(payment.amountInProjectCurrency, currency, i18n.language)}
+                      </span>
+                      <Can I="payment.write">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="relative z-10"
+                          onClick={() => setDeleting({ kind: 'payment', payment })}
+                          aria-label={t('finance.payments.delete')}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </Can>
+                    </RowCardEnd>
+                  </RowCard>
+                ))}
+              </RowCardList>
+            </ListSection>
+          ))}
+        </>
+      )}
       </ListSections>
 
       {detail?.kind === 'payment' && (
         <MovementDetail
-          open
-          onOpenChange={(open) => !open && setDetail(null)}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
           title={detail.payment.scheduleItemConcept ?? t('finance.payments.onAccount')}
           caption={format(fromDayKey(detail.payment.paidOn), 'PPPP', { locale: dateLocale })}
           amount={formatMoney(detail.payment.amountInProjectCurrency, currency, i18n.language)}
@@ -805,8 +875,8 @@ export function ProjectPaymentsPage() {
 
       {detail?.kind === 'item' && (
         <MovementDetail
-          open
-          onOpenChange={(open) => !open && setDetail(null)}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
           title={detail.item.concept}
           caption={t('finance.schedule.dueOn', { date: format(fromDayKey(detail.item.dueOn), 'PPPP', { locale: dateLocale }) })}
           amount={formatMoney(detail.item.scheduledAmount, currency, i18n.language)}

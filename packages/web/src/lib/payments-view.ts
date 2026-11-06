@@ -1,4 +1,5 @@
 import type { Payment, PaymentMethod } from '@luma/shared';
+import { isDayInRange, normalizeText } from './normalize-text';
 
 /**
  * Cómo se mira la lista de cobros: qué se deja y cómo se agrupa. Es el mismo
@@ -33,25 +34,15 @@ export function countActivePaymentFilters(filters: PaymentFilters): number {
   );
 }
 
-/** Sin mayúsculas ni acentos. */
-function normalize(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase();
-}
-
 export function filterPayments(payments: Payment[], filters: PaymentFilters): Payment[] {
-  const query = normalize(filters.search.trim());
+  const query = normalizeText(filters.search.trim());
   return payments.filter((payment) => {
     if (filters.method !== 'all' && payment.method !== filters.method) return false;
-    // Los días son strings `YYYY-MM-DD`: comparar como texto es comparar fechas.
-    if (filters.from && payment.paidOn < filters.from) return false;
-    if (filters.to && payment.paidOn > filters.to) return false;
+    if (!isDayInRange(payment.paidOn, filters.from, filters.to)) return false;
     if (!query) return true;
     return [payment.scheduleItemConcept, payment.reference, payment.notes]
       .filter((value): value is string => Boolean(value))
-      .some((value) => normalize(value).includes(query));
+      .some((value) => normalizeText(value).includes(query));
   });
 }
 
@@ -67,8 +58,16 @@ export function sumPayments(payments: Payment[]): number {
   return payments.reduce((sum, payment) => sum + payment.amountInProjectCurrency, 0);
 }
 
-/** Agrupa por una sola dimensión. Mes y día, del más reciente al más viejo; método por nombre. */
-export function groupPayments(payments: Payment[], by: PaymentGroupBy): PaymentGroup[] {
+/**
+ * Agrupa por una sola dimensión. Mes y día, del más reciente al más viejo; el
+ * método, por el nombre que se lee en pantalla (`methodLabel`): ordenar por el
+ * código lo dejaría desordenado a la vista, y distinto en cada idioma.
+ */
+export function groupPayments(
+  payments: Payment[],
+  by: PaymentGroupBy,
+  methodLabel: (method: PaymentMethod) => string = (method) => method,
+): PaymentGroup[] {
   const groups = new Map<string, PaymentGroup>();
 
   for (const payment of payments) {
@@ -79,5 +78,9 @@ export function groupPayments(payments: Payment[], by: PaymentGroupBy): PaymentG
   }
 
   const result = [...groups.values()].map((group) => ({ ...group, total: sumPayments(group.payments) }));
-  return result.sort((a, b) => (by === 'method' ? a.key.localeCompare(b.key) : b.key.localeCompare(a.key)));
+  return result.sort((a, b) =>
+    by === 'method'
+      ? methodLabel(a.key as PaymentMethod).localeCompare(methodLabel(b.key as PaymentMethod))
+      : b.key.localeCompare(a.key),
+  );
 }

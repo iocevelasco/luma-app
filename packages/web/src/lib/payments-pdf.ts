@@ -9,8 +9,8 @@ import { purchaseFileName } from './materials-pdf';
  */
 
 /** `cobros-casa-rivera-2026-10-24.pdf`. */
-export function paymentsFileName(projectName: string, date: Date): string {
-  return purchaseFileName(projectName, date, 'cobros');
+export function paymentsFileName(projectName: string, date: Date, extension: 'pdf' | 'csv' = 'pdf'): string {
+  return purchaseFileName(projectName, date, 'cobros', extension);
 }
 
 export interface PaymentsPdfLabels {

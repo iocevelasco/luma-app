@@ -55,8 +55,13 @@ describe('groupPayments', () => {
     expect(groupPayments(sample, 'day').map((g) => g.key)).toEqual(['2026-10-21', '2026-10-02', '2026-09-30']);
   });
 
-  it('por método', () => {
+  it('por método, ordenado por el nombre que se ve y no por el código', () => {
     expect(groupPayments(sample, 'method').map((g) => g.key)).toEqual(['efectivo', 'transferencia']);
+    const labels: Record<string, string> = { efectivo: 'Zeta', transferencia: 'Alfa' };
+    expect(groupPayments(sample, 'method', (method) => labels[method]).map((g) => g.key)).toEqual([
+      'transferencia',
+      'efectivo',
+    ]);
   });
 });
 

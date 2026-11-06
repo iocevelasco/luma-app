@@ -1456,7 +1456,9 @@
         "downloaded": "PDF descargado.",
         "error": "No hemos podido generar el PDF. Inténtalo de nuevo.",
         "filtered": "Con filtros aplicados: no es la lista completa."
-      }
+      },
+      "groupCount_one": "{{count}} cobro",
+      "groupCount_other": "{{count}} cobros"
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1511,7 +1513,9 @@
           "provider": "Sin proveedor",
           "activity": "Sin actividad"
         }
-      }
+      },
+      "groupCount_one": "{{count}} gasto",
+      "groupCount_other": "{{count}} gastos"
     },
     "payroll": {
       "title": "Nómina",
@@ -1613,7 +1617,26 @@
       "button": "Filtros",
       "done": "Hecho",
       "actions": "Acciones"
-    }
+    },
+    "export": {
+      "download": "Descargar",
+      "generating": "Generando PDF…",
+      "pdf": "PDF",
+      "csv": "CSV (Excel)",
+      "pdfButton": "Descargar PDF",
+      "csvButton": "Descargar CSV",
+      "csvDownloaded": "CSV descargado.",
+      "csvError": "No hemos podido generar el CSV. Inténtalo de nuevo.",
+      "columnDate": "Fecha",
+      "columnConcept": "Concepto",
+      "columnAmount": "Importe",
+      "columnCurrency": "Moneda",
+      "columnOriginalAmount": "Importe original",
+      "columnOriginalCurrency": "Moneda original",
+      "columnRate": "Tipo de cambio",
+      "columnNotes": "Notas"
+    },
+    "listTruncated": "Se muestran los {{count}} movimientos más recientes; puede haber más. Los filtros y los totales por grupo sólo ven esos."
   },
   "errors": {
     "validation": "Revisa los datos: hay campos con errores.",

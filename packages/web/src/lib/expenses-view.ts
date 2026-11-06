@@ -1,4 +1,5 @@
 import { EXPENSE_CATEGORIES, type Expense, type ExpenseCategory } from '@luma/shared';
+import { isDayInRange, normalizeText } from './normalize-text';
 
 /**
  * Cómo se mira la lista de gastos: qué se deja y cómo se agrupa. Todo en el
@@ -31,25 +32,15 @@ export function countActiveExpenseFilters(filters: ExpenseFilters): number {
   );
 }
 
-/** Sin mayúsculas ni acentos: "cañeria" encuentra "Cañería". */
-function normalize(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase();
-}
-
 export function filterExpenses(expenses: Expense[], filters: ExpenseFilters): Expense[] {
-  const query = normalize(filters.search.trim());
+  const query = normalizeText(filters.search.trim());
   return expenses.filter((expense) => {
     if (filters.category !== 'all' && expense.category !== filters.category) return false;
-    // Los días son strings `YYYY-MM-DD`: comparar como texto es comparar fechas.
-    if (filters.from && expense.spentOn < filters.from) return false;
-    if (filters.to && expense.spentOn > filters.to) return false;
+    if (!isDayInRange(expense.spentOn, filters.from, filters.to)) return false;
     if (!query) return true;
     return [expense.description, expense.providerName, expense.activityName, expense.notes]
       .filter((value): value is string => Boolean(value))
-      .some((value) => normalize(value).includes(query));
+      .some((value) => normalizeText(value).includes(query));
   });
 }
 

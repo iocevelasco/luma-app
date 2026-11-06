@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -9,8 +9,9 @@ import {
   DOCUMENT_MIME_TYPES,
   type CreateExpenseInput,
   type Expense,
+  type ExpenseCategory,
 } from '@luma/shared';
-import { Download, FileDown, Plus, Receipt, SearchX, Trash2, TrendingUp, Upload, Users, X } from 'lucide-react';
+import { Download, Plus, Receipt, SearchX, Trash2, TrendingUp, Upload, Users, X } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -22,6 +23,7 @@ import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
 import { MovementDetail, RowOpenButton } from '@/components/finance/movement-detail';
+import { MovementExport } from '@/components/finance/movement-export';
 import { MovementFilterBar } from '@/components/finance/movement-filter-bar';
 import {
   AlertDialog,
@@ -47,7 +49,6 @@ import {
 } from '@/components/common/row-card-list';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import {
   Select,
   SelectContent,
@@ -68,6 +69,7 @@ import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useCompactToolbar } from '@/hooks/use-compact-toolbar';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { currencyChoices } from '@/lib/currencies';
+import { FINANCE_LIST_LIMIT } from '@/lib/finance-limits';
 import { downloadBlob } from '@/lib/download-blob';
 import {
   countActiveExpenseFilters,
@@ -232,7 +234,15 @@ function NewExpenseDrawer({
               control={form.control}
               name="currency"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select
+                  value={field.value}
+                  onValueChange={(code) => {
+                    field.onChange(code);
+                    // La cotización sólo existe si la moneda no es la de la obra: si quedara
+                    // el valor tipeado con el campo ya oculto, se guardaría y inflaría el gasto.
+                    if (code === projectCurrency) form.setValue('exchangeRate', 1);
+                  }}
+                >
                   <SelectTrigger id="expense-currency">
                     <SelectValue />
                   </SelectTrigger>
@@ -460,18 +470,13 @@ export function ProjectExpensesPage() {
   const { data: summaryData } = useFinanceSummary(projectId);
   const deleteExpense = useDeleteExpense(projectId!);
   const [deleting, setDeleting] = useState<Expense | null>(null);
+  // `detail` se conserva al cerrar: el panel sale con su animación y devuelve el foco.
   const [detail, setDetail] = useState<Expense | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const compact = useCompactToolbar();
   const hasExpenses = (data?.expenses.length ?? 0) > 0;
 
-  // `jspdf` pesa: se baja apenas hay algo que descargar y no al apretar el botón.
-  useEffect(() => {
-    if (!hasExpenses) return;
-    void import('@/lib/expenses-pdf');
-    void import('jspdf');
-    void import('jspdf-autotable');
-  }, [hasExpenses]);
 
   const [filters, setFilters] = useState<ExpenseFilters>(NO_EXPENSE_FILTERS);
   const [groupBy, setGroupBy] = useState<ExpenseGroupBy>('category');
@@ -486,6 +491,53 @@ export function ProjectExpensesPage() {
 
   const currency = projectData.project.currency;
   const summary = summaryData?.summary;
+
+  // `jspdf` pesa: se empieza a bajar cuando la persona se acerca al botón, no en cada visita.
+  function warmPdf() {
+    void import('@/lib/expenses-pdf');
+    void import('jspdf');
+    void import('jspdf-autotable');
+  }
+
+  async function handleDownloadCsv() {
+    if (visible.length === 0) return;
+    try {
+      const [{ buildExpensesCsv }, { expensesFileName }] = await Promise.all([
+        import('@/lib/movements-csv'),
+        import('@/lib/expenses-pdf'),
+      ]);
+      const now = new Date();
+      // Lo que la pantalla muestra, en su mismo orden.
+      const rows = groups.flatMap((group) => group.expenses);
+      const numberFormat = new Intl.NumberFormat(i18n.language, { useGrouping: false, maximumFractionDigits: 6 });
+      const csv = buildExpensesCsv(rows, currency, {
+        number: (value) => numberFormat.format(value),
+        header: {
+          date: t('finance.export.columnDate'),
+          description: t('finance.fields.description'),
+          category: t('finance.fields.category'),
+          method: t('finance.fields.method'),
+          provider: t('finance.fields.provider'),
+          activity: t('finance.fields.activity'),
+          amount: t('finance.export.columnAmount'),
+          currency: t('finance.export.columnCurrency'),
+          originalAmount: t('finance.export.columnOriginalAmount'),
+          originalCurrency: t('finance.export.columnOriginalCurrency'),
+          rate: t('finance.export.columnRate'),
+          notes: t('finance.export.columnNotes'),
+        },
+        category: (category) => t(`finance.category.${category}`),
+        method: (method) => t(`finance.method.${method}`),
+      });
+      downloadBlob(
+        new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+        expensesFileName(projectData?.project.name ?? '', now, 'csv'),
+      );
+      toast.success(t('finance.export.csvDownloaded'));
+    } catch {
+      toast.error(t('finance.export.csvError'));
+    }
+  }
 
   async function handleDownloadPdf() {
     if (generatingPdf || visible.length === 0) return;
@@ -528,19 +580,32 @@ export function ProjectExpensesPage() {
     }
   }
 
-  const pdfButton = (
-    <Button
-      type="button"
-      variant="outline"
-      className="max-sm:min-h-11"
-      disabled={generatingPdf || visible.length === 0}
-      aria-busy={generatingPdf}
-      onClick={() => void handleDownloadPdf()}
-    >
-      {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
-      {generatingPdf ? t('finance.expenses.pdf.generating') : t('finance.expenses.pdf.button')}
-    </Button>
+  const exportControl = (
+    <MovementExport
+      compact={compact}
+      generatingPdf={generatingPdf}
+      disabled={visible.length === 0}
+      onPdf={() => void handleDownloadPdf()}
+      onCsv={() => void handleDownloadCsv()}
+      onWarm={warmPdf}
+      labels={{
+        download: t('finance.export.download'),
+        generating: t('finance.expenses.pdf.generating'),
+        pdf: t('finance.export.pdf'),
+        csv: t('finance.export.csv'),
+        pdfButton: t('finance.expenses.pdf.button'),
+        csvButton: t('finance.export.csvButton'),
+      }}
+    />
   );
+
+  // Sin filtros y por categoría, el total sale del resumen de la obra: cuenta todos los gastos,
+  // no sólo los que llegaron en la lista (la API corta en `FINANCE_LIST_LIMIT.expenses`).
+  const groupTotal = (group: ExpenseGroup) =>
+    groupBy === 'category' && activeFilters === 0 && summary
+      ? (summary.expensesByCategory[group.key as ExpenseCategory] ?? group.total)
+      : group.total;
+  const truncated = data.expenses.length >= FINANCE_LIST_LIMIT.expenses;
 
   const groupLabel = (group: ExpenseGroup) => {
     if (group.name === null) return t(`finance.expenses.group.none.${groupBy}`);
@@ -577,7 +642,7 @@ export function ProjectExpensesPage() {
             activeCount={activeFilters}
             onClear={() => setFilters(NO_EXPENSE_FILTERS)}
             compact={compact}
-            actions={pdfButton}
+            actions={exportControl}
             labels={{
               search: t('finance.expenses.filters.search'),
               from: t('finance.expenses.filters.from'),
@@ -591,7 +656,7 @@ export function ProjectExpensesPage() {
         ) : undefined
       }
       // En el modo compacto la descarga vive en el panel de filtros.
-      secondaryActions={hasExpenses && !compact ? pdfButton : undefined}
+      secondaryActions={hasExpenses && !compact ? exportControl : undefined}
       action={
         <Can I="expense.write">
           <NewExpenseDrawer projectId={projectId!} projectCurrency={currency} />
@@ -644,6 +709,12 @@ export function ProjectExpensesPage() {
 
       <PayrollCard projectId={projectId!} currency={currency} />
 
+      {truncated && (
+        <p role="status" className="text-xs text-muted-foreground">
+          {t('finance.listTruncated', { count: FINANCE_LIST_LIMIT.expenses })}
+        </p>
+      )}
+
       {data.expenses.length === 0 ? (
         <EmptyState
           icon={Receipt}
@@ -671,9 +742,9 @@ export function ProjectExpensesPage() {
               meta={
                 <>
                   {activeFilters > 0 || groupBy !== 'category' ? (
-                    <span>{t('finance.expenses.pdf.summary', { count: group.expenses.length })}</span>
+                    <span>{t('finance.expenses.groupCount', { count: group.expenses.length })}</span>
                   ) : null}
-                  <span className="tabular-nums">{formatMoney(group.total, currency, i18n.language)}</span>
+                  <span className="tabular-nums">{formatMoney(groupTotal(group), currency, i18n.language)}</span>
                 </>
               }
             >
@@ -692,7 +763,12 @@ export function ProjectExpensesPage() {
                       <RowCardDate date={fromDayKey(expense.spentOn)} locale={dateLocale} />
                       <RowCardBody
                         title={
-                          <RowOpenButton onClick={() => setDetail(expense)}>{expense.description}</RowOpenButton>
+                          <RowOpenButton
+                            onClick={() => {
+                              setDetail(expense);
+                              setDetailOpen(true);
+                            }}
+                          >{expense.description}</RowOpenButton>
                         }
                         meta={
                           (detail.length > 0 || expense.materials) && (
@@ -757,8 +833,8 @@ export function ProjectExpensesPage() {
 
       {detail && (
         <MovementDetail
-          open
-          onOpenChange={(open) => !open && setDetail(null)}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
           title={detail.description}
           caption={format(fromDayKey(detail.spentOn), 'PPPP', { locale: dateLocale })}
           amount={formatMoney(detail.amountInProjectCurrency, currency, i18n.language)}
