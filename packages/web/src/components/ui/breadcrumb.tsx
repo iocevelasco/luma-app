@@ -30,7 +30,7 @@ function BreadcrumbList({
           [
             'bg-card shadow-surface w-fit gap-1 rounded-full border p-1 sm:gap-1',
             '[&_[data-slot=breadcrumb-separator]]:hidden',
-            '[&_[data-slot=breadcrumb-link]]:rounded-full [&_[data-slot=breadcrumb-link]]:px-3 [&_[data-slot=breadcrumb-link]]:py-1.5 [&_[data-slot=breadcrumb-link]]:no-underline [&_[data-slot=breadcrumb-link]:hover]:bg-accent',
+            '[&_[data-slot=breadcrumb-link]]:rounded-full [&_[data-slot=breadcrumb-link]]:px-3 [&_[data-slot=breadcrumb-link]]:py-1.5 [&_[data-slot=breadcrumb-link]]:no-underline [&_[data-slot=breadcrumb-link]:hover]:bg-secondary',
             '[&_[data-slot=breadcrumb-page]]:bg-secondary [&_[data-slot=breadcrumb-page]]:text-foreground [&_[data-slot=breadcrumb-page]]:rounded-full [&_[data-slot=breadcrumb-page]]:px-3 [&_[data-slot=breadcrumb-page]]:py-1.5 [&_[data-slot=breadcrumb-page]]:shadow-xs',
           ],
         className,

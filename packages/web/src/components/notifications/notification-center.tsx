@@ -42,7 +42,7 @@ function NotificationRow({
       type="button"
       onClick={() => onOpen(notification)}
       className={cn(
-        'flex w-full flex-col items-start gap-0.5 rounded-sm px-3 py-2 text-left transition-colors hover:bg-accent',
+        'flex w-full flex-col items-start gap-0.5 rounded-sm px-3 py-2 text-left transition-colors hover:bg-secondary',
         isUnread && 'bg-primary/5',
       )}
     >

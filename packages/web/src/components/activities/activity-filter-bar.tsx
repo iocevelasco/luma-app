@@ -102,7 +102,7 @@ function SearchWithSuggestions({
             <li key={name} role="option" aria-selected={false}>
               <button
                 type="button"
-                className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+                className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm hover:bg-secondary focus-visible:bg-secondary focus-visible:outline-none"
                 onClick={() => onChange(name)}
               >
                 <Search aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
@@ -489,7 +489,7 @@ export function ActiveFiltersNotice({
         {chips.map((chip) => (
           <span
             key={chip.id}
-            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md bg-muted py-1 pl-3 pr-1 text-xs"
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md bg-secondary py-1 pl-3 pr-1 text-xs"
           >
             {chip.label}
             <button

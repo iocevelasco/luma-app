@@ -104,7 +104,7 @@ function TabsList({
         aria-hidden
         data-slot="tabs-indicator"
         className={cn(
-          "bg-muted pointer-events-none absolute top-0 left-0 rounded-md",
+          "bg-secondary pointer-events-none absolute top-0 left-0 rounded-md",
           animate &&
             "transition-[transform,width,height] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none",
         )}

@@ -89,7 +89,7 @@ export function DeleteProjectDialog({
           <Label htmlFor="delete-project-confirm">{t('project.delete.confirmLabel')}</Label>
           <div className="flex items-center gap-2">
             {/* `select-all`: un toque o un triple click lo marca entero para copiarlo a mano. */}
-            <code className="min-w-0 flex-1 select-all break-words rounded-md bg-muted px-3 py-1.5 font-mono text-sm">
+            <code className="min-w-0 flex-1 select-all break-words rounded-md bg-secondary px-3 py-1.5 font-mono text-sm">
               {projectName}
             </code>
             <Button

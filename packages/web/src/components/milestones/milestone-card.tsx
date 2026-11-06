@@ -140,7 +140,7 @@ export function MilestoneCard({
         <div
           aria-hidden
           className={cn(
-            'flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground',
+            'flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground',
             critical && 'bg-tag-danger-bg text-tag-danger-fg',
           )}
         >
@@ -262,7 +262,7 @@ function Evidence({ attachments }: { attachments: MilestoneAttachment[] }) {
                   src={image.url ?? undefined}
                   alt={image.fileName}
                   loading="lazy"
-                  className="size-16 rounded-md border border-border bg-muted object-cover md:size-20"
+                  className="size-16 rounded-md border border-border bg-secondary object-cover md:size-20"
                 />
                 {/* El "+N" va sobre la última miniatura, no en una celda aparte. */}
                 {hiddenImages > 0 && index === shownImages.length - 1 && (
@@ -281,7 +281,7 @@ function Evidence({ attachments }: { attachments: MilestoneAttachment[] }) {
             <li key={file.id} className="min-w-0">
               <EvidenceLink
                 attachment={file}
-                className="flex max-w-60 items-center gap-1.5 rounded-sm border border-border px-2 py-1 text-xs hover:bg-accent"
+                className="flex max-w-60 items-center gap-1.5 rounded-sm border border-border px-2 py-1 text-xs hover:bg-secondary"
               >
                 <FileText className="size-3.5 shrink-0 text-muted-foreground" />
                 <span className="truncate">{file.fileName}</span>

@@ -592,7 +592,7 @@ function ActivityProvidersSection({
           {assigned.map((provider) => (
             <li
               key={provider.id}
-              className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-sm"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1 text-sm"
             >
               <span>{provider.name}</span>
               <span className="text-muted-foreground">
@@ -954,7 +954,7 @@ const TOOLBAR_H = 'h-10';
 /** El selector de escala del Cronograma, con la misma superficie suave que los tabs (`ui/tabs.tsx`). */
 const SEGMENT_LIST = 'h-10 gap-1 rounded-lg bg-card p-1 shadow-surface';
 const SEGMENT_TOGGLE =
-  'h-full rounded-md px-4 text-muted-foreground transition-colors duration-300 hover:bg-transparent hover:text-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground';
+  'h-full rounded-md px-4 text-muted-foreground transition-colors duration-300 hover:bg-transparent hover:text-foreground data-[state=on]:bg-secondary data-[state=on]:text-foreground';
 
 const VIEW_ICON: Record<'gantt' | 'board' | 'list', LucideIcon> = {
   gantt: CalendarRange,

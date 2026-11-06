@@ -51,7 +51,7 @@ es siempre correcto.
 |---|---|---|
 | `background` | `#101010` | Lienzo — el único fondo de página |
 | `card` / `popover` / `sidebar` | `#1a1a1a` | Una card se despega del fondo por **color**, no sólo por filete |
-| `secondary` / `muted` / `accent` | `#242424` | Chips, hover de menú, un escalón **arriba** de la card |
+| `secondary` | `#242424` | Chips, hover de menú, un escalón **arriba** de la card. Antes también se llamaba `muted` y `accent`: en HeroUI esos nombres son el texto secundario y la marca (ver `styles/heroui.css`) |
 
 El escalón de `secondary` no es capricho: un badge o un hover viven casi siempre
 encima de una card. Si compartieran hex con la superficie que los contiene,
@@ -176,7 +176,7 @@ Dos reglas:
    Lo comparten el Tabs, el botón (`outline`, ghost) y el buscador
    (`SearchField`). Lo que dice "esto se toca" es el relleno y la sombra, no
    un marco: **no hay variante "de contorno"**. La pestaña seleccionada y el
-   hover se marcan con un gris (`muted`/`accent`), no con un borde.
+   hover se marcan con un gris (`secondary`), no con un borde.
 2. **El hijo va un escalón abajo del padre.** Un input `rounded-sm` dentro de una
    card `rounded-3xl`. Un radio interno mayor que el del contenedor deja una luz
    visible en la esquina.
@@ -207,39 +207,32 @@ lleva una sombra suave de apoyo.
 
 Nada de `shadow-glow`: un resplandor de marca no es profundidad.
 
-### Relieve de los botones
+### Botones — HeroUI v3
 
-| Rol | Qué es | Uso |
-|---|---|---|
-| `shadow-cta` | Bisel claro abajo, adentro, y sombra negra de apoyo | Botón con relleno: primario y destructivo |
-| `shadow-raised` | Filete claro arriba y la misma sombra, sin bisel | Botón secundario — superficie neutra elevada |
-| `shadow-cta-pressed` | Sombra interna: la luz se va adentro | `:active` de los dos anteriores |
-
-El outline lleva `shadow-surface` y fondo `card`, sin borde: lo levanta la sombra
-suave, la misma de los tabs. Las sombras de afuera son negras siempre — el
-relieve es luz y sombra, no un halo verde.
-
-`cn()` registra estas sombras en `tailwind-merge` (`lib/utils.ts`): sin eso
-las toma por un color de sombra y no resuelve el conflicto con `shadow-none`.
+Desde ADR-003 los botones son las variantes de HeroUI sobre los tokens de Luma
+(`styles/heroui.css`). **Sin relieve**: `shadow-cta`, `shadow-raised` y
+`shadow-cta-pressed` ya no los usa ningún componente (los tokens quedan definidos,
+sólo los ejercita `lib/utils.spec.ts`; se borran cuando se confirme el cambio).
+Las sombras de afuera siguen siendo negras: no hay halo verde.
 
 ## Componentes
 
-Los botones salen de una referencia de cuatro estados —elevado, contorno,
-relleno con bisel, relleno con anillo— traducida al lienzo oscuro:
+**Botón** (`components/ui/button.tsx`) — `rounded-md`, `h-9` (`h-10` en móvil y en
+`lg`). Las variantes conservan los nombres de shadcn y suman los de HeroUI:
 
-**Botón primario** — `rounded-md`, `bg-primary text-primary-foreground`, filete
-`primary-pressed`, `shadow-cta`. Hover `primary-pressed`, `:active`
-`shadow-cta-pressed`. Altura `h-9`, o `h-10` en `lg`.
+| Variante | HeroUI | Aspecto |
+|---|---|---|
+| `default` (`primary`) | `primary` | `bg-primary text-primary-foreground`; hover y presionado, un 10 % hacia el texto |
+| `secondary` | `secondary` | Gris `secondary`, texto `foreground` (no el verde que trae HeroUI) |
+| `tertiary` | `tertiary` | Gris `secondary`, texto heredado |
+| `outline` | `outline` | Fondo `card`, `--surface-shadow`, **sin borde**: no hay variante "de contorno". Dentro de una Card suma un aro de 1px al 20 % |
+| `ghost` | `ghost` | Sin fondo ni borde; hover en `secondary`. Es el de los íconos sueltos |
+| `destructive` (`danger`) | `danger` | `bg-destructive`; `danger-soft` es la versión tenue |
+| `link` | — | Texto `brand` subrayado al pasar; sin caja |
 
-**Botón secundario** — `rounded-md`, `bg-secondary`, `shadow-raised`. Hover sube el
-brillo; `:active` igual que el primario.
-
-**Botón outline** — `rounded-md`, fondo `card` (blanco), `shadow-surface`, **sin
-borde**, texto `foreground`; hover en `accent`. No va en verde: son los
-"Cancelar" y "Volver" del panel, y el verde es para la acción principal.
-
-**Botón ghost** — `rounded-md`, sin fondo ni borde; hover en `accent`. Es el de
-los íconos sueltos (anterior/siguiente, "…").
+No va en verde el "Cancelar" ni el "Volver": el verde es para la acción principal.
+Se escribe como `<Button>`; para un enlace con aspecto de botón, `asChild` o
+`buttonVariants()`.
 
 **Buscador** — `SearchField` (`components/common/search-field.tsx`): `rounded-md`,
 `bg-card`, `shadow-surface`, sin borde, lupa a la izquierda. El foco es el anillo
@@ -248,7 +241,7 @@ verde. Los demás campos de un formulario conservan su borde: es lo que dice
 
 **Tabs** — la base del criterio. Contenedor `rounded-lg` blanco con
 `shadow-surface`; cada pestaña `rounded-md`, `h-9`, **siempre con ícono**; la
-activa en `bg-muted` y el fondo se desliza de una a otra (300 ms).
+activa en `bg-secondary` y el fondo se desliza de una a otra (300 ms).
 
 **Card de obra (inicio del panel)** — `ProjectCard` en `admin-home.tsx`. Es la
 pieza más central de la app —es desde donde se entra a trabajar—, así que tiene

@@ -1,4 +1,9 @@
 /**
+ * Los estados de un campo de texto, en un solo lugar (ADR-003, fase 2: el aspecto
+ * sale de `.input` de HeroUI —reposo, hover, foco, error y deshabilitado— sobre
+ * los tokens de Luma; `heroui.css` hace que `aria-invalid` cuente como error).
+ * Lo que sigue es el contrato original, de referencia:
+ *
  * Los seis estados de un campo de texto, en un solo lugar. Input, Textarea y
  * SelectTrigger los comparten: un campo que cambia distinto a su vecino se lee
  * como un bug, no como un detalle.
@@ -15,13 +20,7 @@
  * `not-aria-invalid` y `not-focus-visible` evitan que hover o "completo" pisen
  * al error y al foco: tienen más especificidad que `aria-invalid:` y `focus-visible:`.
  */
-export const fieldBase = [
-  'border-input bg-field shadow-xs transition-[color,box-shadow,border-color] outline-none',
-  'enabled:not-aria-invalid:not-focus-visible:hover:border-foreground/65',
-  'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-  'aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:ring-[3px] dark:aria-invalid:ring-destructive/40',
-  'disabled:border-border disabled:cursor-not-allowed disabled:bg-field-disabled disabled:text-muted-foreground disabled:opacity-60',
-].join(' ')
+export const fieldBase = 'input input--primary'
 
 /**
  * "Completo": sólo Input y Textarea (`:placeholder-shown`). Exige el atributo

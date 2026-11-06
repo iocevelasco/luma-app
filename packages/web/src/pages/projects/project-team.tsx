@@ -224,7 +224,7 @@ function InviteMemberDrawer({ projectId, slots }: { projectId: string; slots: Ma
                         locked && 'cursor-not-allowed opacity-60',
                         field.value === option
                           ? 'border-primary bg-primary/5'
-                          : 'border-border hover:bg-accent',
+                          : 'border-border hover:bg-secondary',
                         locked && 'hover:bg-transparent',
                       )}
                     >

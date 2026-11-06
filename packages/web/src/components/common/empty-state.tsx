@@ -41,7 +41,7 @@ export function EmptyState({
       )}
       data-testid="empty-state"
     >
-      <div className="flex size-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <div className="flex size-16 items-center justify-center rounded-full bg-secondary text-muted-foreground">
         <Icon className="size-7" aria-hidden="true" />
       </div>
 

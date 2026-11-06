@@ -20,7 +20,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
       <p
         className={cn(
           'max-w-[85%] whitespace-pre-wrap rounded-md px-3 py-2 text-sm',
-          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
+          isUser ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground',
         )}
       >
         {message.content}
@@ -92,7 +92,7 @@ export function ProjectAdvisorPage() {
             )}
             {sendMessage.isPending && (
               <div className="flex justify-start">
-                <p className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm text-muted-foreground">
                   <Loader2 className="size-3.5 animate-spin" />
                   {t('advisor.thinking')}
                 </p>

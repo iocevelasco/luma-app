@@ -234,7 +234,7 @@ function MaterialsCard({ projectId }: { projectId: string }) {
                     <li key={material.id}>
                       <Link
                         to={projectMaterialPath(projectId, material.id)}
-                        className="-mx-2 flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="-mx-2 flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm font-medium hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <span className="truncate">{material.name}</span>
                         <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

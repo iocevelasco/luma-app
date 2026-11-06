@@ -107,7 +107,7 @@ export function ProjectNavScroller() {
               'flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors',
               isActive
                 ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent',
+                : 'text-muted-foreground hover:bg-secondary',
             )}
           >
             <Icon className="size-4" />

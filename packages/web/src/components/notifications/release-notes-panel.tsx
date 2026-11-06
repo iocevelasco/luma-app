@@ -73,7 +73,7 @@ export function ReleaseNotesDialog({
                           'flex size-10 shrink-0 items-center justify-center rounded-xl',
                           item.kind === 'new'
                             ? 'bg-primary/15 text-primary'
-                            : 'bg-muted text-muted-foreground',
+                            : 'bg-secondary text-muted-foreground',
                         )}
                       >
                         <Icon className="size-5" />

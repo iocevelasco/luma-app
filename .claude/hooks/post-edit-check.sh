@@ -83,7 +83,7 @@ case "$REL" in
     esac
 
     BTN=$(grep -nE '<Button[^>]*className="[^"]*(rounded|shadow)-' "$FILE" || true)
-    [ -n "$BTN" ] && add "Button con rounded-* o shadow-* propio — Button ya trae la forma (rounded-md, igual que los Tabs) y el relieve; un override rompe el criterio y pisa el bisel (y un shadow-<color> lo pinta entero):"$'\n'"$(lines "$BTN")"
+    [ -n "$BTN" ] && add "Button con rounded-* o shadow-* propio — Button ya trae la forma (rounded-md, igual que los Tabs) y sus colores (HeroUI sobre los tokens de Luma); un override rompe el criterio (y un shadow-<color> lo pinta entero):"$'\n'"$(lines "$BTN")"
     ;;
 esac
 
@@ -100,7 +100,7 @@ esac
 # ── 4. Componentes de shadcn: no se editan ──────────────────────────────────
 case "$REL" in
   packages/web/src/components/ui/*)
-    add "Estás editando un componente de components/ui/. Esos no se editan: se extienden por className o se envuelven. La excepción es un cambio del sistema de diseño que DEBE vivir en el componente (el radio o el color del Button, por ejemplo) — si es eso, seguí; si no, envolvelo."
+    add "Estás editando un componente de components/ui/. Son adaptadores (shadcn → HeroUI v3, ADR-003): se editan SÓLO para migrarlos según docs/design/heroui-componentes.md o por un cambio del sistema de diseño que deba vivir en el componente. Un ajuste de pantalla se hace por className o envolviéndolo."
     ;;
 esac
 

@@ -46,7 +46,7 @@ export function ExpenseMaterials({
               {canOpenPurchases ? (
                 <Link
                   to={projectMaterialPath(projectId, material.id)}
-                  className="block truncate rounded-sm px-2 py-1.5 hover:bg-accent"
+                  className="block truncate rounded-sm px-2 py-1.5 hover:bg-secondary"
                 >
                   {material.name}
                 </Link>

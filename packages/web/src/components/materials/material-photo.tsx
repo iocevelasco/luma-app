@@ -34,7 +34,7 @@ export function MaterialPhotoThumb({ url, name }: { url: string; name: string })
     <>
       <button
         type="button"
-        className="size-11 shrink-0 overflow-hidden rounded-md border border-border bg-muted sm:size-10"
+        className="size-11 shrink-0 overflow-hidden rounded-md border border-border bg-secondary sm:size-10"
         aria-label={t('material.photo.open', { name })}
         onClick={() => setOpen(true)}
       >
@@ -100,7 +100,7 @@ export function MaterialPhotoField({
     <div className="flex flex-col gap-2 sm:col-span-2">
       <p className="text-sm font-medium leading-none">{t('material.photo.label')}</p>
       <div className="flex items-center gap-3">
-        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-md border border-dashed border-border bg-muted text-muted-foreground">
+        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-md border border-dashed border-border bg-secondary text-muted-foreground">
           {shown ? (
             <img src={shown} alt={t('material.photo.previewAlt')} className="size-full object-cover" />
           ) : (

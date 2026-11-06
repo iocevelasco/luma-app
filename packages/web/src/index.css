@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+/* HeroUI v3: va antes de nuestro @theme para que, en los nombres que comparten, gane el de Luma. */
+@import './styles/heroui.css';
 
 /*
   `dark:` aplica en todo lo que cuelga de `.dark`, salvo dentro de una
@@ -55,10 +57,13 @@
   --secondary: #242424;
   --secondary-foreground: #f2f2f2;
 
-  --muted: #242424;
+  /*
+    `--muted` y `--accent` no están acá a propósito: en HeroUI son el texto
+    secundario y el color de marca, y el puente (`styles/heroui.css`) los define
+    a partir de `--muted-foreground` y `--primary`. La superficie de hover que
+    antes se llamaba `accent`/`muted` es `secondary` (mismo valor).
+  */
   --muted-foreground: #bdbdbd; /* body — texto secundario */
-  --accent: #242424;
-  --accent-foreground: #f2f2f2;
 
   --destructive: #e8455a;
   --destructive-foreground: #101010;
@@ -183,10 +188,7 @@
 
   --secondary: #ececef; /* un escalón sobre el lienzo: si no, TabsList y hovers desaparecen */
   --secondary-foreground: #18181b;
-  --muted: #ececef; /* un escalón sobre el lienzo: si no, TabsList y hovers desaparecen */
   --muted-foreground: #52525b;
-  --accent: #ececef; /* un escalón sobre el lienzo: si no, TabsList y hovers desaparecen */
-  --accent-foreground: #18181b;
 
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
@@ -544,7 +546,7 @@ select:-webkit-autofill {
 .luma-filemanager .wx-theme {
   --wx-font-family: var(--font-sans);
   --wx-background: var(--card);
-  --wx-background-alt: var(--muted);
+  --wx-background-alt: var(--secondary);
   --wx-color-primary: var(--primary);
   /* Texto sobre el verde: #101010 (10.3:1), nunca blanco. */
   --wx-color-primary-font: var(--primary-foreground);
@@ -586,7 +588,7 @@ select:-webkit-autofill {
     que pasan por debajo—. Fondo blanco (`card`).
   */
   --wx-background: var(--card);
-  --wx-background-alt: var(--muted);
+  --wx-background-alt: var(--secondary);
   --wx-gantt-border-color: var(--luma-gantt-line);
   --wx-gantt-border: 1px solid var(--luma-gantt-line);
   --wx-grid-body-row-border: 1px solid var(--luma-gantt-line);

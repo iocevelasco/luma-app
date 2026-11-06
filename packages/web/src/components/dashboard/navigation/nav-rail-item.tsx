@@ -54,7 +54,7 @@ export function NavRailItem({
             'flex size-11 shrink-0 items-center justify-center rounded-full transition-colors',
             isActive
               ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
           )}
         >
           <Icon className="size-5" />

@@ -39,7 +39,7 @@ function CardTile({ className, ...props }: React.ComponentProps<'button'>) {
       data-slot="card-tile"
       className={cn(
         'bg-background text-muted-foreground flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-3 text-xs font-medium transition-colors outline-none',
-        'hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+        'hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
         'disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-5 [&>svg]:shrink-0',
         className,
       )}

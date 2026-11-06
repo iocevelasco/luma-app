@@ -95,7 +95,7 @@ export function ActivityTable({
                 const cell = item.periods?.[period];
                 return (
                   <Fragment key={item.role}>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40">
+                    <TableRow className="bg-secondary/40 hover:bg-secondary/40">
                       <TableHead scope="rowgroup" className="text-foreground">
                         {t(`platform.activity.roles.${item.role}`)}
                       </TableHead>

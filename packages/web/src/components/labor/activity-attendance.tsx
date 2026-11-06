@@ -283,7 +283,7 @@ function CrewRow({
           onClick={onToggle}
           className={cn(
             'flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left',
-            canMarkAttendance && 'hover:bg-accent',
+            canMarkAttendance && 'hover:bg-secondary',
           )}
           aria-pressed={present}
         >

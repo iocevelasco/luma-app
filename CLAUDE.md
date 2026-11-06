@@ -15,7 +15,7 @@ parece nuevo suele ser un campo o un estado de un modelo que ya está.
 | Paquete | Qué es |
 |---|---|
 | `packages/api` | Node + Express 4 + Mongoose 8 + TypeScript ESM |
-| `packages/web` | Vite 6 + React 19 + Tailwind v4 + shadcn/ui |
+| `packages/web` | Vite 6 + React 19 + Tailwind v4 + HeroUI v3 (migrando desde shadcn/ui, ADR-003) |
 | `packages/landing` | Vite + React + i18next, estática, servida por nginx |
 | `packages/shared` | Tipos + schemas Zod que comparten API y web |
 | `shared/` (raíz) | Archivos que usan varios paquetes sin build ni dependencias (hoy los trazos del logo). Alias `@shared/*` en web y landing; los dos Dockerfiles la copian. No es un paquete de pnpm ni se confunde con `packages/shared` |
@@ -208,8 +208,12 @@ chrome del panel es oscuro y el área de contenido, clara (`.surface-light`). Si
 - **Tailwind v4**: no hay `tailwind.config.js`; los tokens viven en
   `packages/web/src/index.css` y `packages/landing/src/index.css`.
 - Clases siempre con `cn()` de `@/lib/utils`.
-- **shadcn/ui**: `components/ui/` no se edita; se extiende por `className` o se
-  envuelve. Excepción: un cambio del sistema que tiene que vivir en el componente.
+- **`components/ui/`** son adaptadores: shadcn por dentro, HeroUI v3 cada vez más
+  (qué migró y qué sigue: `docs/design/heroui-componentes.md`, decisión en
+  `docs/adr/003-heroui-v3.md`). Se editan sólo para migrarlos; un ajuste de
+  pantalla va por `className` o envolviéndolos. **`accent` y `muted` son de HeroUI**
+  (la marca y el texto secundario, `styles/heroui.css`): el gris de hover o de
+  superficie se llama `secondary`.
 - **Tokens semánticos, no colores crudos**: `bg-background`, `bg-card`,
   `text-muted-foreground`, `bg-primary text-primary-foreground` (texto sobre el
   verde: `#101010`, nunca blanco). `destructive` es peligro, no marca.

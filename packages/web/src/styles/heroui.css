@@ -1,0 +1,169 @@
+/*
+  Puente entre HeroUI v3 y los tokens de Luma (ADR-003).
+
+  HeroUI trae sus propios tokens (`--accent`, `--muted`, `--surface`…). Acá se
+  DEFINEN A PARTIR DE los de Luma —no se duplica ningún color— y se declaran en
+  los mismos selectores que ya cambian de tema (`:root`, `.surface-light`,
+  `.surface-dark`), así que un componente de HeroUI dentro de una superficie
+  clara se pinta claro sin saber nada de ella.
+
+  Dos nombres significan otra cosa que en shadcn:
+    --accent   HeroUI: color de marca.   Luma antes: gris de hover → hoy `secondary`.
+    --muted    HeroUI: texto secundario. Luma antes: superficie    → hoy `secondary`.
+  Se renombró el lado de Luma porque el CSS de HeroUI vive en node_modules.
+
+  Se importa de a una pieza (no `@heroui/styles` entero): cada componente que se
+  migra suma su CSS acá. Rutas relativas porque el resolver de postcss-import no
+  entiende el `exports` con doble `*` de @heroui/styles.
+*/
+@import '../../node_modules/@heroui/styles/dist/themes/shared/theme.css';
+@import '../../node_modules/@heroui/styles/dist/utilities/index.css';
+@import '../../node_modules/@heroui/styles/dist/components/button.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/input.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/textarea.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/label.css' layer(components);
+
+/*
+  Sin `@reference`: este archivo se importa DESDE index.css, así que es parte de
+  la misma compilación de Tailwind y el @apply de HeroUI ya ve nuestros tokens.
+*/
+
+:root,
+.surface-dark,
+.surface-light {
+  /* Primitivos que usan las utilidades y los estados de HeroUI. */
+  --white: #ffffff;
+  --black: #000000;
+  --snow: oklch(0.9911 0 0);
+  --eclipse: oklch(0.2103 0.0059 285.89);
+  --border-width: 1px;
+  --field-border-width: 1px;
+  --disabled-opacity: 0.5;
+  --ring-offset-width: 2px;
+  --cursor-interactive: pointer;
+  --cursor-disabled: not-allowed;
+  --backdrop: rgb(0 0 0 / 0.5);
+
+  /* Base: salen de los tokens de Luma. */
+  --default: var(--secondary);
+  --default-foreground: var(--secondary-foreground);
+  --surface: var(--card);
+  --surface-foreground: var(--card-foreground);
+  --surface-secondary: var(--secondary);
+  --surface-secondary-foreground: var(--secondary-foreground);
+  --surface-tertiary: color-mix(in oklab, var(--secondary) 92%, var(--foreground) 8%);
+  --surface-tertiary-foreground: var(--secondary-foreground);
+  --overlay: var(--popover);
+  --overlay-foreground: var(--popover-foreground);
+  --muted: var(--muted-foreground);
+
+  /* El verde sólo es "acento" como relleno; como texto sobre claro baja a `--brand`. */
+  --accent: var(--primary);
+  --accent-foreground: var(--primary-foreground);
+  --accent-soft-foreground: var(--brand);
+
+  --danger: var(--destructive);
+  --danger-foreground: var(--destructive-foreground);
+
+  --focus: var(--ring);
+  --link: var(--brand);
+  --separator: var(--border);
+  --segment: var(--card);
+  --segment-foreground: var(--card-foreground);
+
+  --field-background: var(--field);
+  --field-foreground: var(--foreground);
+  --field-placeholder: var(--muted-foreground);
+  --field-border: var(--input);
+  --field-radius: var(--radius-sm);
+
+  /* Derivados: `color-mix()` se resuelve donde se declara, por eso viven en el mismo bloque. */
+  --surface-hover: color-mix(in oklab, var(--surface) 92%, var(--surface-foreground) 8%);
+  --background-secondary: color-mix(in oklab, var(--background) 96%, var(--foreground) 4%);
+  --background-tertiary: color-mix(in oklab, var(--background) 92%, var(--foreground) 8%);
+  --background-inverse: var(--foreground);
+
+  --default-hover: color-mix(in oklab, var(--default) 96%, var(--default-foreground) 4%);
+  --accent-hover: color-mix(in oklab, var(--accent) 90%, var(--accent-foreground) 10%);
+  --success-hover: color-mix(in oklab, var(--success) 90%, var(--success-foreground) 10%);
+  --warning-hover: color-mix(in oklab, var(--warning) 90%, var(--warning-foreground) 10%);
+  --danger-hover: color-mix(in oklab, var(--danger) 90%, var(--danger-foreground) 10%);
+
+  --default-soft: color-mix(in oklab, var(--default) 50%, transparent);
+  --default-soft-foreground: var(--default-foreground);
+  --default-soft-hover: color-mix(in oklab, var(--default) 60%, transparent);
+
+  --accent-soft: color-mix(in oklab, var(--accent) 15%, transparent);
+  --accent-soft-hover: color-mix(in oklab, var(--accent) 20%, transparent);
+
+  --danger-soft: color-mix(in oklab, var(--danger) 15%, transparent);
+  --danger-soft-foreground: color-mix(in oklab, var(--danger) 70%, var(--foreground) 40%);
+  --danger-soft-hover: color-mix(in oklab, var(--danger) 20%, transparent);
+
+  --warning-soft: color-mix(in oklab, var(--warning) 15%, transparent);
+  --warning-soft-foreground: color-mix(in oklab, var(--warning) 80%, var(--foreground) 70%);
+  --warning-soft-hover: color-mix(in oklab, var(--warning) 20%, transparent);
+
+  --success-soft: color-mix(in oklab, var(--success) 15%, transparent);
+  --success-soft-foreground: color-mix(in oklab, var(--success) 80%, var(--foreground) 60%);
+  --success-soft-hover: color-mix(in oklab, var(--success) 20%, transparent);
+
+  --separator-secondary: color-mix(in oklab, var(--surface) 85%, var(--surface-foreground) 15%);
+  --separator-tertiary: color-mix(in oklab, var(--surface) 81%, var(--surface-foreground) 19%);
+  --border-secondary: color-mix(in oklab, var(--surface) 78%, var(--surface-foreground) 22%);
+  --border-tertiary: color-mix(in oklab, var(--surface) 66%, var(--surface-foreground) 34%);
+}
+
+/*
+  La escala `--radius-*` de Luma pisa la de HeroUI (derivada de `--radius`), y el
+  Button usa `rounded-3xl`: saldría en píldora de 28px. En el panel el botón es
+  `rounded-md` (DESIGN.md).
+*/
+.button {
+  border-radius: var(--radius-md);
+}
+
+/*
+  Dos reglas de DESIGN.md que el Button de HeroUI no trae:
+    · no hay variante "de contorno" en el panel: el outline es una superficie
+      blanca (`card`) levantada por la sombra suave, sin marco;
+    · el verde es de la acción principal: el `secondary` lleva texto neutro, no
+      el verde de `--accent-soft-foreground` que le da HeroUI.
+  Sobre una Card blanca, el botón y su fondo son el mismo blanco: ahí (y sólo
+  ahí) suma un aro de 1px al 20%.
+*/
+.button--outline {
+  border-width: 0;
+  --button-bg: var(--card);
+  --button-bg-hover: var(--secondary);
+  --button-bg-pressed: var(--secondary);
+  --button-fg: var(--foreground);
+  box-shadow: var(--surface-shadow);
+}
+
+[data-slot='card'] .button--outline {
+  box-shadow:
+    0 0 0 1px rgb(24 24 27 / 0.2),
+    var(--surface-shadow);
+}
+
+.button--secondary {
+  --button-fg: var(--secondary-foreground);
+}
+
+/*
+  HeroUI marca el error con `data-invalid`; los formularios de Luma, con
+  `aria-invalid` (react-hook-form + los call-sites). Mismo estado, dos nombres.
+*/
+.input[aria-invalid='true'],
+.textarea[aria-invalid='true'] {
+  @apply status-invalid-field;
+  --input-bg: var(--input-bg-focus);
+  background-color: var(--input-bg);
+}
+
+/* Luma: el campo vacío y en reposo lleva el borde del token `input` (3,3:1 sobre blanco, WCAG 1.4.11). */
+.input,
+.textarea {
+  --field-border: var(--input);
+}
