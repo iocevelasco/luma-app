@@ -246,6 +246,45 @@ export const NEXUSBOT_CONFIG = {
   ),
 } as const;
 
+function positiveInt(raw: string | undefined, fallback: number): number {
+  const value = Number(raw);
+  return Number.isInteger(value) && value > 0 ? value : fallback;
+}
+
+/**
+ * Tiempo real de obra (SSE, ver `services/live-hub.service.ts` y
+ * `docs/adr/002-tiempo-real-por-obra.md`).
+ *
+ * Son límites de diseño, no medidos: arrancan conservadores y se ajustan con
+ * lo que muestre `liveHub.stats()`. `LIVE_ENABLED=false` apaga el canal sin
+ * redeploy de código (sí de entorno): la SPA cae al polling sola.
+ *
+ * El hub vive **en memoria de este proceso**. Con más de una réplica de la API
+ * un cambio hecho en una no llegaría a los clientes de la otra: antes de
+ * escalar, el `EventBus` pasa a Redis (ver el ADR).
+ */
+export const LIVE_CONFIG = {
+  ENABLED: process.env.LIVE_ENABLED !== 'false',
+  /** Tope de conexiones abiertas en todo el proceso. Pasado esto, 503 y la SPA hace polling. */
+  MAX_CONNECTIONS: positiveInt(process.env.LIVE_MAX_CONNECTIONS, 500),
+  /** Pestañas abiertas por persona. Al pasarse se cierra la más vieja, no la nueva. */
+  MAX_CONNECTIONS_PER_USER: positiveInt(process.env.LIVE_MAX_CONNECTIONS_PER_USER, 4),
+  /** Latido. Mantiene viva la conexión detrás del proxy y le dice al cliente que sigue ahí. */
+  HEARTBEAT_MS: positiveInt(process.env.LIVE_HEARTBEAT_MS, 20_000),
+  /**
+   * Vida máxima de una conexión. El access token dura días y `isAuthenticated`
+   * sólo verifica la firma: reconectar es lo que vuelve a mirar si la cuenta
+   * sigue activa y si la persona sigue en la obra.
+   */
+  MAX_LIFETIME_MS: positiveInt(process.env.LIVE_MAX_LIFETIME_MS, 20 * 60 * 1000),
+  /** Ventana en que se juntan los avisos de una ráfaga (una importación de 50 filas es un solo aviso). */
+  COALESCE_MS: positiveInt(process.env.LIVE_COALESCE_MS, 150),
+  /** Cada cuánto el proceso loguea cuántas conexiones en vivo tiene (sólo si hay alguna). */
+  STATS_LOG_MS: positiveInt(process.env.LIVE_STATS_LOG_MS, 5 * 60 * 1000),
+  /** Si el socket acumula más que esto sin vaciarse, el cliente es demasiado lento y se lo corta. */
+  MAX_BUFFERED_BYTES: 64 * 1024,
+} as const;
+
 /**
  * Esquema del entorno. Las reglas que dependen de producción van en el refine:
  * en desarrollo se puede arrancar sin reCAPTCHA ni Resend, en producción no.

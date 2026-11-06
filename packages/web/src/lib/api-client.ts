@@ -299,6 +299,38 @@ class ApiClient {
     return response.blob();
   }
 
+  /**
+   * Abre una respuesta que no termina (SSE) y devuelve la `Response` sin leerla.
+   *
+   * Mismo manejo de sesión que el resto: un 401 renueva el token y reintenta
+   * una vez. Existe aparte porque `request` lo lee todo como JSON, y porque el
+   * `EventSource` nativo no puede mandar `Authorization`: con `fetch` el
+   * `Bearer` viaja en el header y nunca en la URL, donde quedaría en los logs.
+   *
+   * Un error de la API llega como `ApiError`, igual que en las demás llamadas.
+   * `performRequest` convierte hasta el `AbortError` en un `Error` genérico:
+   * quien cancela sabe que canceló (mira su `signal`).
+   */
+  async openStream(endpoint: string, signal: AbortSignal): Promise<Response> {
+    const config: RequestInit = {
+      method: 'GET',
+      headers: { Accept: 'text/event-stream' },
+      cache: 'no-store',
+      signal,
+    };
+
+    let response = await this.performRequest(endpoint, config, false);
+
+    if (response.status === 401 && this.getToken()) {
+      const refreshed = await this.refreshSession();
+      if (refreshed) response = await this.performRequest(endpoint, config, false);
+    }
+
+    if (response.status === 401) return this.failUnauthorized(response);
+    if (!response.ok) return this.parse<never>(response);
+    return response;
+  }
+
   async post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
     const isFormData = data instanceof FormData;
     return this.request<T>(endpoint, {

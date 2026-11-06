@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { usePinnedWhileOpen } from '@/hooks/use-pinned-while-open';
 import { useParams } from 'react-router-dom';
 import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import {
@@ -207,6 +208,9 @@ function EditProviderDialog({
 }) {
   const { t } = useTranslation();
   const updateProvider = useUpdateProvider(projectId);
+  // El proveedor llega de una lista que se refresca sola: se congela mientras
+  // el formulario está abierto, o un cambio ajeno lo reiniciaría.
+  const pinned = usePinnedWhileOpen(provider, open);
 
   const {
     register,
@@ -220,14 +224,14 @@ function EditProviderDialog({
     // lo acepta: cambiar el alcance de un proveedor ya creado no es un edit,
     // es una decisión aparte que hoy no existe.
     values: {
-      name: provider.name,
-      companyName: provider.companyName,
-      specialty: provider.specialty,
-      customSpecialty: provider.customSpecialty,
-      phone: provider.phone,
-      email: provider.email,
-      notes: provider.notes,
-      scope: provider.scope,
+      name: pinned.name,
+      companyName: pinned.companyName,
+      specialty: pinned.specialty,
+      customSpecialty: pinned.customSpecialty,
+      phone: pinned.phone,
+      email: pinned.email,
+      notes: pinned.notes,
+      scope: pinned.scope,
     },
   });
 

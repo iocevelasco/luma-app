@@ -10,6 +10,7 @@ import type {
 import { providersApi } from '@/api/providers';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { POLLED_LIST } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-activity-queries.ts`. */
@@ -23,6 +24,7 @@ export function useProviders(projectId: string | undefined) {
     queryKey: [QueryKeys.providers, projectId],
     queryFn: () => providersApi.list(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...POLLED_LIST,
   });
 }
 

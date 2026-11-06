@@ -9,6 +9,7 @@ import type {
 import { financeApi } from '@/api/finance';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { POLLED_LIST } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
@@ -32,6 +33,7 @@ export function usePaymentSchedule(projectId: string | undefined) {
     queryKey: [QueryKeys.paymentSchedule, projectId],
     queryFn: () => financeApi.schedule(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...POLLED_LIST,
   });
 }
 
@@ -42,6 +44,7 @@ export function usePayments(projectId: string | undefined) {
     queryKey: [QueryKeys.payments, projectId],
     queryFn: () => financeApi.payments(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...POLLED_LIST,
   });
 }
 
@@ -120,6 +123,7 @@ export function useExpenses(projectId: string | undefined) {
     queryKey: [QueryKeys.expenses, projectId],
     queryFn: () => financeApi.expenses(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...POLLED_LIST,
   });
 }
 
@@ -130,6 +134,7 @@ export function useFinanceSummary(projectId: string | undefined) {
     queryKey: [QueryKeys.financeSummary, projectId],
     queryFn: () => financeApi.summary(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...POLLED_LIST,
   });
 }
 
@@ -175,5 +180,6 @@ export function usePayroll(projectId: string | undefined, from?: string, to?: st
     queryKey: [QueryKeys.payroll, projectId, from, to],
     queryFn: () => financeApi.payroll(projectId!, from!, to!),
     enabled: isAuthenticated && !!projectId && !!from && !!to,
+    ...POLLED_LIST,
   });
 }
