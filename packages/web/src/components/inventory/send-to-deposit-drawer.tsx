@@ -77,7 +77,7 @@ export function SendToDepositDrawer({
       }}
       title={t('inventory.deposit.sendTitle', { name: item?.name ?? '' })}
       description={t('inventory.deposit.sendHint')}
-      fieldCount={4}
+      fieldCount={3}
       submitLabel={t('inventory.deposit.sendSubmit')}
       isSubmitting={send.isPending}
       error={send.error}
@@ -85,7 +85,11 @@ export function SendToDepositDrawer({
         send.mutate({ ...values, note: values.note || undefined }, { onSuccess: close }),
       )}
     >
-      <div className="grid gap-4 sm:grid-cols-2">
+      {/*
+        Una columna: en un panel angosto el rótulo «Costo unitario de referencia» ocupa
+        dos líneas (más en pt) y empuja su campo hacia abajo del de al lado.
+      */}
+      <div className="grid gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="deposit-quantity">{t('inventory.movement.quantity')}</Label>
           <Input
@@ -119,7 +123,7 @@ export function SendToDepositDrawer({
           {errors.unitCost && <p className="text-sm text-destructive">{errors.unitCost.message}</p>}
         </div>
 
-        <div className="flex flex-col gap-2 sm:col-span-2">
+        <div className="flex flex-col gap-2">
           <Label htmlFor="deposit-note">{t('inventory.movement.note')}</Label>
           <Textarea id="deposit-note" rows={2} {...register('note')} />
         </div>
