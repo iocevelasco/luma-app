@@ -85,6 +85,7 @@ Restricciones que mandan:
 | **Presencia ("quién está viendo")** | Pide canal bidireccional, expone actividad individual (se puede leer como monitoreo laboral) y no resuelve el riesgo real, que es pisar cambios. |
 | **Compartir la conexión entre pestañas** | Optimización de escritorio que hoy no se justifica; el servidor ya limita por persona. |
 | **Dinero en vivo** (cobros, gastos, resumen) | Lo ven pocas personas y la fuga de metadatos pesa más que la ventaja. Va por polling. |
+| **Inventario y Depósito en vivo** | Lo ven pocas personas a la vez y el Depósito lleva costos. Va por polling de 30 s (`POLLED_LIST`), igual que el resto de las listas; Compras avisa al inventario con una invalidación al cambiar el estado de un material. |
 
 ## Trade-offs
 

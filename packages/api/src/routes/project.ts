@@ -22,6 +22,7 @@ import {
   updateProject,
 } from '../controllers/index.js';
 import { activityRouter } from './activity.js';
+import { inventoryRouter } from './inventory.js';
 import { materialRouter } from './material.js';
 import { laborRouter } from './labor.js';
 import { budgetRouter } from './budget.js';
@@ -109,6 +110,7 @@ projectRouter.delete(
 // refresca por polling en la SPA, así que no cuelga nada acá.
 projectRouter.use('/:projectId/activities', publishLiveChanges, activityRouter);
 projectRouter.use('/:projectId/materials', publishLiveChanges, materialRouter);
+projectRouter.use('/:projectId/inventory', inventoryRouter);
 projectRouter.use('/:projectId/live', liveRouter);
 projectRouter.use('/:projectId/labor', laborRouter);
 projectRouter.use('/:projectId/budget', budgetRouter);

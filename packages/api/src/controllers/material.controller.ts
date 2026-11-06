@@ -16,6 +16,7 @@ import type { IProject } from '../models/Project.js';
 import { Provider, type IProvider } from '../models/Provider.js';
 import { MATERIAL_PHOTO_MIME_TO_EXTENSION } from '../middleware/material-photo-upload.middleware.js';
 import { visibleProviderFilter } from '../services/directory.service.js';
+import { recordPurchaseEntries } from '../services/inventory.service.js';
 import {
   deleteObject,
   openObject,
@@ -232,6 +233,8 @@ export const createMaterial = wrap(async (req, res) => {
       : {}),
   });
   const material = await created.populate('provider', PROVIDER_FIELDS);
+  // Un material cargado ya «En obra» entra al patio.
+  await recordPurchaseEntries([material]);
 
   // Exige una capacidad de escritura — quien la llama siempre puede ver el
   // detalle completo de lo que acaba de crear.
@@ -321,6 +324,10 @@ export const updateMaterial = wrap(async (req, res) => {
   // No matcheó: o se movió de estado entre la lectura y la escritura, o lo
   // borraron. Se vuelve a mirar para decir cuál de las dos.
   if (!material) throw await whyNotFound(existing._id, project._id);
+
+  // «En obra» es la entrada al patio. Va aunque el estado no haya cambiado en esta
+  // request: es idempotente, y reintentar el cambio completa una entrada que falló.
+  await recordPurchaseEntries([material]);
 
   // Exige una capacidad de escritura — quien la llama siempre puede ver el
   // detalle completo de lo que acaba de actualizar.
@@ -555,6 +562,11 @@ export const bulkUpdateMaterials = wrap(async (req, res) => {
       { _id: { $in: ids }, project: project._id, status: { $ne: status } },
       { $set: { status, statusChangedBy: req.user.sub, statusChangedAt: new Date() } },
     );
+    // Los que quedaron «En obra» entran al patio (los que ya lo estaban, también:
+    // es idempotente y completa lo que una falla anterior haya dejado afuera).
+    if (status === 'en_obra') {
+      await recordPurchaseEntries(await MaterialItem.find({ _id: { $in: ids }, project: project._id }));
+    }
   }
 
   return res.json({ success: true, data: { materialIds: ids } });

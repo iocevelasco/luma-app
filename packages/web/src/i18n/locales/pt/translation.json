@@ -55,8 +55,10 @@
     "hints": {
       "projects": "Todas as suas obras. Entre em uma para ver como está.",
       "providers": "O diretório de fornecedores da Empresa, compartilhado entre obras.",
-      "crew": "Os funcionários da Empresa: pessoal de obra e administrativo."
-    }
+      "crew": "Os funcionários da Empresa: pessoal de obra e administrativo.",
+      "deposit": "O material excedente da Empresa, pronto para usar em outra obra."
+    },
+    "deposit": "Depósito"
   },
   "appUpdate": {
     "title": "Há uma nova versão",
@@ -127,7 +129,8 @@
       "team": "Equipe",
       "payments": "Pagamentos",
       "expenses": "Despesas",
-      "aria": "Seções da obra"
+      "aria": "Seções da obra",
+      "inventory": "Estoque"
     },
     "navHint": {
       "back": "Volte para a lista de todas as suas obras.",
@@ -142,7 +145,8 @@
       "expenses": "O que saiu da obra, com data, moeda e comprovante.",
       "budget": "Cadastre ou importe o orçamento e compare com o comprometido.",
       "advisor": "Consulte a IA sobre a obra, com seu orçamento e seu avanço.",
-      "team": "Dê acesso à obra a supervisores, contadores e ao cliente."
+      "team": "Dê acesso à obra a supervisores, contadores e ao cliente.",
+      "inventory": "O que há no pátio da obra e quem retirou cada material."
     },
     "detail": {
       "gantt": "Cronograma de tarefas",
@@ -2376,6 +2380,130 @@
       "roles": "O que cada papel pode fazer em uma obra?",
       "advisor": "O que posso perguntar ao Consultor IA?",
       "money": "Qual a diferença entre gasto e recebido?"
+    }
+  },
+  "inventory": {
+    "tabs": {
+      "stock": "No pátio",
+      "kardex": "Kardex"
+    },
+    "empty": {
+      "title": "Ainda não há material no pátio",
+      "description": "O material entra sozinho quando você marca uma compra como «Na obra». Daqui você vai registrar o que é entregue, devolvido ou perdido."
+    },
+    "stock": {
+      "search": "Buscar material",
+      "noResults": "Nenhum material com esse nome.",
+      "meta": "Entrou {{received}} · Entregue {{consumed}} · Perda {{wasted}}",
+      "deliver": "Entregar",
+      "moreActions": "Mais ações de {{name}}",
+      "transferred": "Enviado ao Depósito {{quantity}}"
+    },
+    "level": {
+      "ok": "Em estoque",
+      "low": "Acabando",
+      "out": "Esgotado"
+    },
+    "kind": {
+      "compra": "Compra",
+      "devolucion": "Devolução",
+      "consumo": "Entrega",
+      "merma": "Perda",
+      "desincorporacion": "Ao depósito",
+      "importacion": "Do depósito",
+      "deposito_ingreso": "Entrada",
+      "deposito_egreso": "Saída"
+    },
+    "movement": {
+      "new": "Registrar saída",
+      "title": {
+        "devolucion": "Registrar devolução",
+        "consumo": "Registrar entrega",
+        "merma": "Registrar perda"
+      },
+      "kind": "Tipo",
+      "item": "Material",
+      "itemPlaceholder": "Escolha um material",
+      "quantity": "Quantidade",
+      "available": "Disponível: {{quantity}} {{unit}}",
+      "receiver": "Quem recebe",
+      "responsible": "Responsável",
+      "optional": "(opcional)",
+      "receiverPlaceholder": "Ex. Pedro Pérez / Alvenaria",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Ex. Endureceu com a chuva",
+      "activity": "Tarefa",
+      "noActivity": "Nenhuma",
+      "destination": "Zona ou frente",
+      "destinationPlaceholder": "Ex. Laje nível 2",
+      "note": "Observação",
+      "submit": "Registrar",
+      "saved": "Movimento registrado"
+    },
+    "kardex": {
+      "from": "De",
+      "to": "Até",
+      "item": "Material",
+      "allItems": "Todos os materiais",
+      "kind": "Tipo",
+      "allKinds": "Todos os tipos",
+      "receiver": "Buscar por quem recebeu",
+      "empty": "Ainda não há movimentos com esses filtros.",
+      "error": "Não foi possível carregar o kardex.",
+      "by": "Registrado por {{name}}"
+    },
+    "deposit": {
+      "import": "Importar do Depósito",
+      "send": "Enviar ao Depósito",
+      "sendTitle": "Enviar {{name}} ao Depósito",
+      "sendHint": "Sai desta obra e fica disponível para outra da Empresa.",
+      "sendSubmit": "Enviar",
+      "sent": "Enviado ao Depósito",
+      "imported": "Material importado",
+      "unitCost": "Custo unitário de referência ({{currency}})",
+      "unitCostHint": "Quanto valia uma unidade. Serve para calcular a economia ao reutilizá-la; com 0 não conta.",
+      "importTitle": "Importar do Depósito",
+      "importHint": "Entra nesta obra a custo 0, sem nota fiscal nem fornecedor. Deixe em branco o que não quiser trazer.",
+      "importSubmit": "Importar",
+      "importNothing": "O Depósito não tem material disponível.",
+      "importEmpty": "Informe a quantidade de pelo menos um material.",
+      "importQuantity": "Quantidade de {{name}} a importar",
+      "lineMeta": "Disponível: {{stock}} {{unit}} · Custo de ref. {{cost}}",
+      "freight": "Frete ({{currency}}, opcional)",
+      "freightHint": "Se mover o material custou um caminhão, é lançado como despesa desta obra.",
+      "freightNote": "Descrição do frete (opcional)",
+      "invalidQuantity": "A quantidade de {{name}} não é um número válido.",
+      "invalidFreight": "O frete não é um número válido."
+    }
+  },
+  "deposit": {
+    "tabs": {
+      "stock": "No depósito",
+      "history": "Histórico"
+    },
+    "empty": {
+      "title": "O Depósito está vazio",
+      "description": "Quando uma obra enviar material excedente, ele aparecerá aqui para usar em outra."
+    },
+    "savings": {
+      "title": "Economia por reutilização",
+      "reused_one": "{{count}} material reutilizado",
+      "reused_other": "{{count}} materiais reutilizados",
+      "deletedProject": "Obra excluída"
+    },
+    "stock": {
+      "title": "Material disponível",
+      "empty": "Não há material com esse nome no Depósito.",
+      "unitCost": "Custo de ref. {{cost}}",
+      "noCost": "Sem custo de referência"
+    },
+    "history": {
+      "from": "De {{name}}",
+      "to": "Para {{name}}"
+    },
+    "notOwner": {
+      "title": "Você não tem um Depósito",
+      "description": "O Depósito Geral é da Empresa e é visto pelos seus donos. Se você trabalha na obra de outra Empresa, o material excedente é gerenciado pelo dono dela."
     }
   }
 }

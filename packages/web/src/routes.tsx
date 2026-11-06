@@ -43,6 +43,9 @@ const ChatPrototypePage = lazy(() =>
 const EmployeesPage = lazy(() =>
   import('./pages/employees').then((m) => ({ default: m.EmployeesPage })),
 );
+const DepositPage = lazy(() =>
+  import('./pages/deposit').then((m) => ({ default: m.DepositPage })),
+);
 const ProvidersDirectoryPage = lazy(() =>
   import('./pages/providers-directory').then((m) => ({ default: m.ProvidersDirectoryPage })),
 );
@@ -59,6 +62,9 @@ const ProjectActivitiesPage = lazy(() =>
   import('./pages/projects/project-activities').then((m) => ({
     default: m.ProjectActivitiesPage,
   })),
+);
+const ProjectInventoryPage = lazy(() =>
+  import('./pages/projects/project-inventory').then((m) => ({ default: m.ProjectInventoryPage })),
 );
 const ProjectMaterialsPage = lazy(() =>
   import('./pages/projects/project-materials').then((m) => ({ default: m.ProjectMaterialsPage })),
@@ -174,6 +180,7 @@ export function AppRoutes() {
           />
           {/* Empresa se unificó con Empleados; los datos de la Empresa están en la cuenta. */}
           <Route path={ROUTES.COMPANY} element={<Navigate to={ROUTES.CREW} replace />} />
+          <Route path={ROUTES.DEPOSIT} element={<LazyRoute><DepositPage /></LazyRoute>} />
           <Route
             path={ROUTES.PROVIDERS}
             element={<LazyRoute><ProvidersDirectoryPage /></LazyRoute>}
@@ -208,6 +215,10 @@ export function AppRoutes() {
           <Route
             path={ROUTES.PROJECT_MATERIALS}
             element={<LazyRoute><ProjectMaterialsPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_INVENTORY}
+            element={<LazyRoute><ProjectInventoryPage /></LazyRoute>}
           />
           <Route
             path={ROUTES.PROJECT_LABOR}

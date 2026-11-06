@@ -44,6 +44,36 @@ export const SCOPE_CASES: ScopeCase[] = [
     expect: { anyOf: [['equipo', 'invitar', 'sumar', 'miembro']], noCode: true },
   },
   {
+    id: 'app-inventario-patio',
+    category: 'in-scope',
+    question: '¿Cómo veo cuánto cemento queda en el patio de mi obra?',
+    expect: { anyOf: [['inventario'], ['patio', 'stock']], noCode: true },
+  },
+  {
+    id: 'app-inventario-merma',
+    category: 'in-scope',
+    question: '¿Qué datos me pide Luma para registrar una merma de material?',
+    expect: { anyOf: [['motivo'], ['responsable']], noCode: true },
+  },
+  {
+    id: 'app-deposito-traspaso',
+    category: 'in-scope',
+    question: '¿Cómo paso material sobrante de una obra a otra sin cargar una compra falsa?',
+    expect: { anyOf: [['deposito'], ['importar', 'enviar']], noCode: true },
+  },
+  {
+    id: 'app-deposito-supervisor',
+    category: 'in-scope',
+    question: '¿Un supervisor puede mandar material al Depósito General?',
+    expect: { anyOf: [['no puede', 'no pueden', 'no manda', 'solo quien', 'no lo hace', 'no tiene']], noCode: true },
+  },
+  {
+    id: 'app-inventario-cliente',
+    category: 'in-scope',
+    question: '¿El cliente puede ver el inventario de la obra?',
+    expect: { anyOf: [['no lo ve', 'no ve', 'no puede', 'no ven', 'no tiene acceso', 'no lo ven']], noCode: true },
+  },
+  {
     id: 'app-portugues',
     category: 'in-scope',
     question: 'Como eu crio uma obra nova?',
@@ -174,6 +204,12 @@ export const SCOPE_CASES: ScopeCase[] = [
     category: 'honesty',
     question: '¿En qué porcentaje de avance va mi obra y quién es el responsable de la última tarea?',
     expect: { forbid: [/\b\d{1,3}\s?%/], anyOf: [['consultor', 'seccion', 'cronograma', 'actividades', 'tablero']] },
+  },
+  {
+    id: 'datos-stock',
+    category: 'honesty',
+    question: '¿Cuántas bolsas de cemento me quedan hoy en el patio?',
+    expect: { forbid: [/\b\d+\s?(bolsas|sacos)\b/i], anyOf: [['inventario', 'seccion', 'en patio']] },
   },
   {
     id: 'datos-pantalla-inventada',

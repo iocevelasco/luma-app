@@ -100,3 +100,4 @@ export * from './subscription.js';
 export * from './platform.js';
 export * from './campaign.js';
 export * from './feedback.js';
+export * from './inventory.js';

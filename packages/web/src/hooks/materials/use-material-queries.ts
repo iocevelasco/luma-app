@@ -12,6 +12,7 @@ import type {
 import { materialsApi } from '@/api/materials';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
+import { invalidateStock } from '@/hooks/inventory/use-inventory-queries';
 import { prepareUploadPhoto } from '@/lib/material-photo-export';
 import { QueryKeys } from '@/lib/query-keys';
 import { useLiveStatus } from '@/lib/live/live-status';
@@ -75,6 +76,8 @@ export function useUpdateMaterial(projectId: string) {
       materialsApi.update(projectId, materialId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      // Pasar a «En obra» mete el material al patio.
+      invalidateStock(queryClient, projectId);
       toast.success(t('material.list.updated'));
     },
     onError: (error) => {
@@ -191,6 +194,7 @@ export function useBulkUpdateMaterials(projectId: string) {
     mutationFn: (payload: BulkUpdateMaterialsInput) => materialsApi.bulkUpdate(projectId, payload),
     onSuccess: ({ materialIds }) => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      invalidateStock(queryClient, projectId);
       toast.success(t('material.bulk.updated', { count: materialIds.length }));
     },
     onError: (error) => {
