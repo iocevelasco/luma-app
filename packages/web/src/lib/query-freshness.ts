@@ -1,3 +1,5 @@
+import type { MutationKey, QueryClient, QueryKey } from '@tanstack/react-query';
+
 /**
  * Cuán fresca tiene que estar cada lista de obra.
  *
@@ -29,13 +31,54 @@
 
 export const LIST_STALE_MS = 30_000;
 export const LIST_POLL_MS = 30_000;
+/**
+ * Polling de respaldo de las listas que **ya reciben avisos en vivo**
+ * (Actividades, Materiales) cuando el canal está sano. Sigue existiendo porque
+ * en iPhone el stream puede morir sin avisar, pero no hace falta pedir cada
+ * 30 s lo que el servidor ya avisa: cada vuelta cuesta unas cuatro consultas
+ * de autorización por cliente.
+ */
+export const LIVE_BACKUP_POLL_MS = 120_000;
 
-export const POLLED_LIST = {
-  staleTime: LIST_STALE_MS,
-  refetchInterval: LIST_POLL_MS,
-  refetchIntervalInBackground: false,
-} as const;
+/**
+ * Lista de obra con polling. Con `live: true` (el canal en vivo está sano) se
+ * espacia al respaldo; si el canal cae vuelve a `LIST_POLL_MS`, solo.
+ */
+export function polledList(live = false) {
+  return {
+    staleTime: LIST_STALE_MS,
+    refetchInterval: live ? LIVE_BACKUP_POLL_MS : LIST_POLL_MS,
+    refetchIntervalInBackground: false,
+  } as const;
+}
+
+export const POLLED_LIST = polledList();
 
 export const FRESH_30S = {
   staleTime: LIST_STALE_MS,
 } as const;
+
+/**
+ * Clave de las mutaciones que escriben la caché de actividades **antes** de
+ * que la API conteste (mover una tarjeta, mover una barra del Cronograma).
+ */
+export function optimisticActivityMutationKey(projectId: string) {
+  return ['optimistic-activity', projectId] as const;
+}
+
+/**
+ * Si hay una mutación optimista en vuelo, el dato que acaba de llegar es
+ * anterior a ella —el servidor todavía no sabe del cambio— y pisaría la caché
+ * optimista: la tarjeta saltaría a su lugar viejo hasta el siguiente refetch.
+ * En ese caso se conserva lo que ya está en caché; la mutación invalida al
+ * terminar y trae el dato bueno.
+ */
+export function keepWhileMutating<T>(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+  mutationKey: MutationKey,
+  fetched: T,
+): T {
+  if (queryClient.isMutating({ mutationKey }) === 0) return fetched;
+  return queryClient.getQueryData<T>(queryKey) ?? fetched;
+}

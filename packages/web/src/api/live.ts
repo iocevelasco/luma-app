@@ -1,4 +1,5 @@
 import {
+  LIVE_BYE_REASONS,
   LIVE_PROTOCOL_VERSION,
   isLiveResource,
   liveStreamPath,
@@ -41,14 +42,6 @@ export class LiveUnsupportedError extends Error {
   }
 }
 
-const BYE_REASONS: readonly LiveByeReason[] = [
-  'lifetime',
-  'access-changed',
-  'shutdown',
-  'superseded',
-  'slow',
-];
-
 /**
  * Un marco a mensaje, o `null` si no se entiende. Lo desconocido se ignora y
  * no corta la conexión: un servidor más nuevo puede mandar eventos que este
@@ -79,7 +72,7 @@ export function toLiveMessage(frame: SseFrame): LiveMessage | null {
     case 'ping':
       return { type: 'ping' };
     case 'bye':
-      return BYE_REASONS.includes(body.reason as LiveByeReason)
+      return (LIVE_BYE_REASONS as readonly unknown[]).includes(body.reason)
         ? { type: 'bye', reason: body.reason as LiveByeReason }
         : null;
     default:

@@ -41,6 +41,12 @@ export const streamProjectLive = wrapAsync(async (req, res) => {
     throw serviceUnavailable('Hay muchas conexiones en vivo abiertas. Probá de nuevo en un rato.');
   }
 
+  // Los `await` de arriba dejan una ventana en la que el cliente puede haberse
+  // ido (un iPhone que reconecta, una pestaña que cambia rápido). Su `close` ya
+  // se emitió y no va a volver a salir: registrarlo dejaría una conexión
+  // fantasma contando contra los límites hasta que venciera su vida máxima.
+  if (res.destroyed || req.destroyed) return;
+
   // Conexión larga: ni timeout de inactividad del socket, ni Nagle.
   req.socket.setTimeout(0);
   req.socket.setNoDelay(true);

@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { liveResourcesForCapability, type Capability, type LiveByeReason } from '@luma/shared';
+import { liveResourcesForCapability, type Capability } from '@luma/shared';
 import { liveHub } from '../services/live-hub.service.js';
 
 /**
@@ -42,16 +42,34 @@ export function publishLiveChanges(req: Request, res: Response, next: NextFuncti
 }
 
 /**
+ * ¿Este cambio de la obra toca algo que decide qué puede leer cada rol? Hoy son
+ * los dos flags que le abren Compras y Proveedores al cliente. Editar el nombre,
+ * la descripción o las fechas no cambia ninguna capacidad y no corta a nadie.
+ */
+export function changesProjectVisibility(req: Request): boolean {
+  const body = req.body as Record<string, unknown> | undefined;
+  if (!body || typeof body !== 'object') return false;
+  return 'purchasesVisibleToClient' in body || 'providersVisibleToClient' in body;
+}
+
+/**
  * Tras un cambio de **quién puede qué** en la obra (miembros, roles, flags,
  * papelera), corta las conexiones abiertas: reconectan y se les vuelve a
  * resolver el acceso. Sin esto alguien que ya no es parte de la obra seguiría
  * recibiendo avisos hasta que venciera su conexión.
+ *
+ * Cortar cuesta: cada cliente vuelve a autorizarse (varias consultas) y hace un
+ * resync completo. Por eso `when` deja acotar el corte a los cambios que de
+ * verdad mueven permisos, en vez de cortar con cualquier edición de la obra.
  */
-export function closeLiveOnAccessChange(reason: LiveByeReason = 'access-changed') {
+export function closeLiveOnAccessChange(options: { when?: (req: Request) => boolean } = {}) {
+  const { when } = options;
+
   return function closeLive(req: Request, res: Response, next: NextFunction) {
     res.once('finish', () => {
       if (!succeeded(res) || !req.project) return;
-      liveHub.closeProject(String(req.project._id), reason);
+      if (when && !when(req)) return;
+      liveHub.closeProject(String(req.project._id), 'access-changed');
     });
 
     next();

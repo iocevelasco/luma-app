@@ -29,6 +29,7 @@ function run(role: ProjectRole = 'supervisor') {
     end: vi.fn().mockReturnThis(),
     flushHeaders: vi.fn(),
     once: vi.fn(),
+    destroyed: false,
   } as unknown as Response;
   const req = {
     user: { sub: 'u-1' },
@@ -36,6 +37,7 @@ function run(role: ProjectRole = 'supervisor') {
     projectCapabilities: capabilitiesInProject(role, { providersVisibleToClient: false }),
     socket: { setTimeout: vi.fn(), setNoDelay: vi.fn(), setKeepAlive: vi.fn() },
     once: vi.fn(),
+    destroyed: false,
   } as unknown as Request;
   const next = vi.fn();
   return { req, res, next };
@@ -125,5 +127,16 @@ describe('streamProjectLive', () => {
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ code: 'SERVICE_UNAVAILABLE' }));
     expect(res.flushHeaders).not.toHaveBeenCalled();
     expect(liveHub.open).not.toHaveBeenCalled();
+  });
+
+  it('si el cliente se fue mientras se resolvía el acceso, no registra una conexión fantasma', async () => {
+    const { req, res, next } = run();
+    (res as { destroyed: boolean }).destroyed = true;
+
+    await streamProjectLive(req, res, next);
+
+    expect(liveHub.open).not.toHaveBeenCalled();
+    expect(res.flushHeaders).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
   });
 });

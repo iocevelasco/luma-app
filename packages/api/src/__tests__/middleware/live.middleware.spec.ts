@@ -12,11 +12,17 @@ vi.mock('../../services/live-hub.service.js', () => ({
 }));
 
 const { liveHub } = await import('../../services/live-hub.service.js');
-const { publishLiveChanges, closeLiveOnAccessChange } = await import(
+const { publishLiveChanges, closeLiveOnAccessChange, changesProjectVisibility } = await import(
   '../../middleware/live.middleware.js'
 );
 
-function exchange(opts: { method?: string; status?: number; capability?: string; project?: boolean }) {
+function exchange(opts: {
+  method?: string;
+  status?: number;
+  capability?: string;
+  project?: boolean;
+  body?: unknown;
+}) {
   const res = Object.assign(new EventEmitter(), {
     statusCode: opts.status ?? 200,
     locals: { exercisedCapability: opts.capability } as Record<string, unknown>,
@@ -24,6 +30,7 @@ function exchange(opts: { method?: string; status?: number; capability?: string;
   const req = {
     method: opts.method ?? 'POST',
     project: opts.project === false ? undefined : { _id: 'p1' },
+    body: opts.body,
   } as unknown as Request;
   const next = vi.fn();
   return { req, res, next, finish: () => res.emit('finish') };
@@ -104,5 +111,32 @@ describe('closeLiveOnAccessChange', () => {
     closeLiveOnAccessChange()(req, res, next);
     finish();
     expect(liveHub.closeProject).not.toHaveBeenCalled();
+  });
+
+  it('con `when`, sólo corta si el cambio mueve permisos', () => {
+    const edit = exchange({ method: 'PATCH', body: { name: 'Otro nombre' } });
+    closeLiveOnAccessChange({ when: changesProjectVisibility })(edit.req, edit.res, edit.next);
+    edit.finish();
+    expect(liveHub.closeProject).not.toHaveBeenCalled();
+
+    const flag = exchange({ method: 'PATCH', body: { purchasesVisibleToClient: true } });
+    closeLiveOnAccessChange({ when: changesProjectVisibility })(flag.req, flag.res, flag.next);
+    flag.finish();
+    expect(liveHub.closeProject).toHaveBeenCalledWith('p1', 'access-changed');
+  });
+});
+
+describe('changesProjectVisibility', () => {
+  const req = (body: unknown) => ({ body }) as unknown as Request;
+
+  it('detecta los dos flags que le abren secciones al cliente', () => {
+    expect(changesProjectVisibility(req({ purchasesVisibleToClient: false }))).toBe(true);
+    expect(changesProjectVisibility(req({ providersVisibleToClient: true }))).toBe(true);
+  });
+
+  it('una edición común no toca permisos', () => {
+    expect(changesProjectVisibility(req({ name: 'x', estimatedEndDate: '2027-01-01' }))).toBe(false);
+    expect(changesProjectVisibility(req(undefined))).toBe(false);
+    expect(changesProjectVisibility(req('texto'))).toBe(false);
   });
 });

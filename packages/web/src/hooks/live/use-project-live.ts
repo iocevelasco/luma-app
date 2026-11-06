@@ -4,6 +4,7 @@ import { liveApi } from '@/api/live';
 import { createInvalidationBatcher } from '@/lib/live/invalidation-batcher';
 import { createLiveConnection } from '@/lib/live/live-connection';
 import { liveQueryKeysFor } from '@/lib/live/live-query-keys';
+import { setLiveStatus } from '@/lib/live/live-status';
 import { useAuth } from '@/providers/auth-provider';
 
 /**
@@ -49,6 +50,7 @@ export function useProjectLive(projectId: string | undefined): void {
       onInvalidate: (resources) => batcher.add(resources),
       onStatus: (status) => {
         root.dataset.liveStatus = status;
+        setLiveStatus(status);
       },
     });
 
@@ -60,11 +62,17 @@ export function useProjectLive(projectId: string | undefined): void {
     const onPageHide = () => connection.hide();
     // Volvió la red: la conexión vieja no se puede dar por buena.
     const onOnline = () => connection.show({ force: true });
+    // Una pestaña desplazada por otra de la misma persona espera a que la
+    // miren. En ventanas lado a lado las dos están "visibles" y no hay
+    // `visibilitychange`: darle el foco es la señal. Si no está pausada,
+    // `show()` no hace nada.
+    const onFocus = () => connection.show();
 
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('pageshow', onPageShow);
     window.addEventListener('pagehide', onPageHide);
     window.addEventListener('online', onOnline);
+    window.addEventListener('focus', onFocus);
 
     connection.start();
     if (hidden()) connection.hide();
@@ -74,9 +82,11 @@ export function useProjectLive(projectId: string | undefined): void {
       window.removeEventListener('pageshow', onPageShow);
       window.removeEventListener('pagehide', onPageHide);
       window.removeEventListener('online', onOnline);
+      window.removeEventListener('focus', onFocus);
       connection.stop();
       batcher.cancel();
       delete root.dataset.liveStatus;
+      setLiveStatus('off');
     };
   }, [isAuthenticated, projectId, queryClient]);
 }

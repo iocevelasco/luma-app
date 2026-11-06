@@ -1,5 +1,6 @@
 import { Router, type NextFunction, type Request, type Response } from 'express';
 import rateLimit from 'express-rate-limit';
+import { isProduction } from '../config/app.config.js';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
 import { streamProjectLive } from '../controllers/live.controller.js';
@@ -16,7 +17,7 @@ import { streamProjectLive } from '../controllers/live.controller.js';
  * comparten el cupo. Sólo en producción, mismo criterio que el resto.
  */
 const openLimiter =
-  process.env.NODE_ENV === 'production'
+  isProduction
     ? rateLimit({
         windowMs: 60 * 1000,
         max: 60,

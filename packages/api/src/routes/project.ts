@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
-import { closeLiveOnAccessChange, publishLiveChanges } from '../middleware/live.middleware.js';
+import {
+  changesProjectVisibility,
+  closeLiveOnAccessChange,
+  publishLiveChanges,
+} from '../middleware/live.middleware.js';
 import {
   createProject,
   createProjectSpecialty,
@@ -41,7 +45,8 @@ projectRouter.post('/papelera/:projectId/restaurar', restoreProject);
 projectRouter.get('/:projectId', requireProjectAccess, getProject);
 projectRouter.patch(
   '/:projectId',
-  closeLiveOnAccessChange(),
+  // Sólo los flags que le abren Compras o Proveedores al cliente mueven permisos.
+  closeLiveOnAccessChange({ when: changesProjectVisibility }),
   requireProjectAccess,
   requireCapability('project.update'),
   updateProject,

@@ -263,4 +263,14 @@ describe('LiveHub', () => {
     expect(events(alive.sink)).toHaveLength(1);
     expect(hub.stats().connections).toBe(1);
   });
+
+  it('un socket que ya estaba destruido no queda registrado contando contra los límites', () => {
+    const { sink } = connect(hub, 'u1', 'p1', 'gerente');
+    // El cliente se fue: escribirle no falla, pero tampoco llega a nadie.
+    sink.destroyed = true;
+
+    vi.advanceTimersByTime(CONFIG.HEARTBEAT_MS);
+
+    expect(hub.stats().connections).toBe(0);
+  });
 });

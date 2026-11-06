@@ -106,18 +106,27 @@ export interface LiveInvalidateEvent {
   at: string;
 }
 
-/** Por qué cierra el servidor. Ninguno es un error: el cliente reconecta y vuelve a pedir. */
-export type LiveByeReason =
-  /** Tope de vida de la conexión: obliga a revalidar el acceso. */
-  | 'lifetime'
-  /** Cambió quién puede qué en la obra (miembros, roles, flags, papelera). */
-  | 'access-changed'
-  /** El servidor se reinicia (deploy). */
-  | 'shutdown'
-  /** La misma persona abrió demasiadas conexiones; se cierra la más vieja. */
-  | 'superseded'
-  /** El cliente no lee lo bastante rápido. */
-  | 'slow';
+/**
+ * Por qué cierra el servidor. Ninguno es un error: el cliente reconecta y vuelve a pedir.
+ *
+ * - `lifetime`: tope de vida de la conexión; obliga a revalidar el acceso.
+ * - `access-changed`: cambió quién puede qué en la obra (miembros, roles, flags de visibilidad).
+ * - `shutdown`: el servidor se reinicia (deploy).
+ * - `superseded`: la misma persona abrió demasiadas conexiones; se cierra la más vieja.
+ * - `slow`: el cliente no lee lo bastante rápido.
+ *
+ * Una lista y no sólo un tipo: el cliente valida con ella lo que llega del
+ * servidor, y así un motivo nuevo no se ignora por haberse olvidado de un array.
+ */
+export const LIVE_BYE_REASONS = [
+  'lifetime',
+  'access-changed',
+  'shutdown',
+  'superseded',
+  'slow',
+] as const;
+
+export type LiveByeReason = (typeof LIVE_BYE_REASONS)[number];
 
 export interface LiveByeEvent {
   v: typeof LIVE_PROTOCOL_VERSION;

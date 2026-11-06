@@ -40,6 +40,8 @@ export interface LiveSink {
   destroy(): void;
   readonly writableLength: number;
   readonly writableEnded: boolean;
+  /** `true` si el socket ya se cerró (el cliente se fue). Escribirle no falla, pero tampoco llega a nadie. */
+  readonly destroyed?: boolean;
 }
 
 export interface LiveHubConfig {
@@ -214,7 +216,9 @@ export class LiveHub {
   /** Escribe un evento. Si el cliente no vacía lo que se le manda, se lo corta. */
   private send(connection: Connection, event: LiveEventName, data: object): void {
     const { sink } = connection;
-    if (sink.writableEnded) {
+    // Escribir a un socket destruido no lanza: la conexión quedaría registrada,
+    // contando contra los límites, hasta que venciera su vida máxima.
+    if (sink.writableEnded || sink.destroyed) {
       this.remove(connection);
       return;
     }

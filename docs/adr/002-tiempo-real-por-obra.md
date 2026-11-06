@@ -52,7 +52,10 @@ Restricciones que mandan:
    en la URL (queda en logs y proxies) y sin la cookie de refresh (dura 90 días y
    reabre el secuestro entre sitios).
 6. **Un cambio de quién puede qué corta las conexiones de la obra** (miembros, roles,
-   flags, papelera: `closeLiveOnAccessChange`). Reconectan y se autoriza de nuevo.
+   papelera, y los flags `purchasesVisibleToClient` / `providersVisibleToClient`:
+   `closeLiveOnAccessChange`). Reconectan y se autoriza de nuevo. Cortar cuesta (cada
+   cliente se vuelve a autorizar y hace un resync), así que editar el nombre o las fechas
+   de la obra **no** corta: sólo lo que mueve permisos.
 7. **Acotado por diseño** (`LIVE_CONFIG`): 4 conexiones por persona (se cierra la más
    vieja), 500 en el proceso (después 503 y la SPA hace polling), vida máxima de
    20 min con jitter, latido de 20 s, buffer de 64 KiB por cliente, y el contador
@@ -85,8 +88,20 @@ Restricciones que mandan:
   reconecta con jitter. El polling cubre el hueco.
 - **Escrituras por fuera de HTTP no avisan** (tareas de Coolify, seeds, purgas): hoy
   sólo borran datos ya invisibles. Se corrigen con el siguiente refetch.
-- **El polling queda activo aun con el canal sano**: es redundante la mayor parte del
-  tiempo, y es lo que sostiene a iPhone cuando el stream muere sin avisar.
+- **El polling queda activo aun con el canal sano**, pero espaciado: Actividades y
+  Materiales pasan de 30 s a 2 min mientras el canal está en `live`
+  (`polledList(live)`, leyendo `useLiveStatus`) y vuelven a 30 s si cae. Es lo que
+  sostiene a iPhone cuando el stream muere sin avisar.
+- **Un refetch no pisa un cambio optimista.** Mover una tarjeta o una barra del Cronograma
+  escribe la caché antes de que conteste la API; un refetch que llega en ese lapso es
+  anterior al cambio. `useAllActivities` conserva la caché mientras hay una mutación
+  optimista en vuelo (`keepWhileMutating`) y la mutación invalida al terminar.
+- **Una baja de cuenta no corta sus streams abiertos.** Hoy ningún camino HTTP desactiva
+  cuentas (se hace por fuera de la API), así que no hay dónde enganchar el corte. La
+  persona conserva el stream hasta el tope de vida (~22 min con jitter) y sólo recibe
+  `{ projectId, resources }`, sin datos. Al reconectar, el controller consulta la cuenta
+  y la rechaza. Si aparece un camino de baja dentro de la API, es donde llamar a
+  `liveHub.closeProject` / un `closeUser`.
 - **Dos refetch por escritura propia** (el de la mutación y el del aviso): la ventana
   de 250 ms + jitter los junta casi siempre. Si las métricas muestran duplicados, el
   paso es un `originId` por pestaña.
@@ -126,5 +141,6 @@ Restricciones que mandan:
 10. [ ] Métricas: conexiones abiertas, avisos por minuto, y cuántos refetch dispara cada
         aviso, antes de ajustar los límites de `LIVE_CONFIG`.
 11. [ ] Cuando haya más de una réplica de la API: Redis/Valkey Pub/Sub o Centrifugo.
-12. [ ] El E2E `e2e/live-updates.spec.ts` está escrito pero **no se corrió** contra una
-        API real al implementarlo.
+12. [x] El E2E `e2e/live-updates.spec.ts` pasó contra la API local y un servidor web propio
+        (es-AR). No se corrió la suite completa contra `main`: 11 specs ajenos fallan, con
+        pinta de desfase de textos es-ES / es-AR.
