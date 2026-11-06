@@ -1888,6 +1888,19 @@
         "previous": "Anterior",
         "next": "Siguiente",
         "status": "Página {{page}} de {{pages}} · {{total}} cuentas"
+      },
+      "views": {
+        "census": "Censo",
+        "directory": "Directorio"
+      },
+      "segment": {
+        "label": "Segmento",
+        "all": "Todos los segmentos",
+        "membership": "Con membresía",
+        "staff": "Empleado",
+        "client": "Cliente",
+        "noProject": "Sin obra",
+        "inactive": "Dada de baja"
       }
     },
     "layout": {
@@ -1998,6 +2011,53 @@
       },
       "changesTitle": "Cambios que piden",
       "noChanges": "Nadie pidió cambios todavía."
+    },
+    "census": {
+      "intro": "Hoy suman {{total}} cuentas. Solo {{membership}} tienen una membresía: {{client}} son clientes que miran el estado de su obra, {{staff}} son empleados de la obra de otra persona, {{noProject}} no tienen obra y {{inactive}} están dadas de baja.",
+      "testNote": "Las {{count}} cuentas de prueba (@luma.test) no entran en ninguna cifra.",
+      "kpi": {
+        "membership": {
+          "title": "Con membresía",
+          "hint": "Las cuentas que importan"
+        },
+        "client": {
+          "title": "Clientes",
+          "hint": "Solo miran el estado de su obra"
+        },
+        "staff": {
+          "title": "Empleados",
+          "hint": "Trabajan en la obra de otra persona"
+        },
+        "test": {
+          "title": "Cuentas de prueba",
+          "hint": "No cuentan"
+        }
+      },
+      "membership": {
+        "title": "Estado de la membresía",
+        "subtitle_one": "De la cuenta que tiene una",
+        "subtitle_other": "De las {{count}} cuentas que tienen una",
+        "trial": "En prueba",
+        "paying": "Pagando",
+        "unlimited": "Plan ilimitado",
+        "expired": "Vencida"
+      },
+      "signups": {
+        "title": "Altas por semana",
+        "subtitle": "Últimas {{weeks}} semanas",
+        "members": "Con membresía",
+        "others": "Resto",
+        "label": "Altas por semana, de la más vieja a la actual",
+        "week": "Semana del {{date}}: {{members}} con membresía, {{others}} sin ella"
+      },
+      "roles": {
+        "title": "Quiénes no tienen membresía",
+        "subtitle": "{{ratio}} personas por cada cuenta con membresía",
+        "client": "Clientes",
+        "staff": "Empleados",
+        "other": "Otros roles",
+        "note": "Cada persona cuenta una sola vez: si tiene membresía propia, gana sobre cualquier rol que tenga en otras obras. Los roles con menos de {{min}} personas se juntan en «Otros roles»; si juntos tampoco llegan, no se muestran."
+      }
     }
   },
   "legal": {

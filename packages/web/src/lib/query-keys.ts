@@ -43,6 +43,7 @@ export enum QueryKeys {
   adminSubscriptionPayments = 'admin-subscription-payments',
   exchangeRates = 'exchange-rates',
   platformUsersOverview = 'platform-users-overview',
+  platformCensus = 'platform-census',
   platformUsers = 'platform-users',
   chatPrompt = 'chat-prompt',
   platformActivity = 'platform-activity',

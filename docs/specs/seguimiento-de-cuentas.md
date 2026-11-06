@@ -71,14 +71,15 @@ Una persona cuenta **una sola vez**, con esta precedencia:
 
 | # | Segmento | Regla |
 |---|---|---|
-| 1 | Cuenta de prueba | Email `@luma.test`. Fuera de todas las cifras |
-| 2 | **Con membresía** | Tiene `Subscription` en estado ≠ `sin_iniciar` |
-| 3 | Empleado | Sin membresía y con alguna fila de `ProjectMembership` con rol ≠ `cliente` |
-| 4 | Cliente | Sin membresía y solo filas con rol `cliente` |
-| 5 | Sin obra | Sin membresía y sin ninguna fila (la sacaron de la obra) |
+| 1 | Cuenta de prueba | Email `@luma.test`. Fuera de todas las cifras: se cuenta aparte y no suma al total |
+| 2 | Baja | `account_status: 'inactive'`, tenga lo que tenga. Es un segmento más y no suma en ningún otro |
+| 3 | **Con membresía** | Tiene `Subscription` en estado ≠ `sin_iniciar` |
+| 4 | Empleado | Sin membresía y con alguna fila de `ProjectMembership` con rol ≠ `cliente` |
+| 5 | Cliente | Sin membresía y solo filas con rol `cliente` |
+| 6 | Sin obra | Sin membresía y sin ninguna fila (la sacaron de la obra) |
 
-`account_status: 'inactive'` se cuenta aparte como **bajas**, en cualquier
-segmento.
+Los segmentos no se solapan: el total de cuentas es la suma de los cinco, y las
+cuentas de prueba quedan fuera de ella.
 
 Un invitado no tiene `Subscription`; cuando crea su primera obra se le arranca la
 prueba (`decideProjectCreation`) y pasa a ser "con membresía". No hay que hacer
@@ -133,8 +134,13 @@ un ingreso, es una acción registrada.
 - **R3. Pestaña Censo** como en el prototipo, con la aclaración de cuántas cuentas
   cuenta hoy la pantalla frente a cuántas tienen membresía.
 - **R4. Filtro por segmento en el Directorio**, y el segmento visible en cada fila.
-- **R5. Roles sin cifras.** Un rol de empleado con menos de `MIN_PEOPLE_PER_CELL`
-  personas sale con la cifra en `null`, igual que en Actividad.
+- **R5. Roles chicos, fundidos.** Un rol de empleado con menos de
+  `MIN_PEOPLE_PER_CELL` personas no sale solo: se junta con los demás roles chicos
+  en "Otros roles", y si juntos tampoco llegan al mínimo, no se muestran. Se funde
+  en vez de poner `null` porque el total de empleados sí se publica y con un rol
+  en `null` bastaría restar para recuperarlo. Un empleado con varios roles cuenta
+  con el que más manda (gerente, supervisor, arquitecto, ingeniero, diseñador,
+  contador).
 
 *Aceptación*
 - Given una cuenta `@luma.test` con membresía, When se calcula el censo, Then no
@@ -145,7 +151,8 @@ un ingreso, es una acción registrada.
   a "con membresía" sin intervención.
 - Given una cuenta dada de baja con membresía, Then cuenta en bajas y no en "con
   membresía".
-- Given el rol "diseñador" con 3 personas, Then la API devuelve `people: null`.
+- Given el rol "diseñador" con 3 personas y los demás roles chicos sumando menos de 5, Then "diseñador" no aparece en el desglose.
+- Given dos roles de 3 personas, Then se muestran juntos como "Otros roles" con 6.
 
 ### P0 — Fase 2: embudo y seguimiento
 

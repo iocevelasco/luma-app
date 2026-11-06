@@ -14,6 +14,7 @@ import {
   getChatPrompt,
   getPlatformFeedback,
   getPlatformActivity,
+  getPlatformCensus,
   getPlatformUsersOverview,
   listExchangeRates,
   listPlatformUsersPage,
@@ -55,6 +56,7 @@ adminRouter.post('/exchange-rates', createManualExchangeRate);
 adminRouter.post('/exchange-rates/refresh', refreshExchangeRateNow);
 
 adminRouter.get('/users/overview', getPlatformUsersOverview);
+adminRouter.get('/users/census', getPlatformCensus);
 adminRouter.get('/users', listPlatformUsersPage);
 adminRouter.post('/users/:userId/unlimited', setPlatformUserUnlimited);
 
