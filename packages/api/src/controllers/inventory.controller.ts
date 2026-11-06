@@ -6,7 +6,7 @@ import {
 import { Activity } from '../models/Activity.js';
 import type { IProject } from '../models/Project.js';
 import { StockMovement, type IStockMovement } from '../models/StockMovement.js';
-import { currentStock, ensurePurchaseEntries } from '../services/inventory.service.js';
+import { currentStock } from '../services/inventory.service.js';
 import { badRequest, conflict, notFound, unauthenticated, wrapAsync as wrap } from '../utils/errors.js';
 
 /** Los 1000 más recientes: un kardex que los pasa se acota con los filtros. */
@@ -58,7 +58,6 @@ export const listMovements = wrap(async (req, res) => {
 
   const project = req.project as IProject;
   const { from, to, itemKey, receiver, kind } = parsed.data;
-  await ensurePurchaseEntries(project._id);
 
   const occurredAt: Record<string, Date> = {};
   if (from) occurredAt.$gte = new Date(`${from}T00:00:00.000Z`);

@@ -24,6 +24,9 @@ vi.mock('../../models/MaterialItem.js', () => ({
   },
 }));
 
+// «En obra» entra al patio: el inventario se prueba aparte, acá sólo que se pida.
+vi.mock('../../services/inventory.service.js', () => ({ recordPurchaseEntries: vi.fn() }));
+
 // La lista suma las facturas de cada material: sin facturas en estos tests.
 vi.mock('../../models/Expense.js', () => ({
   Expense: { find: vi.fn(() => ({ sort: vi.fn().mockResolvedValue([]) })) },
@@ -54,6 +57,7 @@ const {
 } = await import(
   '../../controllers/material.controller.js'
 );
+const { recordPurchaseEntries } = await import('../../services/inventory.service.js');
 const { isAppError } = await import('../../utils/errors.js');
 
 /**
@@ -678,5 +682,63 @@ describe('proveedor vinculado', () => {
       await bulkUpdateMaterials(bulkReq({ ids: [A] }), mockRes(), next);
       expect(thrownBy(next)).toMatchObject({ code: 'VALIDATION', status: 400 });
     });
+  });
+});
+
+describe('inventario — la entrada al patio se registra al escribir', () => {
+  const A = 'a'.repeat(24);
+  const B = 'b'.repeat(24);
+  const bulkReq = (body: Record<string, unknown>) =>
+    ({ user: { sub: 'user-1' }, project: { _id: 'project-1' }, body }) as unknown as Request;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('pasar un material a «En obra» pide su entrada, con el material ya actualizado', async () => {
+    const updated = stored({ status: 'en_obra', statusChangedAt: new Date() });
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(stored({ status: 'comprado' }) as never);
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(populated(updated) as never);
+    const next = mockNext();
+
+    await updateMaterial(projectReq({ body: { status: 'en_obra' } }), mockRes(), next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(recordPurchaseEntries).toHaveBeenCalledWith([updated]);
+  });
+
+  it('si registrar la entrada falla, el error sube: reintentar el cambio la completa', async () => {
+    vi.mocked(MaterialItem.findOne).mockResolvedValue(stored({ status: 'comprado' }) as never);
+    vi.mocked(MaterialItem.findOneAndUpdate).mockReturnValue(
+      populated(stored({ status: 'en_obra' })) as never,
+    );
+    vi.mocked(recordPurchaseEntries).mockRejectedValueOnce(new Error('boom'));
+    const next = mockNext();
+
+    await updateMaterial(projectReq({ body: { status: 'en_obra' } }), mockRes(), next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'boom' }));
+  });
+
+  it('cargar un material ya «En obra» también lo pide', async () => {
+    vi.mocked(MaterialItem.create).mockResolvedValue(
+      withPopulate(stored({ status: 'en_obra' })) as never,
+    );
+    vi.mocked(Activity.findOne).mockResolvedValue(null as never);
+
+    await createMaterial(mockReq({ status: 'en_obra' }), mockRes(), mockNext());
+
+    expect(recordPurchaseEntries).toHaveBeenCalledWith([expect.objectContaining({ status: 'en_obra' })]);
+  });
+
+  it('en lote: «En obra» pide la entrada de todos; otro estado no', async () => {
+    const loaded = [stored({ _id: A }), stored({ _id: B })];
+    vi.mocked(MaterialItem.find).mockResolvedValue(loaded as never);
+
+    await bulkUpdateMaterials(bulkReq({ ids: [A, B], status: 'comprado' }), mockRes(), mockNext());
+    expect(recordPurchaseEntries).not.toHaveBeenCalled();
+
+    await bulkUpdateMaterials(bulkReq({ ids: [A, B], status: 'en_obra' }), mockRes(), mockNext());
+    expect(recordPurchaseEntries).toHaveBeenCalledWith(loaded);
   });
 });

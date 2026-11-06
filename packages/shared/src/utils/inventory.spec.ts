@@ -153,6 +153,35 @@ describe('summarizeDeposit', () => {
   it('sin movimientos no hay líneas', () => {
     expect(summarizeDeposit([])).toEqual([]);
   });
+
+  it('el costo es el de lo que QUEDA: lo que sale se lleva su parte del promedio', () => {
+    // 10 a 1, se van las 10, entran 10 a 100: lo que queda vale 100 cada una,
+    // no el promedio histórico de 50,50.
+    const [line] = summarizeDeposit([
+      dep({ quantity: 10, unitCost: 1, occurredAt: '2026-11-01T10:00:00.000Z' }),
+      dep({ kind: 'deposito_egreso', quantity: 10, unitCost: 1, projectId: 'obra-b', occurredAt: '2026-11-02T10:00:00.000Z' }),
+      dep({ quantity: 10, unitCost: 100, occurredAt: '2026-11-03T10:00:00.000Z' }),
+    ]);
+    expect(line).toMatchObject({ stock: 10, unitCost: 100 });
+  });
+
+  it('una salida parcial no cambia el costo unitario de lo que queda', () => {
+    const [line] = summarizeDeposit([
+      dep({ quantity: 10, unitCost: 8 }),
+      dep({ quantity: 10, unitCost: 12, occurredAt: '2026-11-02T10:00:00.000Z' }),
+      dep({ kind: 'deposito_egreso', quantity: 5, unitCost: 10, projectId: 'obra-b', occurredAt: '2026-11-03T10:00:00.000Z' }),
+    ]);
+    expect(line).toMatchObject({ stock: 15, unitCost: 10 });
+  });
+
+  it('ordena por fecha: un egreso anterior a un ingreso no usa su costo', () => {
+    const [line] = summarizeDeposit([
+      dep({ quantity: 10, unitCost: 100, occurredAt: '2026-11-03T10:00:00.000Z' }),
+      dep({ quantity: 10, unitCost: 1, occurredAt: '2026-11-01T10:00:00.000Z' }),
+      dep({ kind: 'deposito_egreso', quantity: 10, unitCost: 1, projectId: 'obra-b', occurredAt: '2026-11-02T10:00:00.000Z' }),
+    ]);
+    expect(line).toMatchObject({ stock: 10, unitCost: 100 });
+  });
 });
 
 describe('summarizeSavings', () => {
@@ -170,5 +199,46 @@ describe('summarizeSavings', () => {
       ]),
     );
     expect(savings).toHaveLength(2);
+  });
+
+  const imported = (over: Partial<DepositLedgerEntry>) =>
+    dep({ kind: 'deposito_egreso', quantity: 40, unitCost: 9, projectId: 'obra-b', ...over });
+  const returned = (over: Partial<DepositLedgerEntry>) =>
+    dep({
+      kind: 'deposito_ingreso',
+      quantity: 40,
+      unitCost: 9,
+      projectId: 'obra-b',
+      occurredAt: '2026-11-05T10:00:00.000Z',
+      ...over,
+    });
+
+  it('si la obra devuelve el material al Depósito, el ahorro se revierte', () => {
+    expect(summarizeSavings([imported({}), returned({})])).toEqual([
+      { projectId: 'obra-b', currency: 'USD', items: 0, saved: 0 },
+    ]);
+  });
+
+  it('una devolución parcial revierte sólo esa parte, al costo con que se contó', () => {
+    const [line] = summarizeSavings([imported({}), returned({ quantity: 10, unitCost: 500 })]);
+    expect(line).toMatchObject({ items: 1, saved: 270 });
+  });
+
+  it('no revierte más de lo que esa obra importó, ni lo que importó otra', () => {
+    const [line] = summarizeSavings([
+      imported({}),
+      returned({ quantity: 100 }),
+      returned({ projectId: 'obra-c', quantity: 5 }),
+    ]);
+    expect(line).toMatchObject({ items: 0, saved: 0 });
+  });
+
+  it('volver a importar después de devolver cuenta de nuevo, una sola vez', () => {
+    const [line] = summarizeSavings([
+      imported({ occurredAt: '2026-11-01T10:00:00.000Z' }),
+      returned({}),
+      imported({ quantity: 10, occurredAt: '2026-11-06T10:00:00.000Z' }),
+    ]);
+    expect(line).toMatchObject({ items: 1, saved: 90 });
   });
 });

@@ -4,7 +4,7 @@ import {
   type StockItem,
   type StockLedgerEntry,
 } from '@luma/shared';
-import { MaterialItem } from '../models/MaterialItem.js';
+import { MaterialItem, type IMaterialItem } from '../models/MaterialItem.js';
 import { StockMovement, type IStockMovement } from '../models/StockMovement.js';
 
 /** Lo que `summarizeStock` necesita de una línea del kardex. */
@@ -22,33 +22,43 @@ export function toLedgerEntry(movement: IStockMovement): StockLedgerEntry {
 const DUPLICATE_KEY = 11000;
 
 /**
- * Cada material de Compras que ya llegó a obra tiene su entrada en el kardex.
+ * La entrada al patio de cada material de Compras que llegó a obra: una fila
+ * `compra` por material (el índice único de `material` frena el duplicado, aunque
+ * dos requests lo intenten a la vez).
  *
- * Se resuelve al leer, no al cambiar el estado del material: así cubre también
- * los materiales que ya estaban en obra antes de que existiera el inventario, y
- * una falla puntual se repara sola en la próxima lectura. Es idempotente —el
- * índice único de `material` frena el duplicado aunque dos requests corran a
- * la vez— y sólo escribe hechos que ya ocurrieron.
+ * Se llama **al escribir**, cuando Compras deja un material en `en_obra`
+ * (`material.controller.ts`), y es idempotente: repetir el cambio de estado
+ * —o reintentarlo si falló— completa lo que faltó. Las lecturas del inventario
+ * no escriben. Los materiales que ya estaban en obra antes del inventario los
+ * cubre `backfillPurchaseEntries`.
  *
  * Una entrada ya registrada no se revierte si el material vuelve a un estado
  * anterior: el kardex es historia, no un espejo de Compras.
  */
-export async function ensurePurchaseEntries(projectId: unknown): Promise<void> {
-  const arrived = await MaterialItem.find({ project: projectId, status: 'en_obra' });
-  if (arrived.length === 0) return;
+export async function recordPurchaseEntries(
+  materials: readonly Pick<
+    IMaterialItem,
+    '_id' | 'project' | 'name' | 'unit' | 'quantity' | 'status' | 'statusChangedAt' | 'statusChangedBy' | 'createdBy' | 'updatedAt'
+  >[],
+): Promise<number> {
+  const arrived = materials.filter((material) => material.status === 'en_obra');
+  if (arrived.length === 0) return 0;
 
   const registered = new Set(
-    (await StockMovement.find({ project: projectId, kind: 'compra' }).select('material')).map(
-      (movement) => String(movement.material),
-    ),
+    (
+      await StockMovement.find({
+        kind: 'compra',
+        material: { $in: arrived.map((material) => material._id) },
+      }).select('material')
+    ).map((movement) => String(movement.material)),
   );
   const missing = arrived.filter((material) => !registered.has(String(material._id)));
-  if (missing.length === 0) return;
+  if (missing.length === 0) return 0;
 
   try {
     await StockMovement.insertMany(
       missing.map((material) => ({
-        project: projectId,
+        project: material.project,
         itemKey: stockItemKey(material.name, material.unit),
         name: material.name,
         unit: material.unit,
@@ -68,11 +78,39 @@ export async function ensurePurchaseEntries(projectId: unknown): Promise<void> {
       code === DUPLICATE_KEY || (writeErrors?.length && writeErrors.every((e) => e.code === DUPLICATE_KEY));
     if (!onlyDuplicates) throw error;
   }
+  return missing.length;
+}
+
+const BACKFILL_BATCH = 500;
+
+/**
+ * Registra la entrada de los materiales que ya estaban en obra antes de que
+ * existiera el inventario (y de cualquiera que se haya escapado). Se corre una
+ * vez al desplegar (`pnpm --filter @luma/api stock:backfill`); repetirlo es
+ * inofensivo. La fecha y quien la cargó salen del material, o de su última
+ * actualización si es anterior al campo `statusChangedAt`.
+ */
+export async function backfillPurchaseEntries(): Promise<{ materials: number; created: number }> {
+  let materials = 0;
+  let created = 0;
+  let batch: IMaterialItem[] = [];
+
+  const flush = async () => {
+    created += await recordPurchaseEntries(batch);
+    batch = [];
+  };
+
+  for await (const material of MaterialItem.find({ status: 'en_obra' }).cursor()) {
+    materials += 1;
+    batch.push(material);
+    if (batch.length >= BACKFILL_BATCH) await flush();
+  }
+  await flush();
+  return { materials, created };
 }
 
 /** El stock actual de la obra, recalculado desde todo su kardex. */
 export async function currentStock(projectId: unknown): Promise<StockItem[]> {
-  await ensurePurchaseEntries(projectId);
   const movements = await StockMovement.find({ project: projectId });
   return summarizeStock(movements.map(toLedgerEntry));
 }

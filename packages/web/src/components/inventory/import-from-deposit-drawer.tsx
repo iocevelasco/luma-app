@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDepositForImport, useImportFromDeposit } from '@/hooks/inventory/use-inventory-queries';
 import { formatMoney } from '@/lib/format-money';
+import { parseDecimal } from '@/lib/parse-decimal';
 
 interface ImportFromDepositDrawerProps {
   projectId: string;
@@ -49,14 +50,24 @@ export function ImportFromDepositDrawer({
   }
 
   function submit() {
-    const picked = lines
-      .map((line) => ({
-        itemKey: line.itemKey,
-        currency: line.currency,
-        quantity: Number(quantities[line.lineKey] ?? 0),
-      }))
-      .filter((line) => line.quantity > 0);
-    const freightAmount = Number(freight);
+    // Un campo con texto que no es un número se avisa: descartarlo en silencio
+    // haría importar menos de lo que la persona cree.
+    const picked: { itemKey: string; currency: string; quantity: number }[] = [];
+    for (const line of lines) {
+      const text = quantities[line.lineKey] ?? '';
+      if (text.trim() === '') continue;
+      const quantity = parseDecimal(text);
+      if (Number.isNaN(quantity)) {
+        setLocalError(t('inventory.deposit.invalidQuantity', { name: line.name }));
+        return;
+      }
+      if (quantity > 0) picked.push({ itemKey: line.itemKey, currency: line.currency, quantity });
+    }
+    const freightAmount = freight.trim() === '' ? 0 : parseDecimal(freight);
+    if (Number.isNaN(freightAmount)) {
+      setLocalError(t('inventory.deposit.invalidFreight'));
+      return;
+    }
 
     const parsed = importFromDepositSchema.safeParse({
       lines: picked,

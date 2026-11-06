@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 
 vi.mock('../../models/Project.js', () => ({ Project: { find: vi.fn() } }));
 vi.mock('../../services/deposit.service.js', () => ({
+  depositHistory: vi.fn(),
   depositLedger: vi.fn(),
   depositLines: vi.fn(),
   importFromDeposit: vi.fn(),
@@ -26,7 +27,7 @@ vi.mock('../../services/deposit.service.js', () => ({
 vi.mock('../../services/organization.service.js', () => ({ findMyOrganizationId: vi.fn() }));
 
 const { Project } = await import('../../models/Project.js');
-const { depositLedger, depositLines, importFromDeposit } = await import(
+const { depositHistory, depositLedger, importFromDeposit } = await import(
   '../../services/deposit.service.js'
 );
 const { findMyOrganizationId } = await import('../../services/organization.service.js');
@@ -109,18 +110,18 @@ describe('getMyDeposit', () => {
 
   it('devuelve líneas, historial y ahorro por obra destino, con los nombres resueltos', async () => {
     vi.mocked(findMyOrganizationId).mockResolvedValue('org-1' as never);
-    vi.mocked(depositLedger).mockResolvedValue([
-      ledgerRow({ originProject: 'obra-a' }),
-      ledgerRow({
-        _id: 'e',
-        kind: 'deposito_egreso',
-        quantity: 8,
-        originProject: undefined,
-        destinationProject: 'obra-b',
-        occurredAt: new Date('2026-11-02T10:00:00.000Z'),
-      }),
-    ] as never);
-    vi.mocked(depositLines).mockResolvedValue([{ lineKey: 'cemento|bolsa|USD', stock: 12 }] as never);
+    const ingreso = ledgerRow({ originProject: 'obra-a' });
+    const egreso = ledgerRow({
+      _id: 'e',
+      kind: 'deposito_egreso',
+      quantity: 8,
+      originProject: undefined,
+      destinationProject: 'obra-b',
+      occurredAt: new Date('2026-11-02T10:00:00.000Z'),
+    });
+    // El kardex completo, en orden de fecha, para sumar; el historial lo ordena y acota la base.
+    vi.mocked(depositLedger).mockResolvedValue([ingreso, egreso] as never);
+    vi.mocked(depositHistory).mockResolvedValue([egreso, ingreso] as never);
     vi.mocked(Project.find).mockReturnValue({
       select: vi.fn().mockResolvedValue([
         { _id: 'obra-a', name: 'Obra A' },
@@ -138,7 +139,9 @@ describe('getMyDeposit', () => {
         savings: unknown[];
       };
     };
+    expect(depositHistory).toHaveBeenCalledWith('org-1', 200);
     expect(data.lines).toHaveLength(1);
+    expect(data.lines[0]).toMatchObject({ stock: 12 });
     // El más reciente primero.
     expect(data.movements.map((m) => m.kind)).toEqual(['deposito_egreso', 'deposito_ingreso']);
     expect(data.movements[0]!.projectName).toBe('Obra B');

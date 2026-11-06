@@ -88,7 +88,8 @@ test.describe('depósito general', () => {
     await expect(page.getByText(/(aún|todavía) no hay material en el patio/i)).toBeVisible();
     await page.getByRole('button', { name: /importar del depósito/i }).click();
     await page.getByLabel(new RegExp(`cantidad de ${MATERIAL} a importar`, 'i')).fill('3');
-    await page.locator('#freight-amount').fill('50');
+    // Con coma decimal, como se escribe en es-ES, es-AR y pt.
+    await page.locator('#freight-amount').fill('50,5');
     await page.getByRole('button', { name: /^importar$/i }).click();
     const imported = page.getByRole('listitem').filter({ hasText: MATERIAL });
     await expect(imported).toContainText('3');

@@ -15,13 +15,41 @@ import { conflict, notFound } from '../utils/errors.js';
 import { currentStock } from './inventory.service.js';
 
 /** La obra del otro lado de una fila del Depósito: la que mandó (ingreso) o la que recibió (egreso). */
-export function movementProjectId(movement: IStockMovement): string | null {
+export function movementProjectId(
+  movement: Pick<IStockMovement, 'originProject' | 'destinationProject'>,
+): string | null {
   const id = movement.originProject ?? movement.destinationProject;
   return id ? String(id) : null;
 }
 
+/**
+ * Cotización con que se congela el costo de referencia: el costo va en la moneda
+ * de la obra de origen y no se convierte, así que es 1. Se guarda igual en cada
+ * fila del Depósito para que la regla («moneda y cotización, congeladas») valga
+ * sin excepciones el día que haya que convertir.
+ */
+export const DEPOSIT_COST_RATE = 1;
+
+/** Lo que se lee de una fila del Depósito para sumarla: el resto no hace falta. */
+export type DepositRow = Pick<
+  IStockMovement,
+  | 'itemKey'
+  | 'name'
+  | 'unit'
+  | 'kind'
+  | 'quantity'
+  | 'unitCost'
+  | 'currency'
+  | 'originProject'
+  | 'destinationProject'
+  | 'occurredAt'
+>;
+
+const LEDGER_FIELDS =
+  'itemKey name unit kind quantity unitCost currency originProject destinationProject occurredAt';
+
 /** Lo que `summarizeDeposit` necesita de una fila del Depósito. */
-export function toDepositEntry(movement: IStockMovement): DepositLedgerEntry {
+export function toDepositEntry(movement: DepositRow): DepositLedgerEntry {
   return {
     itemKey: movement.itemKey,
     name: movement.name,
@@ -35,15 +63,45 @@ export function toDepositEntry(movement: IStockMovement): DepositLedgerEntry {
   };
 }
 
-/** Todo el kardex del Depósito de una Empresa. */
-export async function depositLedger(organization: unknown): Promise<IStockMovement[]> {
-  return StockMovement.find({ organization, kind: { $in: DEPOSIT_MOVEMENT_KINDS } });
+/**
+ * El kardex del Depósito de una Empresa, en orden de fecha, sólo con los campos
+ * que se suman. Las líneas y el ahorro necesitan todas las filas (el costo es un
+ * promedio móvil que depende de lo que pasó antes), así que ésta es la lectura
+ * completa: va sin hidratar y sin los campos que no se usan. Si el historial
+ * llega a pesar, el paso siguiente es guardar un resumen, no leer menos.
+ */
+export async function depositLedger(organization: unknown): Promise<DepositRow[]> {
+  return StockMovement.find({ organization, kind: { $in: DEPOSIT_MOVEMENT_KINDS } })
+    .select(LEDGER_FIELDS)
+    .sort({ occurredAt: 1, _id: 1 })
+    .lean<DepositRow[]>();
+}
+
+/** Las últimas filas del Depósito, más nuevas primero: ordena y acota la base, no Node. */
+export async function depositHistory(organization: unknown, limit: number): Promise<IStockMovement[]> {
+  return StockMovement.find({ organization, kind: { $in: DEPOSIT_MOVEMENT_KINDS } })
+    .sort({ occurredAt: -1, _id: -1 })
+    .limit(limit);
 }
 
 /** Lo que hay hoy en el Depósito, recalculado. */
 export async function depositLines(organization: unknown): Promise<DepositLine[]> {
   const ledger = await depositLedger(organization);
   return summarizeDeposit(ledger.map(toDepositEntry));
+}
+
+/**
+ * Deshace las filas de un traspaso que falló a medias. Es limpieza: si el borrado
+ * también falla se avisa en el log y **no** se lanza, para que el error que ve
+ * quien llama sea el original y no el de la limpieza. Lo que quede suelto lo
+ * repara `repairIncompleteTransfers`.
+ */
+async function rollbackTransfer(transfer: mongoose.Types.ObjectId): Promise<void> {
+  try {
+    await StockMovement.deleteMany({ transfer });
+  } catch (error) {
+    console.error('❌ [DEPOSIT] no se pudo deshacer el traspaso', String(transfer), error);
+  }
 }
 
 interface Actor {
@@ -96,9 +154,10 @@ export async function sendToDeposit(
       originProject: project._id,
       unitCost,
       currency: project.currency,
+      exchangeRate: DEPOSIT_COST_RATE,
     });
   } catch (error) {
-    await StockMovement.deleteMany({ transfer });
+    await rollbackTransfer(transfer);
     throw error;
   }
   return fromProject;
@@ -161,6 +220,7 @@ export async function importFromDeposit(
         destinationProject: project._id,
         unitCost: line.unitCost,
         currency: line.currency,
+        exchangeRate: DEPOSIT_COST_RATE,
       })),
     );
     const imported = await StockMovement.insertMany(
@@ -184,7 +244,64 @@ export async function importFromDeposit(
     }
     return imported as unknown as IStockMovement[];
   } catch (error) {
-    await StockMovement.deleteMany({ transfer });
+    await rollbackTransfer(transfer);
     throw error;
   }
+}
+
+/** Un traspaso más nuevo que esto puede estar escribiéndose todavía: no se toca. */
+export const TRANSFER_REPAIR_MIN_AGE_MS = 10 * 60 * 1000;
+/**
+ * Más viejo que esto ya no se mira. El tope no es por costo: una obra purgada se
+ * lleva sus filas `importacion` (90 días después de eliminarse), y esa ausencia
+ * se parecería a un traspaso roto. Con tres días de ventana y una corrida
+ * diaria, un corte se repara sin que la purga pueda confundirse con uno.
+ */
+export const TRANSFER_REPAIR_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * Un traspaso son dos filas (la de la obra y la del Depósito) y no hay
+ * transacciones: un corte del proceso entre las dos escrituras deja material «en
+ * tránsito». Esto revierte los traspasos con una mitad faltante —el stock vuelve
+ * a donde estaba y la persona repite la acción— dentro de la ventana segura.
+ * Idempotente: un traspaso completo no se toca.
+ */
+export async function repairIncompleteTransfers(
+  now: Date = new Date(),
+): Promise<{ checked: number; repaired: number }> {
+  const count = (kind: string) => ({ $sum: { $cond: [{ $eq: ['$kind', kind] }, 1, 0] } });
+  const groups = await StockMovement.aggregate<{
+    _id: unknown;
+    sent: number;
+    deposited: number;
+    exported: number;
+    imported: number;
+  }>([
+    {
+      $match: {
+        transfer: { $exists: true },
+        createdAt: {
+          $gte: new Date(now.getTime() - TRANSFER_REPAIR_MAX_AGE_MS),
+          $lte: new Date(now.getTime() - TRANSFER_REPAIR_MIN_AGE_MS),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$transfer',
+        sent: count('desincorporacion'),
+        deposited: count('deposito_ingreso'),
+        exported: count('deposito_egreso'),
+        imported: count('importacion'),
+      },
+    },
+  ]);
+
+  const broken = groups.filter(
+    (group) => group.sent !== group.deposited || group.exported !== group.imported,
+  );
+  if (broken.length > 0) {
+    await StockMovement.deleteMany({ transfer: { $in: broken.map((group) => group._id) } });
+  }
+  return { checked: groups.length, repaired: broken.length };
 }

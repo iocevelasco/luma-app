@@ -129,16 +129,24 @@ export function depositLineKey(itemKey: string, currency: string): string {
   return `${itemKey}|${currency}`;
 }
 
+/** Los movimientos en orden de fecha: el costo y el ahorro dependen de qué pasó antes. */
+function chronological(entries: readonly DepositLedgerEntry[]): DepositLedgerEntry[] {
+  return [...entries].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+}
+
 /**
- * Lo que hay hoy en el Depósito General, recalculado del kardex. El costo de
- * referencia es el promedio, por cantidad, de todo lo que entró: un material
- * que llegó sin costo (0) pesa igual y baja el promedio, a propósito, para no
- * inflar un ahorro que nadie declaró.
+ * Lo que hay hoy en el Depósito General, recalculado del kardex.
+ *
+ * El costo de referencia es un **promedio móvil**: lo que entra suma su costo y
+ * lo que sale se lleva su parte al costo promedio de ese momento, así el costo
+ * unitario es el de lo que **queda** y no el de todo lo que alguna vez entró.
+ * Un material que llegó sin costo (0) pesa por cantidad y baja el promedio, a
+ * propósito, para no inflar un ahorro que nadie declaró.
  */
 export function summarizeDeposit(entries: readonly DepositLedgerEntry[]): DepositLine[] {
-  const byKey = new Map<string, DepositLine & { cost: number }>();
+  const byKey = new Map<string, DepositLine & { value: number }>();
 
-  for (const entry of entries) {
+  for (const entry of chronological(entries)) {
     const lineKey = depositLineKey(entry.itemKey, entry.currency);
     let line = byKey.get(lineKey);
     if (!line) {
@@ -152,28 +160,32 @@ export function summarizeDeposit(entries: readonly DepositLedgerEntry[]): Deposi
         received: 0,
         sent: 0,
         unitCost: 0,
-        cost: 0,
+        value: 0,
       };
       byKey.set(lineKey, line);
     }
     if (stockDirection(entry.kind) === 'in') {
       line.received += entry.quantity;
-      line.cost += entry.quantity * entry.unitCost;
+      line.value += entry.quantity * entry.unitCost;
+      line.stock += entry.quantity;
     } else {
+      const average = line.stock > 0 ? line.value / line.stock : 0;
       line.sent += entry.quantity;
+      line.value -= entry.quantity * average;
+      line.stock -= entry.quantity;
+      if (line.stock <= 0) line.value = 0;
     }
   }
 
   return [...byKey.values()]
-    .map(({ cost, ...line }) => {
-      const received = roundQuantity(line.received);
-      const sent = roundQuantity(line.sent);
+    .map(({ value, ...line }) => {
+      const stock = roundQuantity(line.received - line.sent);
       return {
         ...line,
-        received,
-        sent,
-        stock: roundQuantity(received - sent),
-        unitCost: received > 0 ? roundMoney(cost / received) : 0,
+        received: roundQuantity(line.received),
+        sent: roundQuantity(line.sent),
+        stock,
+        unitCost: stock > 0 ? roundMoney(value / line.stock) : 0,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'es') || a.currency.localeCompare(b.currency));
@@ -184,28 +196,50 @@ export function summarizeDeposit(entries: readonly DepositLedgerEntry[]): Deposi
  * del Depósito se llevó, a su costo de referencia congelado. Las monedas no se
  * suman entre sí, y tampoco las cantidades: una bolsa y un metro no se suman,
  * así que se cuenta cuántos materiales distintos se reutilizaron (`items`).
+ *
+ * Si la obra devuelve al Depósito lo que importó, el ahorro de esa parte se
+ * revierte —al costo con que se contó, no al que se tecleó al devolver—, sin
+ * pasarse de lo que esa obra importó: lo que una obra manda de su propia compra
+ * no resta ahorro. La devolución sólo revierte si va en la misma moneda.
  */
 export function summarizeSavings(entries: readonly DepositLedgerEntry[]): SavingsLine[] {
-  const byKey = new Map<string, SavingsLine>();
-  const materials = new Map<string, Set<string>>();
+  // Por obra, moneda y material: cuánto se reutilizó y cuánto ahorro lleva.
+  const net = new Map<string, { projectId: string | null; currency: string; quantity: number; saved: number }>();
 
-  for (const entry of entries) {
-    if (entry.kind !== 'deposito_egreso') continue;
-    const key = `${entry.projectId ?? ''}|${entry.currency}`;
-    const line = byKey.get(key) ?? {
+  for (const entry of chronological(entries)) {
+    const key = `${entry.projectId ?? ''}|${entry.currency}|${entry.itemKey}`;
+    const reused = net.get(key) ?? {
       projectId: entry.projectId,
       currency: entry.currency,
+      quantity: 0,
+      saved: 0,
+    };
+    if (entry.kind === 'deposito_egreso') {
+      reused.quantity += entry.quantity;
+      reused.saved += entry.quantity * entry.unitCost;
+    } else if (reused.quantity > 0) {
+      const back = Math.min(entry.quantity, reused.quantity);
+      reused.saved -= back * (reused.saved / reused.quantity);
+      reused.quantity -= back;
+    } else {
+      continue;
+    }
+    net.set(key, reused);
+  }
+
+  const byProject = new Map<string, SavingsLine>();
+  for (const reused of net.values()) {
+    const key = `${reused.projectId ?? ''}|${reused.currency}`;
+    const line = byProject.get(key) ?? {
+      projectId: reused.projectId,
+      currency: reused.currency,
       items: 0,
       saved: 0,
     };
-    materials.set(key, (materials.get(key) ?? new Set()).add(entry.itemKey));
-    line.saved += entry.quantity * entry.unitCost;
-    byKey.set(key, line);
+    if (reused.quantity > 1e-9) line.items += 1;
+    line.saved += reused.saved;
+    byProject.set(key, line);
   }
 
-  return [...byKey.entries()].map(([key, line]) => ({
-    ...line,
-    items: materials.get(key)?.size ?? 0,
-    saved: roundMoney(line.saved),
-  }));
+  return [...byProject.values()].map((line) => ({ ...line, saved: Math.max(0, roundMoney(line.saved)) }));
 }

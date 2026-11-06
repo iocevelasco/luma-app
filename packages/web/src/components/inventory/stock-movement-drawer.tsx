@@ -21,6 +21,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useAllActivities } from '@/hooks/activities/use-activity-queries';
 import { useCreateStockMovement } from '@/hooks/inventory/use-inventory-queries';
+import { numberField } from '@/lib/parse-decimal';
 
 /** `Select` no admite un valor vacío: este es el "ninguna" de la tarea. */
 const NO_ACTIVITY = '__none__';
@@ -162,7 +163,7 @@ export function StockMovementDrawer({
             id="movement-quantity"
             inputMode="decimal"
             aria-invalid={Boolean(errors.quantity)}
-            {...register('quantity', { setValueAs: (v) => (v === '' ? undefined : Number(v)) })}
+            {...register('quantity', { setValueAs: numberField(undefined) })}
           />
           {available !== undefined && (
             <p className="text-xs text-muted-foreground">

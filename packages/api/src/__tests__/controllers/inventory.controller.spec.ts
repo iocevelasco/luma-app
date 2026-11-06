@@ -12,7 +12,6 @@ vi.mock('../../models/StockMovement.js', () => ({
 }));
 vi.mock('../../services/inventory.service.js', () => ({
   currentStock: vi.fn(),
-  ensurePurchaseEntries: vi.fn(),
 }));
 
 const { Activity } = await import('../../models/Activity.js');

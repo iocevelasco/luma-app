@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { useMountOnOpen } from '@/hooks/use-mount-on-open';
 import { useStock, useStockMovements } from '@/hooks/inventory/use-inventory-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useProject } from '@/hooks/projects/use-project-queries';
@@ -64,6 +65,11 @@ export function ProjectInventoryPage() {
   const [sendItem, setSendItem] = useState<StockItem | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const { data: projectData } = useProject(projectId);
+  // Los formularios piden actividades y Compras: se montan al abrirlos la primera vez,
+  // no para cada persona que sólo mira el patio.
+  const movementMounted = useMountOnOpen(drawer !== null);
+  const sendMounted = useMountOnOpen(sendItem !== null);
+  const importMounted = useMountOnOpen(importOpen);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<StockMovementQuery>({});
 
@@ -183,31 +189,37 @@ export function ProjectInventoryPage() {
       </PageLayout>
 
       {/* Fuera de `PageLayout`: con el inventario vacío no se monta y el atajo no haría nada. */}
-      <StockMovementDrawer
-        projectId={projectId!}
-        items={items}
-        initial={drawer}
-        open={drawer !== null}
-        onOpenChange={(open) => {
-          if (!open) setDrawer(null);
-        }}
-      />
-      <SendToDepositDrawer
-        projectId={projectId!}
-        currency={currency}
-        // Sin la moneda de la obra el costo de referencia no tendría unidad.
-        item={currency ? sendItem : null}
-        onOpenChange={(open) => {
-          if (!open) setSendItem(null);
-        }}
-      />
-      <ImportFromDepositDrawer
-        projectId={projectId!}
-        currency={currency}
-        canChargeFreight={can('expense.write')}
-        open={importOpen && Boolean(currency)}
-        onOpenChange={setImportOpen}
-      />
+      {movementMounted && (
+        <StockMovementDrawer
+          projectId={projectId!}
+          items={items}
+          initial={drawer}
+          open={drawer !== null}
+          onOpenChange={(open) => {
+            if (!open) setDrawer(null);
+          }}
+        />
+      )}
+      {sendMounted && (
+        <SendToDepositDrawer
+          projectId={projectId!}
+          currency={currency}
+          // Sin la moneda de la obra el costo de referencia no tendría unidad.
+          item={currency ? sendItem : null}
+          onOpenChange={(open) => {
+            if (!open) setSendItem(null);
+          }}
+        />
+      )}
+      {importMounted && (
+        <ImportFromDepositDrawer
+          projectId={projectId!}
+          currency={currency}
+          canChargeFreight={can('expense.write')}
+          open={importOpen && Boolean(currency)}
+          onOpenChange={setImportOpen}
+        />
+      )}
     </>
   );
 }

@@ -43,6 +43,12 @@ export interface IStockMovement extends Document {
   /** Costo de referencia congelado, en `currency`. Sólo filas del Depósito. */
   unitCost?: number;
   currency?: string;
+  /**
+   * Cotización del costo respecto de la moneda de la obra de origen, congelada en
+   * la fila (regla 2 de Plata). Hoy siempre 1: el costo se guarda en esa moneda y
+   * nunca se convierte, pero la fila ya dice con qué cotización se tomó.
+   */
+  exchangeRate?: number;
   itemKey: string;
   name: string;
   unit: MaterialUnit;
@@ -77,6 +83,7 @@ const stockMovementSchema = new Schema<IStockMovement>(
     destinationProject: { type: Schema.Types.ObjectId, ref: 'Project' },
     unitCost: { type: Number, min: 0 },
     currency: { type: String, uppercase: true, trim: true },
+    exchangeRate: { type: Number, min: 0 },
     itemKey: { type: String, required: true },
     name: { type: String, required: true, trim: true },
     unit: {

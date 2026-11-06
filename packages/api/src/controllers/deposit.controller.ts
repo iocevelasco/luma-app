@@ -10,6 +10,7 @@ import {
 import { Project, type IProject } from '../models/Project.js';
 import type { IStockMovement } from '../models/StockMovement.js';
 import {
+  depositHistory,
   depositLedger,
   depositLines,
   importFromDeposit,
@@ -107,9 +108,7 @@ export const getMyDeposit = wrap(async (req, res) => {
   const ledger = await depositLedger(organizationId);
   const entries = ledger.map(toDepositEntry);
   const savings = summarizeSavings(entries);
-  const recent = [...ledger]
-    .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime())
-    .slice(0, HISTORY_LIMIT);
+  const recent = await depositHistory(organizationId, HISTORY_LIMIT);
 
   const names = await projectNames([
     ...recent.map(movementProjectId),

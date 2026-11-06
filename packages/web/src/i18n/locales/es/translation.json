@@ -2301,7 +2301,9 @@
       "lineMeta": "Disponible: {{stock}} {{unit}} · Costo de ref. {{cost}}",
       "freight": "Flete ({{currency}}, opcional)",
       "freightHint": "Si mover el material costó un camión, se carga como un gasto de esta obra.",
-      "freightNote": "Descripción del flete (opcional)"
+      "freightNote": "Descripción del flete (opcional)",
+      "invalidQuantity": "La cantidad de {{name}} no es un número válido.",
+      "invalidFreight": "El flete no es un número válido."
     }
   },
   "deposit": {

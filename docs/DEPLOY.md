@@ -222,6 +222,37 @@ a `inactive`); una baja sin esa fecha cuenta desde `updatedAt`.
 Idempotente: una cuenta ya purgada (`purgedAt`) no se toca. A mano:
 `pnpm --filter @luma/api accounts:purge`.
 
+### Inventario: traspasos a medias del Depósito
+
+Un traspaso al Depósito General son dos escrituras sin transacción: si el
+proceso se corta entre las dos, el material queda «en tránsito» (salió de una
+obra y no entró al Depósito, o al revés). Esta tarea revierte los traspasos con
+una mitad faltante de hace entre 10 minutos y 3 días: el stock vuelve a donde
+estaba y la persona repite la acción.
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/repair-incomplete-transfers.js` |
+| Container | `app` |
+| Frequency | `0 8 * * *` — todos los días a las 4:00 de Caracas |
+
+Idempotente: un traspaso completo no se toca. A mano:
+`pnpm --filter @luma/api transfers:repair`.
+
+### Inventario: entradas de lo que ya estaba en obra (una sola vez)
+
+Al desplegar el inventario por primera vez, los materiales que ya estaban «En
+obra» no tienen entrada en el kardex (las nuevas se registran al pasar a «En
+obra»). Se corre **una vez**, a mano, después del deploy:
+
+```bash
+node dist/scripts/backfill-stock-entries.js
+# en local: pnpm --filter @luma/api stock:backfill
+```
+
+Es inofensivo repetirlo: cada material tiene una sola entrada. **Sin esto, el
+patio de las obras que ya tenían material en obra se ve vacío.**
+
 
 ## Verificar
 
