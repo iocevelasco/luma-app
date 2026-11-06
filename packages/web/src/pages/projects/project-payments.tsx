@@ -67,6 +67,7 @@ import {
   usePayments,
 } from '@/hooks/finance/use-finance-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
+import { useCompactToolbar } from '@/hooks/use-compact-toolbar';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { downloadBlob } from '@/lib/download-blob';
 import { formatMoney } from '@/lib/format-money';
@@ -181,15 +182,24 @@ function MoneyFields<T extends MoneyFormValues>({
   );
 }
 
+/**
+ * El alta de una cuota. El estado de abierto vive en la pantalla y no acá: el
+ * botón que lo abre puede estar dentro del panel de filtros del celular, que se
+ * desmonta al cerrarse y se llevaría el formulario con él.
+ */
 function NewScheduleItemDrawer({
   projectId,
   projectCurrency,
+  open,
+  onOpenChange,
 }: {
   projectId: string;
   projectCurrency: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const setOpen = onOpenChange;
   const createItem = useCreateScheduleItem(projectId);
 
   const form = useForm<CreatePaymentScheduleItemInput>({
@@ -199,11 +209,6 @@ function NewScheduleItemDrawer({
 
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        <Plus className="size-4" />
-        {t('finance.schedule.new')}
-      </Button>
-
       <FormDrawer
         open={open}
         onOpenChange={(next) => {
@@ -398,6 +403,8 @@ export function ProjectPaymentsPage() {
   const [filters, setFilters] = useState<PaymentFilters>(NO_PAYMENT_FILTERS);
   const [groupBy, setGroupBy] = useState<PaymentGroupBy>('month');
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const compact = useCompactToolbar();
   const activeFilters = countActivePaymentFilters(filters);
   const allPayments = useMemo(() => paymentsData?.payments ?? [], [paymentsData]);
   const hasPayments = allPayments.length > 0;
@@ -475,15 +482,42 @@ export function ProjectPaymentsPage() {
 
   // Las dos altas de la pantalla van arriba, siempre: registrar un cobro es la
   // principal; la cuota del cronograma acordado, la de segundo orden.
+  const scheduleButton = (
+    <Can I="payment.write">
+      <Button variant="outline" onClick={() => setScheduleOpen(true)}>
+        <Plus className="size-4" />
+        {t('finance.schedule.new')}
+      </Button>
+    </Can>
+  );
+  const scheduleDrawer = (
+    <Can I="payment.write">
+      <NewScheduleItemDrawer
+        projectId={projectId!}
+        projectCurrency={currency}
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+      />
+    </Can>
+  );
+  const pdfButton = (
+    <Button
+      type="button"
+      variant="outline"
+      className="max-sm:min-h-11"
+      disabled={generatingPdf || visible.length === 0}
+      aria-busy={generatingPdf}
+      onClick={() => void handleDownloadPdf()}
+    >
+      {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+      {generatingPdf ? t('finance.payments.pdf.generating') : t('finance.payments.pdf.button')}
+    </Button>
+  );
+
   const actions = {
     action: (
       <Can I="payment.write">
         <NewPaymentDrawer projectId={projectId!} projectCurrency={currency} items={items} />
-      </Can>
-    ),
-    secondaryActions: (
-      <Can I="payment.write">
-        <NewScheduleItemDrawer projectId={projectId!} projectCurrency={currency} />
       </Can>
     ),
   };
@@ -492,6 +526,12 @@ export function ProjectPaymentsPage() {
     return (
       <PageLayout
         {...actions}
+        secondaryActions={
+          <>
+            {scheduleButton}
+            {scheduleDrawer}
+          </>
+        }
         empty={{
           icon: Wallet,
           title: t('finance.empty.title'),
@@ -528,50 +568,52 @@ export function ProjectPaymentsPage() {
             }}
             activeCount={activeFilters}
             onClear={() => setFilters(NO_PAYMENT_FILTERS)}
+            compact={compact}
+            actions={
+              <>
+                {pdfButton}
+                {scheduleButton}
+              </>
+            }
             labels={{
               search: t('finance.payments.filters.search'),
               from: t('finance.payments.filters.from'),
               to: t('finance.payments.filters.to'),
               clear: t('finance.payments.filters.clear'),
+              button: t('finance.filters.button'),
+              done: t('finance.filters.done'),
+              actions: t('finance.filters.actions'),
             }}
           />
         ) : undefined
       }
       secondaryActions={
-        <>
-          {hasPayments && (
-            <Button
-              type="button"
-              variant="outline"
-              className="max-sm:min-h-11"
-              disabled={generatingPdf || visible.length === 0}
-              aria-busy={generatingPdf}
-              onClick={() => void handleDownloadPdf()}
-            >
-              {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
-              {generatingPdf ? t('finance.payments.pdf.generating') : t('finance.payments.pdf.button')}
-            </Button>
-          )}
-          {actions.secondaryActions}
-        </>
+        // En el modo compacto las acciones viven en el panel de filtros.
+        hasPayments && compact ? undefined : (
+          <>
+            {hasPayments && pdfButton}
+            {scheduleButton}
+          </>
+        )
       }
     >
+      {scheduleDrawer}
       <Card>
         <CardHeader className="flex flex-row items-center gap-3">
           <Wallet className="size-4 text-muted-foreground" />
           <CardTitle className="text-base">{t('finance.summary.title')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
+          <dl className="grid gap-4 text-sm [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))]">
             <div>
               <dt className="text-muted-foreground">{t('finance.summary.scheduled')}</dt>
-              <dd className="text-lg font-semibold">
+              <dd className="break-words text-lg font-semibold tabular-nums">
                 {formatMoney(summary.scheduledTotal, currency, i18n.language)}
               </dd>
             </div>
             <div>
               <dt className="text-muted-foreground">{t('finance.summary.paid')}</dt>
-              <dd className="text-lg font-semibold">
+              <dd className="break-words text-lg font-semibold tabular-nums">
                 {formatMoney(summary.paidTotal, currency, i18n.language)}
               </dd>
             </div>
@@ -581,7 +623,7 @@ export function ProjectPaymentsPage() {
                   caso que hay que devolver o imputar. */}
               <dd
                 className={cn(
-                  'text-lg font-semibold',
+                  'break-words text-lg font-semibold tabular-nums',
                   summary.pendingTotal < 0 && 'text-success',
                 )}
               >

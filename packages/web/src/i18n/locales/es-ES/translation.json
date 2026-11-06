@@ -1428,7 +1428,7 @@
       "filters": {
         "search": "Buscar cobros",
         "method": "Forma de pago",
-        "allMethods": "Todas las formas de pago",
+        "allMethods": "Todas las formas",
         "from": "Desde",
         "to": "Hasta",
         "clear": "Quitar filtros",
@@ -1608,6 +1608,11 @@
       "status": "Estado",
       "paidSoFar": "Cobrado hasta ahora",
       "scheduleItem": "Cuota"
+    },
+    "filters": {
+      "button": "Filtros",
+      "done": "Hecho",
+      "actions": "Acciones"
     }
   },
   "errors": {

@@ -1428,7 +1428,7 @@
       "filters": {
         "search": "Buscar recebimentos",
         "method": "Forma de pagamento",
-        "allMethods": "Todas as formas de pagamento",
+        "allMethods": "Todas as formas",
         "from": "De",
         "to": "Até",
         "clear": "Limpar filtros",
@@ -1608,6 +1608,11 @@
       "status": "Status",
       "paidSoFar": "Recebido até agora",
       "scheduleItem": "Parcela"
+    },
+    "filters": {
+      "button": "Filtros",
+      "done": "Concluir",
+      "actions": "Ações"
     }
   },
   "errors": {

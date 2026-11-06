@@ -42,7 +42,7 @@ export function MovementDetail({
 
   return (
     <FormDrawer open={open} onOpenChange={onOpenChange} title={title} description={caption} size="sm">
-      <p className="text-3xl tabular-nums">{amount}</p>
+      <p className="break-words text-2xl tabular-nums sm:text-3xl">{amount}</p>
       <dl className="flex flex-col gap-3 text-sm">
         {visible.map((field) => (
           <div key={field.label} className="flex flex-col gap-0.5 border-t border-border pt-3">

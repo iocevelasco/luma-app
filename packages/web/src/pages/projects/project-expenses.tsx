@@ -65,7 +65,9 @@ import {
 } from '@/hooks/finance/use-finance-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
+import { useCompactToolbar } from '@/hooks/use-compact-toolbar';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { currencyChoices } from '@/lib/currencies';
 import { downloadBlob } from '@/lib/download-blob';
 import {
   countActiveExpenseFilters,
@@ -226,11 +228,23 @@ function NewExpenseDrawer({
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="expense-currency">{t('finance.fields.currency')}</Label>
-            <Input
-              id="expense-currency"
-              maxLength={3}
-              className="uppercase"
-              {...form.register('currency')}
+            <Controller
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="expense-currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencyChoices(projectCurrency, field.value).map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             />
           </div>
         </div>
@@ -448,6 +462,7 @@ export function ProjectExpensesPage() {
   const [deleting, setDeleting] = useState<Expense | null>(null);
   const [detail, setDetail] = useState<Expense | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const compact = useCompactToolbar();
   const hasExpenses = (data?.expenses.length ?? 0) > 0;
 
   // `jspdf` pesa: se baja apenas hay algo que descargar y no al apretar el botón.
@@ -513,6 +528,20 @@ export function ProjectExpensesPage() {
     }
   }
 
+  const pdfButton = (
+    <Button
+      type="button"
+      variant="outline"
+      className="max-sm:min-h-11"
+      disabled={generatingPdf || visible.length === 0}
+      aria-busy={generatingPdf}
+      onClick={() => void handleDownloadPdf()}
+    >
+      {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
+      {generatingPdf ? t('finance.expenses.pdf.generating') : t('finance.expenses.pdf.button')}
+    </Button>
+  );
+
   const groupLabel = (group: ExpenseGroup) => {
     if (group.name === null) return t(`finance.expenses.group.none.${groupBy}`);
     if (groupBy === 'category') return t(`finance.category.${group.name}`);
@@ -547,30 +576,22 @@ export function ProjectExpensesPage() {
             }}
             activeCount={activeFilters}
             onClear={() => setFilters(NO_EXPENSE_FILTERS)}
+            compact={compact}
+            actions={pdfButton}
             labels={{
               search: t('finance.expenses.filters.search'),
               from: t('finance.expenses.filters.from'),
               to: t('finance.expenses.filters.to'),
               clear: t('finance.expenses.filters.clear'),
+              button: t('finance.filters.button'),
+              done: t('finance.filters.done'),
+              actions: t('finance.filters.actions'),
             }}
           />
         ) : undefined
       }
-      secondaryActions={
-        hasExpenses ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="max-sm:min-h-11"
-            disabled={generatingPdf || visible.length === 0}
-            aria-busy={generatingPdf}
-            onClick={() => void handleDownloadPdf()}
-          >
-            {generatingPdf ? <Spinner className="size-4" /> : <FileDown className="size-4" />}
-            {generatingPdf ? t('finance.expenses.pdf.generating') : t('finance.expenses.pdf.button')}
-          </Button>
-        ) : undefined
-      }
+      // En el modo compacto la descarga vive en el panel de filtros.
+      secondaryActions={hasExpenses && !compact ? pdfButton : undefined}
       action={
         <Can I="expense.write">
           <NewExpenseDrawer projectId={projectId!} projectCurrency={currency} />
@@ -584,22 +605,22 @@ export function ProjectExpensesPage() {
             <CardTitle className="text-base">{t('finance.result.title')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+            <dl className="grid gap-4 text-sm [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))]">
               <div>
                 <dt className="text-muted-foreground">{t('finance.result.paid')}</dt>
-                <dd className="text-lg font-semibold">
+                <dd className="break-words text-lg font-semibold tabular-nums">
                   {formatMoney(summary.paidTotal, currency, i18n.language)}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">{t('finance.result.spent')}</dt>
-                <dd className="text-lg font-semibold">
+                <dd className="break-words text-lg font-semibold tabular-nums">
                   {formatMoney(summary.expenseTotal, currency, i18n.language)}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">{t('finance.result.committed')}</dt>
-                <dd className="text-lg font-semibold">
+                <dd className="break-words text-lg font-semibold tabular-nums">
                   {formatMoney(summary.committedTotal, currency, i18n.language)}
                 </dd>
               </div>
@@ -609,7 +630,7 @@ export function ProjectExpensesPage() {
                     va con `expense.read`, que su rol no tiene. */}
                 <dd
                   className={cn(
-                    'text-lg font-semibold',
+                    'break-words text-lg font-semibold tabular-nums',
                     summary.marginTotal < 0 && 'text-destructive',
                   )}
                 >
