@@ -1428,7 +1428,41 @@
       "onAccount": "Por conta",
       "delete": "Excluir recebimento",
       "deleteTitle": "Excluir este recebimento?",
-      "deleteBody": "Você vai excluir o recebimento de {{amount}} de {{date}}. O saldo do cliente é recalculado sem ele. Não é possível desfazer."
+      "deleteBody": "Você vai excluir o recebimento de {{amount}} de {{date}}. O saldo do cliente é recalculado sem ele. Não é possível desfazer.",
+      "filters": {
+        "search": "Buscar recebimentos",
+        "method": "Forma de pagamento",
+        "allMethods": "Todas as formas",
+        "from": "De",
+        "to": "Até",
+        "clear": "Limpar filtros",
+        "emptyTitle": "Nenhum recebimento corresponde",
+        "emptyDescription": "Tente outra busca ou remova algum filtro."
+      },
+      "groupBy": {
+        "label": "Agrupar por",
+        "month": "Agrupar por mês",
+        "day": "Agrupar por dia",
+        "method": "Agrupar por forma de pagamento"
+      },
+      "pdf": {
+        "button": "Baixar PDF",
+        "generating": "Gerando PDF…",
+        "title": "Recebimentos",
+        "summary_one": "{{count}} recebimento",
+        "summary_other": "{{count}} recebimentos",
+        "columnDate": "Data",
+        "columnConcept": "Descrição",
+        "columnAmount": "Valor",
+        "total": "Total",
+        "generated": "Gerado em {{date}}",
+        "page": "Página {{page}} de {{total}}",
+        "downloaded": "PDF baixado.",
+        "error": "Não conseguimos gerar o PDF. Tente de novo.",
+        "filtered": "Com filtros aplicados: não é a lista completa."
+      },
+      "groupCount_one": "{{count}} recebimento",
+      "groupCount_other": "{{count}} recebimentos"
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1443,7 +1477,49 @@
       "delete": "Excluir despesa",
       "openReceipt": "Abrir comprovante",
       "deleteTitle": "Excluir esta despesa?",
-      "deleteBody": "Você vai excluir “{{description}}” de {{amount}}. O resultado da obra é recalculado. Não é possível desfazer."
+      "deleteBody": "Você vai excluir “{{description}}” de {{amount}}. O resultado da obra é recalculado. Não é possível desfazer.",
+      "pdf": {
+        "button": "Baixar PDF",
+        "generating": "Gerando PDF…",
+        "title": "Despesas",
+        "summary_one": "{{count}} despesa",
+        "summary_other": "{{count}} despesas",
+        "columnDate": "Data",
+        "columnDetail": "Detalhe",
+        "columnAmount": "Valor",
+        "total": "Total",
+        "generated": "Gerado em {{date}}",
+        "page": "Página {{page}} de {{total}}",
+        "downloaded": "PDF baixado.",
+        "error": "Não conseguimos gerar o PDF. Tente de novo.",
+        "filtered": "Com filtros aplicados: não é a lista completa."
+      },
+      "filters": {
+        "search": "Buscar despesas",
+        "category": "Categoria",
+        "allCategories": "Todas as categorias",
+        "from": "De",
+        "to": "Até",
+        "clear": "Limpar filtros",
+        "emptyTitle": "Nenhuma despesa corresponde",
+        "emptyDescription": "Tente outra busca ou remova algum filtro."
+      },
+      "groupBy": {
+        "label": "Agrupar por",
+        "category": "Agrupar por categoria",
+        "provider": "Agrupar por fornecedor",
+        "activity": "Agrupar por atividade",
+        "month": "Agrupar por mês",
+        "day": "Agrupar por dia"
+      },
+      "group": {
+        "none": {
+          "provider": "Sem fornecedor",
+          "activity": "Sem atividade"
+        }
+      },
+      "groupCount_one": "{{count}} despesa",
+      "groupCount_other": "{{count}} despesas"
     },
     "payroll": {
       "title": "Folha de pagamento",
@@ -1530,7 +1606,41 @@
       "expenseDelete": "Não foi possível excluir a despesa.",
       "receiptType": "Comprovante não suportado. Envie um PDF ou uma imagem.",
       "receiptSize": "O comprovante é muito grande (máximo 20MB)."
-    }
+    },
+    "detail": {
+      "originalAmount": "Valor original",
+      "rate": "cotação {{rate}}",
+      "notes": "Observações",
+      "registeredBy": "Registrado por",
+      "registeredAt": "Registrado em",
+      "status": "Status",
+      "paidSoFar": "Recebido até agora",
+      "scheduleItem": "Parcela"
+    },
+    "filters": {
+      "button": "Filtros",
+      "done": "Concluir",
+      "actions": "Ações"
+    },
+    "export": {
+      "download": "Baixar",
+      "generating": "Gerando PDF…",
+      "pdf": "PDF",
+      "csv": "CSV (Excel)",
+      "pdfButton": "Baixar PDF",
+      "csvButton": "Baixar CSV",
+      "csvDownloaded": "CSV baixado.",
+      "csvError": "Não conseguimos gerar o CSV. Tente de novo.",
+      "columnDate": "Data",
+      "columnConcept": "Descrição",
+      "columnAmount": "Valor",
+      "columnCurrency": "Moeda",
+      "columnOriginalAmount": "Valor original",
+      "columnOriginalCurrency": "Moeda original",
+      "columnRate": "Cotação",
+      "columnNotes": "Observações"
+    },
+    "listTruncated": "São mostrados os {{count}} lançamentos mais recentes; pode haver mais. Os filtros e os totais por grupo só veem esses."
   },
   "errors": {
     "validation": "Revise os dados: há campos com erros.",
@@ -1892,6 +2002,19 @@
         "previous": "Anterior",
         "next": "Próxima",
         "status": "Página {{page}} de {{pages}} · {{total}} contas"
+      },
+      "views": {
+        "census": "Censo",
+        "directory": "Diretório"
+      },
+      "segment": {
+        "label": "Segmento",
+        "all": "Todos os segmentos",
+        "membership": "Com assinatura",
+        "staff": "Funcionário",
+        "client": "Cliente",
+        "noProject": "Sem obra",
+        "inactive": "Desativada"
       }
     },
     "layout": {
@@ -2002,6 +2125,53 @@
       },
       "changesTitle": "Mudanças pedidas",
       "noChanges": "Ninguém pediu mudanças ainda."
+    },
+    "census": {
+      "intro": "Hoje são {{total}} contas. Só {{membership}} têm uma assinatura: {{client}} são clientes que acompanham o estado da sua obra, {{staff}} são funcionários da obra de outra pessoa, {{noProject}} não têm obra e {{inactive}} estão desativadas.",
+      "testNote": "As {{count}} contas de teste (@luma.test) não entram em nenhum número.",
+      "kpi": {
+        "membership": {
+          "title": "Com assinatura",
+          "hint": "As contas que importam"
+        },
+        "client": {
+          "title": "Clientes",
+          "hint": "Só acompanham o estado da sua obra"
+        },
+        "staff": {
+          "title": "Funcionários",
+          "hint": "Trabalham na obra de outra pessoa"
+        },
+        "test": {
+          "title": "Contas de teste",
+          "hint": "Não contam"
+        }
+      },
+      "membership": {
+        "title": "Estado da assinatura",
+        "subtitle_one": "Da conta que tem uma",
+        "subtitle_other": "Das {{count}} contas que têm uma",
+        "trial": "Em teste",
+        "paying": "Pagando",
+        "unlimited": "Plano ilimitado",
+        "expired": "Vencida"
+      },
+      "signups": {
+        "title": "Cadastros por semana",
+        "subtitle": "Últimas {{weeks}} semanas",
+        "members": "Com assinatura",
+        "others": "Restante",
+        "label": "Cadastros por semana, da mais antiga à atual",
+        "week": "Semana de {{date}}: {{members}} com assinatura, {{others}} sem ela"
+      },
+      "roles": {
+        "title": "Quem não tem assinatura",
+        "subtitle": "{{ratio}} pessoas para cada conta com assinatura",
+        "client": "Clientes",
+        "staff": "Funcionários",
+        "other": "Outros papéis",
+        "note": "Cada pessoa conta uma só vez: se tem assinatura própria, ela vale mais que qualquer papel em outras obras. Os papéis com menos de {{min}} pessoas são juntados em «Outros papéis»; se juntos também não chegam, não aparecem."
+      }
     }
   },
   "legal": {

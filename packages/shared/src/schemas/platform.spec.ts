@@ -5,10 +5,18 @@ describe('platformUsersQuerySchema', () => {
   it('completa los valores por defecto', () => {
     expect(platformUsersQuerySchema.parse({})).toEqual({
       filter: 'all',
+      segment: 'all',
       q: '',
       page: 1,
       pageSize: 20,
     });
+  });
+
+  it('acepta cada segmento y rechaza uno que no existe', () => {
+    for (const segment of ['membership', 'staff', 'client', 'noProject', 'inactive']) {
+      expect(platformUsersQuerySchema.parse({ segment }).segment).toBe(segment);
+    }
+    expect(platformUsersQuerySchema.safeParse({ segment: 'test' }).success).toBe(false);
   });
 
   it('convierte los números que llegan como texto en la URL', () => {

@@ -16,7 +16,27 @@ const USERS_PATH = '/plataforma/cuentas';
 const ENTRY = 'Administración de la plataforma';
 
 test.describe('cuentas de la plataforma: admin', () => {
-  test('ve los totales, la curva de altas de 12 semanas y no ve las cuentas de prueba', async ({
+  test('el censo separa las cuentas con membresía y no cuenta las de prueba', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+
+    await page.goto(appUrl(USERS_PATH));
+
+    // El censo es la vista de entrada: con membresía, clientes, empleados y pruebas.
+    await expect(page.getByRole('tab', { name: 'Censo' })).toHaveAttribute('data-state', 'active');
+    await expect(page.locator('dl dt')).toHaveCount(4);
+    await expect(page.locator('dl dd').first()).toHaveText(/^\d/);
+    await expect(page.getByText('Estado de la membresía')).toBeVisible();
+
+    // La curva: siempre 12 semanas, con 0 donde no hubo altas.
+    await expect(page.getByRole('list', { name: /altas por semana/i }).getByRole('listitem')).toHaveCount(12);
+
+    expect(consoleErrors).toEqual([]);
+  });
+
+  test('el directorio filtra por estado y por segmento, y no lista las cuentas de prueba', async ({
     page,
   }) => {
     const consoleErrors: string[] = [];
@@ -25,12 +45,10 @@ test.describe('cuentas de la plataforma: admin', () => {
     });
 
     await page.goto(appUrl(USERS_PATH));
+    await page.getByRole('tab', { name: 'Directorio' }).click();
 
-    // Las cinco cifras de arriba.
+    // Las cinco cifras de arriba y la curva de altas, como siempre.
     await expect(page.locator('dl dt')).toHaveCount(5);
-    await expect(page.locator('dl dd').first()).toHaveText(/^\d/);
-
-    // La curva: siempre 12 semanas, con 0 donde no hubo altas.
     await expect(page.getByRole('list', { name: /altas por semana/i }).getByRole('listitem')).toHaveCount(12);
 
     // Buscar una cuenta de prueba no encuentra nada: están excluidas.
@@ -46,6 +64,12 @@ test.describe('cuentas de la plataforma: admin', () => {
       'data-state',
       'active',
     );
+
+    // El segmento también: la lista se acota a las cuentas de ese tipo.
+    await page.getByRole('tab', { name: 'Todas' }).click();
+    await page.getByRole('combobox', { name: 'Segmento' }).click();
+    await page.getByRole('option', { name: 'Cliente' }).click();
+    await expect(page.getByRole('combobox', { name: 'Segmento' })).toContainText('Cliente');
 
     expect(consoleErrors).toEqual([]);
   });
@@ -104,5 +128,10 @@ test.describe('cuentas de la plataforma: usuario común', () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(response.status()).toBe(403);
+
+    const census = await request.get(appUrl('/api/admin/users/census'), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(census.status()).toBe(403);
   });
 });

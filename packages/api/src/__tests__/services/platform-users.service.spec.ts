@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AccountSegment } from '@luma/shared';
 
 /**
  * Panel de cuentas de la plataforma: las cifras salen de contar `User`, las
@@ -121,6 +122,13 @@ describe('listPlatformUsers', () => {
     createdAt: new Date('2026-10-20T10:00:00.000Z'),
   };
 
+  const ALL = { filter: 'all', segment: 'all', q: '', page: 1, pageSize: 20 } as const;
+  const SEGMENTS = new Map<string, AccountSegment>([
+    ['u1', 'membership'],
+    ['u2', 'client'],
+    ['u3', 'staff'],
+  ]);
+
   function mockPage(users: unknown[]) {
     const limit = vi.fn().mockResolvedValue(users);
     const skip = vi.fn(() => ({ limit }));
@@ -134,7 +142,7 @@ describe('listPlatformUsers', () => {
     countDocuments.mockResolvedValue(41);
     mockUnlimited(['u1']);
 
-    const page = await listPlatformUsers({ filter: 'all', q: '', page: 3, pageSize: 20 });
+    const page = await listPlatformUsers({ ...ALL, page: 3 }, SEGMENTS);
 
     expect(sort).toHaveBeenCalledWith({ createdAt: -1 });
     expect(skip).toHaveBeenCalledWith(40);
@@ -145,6 +153,7 @@ describe('listPlatformUsers', () => {
       name: 'Ana Pérez',
       email: 'ana@estudio.com',
       role: 'user',
+      segment: 'membership',
       emailVerified: false,
       accountStatus: 'active',
       createdAt: '2026-10-20T10:00:00.000Z',
@@ -157,7 +166,7 @@ describe('listPlatformUsers', () => {
     countDocuments.mockResolvedValue(0);
     mockUnlimited();
 
-    await listPlatformUsers({ filter: 'unverified', q: '', page: 1, pageSize: 20 });
+    await listPlatformUsers({ ...ALL, filter: 'unverified' }, SEGMENTS);
 
     const where = find.mock.calls[0][0] as { $and: object[] };
     expect(where.$and).toContainEqual({ account_status: 'active', email_verified: false });
@@ -168,11 +177,33 @@ describe('listPlatformUsers', () => {
     countDocuments.mockResolvedValue(0);
     mockUnlimited();
 
-    await listPlatformUsers({ filter: 'all', q: 'a.(b', page: 1, pageSize: 20 });
+    await listPlatformUsers({ ...ALL, q: 'a.(b' }, SEGMENTS);
 
     const where = find.mock.calls[0][0] as { $and: Array<{ $or?: Array<{ name: RegExp }> }> };
     const search = where.$and.find((condition) => condition.$or)?.$or?.[0].name;
     expect(search?.source).toBe('a\\.\\(b');
+  });
+
+  it('filtra por segmento con los ids que la clasificación puso en él', async () => {
+    mockPage([]);
+    countDocuments.mockResolvedValue(0);
+    mockUnlimited();
+
+    await listPlatformUsers({ ...ALL, segment: 'client' }, SEGMENTS);
+
+    const where = find.mock.calls[0][0] as { $and: object[] };
+    expect(where.$and).toContainEqual({ _id: { $in: ['u2'] } });
+  });
+
+  it('sin filtro de segmento no restringe por id', async () => {
+    mockPage([]);
+    countDocuments.mockResolvedValue(0);
+    mockUnlimited();
+
+    await listPlatformUsers(ALL, SEGMENTS);
+
+    const where = find.mock.calls[0][0] as { $and: Array<{ _id?: unknown }> };
+    expect(where.$and.some((condition) => condition._id)).toBe(false);
   });
 
   it('con 0 resultados informa 1 página, no 0', async () => {
@@ -180,7 +211,7 @@ describe('listPlatformUsers', () => {
     countDocuments.mockResolvedValue(0);
     mockUnlimited();
 
-    const page = await listPlatformUsers({ filter: 'all', q: '', page: 1, pageSize: 20 });
+    const page = await listPlatformUsers(ALL, SEGMENTS);
 
     expect(page.pages).toBe(1);
   });
