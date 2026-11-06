@@ -1,3 +1,8 @@
+import type {
+  AccountSegment,
+  MembershipBucket,
+  StaffRoleCount,
+} from '../platform-accounts/index.js';
 import type { AccountStatus, UserRole } from './index.js';
 
 /**
@@ -30,11 +35,40 @@ export interface PlatformUsersOverview {
   signups: PlatformSignupWeek[];
 }
 
+/** Cuentas reales por segmento. Una persona cuenta en uno solo. */
+export type PlatformCensusSegments = Record<AccountSegment, number>;
+
+/** Altas de una semana, separadas entre quienes tienen membresía y el resto. */
+export interface PlatformCensusWeek {
+  /** Lunes de esa semana, `YYYY-MM-DD`. */
+  weekStart: string;
+  members: number;
+  others: number;
+}
+
+/**
+ * El censo de cuentas, por segmento. `total` es la suma de `segments`: las
+ * cuentas de prueba no están y se cuentan aparte.
+ */
+export interface PlatformCensus {
+  total: number;
+  segments: PlatformCensusSegments;
+  /** Cuentas `@luma.test`, fuera de todo lo demás. */
+  testAccounts: number;
+  /** Estado de la membresía de las cuentas que tienen una. */
+  memberships: Record<MembershipBucket, number>;
+  /** Empleados por rol, con los roles chicos fundidos en `other`. */
+  staffRoles: StaffRoleCount[];
+  /** Las últimas 12 semanas, de la más vieja a la actual. */
+  signups: PlatformCensusWeek[];
+}
+
 export interface PlatformUserRow {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  segment: AccountSegment;
   emailVerified: boolean;
   accountStatus: AccountStatus;
   createdAt: string;

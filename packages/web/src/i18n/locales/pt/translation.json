@@ -1888,6 +1888,19 @@
         "previous": "Anterior",
         "next": "Próxima",
         "status": "Página {{page}} de {{pages}} · {{total}} contas"
+      },
+      "views": {
+        "census": "Censo",
+        "directory": "Diretório"
+      },
+      "segment": {
+        "label": "Segmento",
+        "all": "Todos os segmentos",
+        "membership": "Com assinatura",
+        "staff": "Funcionário",
+        "client": "Cliente",
+        "noProject": "Sem obra",
+        "inactive": "Desativada"
       }
     },
     "layout": {
@@ -1998,6 +2011,53 @@
       },
       "changesTitle": "Mudanças pedidas",
       "noChanges": "Ninguém pediu mudanças ainda."
+    },
+    "census": {
+      "intro": "Hoje são {{total}} contas. Só {{membership}} têm uma assinatura: {{client}} são clientes que acompanham o estado da sua obra, {{staff}} são funcionários da obra de outra pessoa, {{noProject}} não têm obra e {{inactive}} estão desativadas.",
+      "testNote": "As {{count}} contas de teste (@luma.test) não entram em nenhum número.",
+      "kpi": {
+        "membership": {
+          "title": "Com assinatura",
+          "hint": "As contas que importam"
+        },
+        "client": {
+          "title": "Clientes",
+          "hint": "Só acompanham o estado da sua obra"
+        },
+        "staff": {
+          "title": "Funcionários",
+          "hint": "Trabalham na obra de outra pessoa"
+        },
+        "test": {
+          "title": "Contas de teste",
+          "hint": "Não contam"
+        }
+      },
+      "membership": {
+        "title": "Estado da assinatura",
+        "subtitle_one": "Da conta que tem uma",
+        "subtitle_other": "Das {{count}} contas que têm uma",
+        "trial": "Em teste",
+        "paying": "Pagando",
+        "unlimited": "Plano ilimitado",
+        "expired": "Vencida"
+      },
+      "signups": {
+        "title": "Cadastros por semana",
+        "subtitle": "Últimas {{weeks}} semanas",
+        "members": "Com assinatura",
+        "others": "Restante",
+        "label": "Cadastros por semana, da mais antiga à atual",
+        "week": "Semana de {{date}}: {{members}} com assinatura, {{others}} sem ela"
+      },
+      "roles": {
+        "title": "Quem não tem assinatura",
+        "subtitle": "{{ratio}} pessoas para cada conta com assinatura",
+        "client": "Clientes",
+        "staff": "Funcionários",
+        "other": "Outros papéis",
+        "note": "Cada pessoa conta uma só vez: se tem assinatura própria, ela vale mais que qualquer papel em outras obras. Os papéis com menos de {{min}} pessoas são juntados em «Outros papéis»; se juntos também não chegam, não aparecem."
+      }
     }
   },
   "legal": {

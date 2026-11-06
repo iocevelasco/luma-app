@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   MailQuestion,
@@ -9,16 +10,30 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PLATFORM_USERS_FILTERS, type PlatformUsersFilter } from '@luma/shared';
+import {
+  PLATFORM_USERS_FILTERS,
+  PLATFORM_USERS_SEGMENTS,
+  type PlatformUsersFilter,
+  type PlatformUsersSegment,
+} from '@luma/shared';
 import { EmptyState } from '@/components/common/empty-state';
 import { RowCardList } from '@/components/common/row-card-list';
 import { PageLayout } from '@/components/layout/page-layout';
+import { AccountsCensus } from '@/components/platform/accounts-census';
 import { UserRowCard } from '@/components/platform/user-row-card';
 import { UsersOverview } from '@/components/platform/users-overview';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/common/search-field';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  usePlatformCensus,
   usePlatformUsers,
   usePlatformUsersOverview,
 } from '@/hooks/platform/use-platform-users-queries';
@@ -26,10 +41,20 @@ import {
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
 
+/** Las dos vistas de la pantalla: el censo por segmento y el listado de cuentas. */
+const VIEWS = ['census', 'directory'] as const;
+type View = (typeof VIEWS)[number];
+
+const VIEW_ICON: Record<View, LucideIcon> = {
+  census: BarChart3,
+  directory: Users,
+};
+
 /**
- * Las cuentas de Luma, para el admin de la plataforma: cuántas hay, cuántas
- * confirmaron el mail, quién se registró hace poco y a quién se le asigna el
- * plan ilimitado. La ruta va detrás de `AdminLayout` y la API lo vuelve a exigir.
+ * Las cuentas de Luma, para el admin de la plataforma. El **censo** dice cuántas
+ * hay de cada tipo (solo las que tienen membresía importan) y el **directorio**
+ * es el listado: confirmadas, altas recientes, segmento y el plan ilimitado. La
+ * ruta va detrás de `AdminLayout` y la API lo vuelve a exigir.
  */
 /** El ícono de cada subconjunto de cuentas de las pestañas. */
 const FILTER_ICON: Record<PlatformUsersFilter, LucideIcon> = {
@@ -41,7 +66,9 @@ const FILTER_ICON: Record<PlatformUsersFilter, LucideIcon> = {
 
 export function PlatformUsersPage() {
   const { t, i18n } = useTranslation();
+  const [view, setView] = useState<View>('census');
   const [filter, setFilter] = useState<PlatformUsersFilter>('all');
+  const [segment, setSegment] = useState<PlatformUsersSegment>('all');
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -56,36 +83,82 @@ export function PlatformUsersPage() {
     return () => window.clearTimeout(timer);
   }, [search]);
 
+  const inDirectory = view === 'directory';
+  const census = usePlatformCensus(!inDirectory);
   const overview = usePlatformUsersOverview();
-  const users = usePlatformUsers({ filter, q, page, pageSize: PAGE_SIZE });
+  const users = usePlatformUsers({ filter, segment, q, page, pageSize: PAGE_SIZE }, inDirectory);
   const data = users.data;
 
   const toolbar = (
     <>
-      <Tabs
-        value={filter}
-        onValueChange={(value) => {
-          setFilter(value as PlatformUsersFilter);
-          setPage(1);
-        }}
-      >
+      <Tabs value={view} onValueChange={(value) => setView(value as View)}>
         <TabsList>
-          {PLATFORM_USERS_FILTERS.map((value) => (
-            <TabsTrigger key={value} value={value} icon={FILTER_ICON[value]}>
-              {t(`platform.users.filters.${value}`)}
+          {VIEWS.map((value) => (
+            <TabsTrigger key={value} value={value} icon={VIEW_ICON[value]}>
+              {t(`platform.users.views.${value}`)}
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
-      <SearchField
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder={t('platform.users.searchPlaceholder')}
-        aria-label={t('platform.users.searchPlaceholder')}
-        wrapperClassName="w-full sm:w-64"
-      />
+      {inDirectory && (
+        <>
+          <Tabs
+            value={filter}
+            onValueChange={(value) => {
+              setFilter(value as PlatformUsersFilter);
+              setPage(1);
+            }}
+          >
+            <TabsList>
+              {PLATFORM_USERS_FILTERS.map((value) => (
+                <TabsTrigger key={value} value={value} icon={FILTER_ICON[value]}>
+                  {t(`platform.users.filters.${value}`)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          <Select
+            value={segment}
+            onValueChange={(value) => {
+              setSegment(value as PlatformUsersSegment);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger aria-label={t('platform.users.segment.label')} className="w-full sm:w-52">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PLATFORM_USERS_SEGMENTS.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {t(`platform.users.segment.${value}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <SearchField
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t('platform.users.searchPlaceholder')}
+            aria-label={t('platform.users.searchPlaceholder')}
+            wrapperClassName="w-full sm:w-64"
+          />
+        </>
+      )}
     </>
   );
+
+  if (!inDirectory) {
+    return (
+      <PageLayout
+        width="default"
+        toolbar={toolbar}
+        isLoading={census.isLoading}
+        isError={census.isError}
+      >
+        {census.data && <AccountsCensus census={census.data} />}
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout
@@ -101,7 +174,11 @@ export function PlatformUsersPage() {
           <EmptyState
             icon={Users}
             title={t('platform.users.empty')}
-            description={q || filter !== 'all' ? t('platform.users.emptyFiltered') : undefined}
+            description={
+              q || filter !== 'all' || segment !== 'all'
+                ? t('platform.users.emptyFiltered')
+                : undefined
+            }
           />
         ) : (
           <RowCardList>

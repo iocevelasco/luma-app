@@ -24,8 +24,20 @@ export function usePlatformUsersOverview() {
   });
 }
 
-export function usePlatformUsers(query: PlatformUsersQuery) {
-  const enabled = useIsPlatformAdmin();
+/** El censo clasifica a todas las cuentas: solo se pide cuando se está mirando. */
+export function usePlatformCensus(active: boolean) {
+  const isAdminSession = useIsPlatformAdmin();
+
+  return useQuery({
+    queryKey: [QueryKeys.platformCensus],
+    queryFn: () => platformUsersApi.census(),
+    enabled: isAdminSession && active,
+  });
+}
+
+export function usePlatformUsers(query: PlatformUsersQuery, active = true) {
+  const isAdminSession = useIsPlatformAdmin();
+  const enabled = isAdminSession && active;
 
   return useQuery({
     queryKey: [QueryKeys.platformUsers, query],
@@ -45,6 +57,7 @@ export function useSetUnlimitedPlan() {
       platformUsersApi.setUnlimited(userId, unlimited),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QueryKeys.platformUsers] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.platformCensus] });
       queryClient.invalidateQueries({ queryKey: [QueryKeys.subscription] });
     },
   });
