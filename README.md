@@ -53,6 +53,8 @@ pnpm test:e2e:ci  # E2E chromium
 
 - `CLAUDE.md` — convenciones del repo (patrón de llamadas a la API, estilos, i18n,
   cross-browsing).
+- `docs/AGENTES.md` — cómo se reparte un trabajo entre agentes (coordinador,
+  backend, frontend, revisor): contrato, handoff y límites de autoridad.
 - `docs/DEPLOY.md` — topología, recursos de Coolify, variables de entorno.
 - `docs/CORREOS.md` — qué correos manda Luma, cómo configurar Resend y cómo ver
   el diseño de todos en local (`pnpm --filter @luma/api email:preview`).
