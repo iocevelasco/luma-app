@@ -10,16 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { fromDayKey } from '@/lib/day-key';
+import { MEMBERSHIP_TONE } from '@/lib/platform-accounts';
 import { cn } from '@/lib/utils';
 
-/** El tono de cada estado de la membresía: el mismo del Badge y de su tramo en la barra. */
-const BUCKET_TONE: Record<MembershipBucket, 'info' | 'success' | 'neutral' | 'danger'> = {
-  trial: 'info',
-  paying: 'success',
-  unlimited: 'neutral',
-  expired: 'danger',
-};
-
+/** El color de cada tramo de la barra: el mismo tono que su Badge. */
 const BUCKET_FILL: Record<MembershipBucket, string> = {
   trial: 'bg-tag-info-dot',
   paying: 'bg-tag-success-dot',
@@ -103,7 +97,7 @@ export function AccountsCensus({ census }: { census: PlatformCensus }) {
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
             {MEMBERSHIP_BUCKETS.map((bucket) => (
               <li key={bucket} className="flex items-center gap-2 text-sm">
-                <Badge variant={BUCKET_TONE[bucket]}>{t(`platform.census.membership.${bucket}`)}</Badge>
+                <Badge variant={MEMBERSHIP_TONE[bucket]}>{t(`platform.census.membership.${bucket}`)}</Badge>
                 <span className="font-mono tabular-nums">{number(memberships[bucket])}</span>
                 <span className="text-xs text-muted-foreground">
                   {members > 0 ? `${Math.round((memberships[bucket] / members) * 100)}%` : '–'}

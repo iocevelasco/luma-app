@@ -36,6 +36,37 @@ test.describe('cuentas de la plataforma: admin', () => {
     expect(consoleErrors).toEqual([]);
   });
 
+  test('el embudo y el seguimiento miran solo cuentas con membresía y no cuentan las de prueba', async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+
+    await page.goto(appUrl(USERS_PATH));
+
+    // Embudo: las seis etapas y las seis cohortes semanales.
+    await page.getByRole('tab', { name: 'Embudo' }).click();
+    await expect(page.getByText('Dónde se caen las cuentas')).toBeVisible();
+    await expect(page.getByRole('list').filter({ hasText: 'Primer gasto o cobro' }).getByRole('listitem')).toHaveCount(6);
+    await expect(page.locator('table tbody tr')).toHaveCount(6);
+
+    // Seguimiento: cambiar de filtro no rompe la pantalla.
+    await page.getByRole('tab', { name: 'Seguimiento' }).click();
+    await expect(page.getByRole('tab', { name: /Necesitan atención/ })).toBeVisible();
+    await page.getByRole('tab', { name: /En prueba/ }).click();
+    await expect(page.getByRole('tab', { name: /En prueba/ })).toHaveAttribute('data-state', 'active');
+
+    // Una cuenta de prueba no aparece ni buscándola.
+    const { email } = e2eUser('admin');
+    await page.getByRole('searchbox').fill(email);
+    await expect(page.getByText('No hay cuentas con membresía para mostrar.')).toBeVisible();
+    await expect(page.getByText(email)).toHaveCount(0);
+
+    expect(consoleErrors).toEqual([]);
+  });
+
   test('el directorio filtra por estado y por segmento, y no lista las cuentas de prueba', async ({
     page,
   }) => {
@@ -129,9 +160,11 @@ test.describe('cuentas de la plataforma: usuario común', () => {
     });
     expect(response.status()).toBe(403);
 
-    const census = await request.get(appUrl('/api/admin/users/census'), {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    expect(census.status()).toBe(403);
+    for (const path of ['census', 'funnel', 'follow-up']) {
+      const response403 = await request.get(appUrl(`/api/admin/users/${path}`), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(response403.status(), path).toBe(403);
+    }
   });
 });

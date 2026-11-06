@@ -5,6 +5,9 @@ import type {
   CampaignInput,
   PlatformActivityReport,
   PlatformCensus,
+  PlatformFollowUpPage,
+  PlatformFollowUpQuery,
+  PlatformFunnel,
   PlatformUsersOverview,
   PlatformUsersPage,
   PlatformUsersQuery,
@@ -25,6 +28,16 @@ export const platformUsersApi = {
   overview: () => unwrap<PlatformUsersOverview>(apiClient.get('/api/admin/users/overview')),
 
   census: () => unwrap<PlatformCensus>(apiClient.get('/api/admin/users/census')),
+
+  funnel: () => unwrap<PlatformFunnel>(apiClient.get('/api/admin/users/funnel')),
+
+  followUp: ({ filter, q, page, pageSize }: PlatformFollowUpQuery) => {
+    const params = new URLSearchParams({ filter, page: String(page), pageSize: String(pageSize) });
+    if (q) params.set('q', q);
+    return unwrap<PlatformFollowUpPage>(
+      apiClient.get(`/api/admin/users/follow-up?${params.toString()}`),
+    );
+  },
 
   list: ({ filter, segment, q, page, pageSize }: PlatformUsersQuery) => {
     const params = new URLSearchParams({

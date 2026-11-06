@@ -48,6 +48,8 @@ export enum QueryKeys {
   exchangeRates = 'exchange-rates',
   platformUsersOverview = 'platform-users-overview',
   platformCensus = 'platform-census',
+  platformFunnel = 'platform-funnel',
+  platformFollowUp = 'platform-follow-up',
   platformUsers = 'platform-users',
   chatPrompt = 'chat-prompt',
   platformActivity = 'platform-activity',

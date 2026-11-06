@@ -145,6 +145,51 @@ function pipeline(source: Source, cutoffs: Record<'7d' | '30d', Date>): Pipeline
   ];
 }
 
+/** Lo que una persona hizo en total, sin mirar en qué obra ni con qué rol. */
+export interface ActorStats {
+  counts: Record<PlatformAction, number>;
+  /** La acción más reciente de cualquier tipo. `null` si no hizo ninguna. */
+  last: Date | null;
+}
+
+function actorPipeline(source: Source): PipelineStage[] {
+  return [
+    ...(source.match ? [{ $match: source.match } as PipelineStage] : []),
+    ...(source.unwind ? [{ $unwind: source.unwind } as PipelineStage] : []),
+    {
+      $group: {
+        _id: `$${source.actor}`,
+        count: { $sum: 1 },
+        last: { $max: `$${source.at}` },
+      },
+    },
+  ];
+}
+
+/**
+ * Cuántas acciones de cada tipo hizo cada persona y cuándo fue la última. Es
+ * lo que mira el seguimiento de cuentas: una fila por persona, no por obra. Va
+ * por las mismas `SOURCES` que Actividad, así que cuenta lo mismo (y se borra
+ * lo mismo: ver "Borrados" arriba).
+ */
+export async function actorActivityStats(): Promise<Map<string, ActorStats>> {
+  const results = await Promise.all(
+    SOURCES.map((source) => source.model.aggregate(actorPipeline(source))),
+  );
+  const stats = new Map<string, ActorStats>();
+  results.forEach((rows, index) => {
+    for (const row of rows as { _id: unknown; count: number; last: Date | null }[]) {
+      if (!row._id) continue;
+      const key = String(row._id);
+      const entry = stats.get(key) ?? { counts: emptyActionCounts(), last: null };
+      entry.counts[SOURCES[index].action] += row.count;
+      if (row.last && (!entry.last || row.last > entry.last)) entry.last = row.last;
+      stats.set(key, entry);
+    }
+  });
+  return stats;
+}
+
 async function collectGroups(now: Date): Promise<ActionGroup[]> {
   const cutoffs = {
     '7d': new Date(now.getTime() - PERIOD_DAYS['7d'] * DAY_MS),

@@ -2005,7 +2005,9 @@
       },
       "views": {
         "census": "Censo",
-        "directory": "Directorio"
+        "directory": "Directorio",
+        "funnel": "Embudo",
+        "followUp": "Seguimiento"
       },
       "segment": {
         "label": "Segmento",
@@ -2172,6 +2174,97 @@
         "other": "Otros roles",
         "note": "Cada persona cuenta una sola vez: si tiene membresía propia, gana sobre cualquier rol que tenga en otras obras. Los roles con menos de {{min}} personas se juntan en «Otros roles»; si juntos tampoco llegan, no se muestran."
       }
+    },
+    "funnel": {
+      "kpi": {
+        "registered": {
+          "title": "Cuentas con membresía",
+          "hint": "Las que empezaron una prueba propia"
+        },
+        "project": {
+          "title": "Crearon su primera obra",
+          "hint": "Del total de cuentas con membresía"
+        },
+        "money": {
+          "title": "Cargaron un gasto o cobro",
+          "hint": "Del total de cuentas con membresía"
+        },
+        "active": {
+          "title": "Activas en 7 días",
+          "hint": "Hicieron al menos una acción"
+        }
+      },
+      "steps": {
+        "title": "Dónde se caen las cuentas",
+        "subtitle": "Cada barra es cuántas llegaron a esa etapa. El porcentaje es contra la etapa anterior.",
+        "biggestDrop": "mayor caída",
+        "stuck_one": "{{count}} cuenta confirmó el correo y no creó ninguna obra. Es la que más conviene contactar.",
+        "stuck_other": "{{count}} cuentas confirmaron el correo y no crearon ninguna obra. Son las que más conviene contactar."
+      },
+      "stages": {
+        "registered": "Registrada",
+        "emailConfirmed": "Correo confirmado",
+        "firstProject": "Primera obra",
+        "firstInvite": "Primer invitado",
+        "firstPlanning": "Primera actividad o presupuesto",
+        "firstMoney": "Primer gasto o cobro"
+      },
+      "cohorts": {
+        "title": "Por semana de alta",
+        "subtitle": "Porcentaje de cada grupo que llegó a cada etapa",
+        "week": "Semana",
+        "size": "Altas",
+        "note": "Las columnas 2 a 6 son las etapas del embudo. Los grupos recientes todavía no tuvieron tiempo de avanzar."
+      }
+    },
+    "followUp": {
+      "filters": {
+        "all": "Todas",
+        "risk": "Necesitan atención",
+        "trial": "En prueba",
+        "paying": "Pagando",
+        "expired": "Vencidas"
+      },
+      "groups": {
+        "risk": "Necesitan atención",
+        "ok": "Al día"
+      },
+      "health": {
+        "expired": "Solo lectura",
+        "paymentFailed": "Pago fallido",
+        "paymentReview": "Pago en revisión",
+        "unconfirmed": "No confirmó el correo",
+        "noProject": "Sin primera obra",
+        "cold": "Se enfrió",
+        "trialEnding": "Prueba por vencer",
+        "new": "Recién llegó",
+        "ok": "En marcha"
+      },
+      "joined": "alta {{when}}",
+      "trialLeft_one": "prueba: {{count}} día",
+      "trialLeft_other": "prueba: {{count}} días",
+      "metrics": {
+        "projects_one": "{{count}} obra",
+        "projects_other": "{{count}} obras",
+        "invited_one": "{{count}} invitado",
+        "invited_other": "{{count}} invitados",
+        "activities_one": "{{count}} actividad",
+        "activities_other": "{{count}} actividades"
+      },
+      "lastAction": "última acción: {{when}}",
+      "noActivity": "sin actividad",
+      "view": "Ver",
+      "stageProgress": "Etapa {{current}} de {{total}}",
+      "detail": {
+        "projects": "Obras",
+        "invited": "Invitados",
+        "noInvites": "ninguno todavía",
+        "activities": "Actividades creadas",
+        "lastAction": "Última acción"
+      },
+      "privacy": "Solo cantidades. Esta vista no muestra nombres de clientes, descripciones ni montos de {{name}}.",
+      "empty": "No hay cuentas con membresía para mostrar.",
+      "emptyFiltered": "Prueba con otro filtro o con otra búsqueda."
     }
   },
   "legal": {

@@ -2005,7 +2005,9 @@
       },
       "views": {
         "census": "Censo",
-        "directory": "Diretório"
+        "directory": "Diretório",
+        "funnel": "Funil",
+        "followUp": "Acompanhamento"
       },
       "segment": {
         "label": "Segmento",
@@ -2172,6 +2174,97 @@
         "other": "Outros papéis",
         "note": "Cada pessoa conta uma só vez: se tem assinatura própria, ela vale mais que qualquer papel em outras obras. Os papéis com menos de {{min}} pessoas são juntados em «Outros papéis»; se juntos também não chegam, não aparecem."
       }
+    },
+    "funnel": {
+      "kpi": {
+        "registered": {
+          "title": "Contas com assinatura",
+          "hint": "As que começaram um teste próprio"
+        },
+        "project": {
+          "title": "Criaram a primeira obra",
+          "hint": "Do total de contas com assinatura"
+        },
+        "money": {
+          "title": "Lançaram uma despesa ou recebimento",
+          "hint": "Do total de contas com assinatura"
+        },
+        "active": {
+          "title": "Ativas em 7 dias",
+          "hint": "Fizeram pelo menos uma ação"
+        }
+      },
+      "steps": {
+        "title": "Onde as contas se perdem",
+        "subtitle": "Cada barra é quantas chegaram a essa etapa. A porcentagem é em relação à etapa anterior.",
+        "biggestDrop": "maior queda",
+        "stuck_one": "{{count}} conta confirmou o e-mail e não criou nenhuma obra. É a que mais vale contatar.",
+        "stuck_other": "{{count}} contas confirmaram o e-mail e não criaram nenhuma obra. São as que mais vale contatar."
+      },
+      "stages": {
+        "registered": "Cadastrada",
+        "emailConfirmed": "E-mail confirmado",
+        "firstProject": "Primeira obra",
+        "firstInvite": "Primeiro convidado",
+        "firstPlanning": "Primeira atividade ou orçamento",
+        "firstMoney": "Primeira despesa ou recebimento"
+      },
+      "cohorts": {
+        "title": "Por semana de cadastro",
+        "subtitle": "Porcentagem de cada grupo que chegou a cada etapa",
+        "week": "Semana",
+        "size": "Cadastros",
+        "note": "As colunas 2 a 6 são as etapas do funil. Os grupos recentes ainda não tiveram tempo de avançar."
+      }
+    },
+    "followUp": {
+      "filters": {
+        "all": "Todas",
+        "risk": "Precisam de atenção",
+        "trial": "Em teste",
+        "paying": "Pagando",
+        "expired": "Vencidas"
+      },
+      "groups": {
+        "risk": "Precisam de atenção",
+        "ok": "Em dia"
+      },
+      "health": {
+        "expired": "Somente leitura",
+        "paymentFailed": "Pagamento falhou",
+        "paymentReview": "Pagamento em análise",
+        "unconfirmed": "Não confirmou o e-mail",
+        "noProject": "Sem primeira obra",
+        "cold": "Esfriou",
+        "trialEnding": "Teste perto de vencer",
+        "new": "Acabou de chegar",
+        "ok": "Em andamento"
+      },
+      "joined": "cadastro {{when}}",
+      "trialLeft_one": "teste: {{count}} dia",
+      "trialLeft_other": "teste: {{count}} dias",
+      "metrics": {
+        "projects_one": "{{count}} obra",
+        "projects_other": "{{count}} obras",
+        "invited_one": "{{count}} convidado",
+        "invited_other": "{{count}} convidados",
+        "activities_one": "{{count}} atividade",
+        "activities_other": "{{count}} atividades"
+      },
+      "lastAction": "última ação: {{when}}",
+      "noActivity": "sem atividade",
+      "view": "Ver",
+      "stageProgress": "Etapa {{current}} de {{total}}",
+      "detail": {
+        "projects": "Obras",
+        "invited": "Convidados",
+        "noInvites": "nenhum ainda",
+        "activities": "Atividades criadas",
+        "lastAction": "Última ação"
+      },
+      "privacy": "Só quantidades. Esta tela não mostra nomes de clientes, descrições nem valores de {{name}}.",
+      "empty": "Não há contas com assinatura para mostrar.",
+      "emptyFiltered": "Tente outro filtro ou outra busca."
     }
   },
   "legal": {

@@ -25,6 +25,17 @@ export const platformUsersQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+export const PLATFORM_FOLLOW_UP_FILTERS = ['all', 'risk', 'trial', 'paying', 'expired'] as const;
+
+export const platformFollowUpQuerySchema = z.object({
+  filter: z.enum(PLATFORM_FOLLOW_UP_FILTERS).default('all'),
+  /** Busca en nombre y mail. */
+  q: z.string().trim().max(80).default(''),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type PlatformFollowUpQuery = z.infer<typeof platformFollowUpQuerySchema>;
 export type PlatformUsersFilter = z.infer<typeof platformUsersFilterSchema>;
 export type PlatformUsersSegment = z.infer<typeof platformUsersSegmentSchema>;
 export type PlatformUsersQuery = z.infer<typeof platformUsersQuerySchema>;

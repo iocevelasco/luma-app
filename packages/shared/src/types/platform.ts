@@ -1,8 +1,12 @@
+import type { ProjectRole } from '../permissions/index.js';
 import type {
+  AccountHealthKey,
   AccountSegment,
+  AccountStage,
   MembershipBucket,
   StaffRoleCount,
 } from '../platform-accounts/index.js';
+import type { SubscriptionStatus } from './subscription.js';
 import type { AccountStatus, UserRole } from './index.js';
 
 /**
@@ -61,6 +65,66 @@ export interface PlatformCensus {
   staffRoles: StaffRoleCount[];
   /** Las últimas 12 semanas, de la más vieja a la actual. */
   signups: PlatformCensusWeek[];
+}
+
+/** Cuántas cuentas con membresía llegaron a una etapa del embudo. */
+export interface PlatformFunnelStage {
+  stage: AccountStage;
+  count: number;
+}
+
+/** Una semana de altas: cuántas cuentas entraron y cuántas llegaron a cada etapa. */
+export interface PlatformFunnelCohort {
+  /** Lunes de esa semana, `YYYY-MM-DD`. */
+  weekStart: string;
+  size: number;
+  /** Una cifra por etapa, en el orden de `ACCOUNT_STAGES`. */
+  reached: number[];
+}
+
+/** El embudo de activación de las cuentas con membresía. */
+export interface PlatformFunnel {
+  stages: PlatformFunnelStage[];
+  /** Las últimas 6 semanas, de la más vieja a la actual. */
+  cohorts: PlatformFunnelCohort[];
+  /** Cuentas con alguna acción en los últimos 7 días. */
+  active7d: number;
+}
+
+/**
+ * Una cuenta con membresía en la lista de seguimiento. Solo cantidades: ni
+ * nombres de clientes, ni descripciones, ni montos.
+ */
+export interface PlatformFollowUpRow {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  membership: SubscriptionStatus;
+  /** Solo en prueba. */
+  trialDaysLeft: number | null;
+  stage: AccountStage;
+  projects: number;
+  invited: number;
+  invitedByRole: Partial<Record<ProjectRole, number>>;
+  activities: number;
+  /** `null` si nunca hizo una acción registrada. */
+  lastActionAt: string | null;
+  health: AccountHealthKey;
+  /** Va en "necesitan atención". */
+  risk: boolean;
+}
+
+export type PlatformFollowUpFilter = 'all' | 'risk' | 'trial' | 'paying' | 'expired';
+
+export interface PlatformFollowUpPage {
+  rows: PlatformFollowUpRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pages: number;
+  /** Cuántas cuentas tiene cada filtro, con la búsqueda ya aplicada. */
+  counts: Record<PlatformFollowUpFilter, number>;
 }
 
 export interface PlatformUserRow {

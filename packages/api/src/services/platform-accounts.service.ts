@@ -38,15 +38,22 @@ export interface ClassifiedAccount {
   segment: AccountSegment;
   /** Solo si tiene membresía. */
   membership: MembershipBucket | null;
+  /** Estado de la membresía y días de prueba que le quedan. `null` sin membresía. */
+  subscription: { status: SubscriptionStatus; trialDaysLeft: number | null } | null;
   /** Solo si es empleado: el rol con el que cuenta. */
   staffRole: StaffRole | null;
   createdAt: Date;
 }
 
+interface OwnState {
+  status: SubscriptionStatus;
+  trialDaysLeft: number | null;
+}
+
 /** La membresía que cuenta de una persona con varias Empresas: la primera iniciada. */
-function ownStatus(statuses: SubscriptionStatus[]): SubscriptionStatus | null {
-  if (statuses.length === 0) return null;
-  return statuses.find((status) => status !== 'sin_iniciar') ?? 'sin_iniciar';
+function ownState(states: OwnState[]): OwnState | null {
+  if (states.length === 0) return null;
+  return states.find((state) => state.status !== 'sin_iniciar') ?? states[0];
 }
 
 /**
@@ -67,19 +74,23 @@ export async function classifyAccounts(now: Date = new Date()): Promise<Classifi
     now,
   );
 
-  const statusesByUser = new Map<string, SubscriptionStatus[]>();
+  const statesByUser = new Map<string, OwnState[]>();
   for (const owner of owners) {
-    const status = states.get(String(owner.organization))?.status;
-    if (!status) continue;
+    const state = states.get(String(owner.organization));
+    if (!state) continue;
     const key = String(owner.user);
-    statusesByUser.set(key, [...(statusesByUser.get(key) ?? []), status]);
+    statesByUser.set(key, [
+      ...(statesByUser.get(key) ?? []),
+      { status: state.status, trialDaysLeft: state.trialDaysLeft },
+    ]);
   }
   const rolesByUser = new Map(roleRows.map((row) => [String(row._id), row.roles]));
 
   const accounts: ClassifiedAccount[] = [];
   for (const user of users) {
     const id = String(user._id);
-    const subscriptionStatus = ownStatus(statusesByUser.get(id) ?? []);
+    const own = ownState(statesByUser.get(id) ?? []);
+    const subscriptionStatus = own?.status ?? null;
     const projectRoles = rolesByUser.get(id) ?? [];
     const classification = classifyAccount({
       isTest: false,
@@ -97,6 +108,7 @@ export async function classifyAccounts(now: Date = new Date()): Promise<Classifi
         classification === 'membership' && subscriptionStatus
           ? membershipBucket(subscriptionStatus)
           : null,
+      subscription: classification === 'membership' && own ? own : null,
       staffRole: classification === 'staff' ? primaryStaffRole(projectRoles) : null,
       createdAt: user.createdAt,
     });
