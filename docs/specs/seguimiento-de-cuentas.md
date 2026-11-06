@@ -1,6 +1,6 @@
 # Seguimiento de cuentas con membresía
 
-**Estado:** borrador · **Fecha:** 2026-11-05 · **Pantalla:** `/plataforma/usuarios` · **Prototipo:** [`seguimiento-plataforma.html`](../design/prototipos/seguimiento-plataforma.html)
+**Estado:** borrador · **Fecha:** 2026-11-05 · **Pantalla:** `/plataforma/usuarios`
 
 ## Resumen
 
@@ -131,7 +131,7 @@ un ingreso, es una acción registrada.
 - **R2. Endpoint de censo** (`requireAdmin`): conteos por segmento, bajas, cuentas
   de prueba excluidas, estado de membresía y altas por semana (últimas 12) con y
   sin membresía.
-- **R3. Pestaña Censo** como en el prototipo, con la aclaración de cuántas cuentas
+- **R3. Pestaña Censo**, con la aclaración de cuántas cuentas
   cuenta hoy la pantalla frente a cuántas tienen membresía.
 - **R4. Filtro por segmento en el Directorio**, y el segmento visible en cada fila.
 - **R5. Roles chicos, fundidos.** Un rol de empleado con menos de
