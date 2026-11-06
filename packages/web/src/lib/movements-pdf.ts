@@ -18,8 +18,12 @@ export interface MovementsPdfInput {
   filtered: string | null;
   columns: string[];
   rows: string[][];
-  /** Ancho en mm de cada columna; `undefined` deja que la tabla reparta el resto. */
-  widths: (number | undefined)[];
+  /**
+   * Ancho de cada columna: en mm, `'wrap'` (justo lo que ocupa su contenido, sin partirlo en dos
+   * líneas: lo que corresponde a una fecha o a un importe) o `undefined` para que la tabla
+   * reparta el resto.
+   */
+  widths: (number | 'wrap' | undefined)[];
   total: { label: string; value: string };
   /** "Generado el 24/10/2026 10:30". */
   generated: string;

@@ -63,7 +63,7 @@ export function buildExpensesPdf(input: {
         .join(' · '),
       labels.money(expense.amountInProjectCurrency),
     ]),
-    widths: [22, undefined, 26, 38, 28],
+    widths: ['wrap', undefined, 26, 38, 'wrap'],
     total: { label: labels.total, value: labels.money(total) },
     generated: labels.generated,
     page: labels.page,

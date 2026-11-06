@@ -57,7 +57,7 @@ export function buildPaymentsPdf(input: {
       payment.reference ?? '',
       labels.money(payment.amountInProjectCurrency),
     ]),
-    widths: [22, undefined, 32, 36, 28],
+    widths: ['wrap', undefined, 32, 36, 'wrap'],
     total: { label: labels.total, value: labels.money(total) },
     generated: labels.generated,
     page: labels.page,

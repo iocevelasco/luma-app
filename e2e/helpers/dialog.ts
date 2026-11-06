@@ -12,7 +12,9 @@ export async function attachDialog(page: Page, name: string) {
       document
         .getAnimations()
         .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
-        .map((animation) => animation.finished),
+        // Una animación cancelada (el diálogo anterior se desmontó a mitad de su salida) rechaza
+        // `finished`: para esperar da lo mismo que haya terminado, así que no es un error.
+        .map((animation) => animation.finished.catch(() => undefined)),
     ),
   );
   const path = test.info().outputPath(`${name}.png`);
