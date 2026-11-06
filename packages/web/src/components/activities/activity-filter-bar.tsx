@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ACTIVITY_STATUSES } from '@/lib/activity-catalog';
 import { countActiveFilters, type ActivityFilters } from '@/lib/activity-filters';
+import { normalizeText as normalize } from '@/lib/normalize-text';
 import { initials } from '@/lib/initials';
 import { cn } from '@/lib/utils';
 
@@ -51,11 +52,6 @@ interface ActivityFilterControlsProps {
 
 /** Cuántos responsables se ofrecen como avatar de un toque; el resto, en el panel. */
 const AVATAR_LIMIT = 5;
-
-/** Sin mayúsculas ni tildes: "fundacion" encuentra "Fundación". */
-function normalize(text: string): string {
-  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-}
 
 const MAX_SUGGESTIONS = 6;
 

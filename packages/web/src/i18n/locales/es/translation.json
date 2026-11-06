@@ -1424,7 +1424,41 @@
       "onAccount": "A cuenta",
       "delete": "Eliminar cobro",
       "deleteTitle": "¿Eliminar este cobro?",
-      "deleteBody": "Vas a eliminar el cobro de {{amount}} del {{date}}. El saldo del cliente se recalcula sin él. No se puede deshacer."
+      "deleteBody": "Vas a eliminar el cobro de {{amount}} del {{date}}. El saldo del cliente se recalcula sin él. No se puede deshacer.",
+      "filters": {
+        "search": "Buscar cobros",
+        "method": "Forma de pago",
+        "allMethods": "Todas las formas",
+        "from": "Desde",
+        "to": "Hasta",
+        "clear": "Limpiar filtros",
+        "emptyTitle": "Ningún cobro coincide",
+        "emptyDescription": "Probá con otra búsqueda o quitá algún filtro."
+      },
+      "groupBy": {
+        "label": "Agrupar por",
+        "month": "Agrupar por mes",
+        "day": "Agrupar por día",
+        "method": "Agrupar por forma de pago"
+      },
+      "pdf": {
+        "button": "Descargar PDF",
+        "generating": "Generando PDF…",
+        "title": "Cobros",
+        "summary_one": "{{count}} cobro",
+        "summary_other": "{{count}} cobros",
+        "columnDate": "Fecha",
+        "columnConcept": "Concepto",
+        "columnAmount": "Importe",
+        "total": "Total",
+        "generated": "Generado el {{date}}",
+        "page": "Página {{page}} de {{total}}",
+        "downloaded": "PDF descargado.",
+        "error": "No pudimos armar el PDF. Probá de nuevo.",
+        "filtered": "Con filtros aplicados: no es la lista completa."
+      },
+      "groupCount_one": "{{count}} cobro",
+      "groupCount_other": "{{count}} cobros"
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1439,7 +1473,49 @@
       "delete": "Eliminar gasto",
       "openReceipt": "Abrir comprobante",
       "deleteTitle": "¿Eliminar este gasto?",
-      "deleteBody": "Vas a eliminar «{{description}}» por {{amount}}. El resultado de la obra se recalcula. No se puede deshacer."
+      "deleteBody": "Vas a eliminar «{{description}}» por {{amount}}. El resultado de la obra se recalcula. No se puede deshacer.",
+      "pdf": {
+        "button": "Descargar PDF",
+        "generating": "Generando PDF…",
+        "title": "Gastos",
+        "summary_one": "{{count}} gasto",
+        "summary_other": "{{count}} gastos",
+        "columnDate": "Fecha",
+        "columnDetail": "Detalle",
+        "columnAmount": "Importe",
+        "total": "Total",
+        "generated": "Generado el {{date}}",
+        "page": "Página {{page}} de {{total}}",
+        "downloaded": "PDF descargado.",
+        "error": "No pudimos armar el PDF. Probá de nuevo.",
+        "filtered": "Con filtros aplicados: no es la lista completa."
+      },
+      "filters": {
+        "search": "Buscar gastos",
+        "category": "Categoría",
+        "allCategories": "Todas las categorías",
+        "from": "Desde",
+        "to": "Hasta",
+        "clear": "Limpiar filtros",
+        "emptyTitle": "Ningún gasto coincide",
+        "emptyDescription": "Probá con otra búsqueda o quitá algún filtro."
+      },
+      "groupBy": {
+        "label": "Agrupar por",
+        "category": "Agrupar por categoría",
+        "provider": "Agrupar por proveedor",
+        "activity": "Agrupar por actividad",
+        "month": "Agrupar por mes",
+        "day": "Agrupar por día"
+      },
+      "group": {
+        "none": {
+          "provider": "Sin proveedor",
+          "activity": "Sin actividad"
+        }
+      },
+      "groupCount_one": "{{count}} gasto",
+      "groupCount_other": "{{count}} gastos"
     },
     "payroll": {
       "title": "Nómina",
@@ -1526,7 +1602,41 @@
       "expenseDelete": "No pudimos eliminar el gasto.",
       "receiptType": "Comprobante no soportado. Subí un PDF o una imagen.",
       "receiptSize": "El comprobante es demasiado grande (máximo 20MB)."
-    }
+    },
+    "detail": {
+      "originalAmount": "Importe original",
+      "rate": "cotización {{rate}}",
+      "notes": "Notas",
+      "registeredBy": "Registrado por",
+      "registeredAt": "Registrado el",
+      "status": "Estado",
+      "paidSoFar": "Cobrado hasta ahora",
+      "scheduleItem": "Cuota"
+    },
+    "filters": {
+      "button": "Filtros",
+      "done": "Hecho",
+      "actions": "Acciones"
+    },
+    "export": {
+      "download": "Descargar",
+      "generating": "Generando PDF…",
+      "pdf": "PDF",
+      "csv": "CSV (Excel)",
+      "pdfButton": "Descargar PDF",
+      "csvButton": "Descargar CSV",
+      "csvDownloaded": "CSV descargado.",
+      "csvError": "No pudimos armar el CSV. Probá de nuevo.",
+      "columnDate": "Fecha",
+      "columnConcept": "Concepto",
+      "columnAmount": "Importe",
+      "columnCurrency": "Moneda",
+      "columnOriginalAmount": "Importe original",
+      "columnOriginalCurrency": "Moneda original",
+      "columnRate": "Cotización",
+      "columnNotes": "Notas"
+    },
+    "listTruncated": "Se muestran los {{count}} movimientos más recientes; puede haber más. Los filtros y los totales por grupo sólo ven esos."
   },
   "errors": {
     "validation": "Revisá los datos: hay campos con errores.",
