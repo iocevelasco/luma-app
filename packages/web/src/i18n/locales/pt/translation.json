@@ -127,7 +127,8 @@
       "team": "Equipe",
       "payments": "Pagamentos",
       "expenses": "Despesas",
-      "aria": "Seções da obra"
+      "aria": "Seções da obra",
+      "inventory": "Estoque"
     },
     "navHint": {
       "back": "Volte para a lista de todas as suas obras.",
@@ -142,7 +143,8 @@
       "expenses": "O que saiu da obra, com data, moeda e comprovante.",
       "budget": "Cadastre ou importe o orçamento e compare com o comprometido.",
       "advisor": "Consulte a IA sobre a obra, com seu orçamento e seu avanço.",
-      "team": "Dê acesso à obra a supervisores, contadores e ao cliente."
+      "team": "Dê acesso à obra a supervisores, contadores e ao cliente.",
+      "inventory": "O que há no pátio da obra e quem retirou cada material."
     },
     "detail": {
       "gantt": "Cronograma de tarefas",
@@ -2206,6 +2208,72 @@
       "roles": "O que cada papel pode fazer em uma obra?",
       "advisor": "O que posso perguntar ao Consultor IA?",
       "money": "Qual a diferença entre gasto e recebido?"
+    }
+  },
+  "inventory": {
+    "tabs": {
+      "stock": "No pátio",
+      "kardex": "Kardex"
+    },
+    "empty": {
+      "title": "Ainda não há material no pátio",
+      "description": "O material entra sozinho quando você marca uma compra como «Na obra». Daqui você vai registrar o que é entregue, devolvido ou perdido."
+    },
+    "stock": {
+      "search": "Buscar material",
+      "noResults": "Nenhum material com esse nome.",
+      "meta": "Entrou {{received}} · Entregue {{consumed}} · Perda {{wasted}}",
+      "deliver": "Entregar",
+      "moreActions": "Mais ações de {{name}}"
+    },
+    "level": {
+      "ok": "Em estoque",
+      "low": "Acabando",
+      "out": "Esgotado"
+    },
+    "kind": {
+      "compra": "Compra",
+      "devolucion": "Devolução",
+      "consumo": "Entrega",
+      "merma": "Perda"
+    },
+    "movement": {
+      "new": "Registrar saída",
+      "title": {
+        "devolucion": "Registrar devolução",
+        "consumo": "Registrar entrega",
+        "merma": "Registrar perda"
+      },
+      "kind": "Tipo",
+      "item": "Material",
+      "itemPlaceholder": "Escolha um material",
+      "quantity": "Quantidade",
+      "available": "Disponível: {{quantity}} {{unit}}",
+      "receiver": "Quem recebe",
+      "responsible": "Responsável",
+      "optional": "(opcional)",
+      "receiverPlaceholder": "Ex. Pedro Pérez / Alvenaria",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Ex. Endureceu com a chuva",
+      "activity": "Tarefa",
+      "noActivity": "Nenhuma",
+      "destination": "Zona ou frente",
+      "destinationPlaceholder": "Ex. Laje nível 2",
+      "note": "Observação",
+      "submit": "Registrar",
+      "saved": "Movimento registrado"
+    },
+    "kardex": {
+      "from": "De",
+      "to": "Até",
+      "item": "Material",
+      "allItems": "Todos os materiais",
+      "kind": "Tipo",
+      "allKinds": "Todos os tipos",
+      "receiver": "Buscar por quem recebeu",
+      "empty": "Ainda não há movimentos com esses filtros.",
+      "error": "Não foi possível carregar o kardex.",
+      "by": "Registrado por {{name}}"
     }
   }
 }

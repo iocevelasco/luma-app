@@ -69,6 +69,9 @@ export const USER_REFERENCES: Record<string, Record<string, UserRefTreatment>> =
   ProjectDocument: { uploadedBy: 'history' },
   ProjectMembership: { user: 'owner-deleted', invitedBy: 'history' },
   ProviderEngagement: { createdBy: 'history' },
+  // El kardex es historia de la obra: quién lo registró queda. `receiver` es un
+  // nombre escrito a mano de un tercero, no una cuenta.
+  StockMovement: { createdBy: 'history' },
   Subscription: { owner: 'owner-scrubbed' },
   SubscriptionPayment: { submittedBy: 'owner-scrubbed', reviewedBy: 'history' },
   User: { activationLinkHeldBy: 'history', claimedViaLinkBy: 'history', deactivated_by: 'history' },
@@ -89,6 +92,8 @@ export const PERSONAL_FIELDS: Record<string, Record<string, 'purged' | 'third-pa
   // Referencia de una transferencia de la obra: dato del negocio de la Empresa.
   Payment: { reference: 'third-party' },
   Provider: { phone: 'third-party', email: 'third-party' },
+  // Quien retira material del patio: un nombre de un tercero, parte del kardex.
+  StockMovement: { receiver: 'third-party' },
   SubscriptionPayment: { bank: 'purged', reference: 'purged', payerId: 'purged' },
   User: { email: 'purged', picture: 'purged' },
 };

@@ -60,6 +60,9 @@ const ProjectActivitiesPage = lazy(() =>
     default: m.ProjectActivitiesPage,
   })),
 );
+const ProjectInventoryPage = lazy(() =>
+  import('./pages/projects/project-inventory').then((m) => ({ default: m.ProjectInventoryPage })),
+);
 const ProjectMaterialsPage = lazy(() =>
   import('./pages/projects/project-materials').then((m) => ({ default: m.ProjectMaterialsPage })),
 );
@@ -208,6 +211,10 @@ export function AppRoutes() {
           <Route
             path={ROUTES.PROJECT_MATERIALS}
             element={<LazyRoute><ProjectMaterialsPage /></LazyRoute>}
+          />
+          <Route
+            path={ROUTES.PROJECT_INVENTORY}
+            element={<LazyRoute><ProjectInventoryPage /></LazyRoute>}
           />
           <Route
             path={ROUTES.PROJECT_LABOR}

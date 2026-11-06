@@ -17,6 +17,7 @@ import {
   updateProject,
 } from '../controllers/index.js';
 import { activityRouter } from './activity.js';
+import { inventoryRouter } from './inventory.js';
 import { materialRouter } from './material.js';
 import { laborRouter } from './labor.js';
 import { budgetRouter } from './budget.js';
@@ -88,6 +89,7 @@ projectRouter.delete(
 
 projectRouter.use('/:projectId/activities', activityRouter);
 projectRouter.use('/:projectId/materials', materialRouter);
+projectRouter.use('/:projectId/inventory', inventoryRouter);
 projectRouter.use('/:projectId/labor', laborRouter);
 projectRouter.use('/:projectId/budget', budgetRouter);
 projectRouter.use('/:projectId/advisor', advisorRouter);

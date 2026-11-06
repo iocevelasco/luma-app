@@ -14,6 +14,7 @@ import { CrewMember } from '../models/CrewMember.js';
 import { Expense } from '../models/Expense.js';
 import { LaborRecord } from '../models/LaborRecord.js';
 import { MaterialItem } from '../models/MaterialItem.js';
+import { StockMovement } from '../models/StockMovement.js';
 import { Milestone } from '../models/Milestone.js';
 import { Notification } from '../models/Notification.js';
 import { Payment } from '../models/Payment.js';
@@ -70,6 +71,7 @@ export const PROJECT_OWNED: ReadonlyArray<{ model: AnyModel; label: string }> = 
   { model: ProjectMembership, label: 'ProjectMembership' },
   { model: LaborRecord, label: 'LaborRecord' },
   { model: MaterialItem, label: 'MaterialItem' },
+  { model: StockMovement, label: 'StockMovement' },
   { model: Notification, label: 'Notification' },
   { model: CrewGoal, label: 'CrewGoal' },
   { model: CrewMember, label: 'CrewMember' },

@@ -160,6 +160,11 @@ export type Capability =
   // facturas de lo que compró, pero no Finanzas ni el total gastado.
   | 'material.invoice.read'
   | 'material.invoice.write'
+  // Inventario de obra: lo que hay en el patio y el kardex de cada movimiento.
+  // Escribir es registrar entradas y salidas (consumo, devolución, merma). Sin
+  // costos: el inventario cuenta unidades, no plata.
+  | 'inventory.read'
+  | 'inventory.write'
   // Personal en obra: sumar gente, administrar el roster y la asistencia.
   // Lo que cada uno tiene que hacer son tareas: `activity.*`.
   | 'crew.read'
@@ -202,6 +207,8 @@ const SUPERVISOR_CAPABILITIES = [
     // cobros, así que tampoco puede calcular el margen.
     'material.invoice.read',
     'material.invoice.write',
+    'inventory.read',
+    'inventory.write',
     'milestone.read',
     'milestone.report',
     'document.read',
@@ -222,7 +229,9 @@ const SUPERVISOR_CAPABILITIES = [
  * (`activity.plan`: fechas, alcance, cancelar, borrar) y cargar documentación.
  */
 const PROFESSIONAL_CAPABILITIES: readonly Capability[] = [
-  ...SUPERVISOR_CAPABILITIES,
+  // Ven el inventario pero no despachan: quien registra salidas del patio es
+  // el gerente o el supervisor que está en el sitio.
+  ...SUPERVISOR_CAPABILITIES.filter((capability) => capability !== 'inventory.write'),
   'activity.plan',
   'document.write',
 ];
@@ -285,6 +294,8 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'material.cost.read',
     'material.invoice.read',
     'material.invoice.write',
+    'inventory.read',
+    'inventory.write',
     'milestone.read',
     'milestone.report',
     'milestone.publish',

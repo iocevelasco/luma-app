@@ -6,6 +6,7 @@ export * from './legal/index.js';
 export * from './schemas/index.js';
 export * from './utils/crew.js';
 export * from './utils/environment.js';
+export * from './utils/inventory.js';
 export * from './utils/material.js';
 export * from './utils/money.js';
 export * from './feedback/index.js';

@@ -127,7 +127,8 @@
       "team": "Equipo",
       "payments": "Pagos",
       "expenses": "Gastos",
-      "aria": "Secciones de la obra"
+      "aria": "Secciones de la obra",
+      "inventory": "Inventario"
     },
     "navHint": {
       "back": "Vuelve al listado de todas tus obras.",
@@ -142,7 +143,8 @@
       "expenses": "Lo que salió de la obra, con fecha, moneda y justificante.",
       "budget": "Carga o importa el presupuesto y compáralo con lo comprometido.",
       "advisor": "Consulta a la IA sobre la obra, con su presupuesto y su avance.",
-      "team": "Da acceso a la obra a supervisores, contables y al cliente."
+      "team": "Da acceso a la obra a supervisores, contables y al cliente.",
+      "inventory": "Lo que hay en el patio de la obra y quién se ha llevado cada material."
     },
     "detail": {
       "gantt": "Cronograma de tareas",
@@ -2206,6 +2208,72 @@
       "roles": "¿Qué puede hacer cada rol en una obra?",
       "advisor": "¿Qué le puedo preguntar al Consultor IA?",
       "money": "¿Qué diferencia hay entre gastado y cobrado?"
+    }
+  },
+  "inventory": {
+    "tabs": {
+      "stock": "En patio",
+      "kardex": "Kardex"
+    },
+    "empty": {
+      "title": "Aún no hay material en el patio",
+      "description": "El material entra solo cuando marcas una compra como «En obra». Desde aquí registrarás lo que se entrega, se devuelve o se pierde."
+    },
+    "stock": {
+      "search": "Buscar material",
+      "noResults": "No hay materiales con ese nombre.",
+      "meta": "Entró {{received}} · Entregado {{consumed}} · Merma {{wasted}}",
+      "deliver": "Entregar",
+      "moreActions": "Más acciones de {{name}}"
+    },
+    "level": {
+      "ok": "En stock",
+      "low": "Por agotarse",
+      "out": "Agotado"
+    },
+    "kind": {
+      "compra": "Compra",
+      "devolucion": "Devolución",
+      "consumo": "Entrega",
+      "merma": "Merma"
+    },
+    "movement": {
+      "new": "Registrar salida",
+      "title": {
+        "devolucion": "Registrar devolución",
+        "consumo": "Registrar entrega",
+        "merma": "Registrar merma"
+      },
+      "kind": "Tipo",
+      "item": "Material",
+      "itemPlaceholder": "Elige un material",
+      "quantity": "Cantidad",
+      "available": "Disponible: {{quantity}} {{unit}}",
+      "receiver": "Quién lo recibe",
+      "responsible": "Responsable",
+      "optional": "(opcional)",
+      "receiverPlaceholder": "Ej. Pedro Pérez / Albañilería",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Ej. Fraguó por la lluvia",
+      "activity": "Tarea",
+      "noActivity": "Ninguna",
+      "destination": "Zona o frente",
+      "destinationPlaceholder": "Ej. Losa nivel 2",
+      "note": "Nota",
+      "submit": "Registrar",
+      "saved": "Movimiento registrado"
+    },
+    "kardex": {
+      "from": "Desde",
+      "to": "Hasta",
+      "item": "Material",
+      "allItems": "Todos los materiales",
+      "kind": "Tipo",
+      "allKinds": "Todos los tipos",
+      "receiver": "Buscar por quien lo recibió",
+      "empty": "Todavía no hay movimientos con estos filtros.",
+      "error": "No se pudo cargar el kardex.",
+      "by": "Registró {{name}}"
     }
   }
 }

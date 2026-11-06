@@ -49,6 +49,7 @@ export const ROUTES = {
   PROJECT_DETAIL: '/admin/proyectos/:projectId',
   PROJECT_ACTIVITIES: '/admin/proyectos/:projectId/actividades',
   PROJECT_MATERIALS: '/admin/proyectos/:projectId/materiales',
+  PROJECT_INVENTORY: '/admin/proyectos/:projectId/inventario',
   PROJECT_LABOR: '/admin/proyectos/:projectId/personal',
   PROJECT_PROVIDERS: '/admin/proyectos/:projectId/proveedores',
   PROJECT_DOCUMENTS: '/admin/proyectos/:projectId/documentacion',
@@ -97,6 +98,11 @@ export function projectMaterialsPath(projectId: string): string {
  */
 export function projectMaterialPath(projectId: string, materialId: string): string {
   return `${projectMaterialsPath(projectId)}?material=${encodeURIComponent(materialId)}`;
+}
+
+/** `ROUTES.PROJECT_INVENTORY` con el `:projectId` resuelto, para armar links. */
+export function projectInventoryPath(projectId: string): string {
+  return ROUTES.PROJECT_INVENTORY.replace(':projectId', projectId);
 }
 
 /**
