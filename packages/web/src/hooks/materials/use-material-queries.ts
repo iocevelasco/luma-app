@@ -12,8 +12,11 @@ import type {
 import { materialsApi } from '@/api/materials';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
+import { invalidateStock } from '@/hooks/inventory/use-inventory-queries';
 import { prepareUploadPhoto } from '@/lib/material-photo-export';
 import { QueryKeys } from '@/lib/query-keys';
+import { useLiveStatus } from '@/lib/live/live-status';
+import { polledList } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
@@ -21,11 +24,14 @@ import { useAuth } from '@/providers/auth-provider';
 
 export function useMaterials(projectId: string | undefined) {
   const { isAuthenticated } = useAuth();
+  // Con el canal en vivo sano el polling pasa a ser sólo respaldo.
+  const live = useLiveStatus() === 'live';
 
   return useQuery({
     queryKey: [QueryKeys.materials, projectId],
     queryFn: () => materialsApi.list(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...polledList(live),
   });
 }
 
@@ -70,6 +76,8 @@ export function useUpdateMaterial(projectId: string) {
       materialsApi.update(projectId, materialId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      // Pasar a «En obra» mete el material al patio.
+      invalidateStock(queryClient, projectId);
       toast.success(t('material.list.updated'));
     },
     onError: (error) => {
@@ -186,6 +194,7 @@ export function useBulkUpdateMaterials(projectId: string) {
     mutationFn: (payload: BulkUpdateMaterialsInput) => materialsApi.bulkUpdate(projectId, payload),
     onSuccess: ({ materialIds }) => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      invalidateStock(queryClient, projectId);
       toast.success(t('material.bulk.updated', { count: materialIds.length }));
     },
     onError: (error) => {

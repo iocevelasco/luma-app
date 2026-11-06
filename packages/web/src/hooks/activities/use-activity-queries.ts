@@ -10,6 +10,12 @@ import type {
 import { activitiesApi } from '@/api/activities';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import {
+  keepWhileMutating,
+  optimisticActivityMutationKey,
+  polledList,
+} from '@/lib/query-freshness';
+import { useLiveStatus } from '@/lib/live/live-status';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
@@ -17,11 +23,24 @@ import { useAuth } from '@/providers/auth-provider';
 /** Todas las actividades de la obra, sin filtro de rango — para cruzar con materiales. */
 export function useAllActivities(projectId: string | undefined) {
   const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+  // Con el canal en vivo sano el polling pasa a ser sólo respaldo.
+  const live = useLiveStatus() === 'live';
+  const queryKey = [QueryKeys.activities, projectId, 'all'];
 
   return useQuery({
-    queryKey: [QueryKeys.activities, projectId, 'all'],
-    queryFn: () => activitiesApi.list(projectId!),
+    queryKey,
+    queryFn: async () =>
+      // Un refetch (polling, foco) que llega con una mutación optimista en
+      // vuelo no puede pisar el cambio que la persona ya ve.
+      keepWhileMutating(
+        queryClient,
+        queryKey,
+        optimisticActivityMutationKey(projectId!),
+        await activitiesApi.list(projectId!),
+      ),
     enabled: isAuthenticated && !!projectId,
+    ...polledList(live),
   });
 }
 
@@ -79,6 +98,7 @@ export function useMoveActivity(projectId: string) {
   const key = [QueryKeys.activities, projectId];
 
   return useMutation({
+    mutationKey: optimisticActivityMutationKey(projectId),
     mutationFn: ({ activityId, status }: { activityId: string; status: ActivityStatus }) =>
       activitiesApi.update(projectId, activityId, { status }),
     onMutate: async ({ activityId, status }) => {
@@ -133,6 +153,7 @@ export function useRescheduleActivity(projectId: string) {
   const key = [QueryKeys.activities, projectId];
 
   return useMutation({
+    mutationKey: optimisticActivityMutationKey(projectId),
     mutationFn: ({
       activityId,
       startDate,

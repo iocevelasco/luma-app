@@ -8,18 +8,12 @@ import type {
   StockMovementQuery,
 } from '@luma/shared';
 import { inventoryApi } from '@/api/inventory';
+import { FRESH_30S, POLLED_LIST } from '@/lib/query-freshness';
 import { QueryKeys } from '@/lib/query-keys';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-material-queries.ts`. */
 
-/**
- * El stock cambia desde fuera de esta pantalla —Compras marca un material como
- * llegado, otra persona despacha desde su celular—, así que nunca se sirve
- * del caché al abrir: con el `staleTime` de 5 minutos del resto de la app, el
- * patio mostraría lo de hace un rato.
- */
-const ALWAYS_REFETCH_ON_OPEN = 0;
 
 export function useStock(projectId: string | undefined) {
   const { isAuthenticated } = useAuth();
@@ -28,7 +22,7 @@ export function useStock(projectId: string | undefined) {
     queryKey: [QueryKeys.stock, projectId],
     queryFn: () => inventoryApi.stock(projectId!),
     enabled: isAuthenticated && !!projectId,
-    staleTime: ALWAYS_REFETCH_ON_OPEN,
+    ...POLLED_LIST,
   });
 }
 
@@ -39,7 +33,7 @@ export function useStockMovements(projectId: string | undefined, filters: StockM
     queryKey: [QueryKeys.stockMovements, projectId, filters],
     queryFn: () => inventoryApi.movements(projectId!, filters),
     enabled: isAuthenticated && !!projectId,
-    staleTime: ALWAYS_REFETCH_ON_OPEN,
+    ...POLLED_LIST,
   });
 }
 
@@ -71,7 +65,7 @@ export function useDepositForImport(projectId: string | undefined, enabled: bool
     queryKey: [QueryKeys.deposit, projectId],
     queryFn: () => inventoryApi.deposit(projectId!),
     enabled: isAuthenticated && !!projectId && enabled,
-    staleTime: ALWAYS_REFETCH_ON_OPEN,
+    ...FRESH_30S,
   });
 }
 
@@ -83,8 +77,18 @@ export function useMyDeposit() {
     queryKey: [QueryKeys.myDeposit],
     queryFn: () => inventoryApi.myDeposit(),
     enabled: isAuthenticated,
-    staleTime: ALWAYS_REFETCH_ON_OPEN,
+    ...FRESH_30S,
   });
+}
+
+/**
+ * Compras cambia el inventario sin pasar por acá: un material que llega a obra
+ * entra al patio. Las mutaciones de estado de Compras lo avisan con esto, así
+ * el stock ya está al día cuando se abre la pantalla.
+ */
+export function invalidateStock(queryClient: ReturnType<typeof useQueryClient>, projectId: string) {
+  void queryClient.invalidateQueries({ queryKey: [QueryKeys.stock, projectId] });
+  void queryClient.invalidateQueries({ queryKey: [QueryKeys.stockMovements, projectId] });
 }
 
 /** Un traspaso mueve el patio de la obra y el Depósito de la Empresa: se vuelve a pedir todo. */

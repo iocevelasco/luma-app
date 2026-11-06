@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import type { CreateBudgetInput } from '@luma/shared';
 import { budgetApi } from '@/api/budget';
 import { QueryKeys } from '@/lib/query-keys';
+import { POLLED_LIST } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-labor-queries.ts`. */
@@ -16,6 +17,7 @@ export function useBudget(projectId: string | undefined) {
     queryKey: [QueryKeys.budget, projectId],
     queryFn: () => budgetApi.get(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...POLLED_LIST,
   });
 }
 

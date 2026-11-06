@@ -46,7 +46,7 @@ test.describe('inventario de obra', () => {
     // Sin nada en obra, el inventario está vacío.
     await page.getByRole('link', { name: /^inventario$/i }).click();
     await expect(page).toHaveURL(/\/inventario$/);
-    await expect(page.getByText(/aún no hay material en el patio/i)).toBeVisible();
+    await expect(page.getByText(/(aún|todavía) no hay material en el patio/i)).toBeVisible();
 
     // Compras: el material llega a obra.
     await page.getByRole('link', { name: /^compras$/i }).click();

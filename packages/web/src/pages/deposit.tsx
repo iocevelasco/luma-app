@@ -141,12 +141,12 @@ function LineRow({ line, locale }: { line: DepositLine; locale: string }) {
     <RowCard>
       <RowCardBody
         title={<span className="truncate">{line.name}</span>}
-        meta={[
+        // El costo ya lleva su moneda; sin costo, la moneda es lo que distingue la línea.
+        meta={
           line.unitCost > 0
             ? t('deposit.stock.unitCost', { cost: formatMoney(line.unitCost, line.currency, locale) })
-            : t('deposit.stock.noCost'),
-          line.currency,
-        ].join(' · ')}
+            : `${t('deposit.stock.noCost')} · ${line.currency}`
+        }
       />
       <RowCardEnd>
         <p className="text-lg tabular-nums">

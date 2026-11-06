@@ -244,50 +244,55 @@ function StockRow({
           .join(' · ')}
       />
       <RowCardEnd>
-        <StockLevelBadge level={item.level} />
-        <p className="text-lg tabular-nums">
-          {item.stock} <span className="text-xs text-muted-foreground">{unit}</span>
-        </p>
-        {/* Sin stock no hay qué entregar ni perder: no se ofrece. */}
-        {canWrite && item.stock > 0 && (
-          <Button variant="outline" size="sm" onClick={() => onRegister('consumo')}>
-            <PackageMinus className="size-4" />
-            {t('inventory.stock.deliver')}
-          </Button>
-        )}
-        {(canWrite || (canUseDeposit && item.stock > 0)) && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t('inventory.stock.moreActions', { name: item.name })}
-              >
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {canWrite && (
-                <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onRegister('devolucion')}>
-                  <ArrowRightLeft className="size-4" />
-                  {t('inventory.kind.devolucion')}
-                </DropdownMenuItem>
-              )}
-              {canWrite && item.stock > 0 && (
-                <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onRegister('merma')}>
-                  {t('inventory.kind.merma')}
-                </DropdownMenuItem>
-              )}
-              {canUseDeposit && item.stock > 0 && (
-                <DropdownMenuItem className="max-sm:min-h-11" onSelect={onSendToDeposit}>
-                  <Upload className="size-4" />
-                  {t('inventory.deposit.send')}
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        {/* Qué hay, a la izquierda; las acciones, juntas a la derecha. En celular las acciones bajan como grupo. */}
+        <div className="mr-auto flex items-center gap-2">
+          <StockLevelBadge level={item.level} />
+          <p className="text-lg tabular-nums">
+            {item.stock} <span className="text-xs text-muted-foreground">{unit}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Sin stock no hay qué entregar ni perder: no se ofrece. */}
+          {canWrite && item.stock > 0 && (
+            <Button variant="outline" size="sm" onClick={() => onRegister('consumo')}>
+              <PackageMinus className="size-4" />
+              {t('inventory.stock.deliver')}
+            </Button>
+          )}
+          {(canWrite || (canUseDeposit && item.stock > 0)) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t('inventory.stock.moreActions', { name: item.name })}
+                >
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {canWrite && (
+                  <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onRegister('devolucion')}>
+                    <ArrowRightLeft className="size-4" />
+                    {t('inventory.kind.devolucion')}
+                  </DropdownMenuItem>
+                )}
+                {canWrite && item.stock > 0 && (
+                  <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onRegister('merma')}>
+                    {t('inventory.kind.merma')}
+                  </DropdownMenuItem>
+                )}
+                {canUseDeposit && item.stock > 0 && (
+                  <DropdownMenuItem className="max-sm:min-h-11" onSelect={onSendToDeposit}>
+                    <Upload className="size-4" />
+                    {t('inventory.deposit.send')}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </RowCardEnd>
     </RowCard>
   );

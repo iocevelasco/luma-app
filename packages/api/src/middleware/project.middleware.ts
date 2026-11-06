@@ -153,7 +153,12 @@ export function projectCapabilitiesFor(
  */
 export function requireCapability(capability: Capability) {
   return function capabilityGate(req: Request, res: Response, next: NextFunction) {
-    if (req.can?.(capability)) return next();
+    if (req.can?.(capability)) {
+      // Lo lee `publishLiveChanges`: la capacidad que la ruta exigió dice qué
+      // cambió, sin que cada controller tenga que acordarse de avisar.
+      (res.locals ??= {}).exercisedCapability = capability;
+      return next();
+    }
 
     // El rol sí podría, pero la obra está en sólo lectura: no es un permiso
     // que falta, es una suscripción vencida, y la UI tiene que poder decirlo.

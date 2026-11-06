@@ -85,7 +85,7 @@ test.describe('depósito general', () => {
     // --- Otra obra lo importa: costo 0, y el flete es un gasto suyo.
     await createProject(page, TARGET);
     await page.getByRole('link', { name: /^inventario$/i }).click();
-    await expect(page.getByText(/aún no hay material en el patio/i)).toBeVisible();
+    await expect(page.getByText(/(aún|todavía) no hay material en el patio/i)).toBeVisible();
     await page.getByRole('button', { name: /importar del depósito/i }).click();
     await page.getByLabel(new RegExp(`cantidad de ${MATERIAL} a importar`, 'i')).fill('3');
     await page.locator('#freight-amount').fill('50');
