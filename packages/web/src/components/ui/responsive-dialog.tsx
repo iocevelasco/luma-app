@@ -51,7 +51,7 @@ export interface ResponsiveDialogProps {
 /** Fondo de un diálogo no modal: Radix sólo dibuja el suyo en modo modal. */
 function NonModalBackdrop() {
   return createPortal(
-    <div aria-hidden className="fixed inset-0 z-50 bg-black/50" />,
+    <div aria-hidden className="fixed inset-0 z-50 bg-backdrop" />,
     document.body,
   );
 }

@@ -166,3 +166,18 @@ verificado contra cada call-site**: antes de migrar uno, buscar sus usos con `gr
 | `breadcrumb` | `BreadcrumbList`/`Item`/`Link asChild` → `Breadcrumbs` > `Breadcrumbs.Item href`; el separador es automático |
 | `badge` | `variant` (`default`, `secondary`, `destructive`, `outline`) y los tags de Luma → `Chip variant` + `color`; sin tipo `info` |
 | `card`, `alert` | Luma tiene su propia anatomía (`CardTile`, `CardList`, `interactive`; `Alert` con ícono en grilla): HeroUI usa `Card.Header`/`Content` y `Alert.Indicator`; migrarlos exige reescribir los call-sites o conservar el layout actual |
+
+## Lote D — overlays (restilizados, Radix se queda)
+
+`tooltip`, `popover`, `dropdown-menu`, `dialog`, `alert-dialog`, `sheet` y `drawer`
+usan los tokens de HeroUI: `bg-overlay text-overlay-foreground shadow-overlay`,
+`bg-backdrop` para el velo, `rounded-xl` (menús, popover, tooltip) y `rounded-3xl`
+(diálogos). Se quitó el borde de 1px: la sombra de overlay ya lo trae.
+
+Por qué no se pasaron a `Modal`/`Popover`/`Dropdown` de React Aria: los call-sites
+usan `asChild` en los triggers, `onOpenChange` y `DropdownMenuItem onSelect`, que en
+RAC son `onPress`/`onAction`, y el editor de markdown envuelve botones en
+`PopoverTrigger asChild`. Migrarlos toca decenas de pantallas; queda como decisión.
+
+Cambio visual: el tooltip pasa de fondo invertido (`foreground`) a superficie
+`overlay`. Sin verificar en pantalla ni con E2E.
