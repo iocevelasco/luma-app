@@ -1,5 +1,6 @@
 import type { FilterQuery } from 'mongoose';
 import type {
+  AccountSegment,
   PlatformSignupWeek,
   PlatformUserRow,
   PlatformUsersFilter,
@@ -20,8 +21,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * Las cuentas de prueba (E2E, seed) no son gente: si entraran en las cifras,
  * cada tanda de tests inflaría "altas" y "sin confirmar".
  */
-const TEST_ACCOUNT = /@luma\.test$/i;
-const REAL_ACCOUNTS: FilterQuery<IUser> = { email: { $not: TEST_ACCOUNT } };
+export const TEST_ACCOUNT = /@luma\.test$/i;
+export const REAL_ACCOUNTS: FilterQuery<IUser> = { email: { $not: TEST_ACCOUNT } };
 
 function dayKey(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -106,12 +107,13 @@ function escapeRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function toRow(user: IUser, unlimited: boolean): PlatformUserRow {
+function toRow(user: IUser, unlimited: boolean, segment: AccountSegment): PlatformUserRow {
   return {
     id: String(user._id),
     name: user.name,
     email: user.email,
     role: user.role,
+    segment,
     emailVerified: user.email_verified,
     accountStatus: user.account_status,
     createdAt: user.createdAt.toISOString(),
@@ -138,8 +140,21 @@ async function unlimitedOwnerIds(userIds: IUser['_id'][]): Promise<Set<string>> 
   );
 }
 
-export async function listPlatformUsers(query: PlatformUsersQuery): Promise<PlatformUsersPage> {
+/**
+ * El listado de cuentas. `segments` es la clasificación de todas las cuentas
+ * reales (`classifyAccounts`): el segmento no es un campo de `User`, sale de
+ * cruzar suscripciones y obras, así que para filtrar por él hay que
+ * conocerlo antes de paginar.
+ */
+export async function listPlatformUsers(
+  query: PlatformUsersQuery,
+  segments: ReadonlyMap<string, AccountSegment>,
+): Promise<PlatformUsersPage> {
   const conditions: FilterQuery<IUser>[] = [REAL_ACCOUNTS, filterQuery(query.filter)];
+  if (query.segment !== 'all') {
+    const ids = [...segments].filter(([, segment]) => segment === query.segment).map(([id]) => id);
+    conditions.push({ _id: { $in: ids } });
+  }
   if (query.q) {
     const text = new RegExp(escapeRegex(query.q), 'i');
     conditions.push({ $or: [{ name: text }, { email: text }] });
@@ -157,7 +172,9 @@ export async function listPlatformUsers(query: PlatformUsersQuery): Promise<Plat
   const unlimited = await unlimitedOwnerIds(users.map((user) => user._id));
 
   return {
-    users: users.map((user) => toRow(user, unlimited.has(String(user._id)))),
+    users: users.map((user) =>
+      toRow(user, unlimited.has(String(user._id)), segments.get(String(user._id)) ?? 'noProject'),
+    ),
     total,
     page: query.page,
     pageSize: query.pageSize,

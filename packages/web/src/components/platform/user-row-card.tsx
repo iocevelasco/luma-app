@@ -20,7 +20,7 @@ import { useDateLocale } from '@/hooks/use-date-locale';
 import { errorMessage } from '@/lib/error-message';
 
 /**
- * Una cuenta, como fila. Línea 1: quién es. Línea 2: mail, rol y desde cuándo
+ * Una cuenta, como fila. Línea 1: quién es. Línea 2: mail, rol, segmento y desde cuándo
  * está. A la derecha, si confirmó el mail, si la cuenta está activa y si
  * tiene el plan ilimitado. Ese plan sólo se asigna desde acá.
  */
@@ -55,6 +55,7 @@ export function UserRowCard({ user }: { user: PlatformUserRow }) {
             {[
               user.email,
               t(`platform.users.role.${user.role}`),
+              t(`platform.users.segment.${user.segment}`),
               t('platform.users.joined', { date: format(new Date(user.createdAt), 'PP', { locale }) }),
             ].join(' · ')}
           </span>

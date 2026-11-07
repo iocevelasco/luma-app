@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Controller, useForm, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { usePinnedWhileOpen } from '@/hooks/use-pinned-while-open';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { toast } from '@/lib/toast';
 import { ResponsibleField } from '@/components/activities/responsible-field';
@@ -366,6 +367,10 @@ function EditActivityDialog({
 }) {
   const { t } = useTranslation();
   const updateActivity = useUpdateActivity(projectId);
+  // La tarea llega viva: otra persona puede moverla o editarla mientras este
+  // formulario está abierto. Con `values` sobre el objeto vivo el form se
+  // reiniciaría y se perdería lo tipeado; se congela mientras dura la edición.
+  const pinned = usePinnedWhileOpen(activity, open);
 
   const {
     register,
@@ -375,16 +380,16 @@ function EditActivityDialog({
   } = useForm<CreateActivityInput>({
     resolver: zodResolver(createActivitySchema),
     values: {
-      name: activity.name,
-      startDate: activity.startDate,
-      endDate: activity.endDate,
-      responsible: activity.responsible,
-      status: activity.status,
+      name: pinned.name,
+      startDate: pinned.startDate,
+      endDate: pinned.endDate,
+      responsible: pinned.responsible,
+      status: pinned.status,
       // Una actividad anterior al cambio no tiene especialidad: llega
       // `undefined`, el selector muestra el placeholder y el schema exige
       // elegirla antes de guardar.
-      specialty: activity.specialty as CreateActivityInput['specialty'],
-      notes: activity.notes,
+      specialty: pinned.specialty as CreateActivityInput['specialty'],
+      notes: pinned.notes,
     },
   });
 
@@ -398,7 +403,7 @@ function EditActivityDialog({
       error={updateActivity.error}
       onSubmit={handleSubmit((values) =>
         updateActivity.mutate(
-          { activityId: activity.id, payload: values },
+          { activityId: pinned.id, payload: values },
           { onSuccess: () => onOpenChange(false) },
         ),
       )}

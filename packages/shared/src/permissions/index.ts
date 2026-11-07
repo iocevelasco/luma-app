@@ -160,6 +160,14 @@ export type Capability =
   // facturas de lo que compró, pero no Finanzas ni el total gastado.
   | 'material.invoice.read'
   | 'material.invoice.write'
+  // Inventario de obra: lo que hay en el patio y el kardex de cada movimiento.
+  // Escribir es registrar entradas y salidas (consumo, devolución, merma). Sin
+  // costos: el inventario cuenta unidades, no plata.
+  | 'inventory.read'
+  | 'inventory.write'
+  // Mandar material al Depósito General de la Empresa y traerlo de ahí. Es de la
+  // Empresa, no de una obra: sólo el dueño de la obra (ver `OWNER_ONLY`).
+  | 'inventory.deposit.write'
   // Personal en obra: sumar gente, administrar el roster y la asistencia.
   // Lo que cada uno tiene que hacer son tareas: `activity.*`.
   | 'crew.read'
@@ -202,6 +210,8 @@ const SUPERVISOR_CAPABILITIES = [
     // cobros, así que tampoco puede calcular el margen.
     'material.invoice.read',
     'material.invoice.write',
+    'inventory.read',
+    'inventory.write',
     'milestone.read',
     'milestone.report',
     'document.read',
@@ -222,7 +232,9 @@ const SUPERVISOR_CAPABILITIES = [
  * (`activity.plan`: fechas, alcance, cancelar, borrar) y cargar documentación.
  */
 const PROFESSIONAL_CAPABILITIES: readonly Capability[] = [
-  ...SUPERVISOR_CAPABILITIES,
+  // Ven el inventario pero no despachan: quien registra salidas del patio es
+  // el gerente o el supervisor que está en el sitio.
+  ...SUPERVISOR_CAPABILITIES.filter((capability) => capability !== 'inventory.write'),
   'activity.plan',
   'document.write',
 ];
@@ -285,6 +297,9 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'material.cost.read',
     'material.invoice.read',
     'material.invoice.write',
+    'inventory.read',
+    'inventory.write',
+    'inventory.deposit.write',
     'milestone.read',
     'milestone.report',
     'milestone.publish',
@@ -362,6 +377,8 @@ const CLIENT_GATED_BY_PROJECT_FLAG: Partial<
  * - `crew.directory.write`: el jornal del personal de la Empresa lo lee la
  *   liquidación de todas sus obras; otro gerente cambiaría la plata de obras
  *   donde no está invitado.
+ * - `inventory.deposit.write`: el Depósito General es de la Empresa dueña de la
+ *   obra; otro gerente puede ser de otra Empresa y movería su stock.
  * - `provider.manage`: la libreta de proveedores es de la Empresa dueña de la
  *   obra, y otro gerente puede ser de otra Empresa: vería los proveedores de
  *   todas sus obras.
@@ -373,6 +390,7 @@ const OWNER_ONLY: readonly Capability[] = [
   'project.manager.write',
   'provider.manage',
   'crew.directory.write',
+  'inventory.deposit.write',
 ];
 
 /** Lo que de la obra necesita saber `canInProject` para resolver las excepciones. */

@@ -55,8 +55,10 @@
     "hints": {
       "projects": "Todas tus obras. Entra en una para ver cómo va.",
       "providers": "El directorio de proveedores de la Empresa, compartido entre obras.",
-      "crew": "Los empleados de la Empresa: personal de obra y administrativo."
-    }
+      "crew": "Los empleados de la Empresa: personal de obra y administrativo.",
+      "deposit": "El material sobrante de la Empresa, listo para usarlo en otra obra."
+    },
+    "deposit": "Depósito"
   },
   "appUpdate": {
     "title": "Hay una versión nueva",
@@ -129,7 +131,8 @@
       "team": "Equipo",
       "payments": "Pagos",
       "expenses": "Gastos",
-      "aria": "Secciones de la obra"
+      "aria": "Secciones de la obra",
+      "inventory": "Inventario"
     },
     "navHint": {
       "back": "Vuelve al listado de todas tus obras.",
@@ -144,7 +147,8 @@
       "expenses": "Lo que salió de la obra, con fecha, moneda y justificante.",
       "budget": "Carga o importa el presupuesto y compáralo con lo comprometido.",
       "advisor": "Consulta a la IA sobre la obra, con su presupuesto y su avance.",
-      "team": "Da acceso a la obra a supervisores, contables y al cliente."
+      "team": "Da acceso a la obra a supervisores, contables y al cliente.",
+      "inventory": "Lo que hay en el patio de la obra y quién se ha llevado cada material."
     },
     "detail": {
       "gantt": "Cronograma de tareas",
@@ -1426,7 +1430,41 @@
       "onAccount": "A cuenta",
       "delete": "Eliminar cobro",
       "deleteTitle": "¿Eliminar este cobro?",
-      "deleteBody": "Vas a eliminar el cobro de {{amount}} del {{date}}. El saldo del cliente se recalcula sin él. No se puede deshacer."
+      "deleteBody": "Vas a eliminar el cobro de {{amount}} del {{date}}. El saldo del cliente se recalcula sin él. No se puede deshacer.",
+      "filters": {
+        "search": "Buscar cobros",
+        "method": "Forma de pago",
+        "allMethods": "Todas las formas",
+        "from": "Desde",
+        "to": "Hasta",
+        "clear": "Quitar filtros",
+        "emptyTitle": "Ningún cobro coincide",
+        "emptyDescription": "Prueba con otra búsqueda o quita algún filtro."
+      },
+      "groupBy": {
+        "label": "Agrupar por",
+        "month": "Agrupar por mes",
+        "day": "Agrupar por día",
+        "method": "Agrupar por forma de pago"
+      },
+      "pdf": {
+        "button": "Descargar PDF",
+        "generating": "Generando PDF…",
+        "title": "Cobros",
+        "summary_one": "{{count}} cobro",
+        "summary_other": "{{count}} cobros",
+        "columnDate": "Fecha",
+        "columnConcept": "Concepto",
+        "columnAmount": "Importe",
+        "total": "Total",
+        "generated": "Generado el {{date}}",
+        "page": "Página {{page}} de {{total}}",
+        "downloaded": "PDF descargado.",
+        "error": "No hemos podido generar el PDF. Inténtalo de nuevo.",
+        "filtered": "Con filtros aplicados: no es la lista completa."
+      },
+      "groupCount_one": "{{count}} cobro",
+      "groupCount_other": "{{count}} cobros"
     },
     "expenses": {
       "materialsCount_one": "{{count}} material",
@@ -1441,7 +1479,49 @@
       "delete": "Eliminar gasto",
       "openReceipt": "Abrir justificante",
       "deleteTitle": "¿Eliminar este gasto?",
-      "deleteBody": "Vas a eliminar «{{description}}» por {{amount}}. El resultado de la obra se recalcula. No se puede deshacer."
+      "deleteBody": "Vas a eliminar «{{description}}» por {{amount}}. El resultado de la obra se recalcula. No se puede deshacer.",
+      "pdf": {
+        "button": "Descargar PDF",
+        "generating": "Generando PDF…",
+        "title": "Gastos",
+        "summary_one": "{{count}} gasto",
+        "summary_other": "{{count}} gastos",
+        "columnDate": "Fecha",
+        "columnDetail": "Detalle",
+        "columnAmount": "Importe",
+        "total": "Total",
+        "generated": "Generado el {{date}}",
+        "page": "Página {{page}} de {{total}}",
+        "downloaded": "PDF descargado.",
+        "error": "No hemos podido generar el PDF. Inténtalo de nuevo.",
+        "filtered": "Con filtros aplicados: no es la lista completa."
+      },
+      "filters": {
+        "search": "Buscar gastos",
+        "category": "Categoría",
+        "allCategories": "Todas las categorías",
+        "from": "Desde",
+        "to": "Hasta",
+        "clear": "Quitar filtros",
+        "emptyTitle": "Ningún gasto coincide",
+        "emptyDescription": "Prueba con otra búsqueda o quita algún filtro."
+      },
+      "groupBy": {
+        "label": "Agrupar por",
+        "category": "Agrupar por categoría",
+        "provider": "Agrupar por proveedor",
+        "activity": "Agrupar por actividad",
+        "month": "Agrupar por mes",
+        "day": "Agrupar por día"
+      },
+      "group": {
+        "none": {
+          "provider": "Sin proveedor",
+          "activity": "Sin actividad"
+        }
+      },
+      "groupCount_one": "{{count}} gasto",
+      "groupCount_other": "{{count}} gastos"
     },
     "payroll": {
       "title": "Nómina",
@@ -1528,7 +1608,41 @@
       "expenseDelete": "No hemos podido eliminar el gasto.",
       "receiptType": "Justificante no admitido. Sube un PDF o una imagen.",
       "receiptSize": "El justificante es demasiado grande (máximo 20MB)."
-    }
+    },
+    "detail": {
+      "originalAmount": "Importe original",
+      "rate": "cotización {{rate}}",
+      "notes": "Notas",
+      "registeredBy": "Registrado por",
+      "registeredAt": "Registrado el",
+      "status": "Estado",
+      "paidSoFar": "Cobrado hasta ahora",
+      "scheduleItem": "Cuota"
+    },
+    "filters": {
+      "button": "Filtros",
+      "done": "Hecho",
+      "actions": "Acciones"
+    },
+    "export": {
+      "download": "Descargar",
+      "generating": "Generando PDF…",
+      "pdf": "PDF",
+      "csv": "CSV (Excel)",
+      "pdfButton": "Descargar PDF",
+      "csvButton": "Descargar CSV",
+      "csvDownloaded": "CSV descargado.",
+      "csvError": "No hemos podido generar el CSV. Inténtalo de nuevo.",
+      "columnDate": "Fecha",
+      "columnConcept": "Concepto",
+      "columnAmount": "Importe",
+      "columnCurrency": "Moneda",
+      "columnOriginalAmount": "Importe original",
+      "columnOriginalCurrency": "Moneda original",
+      "columnRate": "Tipo de cambio",
+      "columnNotes": "Notas"
+    },
+    "listTruncated": "Se muestran los {{count}} movimientos más recientes; puede haber más. Los filtros y los totales por grupo sólo ven esos."
   },
   "errors": {
     "validation": "Revisa los datos: hay campos con errores.",
@@ -1890,6 +2004,21 @@
         "previous": "Anterior",
         "next": "Siguiente",
         "status": "Página {{page}} de {{pages}} · {{total}} cuentas"
+      },
+      "views": {
+        "census": "Censo",
+        "directory": "Directorio",
+        "funnel": "Embudo",
+        "followUp": "Seguimiento"
+      },
+      "segment": {
+        "label": "Segmento",
+        "all": "Todos los segmentos",
+        "membership": "Con membresía",
+        "staff": "Empleado",
+        "client": "Cliente",
+        "noProject": "Sin obra",
+        "inactive": "Dada de baja"
       }
     },
     "layout": {
@@ -2000,6 +2129,144 @@
       },
       "changesTitle": "Cambios que piden",
       "noChanges": "Nadie ha pedido cambios todavía."
+    },
+    "census": {
+      "intro": "Hoy suman {{total}} cuentas. Solo {{membership}} tienen una membresía: {{client}} son clientes que miran el estado de su obra, {{staff}} son empleados de la obra de otra persona, {{noProject}} no tienen obra y {{inactive}} están dadas de baja.",
+      "testNote": "Las {{count}} cuentas de prueba (@luma.test) no entran en ninguna cifra.",
+      "kpi": {
+        "membership": {
+          "title": "Con membresía",
+          "hint": "Las cuentas que importan"
+        },
+        "client": {
+          "title": "Clientes",
+          "hint": "Solo miran el estado de su obra"
+        },
+        "staff": {
+          "title": "Empleados",
+          "hint": "Trabajan en la obra de otra persona"
+        },
+        "test": {
+          "title": "Cuentas de prueba",
+          "hint": "No cuentan"
+        }
+      },
+      "membership": {
+        "title": "Estado de la membresía",
+        "subtitle_one": "De la cuenta que tiene una",
+        "subtitle_other": "De las {{count}} cuentas que tienen una",
+        "trial": "En prueba",
+        "paying": "Pagando",
+        "unlimited": "Plan ilimitado",
+        "expired": "Vencida"
+      },
+      "signups": {
+        "title": "Altas por semana",
+        "subtitle": "Últimas {{weeks}} semanas",
+        "members": "Con membresía",
+        "others": "Resto",
+        "label": "Altas por semana, de la más antigua a la actual",
+        "week": "Semana del {{date}}: {{members}} con membresía, {{others}} sin ella"
+      },
+      "roles": {
+        "title": "Quiénes no tienen membresía",
+        "subtitle": "{{ratio}} personas por cada cuenta con membresía",
+        "client": "Clientes",
+        "staff": "Empleados",
+        "other": "Otros roles",
+        "note": "Cada persona cuenta una sola vez: si tiene membresía propia, gana sobre cualquier rol que tenga en otras obras. Los roles con menos de {{min}} personas se juntan en «Otros roles»; si juntos tampoco llegan, no se muestran."
+      }
+    },
+    "funnel": {
+      "kpi": {
+        "registered": {
+          "title": "Cuentas con membresía",
+          "hint": "Las que empezaron una prueba propia"
+        },
+        "project": {
+          "title": "Crearon su primera obra",
+          "hint": "Del total de cuentas con membresía"
+        },
+        "money": {
+          "title": "Cargaron un gasto o cobro",
+          "hint": "Del total de cuentas con membresía"
+        },
+        "active": {
+          "title": "Activas en 7 días",
+          "hint": "Hicieron al menos una acción"
+        }
+      },
+      "steps": {
+        "title": "Dónde se caen las cuentas",
+        "subtitle": "Cada barra es cuántas llegaron a esa etapa. El porcentaje es contra la etapa anterior.",
+        "biggestDrop": "mayor caída",
+        "stuck_one": "{{count}} cuenta confirmó el correo y no creó ninguna obra. Es la que más conviene contactar.",
+        "stuck_other": "{{count}} cuentas confirmaron el correo y no crearon ninguna obra. Son las que más conviene contactar."
+      },
+      "stages": {
+        "registered": "Registrada",
+        "emailConfirmed": "Correo confirmado",
+        "firstProject": "Primera obra",
+        "firstInvite": "Primer invitado",
+        "firstPlanning": "Primera actividad o presupuesto",
+        "firstMoney": "Primer gasto o cobro"
+      },
+      "cohorts": {
+        "title": "Por semana de alta",
+        "subtitle": "Porcentaje de cada grupo que llegó a cada etapa",
+        "week": "Semana",
+        "size": "Altas",
+        "note": "Las columnas 2 a 6 son las etapas del embudo. Los grupos recientes todavía no tuvieron tiempo de avanzar."
+      }
+    },
+    "followUp": {
+      "filters": {
+        "all": "Todas",
+        "risk": "Necesitan atención",
+        "trial": "En prueba",
+        "paying": "Pagando",
+        "expired": "Vencidas"
+      },
+      "groups": {
+        "risk": "Necesitan atención",
+        "ok": "Al día"
+      },
+      "health": {
+        "expired": "Solo lectura",
+        "paymentFailed": "Pago fallido",
+        "paymentReview": "Pago en revisión",
+        "unconfirmed": "No confirmó el correo",
+        "noProject": "Sin primera obra",
+        "cold": "Se enfrió",
+        "trialEnding": "Prueba por vencer",
+        "new": "Recién llegó",
+        "ok": "En marcha"
+      },
+      "joined": "alta {{when}}",
+      "trialLeft_one": "prueba: {{count}} día",
+      "trialLeft_other": "prueba: {{count}} días",
+      "metrics": {
+        "projects_one": "{{count}} obra",
+        "projects_other": "{{count}} obras",
+        "invited_one": "{{count}} invitado",
+        "invited_other": "{{count}} invitados",
+        "activities_one": "{{count}} actividad",
+        "activities_other": "{{count}} actividades"
+      },
+      "lastAction": "última acción: {{when}}",
+      "noActivity": "sin actividad",
+      "view": "Ver",
+      "stageProgress": "Etapa {{current}} de {{total}}",
+      "detail": {
+        "projects": "Obras",
+        "invited": "Invitados",
+        "noInvites": "ninguno todavía",
+        "activities": "Actividades creadas",
+        "lastAction": "Última acción"
+      },
+      "privacy": "Solo cantidades. Esta vista no muestra nombres de clientes, descripciones ni montos de {{name}}.",
+      "empty": "No hay cuentas con membresía para mostrar.",
+      "emptyFiltered": "Prueba con otro filtro o con otra búsqueda."
     }
   },
   "legal": {
@@ -2257,5 +2524,129 @@
     "navExpenses": "Gastos",
     "chromeTitle": "Chrome oscuro",
     "contentTitle": "Contenido claro"
+  },
+  "inventory": {
+    "tabs": {
+      "stock": "En patio",
+      "kardex": "Kardex"
+    },
+    "empty": {
+      "title": "Aún no hay material en el patio",
+      "description": "El material entra solo cuando marcas una compra como «En obra». Desde aquí registrarás lo que se entrega, se devuelve o se pierde."
+    },
+    "stock": {
+      "search": "Buscar material",
+      "noResults": "No hay materiales con ese nombre.",
+      "meta": "Entró {{received}} · Entregado {{consumed}} · Merma {{wasted}}",
+      "deliver": "Entregar",
+      "moreActions": "Más acciones de {{name}}",
+      "transferred": "Enviado al Depósito {{quantity}}"
+    },
+    "level": {
+      "ok": "En stock",
+      "low": "Por agotarse",
+      "out": "Agotado"
+    },
+    "kind": {
+      "compra": "Compra",
+      "devolucion": "Devolución",
+      "consumo": "Entrega",
+      "merma": "Merma",
+      "desincorporacion": "Al depósito",
+      "importacion": "Del depósito",
+      "deposito_ingreso": "Ingreso",
+      "deposito_egreso": "Salida"
+    },
+    "movement": {
+      "new": "Registrar salida",
+      "title": {
+        "devolucion": "Registrar devolución",
+        "consumo": "Registrar entrega",
+        "merma": "Registrar merma"
+      },
+      "kind": "Tipo",
+      "item": "Material",
+      "itemPlaceholder": "Elige un material",
+      "quantity": "Cantidad",
+      "available": "Disponible: {{quantity}} {{unit}}",
+      "receiver": "Quién lo recibe",
+      "responsible": "Responsable",
+      "optional": "(opcional)",
+      "receiverPlaceholder": "Ej. Pedro Pérez / Albañilería",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Ej. Fraguó por la lluvia",
+      "activity": "Tarea",
+      "noActivity": "Ninguna",
+      "destination": "Zona o frente",
+      "destinationPlaceholder": "Ej. Losa nivel 2",
+      "note": "Nota",
+      "submit": "Registrar",
+      "saved": "Movimiento registrado"
+    },
+    "kardex": {
+      "from": "Desde",
+      "to": "Hasta",
+      "item": "Material",
+      "allItems": "Todos los materiales",
+      "kind": "Tipo",
+      "allKinds": "Todos los tipos",
+      "receiver": "Buscar por quien lo recibió",
+      "empty": "Todavía no hay movimientos con estos filtros.",
+      "error": "No se pudo cargar el kardex.",
+      "by": "Registró {{name}}"
+    },
+    "deposit": {
+      "import": "Importar del Depósito",
+      "send": "Enviar al Depósito",
+      "sendTitle": "Enviar {{name}} al Depósito",
+      "sendHint": "Sale de esta obra y queda disponible para otra de la Empresa.",
+      "sendSubmit": "Enviar",
+      "sent": "Enviado al Depósito",
+      "imported": "Material importado",
+      "unitCost": "Costo unitario de referencia ({{currency}})",
+      "unitCostHint": "Lo que valía una unidad. Sirve para calcular el ahorro al reutilizarla; con 0 no cuenta.",
+      "importTitle": "Importar del Depósito",
+      "importHint": "Entra a esta obra a costo 0, sin factura ni proveedor. Deja en blanco lo que no quieras traer.",
+      "importSubmit": "Importar",
+      "importNothing": "El Depósito no tiene material disponible.",
+      "importEmpty": "Indica la cantidad de al menos un material.",
+      "importQuantity": "Cantidad de {{name}} a importar",
+      "lineMeta": "Disponible: {{stock}} {{unit}} · Costo de ref. {{cost}}",
+      "freight": "Flete ({{currency}}, opcional)",
+      "freightHint": "Si mover el material costó un camión, se carga como un gasto de esta obra.",
+      "freightNote": "Descripción del flete (opcional)",
+      "invalidQuantity": "La cantidad de {{name}} no es un número válido.",
+      "invalidFreight": "El flete no es un número válido."
+    }
+  },
+  "deposit": {
+    "tabs": {
+      "stock": "En el depósito",
+      "history": "Historial"
+    },
+    "empty": {
+      "title": "El Depósito está vacío",
+      "description": "Cuando una obra mande material sobrante, aparecerá aquí para usarlo en otra."
+    },
+    "savings": {
+      "title": "Ahorro por reutilización",
+      "reused_one": "Se reutilizó {{count}} material",
+      "reused_other": "Se reutilizaron {{count}} materiales",
+      "deletedProject": "Obra eliminada"
+    },
+    "stock": {
+      "title": "Material disponible",
+      "empty": "No hay material con ese nombre en el Depósito.",
+      "unitCost": "Costo de ref. {{cost}}",
+      "noCost": "Sin costo de referencia"
+    },
+    "history": {
+      "from": "Desde {{name}}",
+      "to": "Hacia {{name}}"
+    },
+    "notOwner": {
+      "title": "No tienes un Depósito",
+      "description": "El Depósito General es de la Empresa y lo ven sus dueños. Si trabajas en la obra de otra Empresa, el material sobrante lo gestiona su dueño."
+    }
   }
 }

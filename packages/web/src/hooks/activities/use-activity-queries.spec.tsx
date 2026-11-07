@@ -4,6 +4,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Activity, ActivityListResponse } from '@luma/shared';
 import { QueryKeys } from '@/lib/query-keys';
+import { optimisticActivityMutationKey } from '@/lib/query-freshness';
 import { useMoveActivity, useRescheduleActivity } from './use-activity-queries';
 
 const { update, toastSuccess, toastError } = vi.hoisted(() => ({
@@ -111,5 +112,36 @@ describe('useRescheduleActivity', () => {
     expect(cached()).toMatchObject({ startDate: '2026-10-12', endDate: '2026-10-14' });
     expect(toastError).toHaveBeenCalledTimes(1);
     expect(toastSuccess).not.toHaveBeenCalled();
+  });
+});
+
+describe('las mutaciones optimistas se declaran como tales', () => {
+  // `useAllActivities` mira esta clave para no pisar el cambio optimista con un
+  // refetch (polling, foco) que llegó antes de que el servidor lo conozca.
+  it.each([
+    {
+      hook: 'useMoveActivity',
+      start: (wrapper: ReturnType<typeof setup>['wrapper']) => {
+        const { result } = renderHook(() => useMoveActivity(PROJECT), { wrapper });
+        return () => result.current.mutate({ activityId: 'a1', status: 'en_curso' });
+      },
+    },
+    {
+      hook: 'useRescheduleActivity',
+      start: (wrapper: ReturnType<typeof setup>['wrapper']) => {
+        const { result } = renderHook(() => useRescheduleActivity(PROJECT), { wrapper });
+        return () =>
+          result.current.mutate({ activityId: 'a1', startDate: '2026-10-13', endDate: '2026-10-15' });
+      },
+    },
+  ])('$hook cuenta como mutación optimista mientras espera a la API', async ({ start }) => {
+    const { queryClient, wrapper } = setup();
+    update.mockReturnValue(new Promise(() => {}));
+
+    const run = start(wrapper);
+    await act(async () => run());
+
+    expect(queryClient.isMutating({ mutationKey: optimisticActivityMutationKey(PROJECT) })).toBe(1);
+    expect(queryClient.isMutating({ mutationKey: optimisticActivityMutationKey('otra') })).toBe(0);
   });
 });

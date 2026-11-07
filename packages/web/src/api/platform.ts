@@ -4,6 +4,10 @@ import type {
   CampaignAudience,
   CampaignInput,
   PlatformActivityReport,
+  PlatformCensus,
+  PlatformFollowUpPage,
+  PlatformFollowUpQuery,
+  PlatformFunnel,
   PlatformUsersOverview,
   PlatformUsersPage,
   PlatformUsersQuery,
@@ -23,8 +27,25 @@ async function unwrap<T>(request: Promise<ApiResponse<T>>): Promise<T> {
 export const platformUsersApi = {
   overview: () => unwrap<PlatformUsersOverview>(apiClient.get('/api/admin/users/overview')),
 
-  list: ({ filter, q, page, pageSize }: PlatformUsersQuery) => {
+  census: () => unwrap<PlatformCensus>(apiClient.get('/api/admin/users/census')),
+
+  funnel: () => unwrap<PlatformFunnel>(apiClient.get('/api/admin/users/funnel')),
+
+  followUp: ({ filter, q, page, pageSize }: PlatformFollowUpQuery) => {
     const params = new URLSearchParams({ filter, page: String(page), pageSize: String(pageSize) });
+    if (q) params.set('q', q);
+    return unwrap<PlatformFollowUpPage>(
+      apiClient.get(`/api/admin/users/follow-up?${params.toString()}`),
+    );
+  },
+
+  list: ({ filter, segment, q, page, pageSize }: PlatformUsersQuery) => {
+    const params = new URLSearchParams({
+      filter,
+      segment,
+      page: String(page),
+      pageSize: String(pageSize),
+    });
     if (q) params.set('q', q);
     return unwrap<PlatformUsersPage>(apiClient.get(`/api/admin/users?${params.toString()}`));
   },

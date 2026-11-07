@@ -86,40 +86,64 @@ function SelectTrigger({
   size = 'default',
   children,
   'aria-invalid': ariaInvalid,
+  'aria-label': ariaLabel,
   ...props
 }: Omit<React.ComponentProps<typeof HeroSelect.Trigger>, 'className' | 'children'> & {
   className?: string
   size?: 'sm' | 'default'
   children?: React.ReactNode
   'aria-invalid'?: boolean | 'true' | 'false'
+  'aria-label'?: string
 }) {
   // El Button de React Aria descarta `role` y `aria-invalid`: se aplican sobre el
   // nodo. `role="combobox"` es el patrón select-only y lo que ya veían los E2E.
   const ref = React.useRef<HTMLButtonElement>(null)
+  const autoId = React.useId()
+  const triggerId = props.id ?? autoId
   const invalid = ariaInvalid === true || ariaInvalid === 'true'
   React.useEffect(() => {
     const node = ref.current
     if (!node) return
-    node.setAttribute('role', 'combobox')
-    // Nombre accesible: un `<Label htmlFor={id}>` suelto (lo habitual en los formularios)
-    // no lo ve React Aria, que sólo nombra al botón por su valor.
-    const label = node.id ? document.querySelector<HTMLElement>(`label[for="${CSS.escape(node.id)}"]`) : null
-    if (label) {
-      if (!label.id) label.id = `${node.id}-label`
-      const rest = (node.getAttribute('aria-labelledby') ?? '').split(' ').filter((id) => id && id !== label.id)
-      node.setAttribute('aria-labelledby', [label.id, ...rest].join(' '))
+    const set = (name: string, value: string | null) => {
+      if (value === null) {
+        if (node.hasAttribute(name)) node.removeAttribute(name)
+      } else if (node.getAttribute(name) !== value) {
+        node.setAttribute(name, value)
+      }
     }
-    if (invalid) {
-      node.setAttribute('aria-invalid', 'true')
-      node.setAttribute('data-invalid', 'true')
-    } else {
-      node.removeAttribute('aria-invalid')
-      node.removeAttribute('data-invalid')
+    const apply = () => {
+      set('role', 'combobox')
+      // Nombre accesible. React Aria nombra al botón con `aria-labelledby` = valor + el
+      // propio botón, así que "Tipo" saldría como "Todos Tipo". Como en Radix, el nombre es
+      // el `aria-label` o, si no hay, el de un `<Label htmlFor={id}>` suelto; el valor es contenido.
+      const label = node.id
+        ? document.querySelector<HTMLElement>(`label[for="${CSS.escape(node.id)}"]`)
+        : null
+      if (ariaLabel) {
+        // Ya se pasa como prop (ver abajo); acá sólo se reafirma si React Aria lo pisa.
+        set('aria-labelledby', node.id)
+      } else if (label) {
+        if (!label.id) label.id = `${node.id}-label`
+        set('aria-labelledby', label.id)
+      }
+      set('aria-invalid', invalid ? 'true' : null)
+      set('data-invalid', invalid ? 'true' : null)
     }
-  })
+    apply()
+    // React Aria vuelve a escribir esos atributos cuando registra sus ids: se reaplican.
+    const observer = new MutationObserver(apply)
+    observer.observe(node, {
+      attributes: true,
+      attributeFilter: ['role', 'aria-label', 'aria-labelledby', 'aria-invalid', 'data-invalid', 'id'],
+    })
+    return () => observer.disconnect()
+  }, [ariaLabel, invalid])
   return (
     <HeroSelect.Trigger
       ref={ref}
+      // Con `aria-label`, el botón se nombra a sí mismo: `aria-labelledby` apuntando a su
+      // propio id usa su `aria-label` y no el valor que React Aria agregaría.
+      {...(ariaLabel ? { id: triggerId, 'aria-label': ariaLabel, 'aria-labelledby': triggerId } : {})}
       data-slot="select-trigger"
       data-size={size}
       className={cn(

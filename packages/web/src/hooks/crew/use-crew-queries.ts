@@ -10,6 +10,7 @@ import { crewApi } from '@/api/crew';
 import { isAssignableCrew } from '@/lib/assignable-crew';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { FRESH_30S } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-provider-queries.ts`. */
@@ -23,6 +24,7 @@ export function useCrewMembers(projectId: string | undefined) {
     queryKey: [QueryKeys.crewMembers, projectId],
     queryFn: () => crewApi.list(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...FRESH_30S,
   });
 }
 

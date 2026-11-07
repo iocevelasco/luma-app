@@ -6,6 +6,7 @@ import { activitiesApi } from '@/api/activities';
 import { laborApi } from '@/api/labor';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { POLLED_LIST } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-activity-queries.ts`. */
@@ -18,6 +19,7 @@ export function useLaborRecords(projectId: string | undefined, date: string | un
     queryKey: [QueryKeys.laborRecords, projectId, date],
     queryFn: () => laborApi.list(projectId!, date),
     enabled: isAuthenticated && !!projectId && !!date,
+    ...POLLED_LIST,
   });
 }
 
@@ -51,6 +53,7 @@ export function useDayAttendance(projectId: string | undefined, date: string | u
     queryKey: [QueryKeys.activityCrew, projectId, date],
     queryFn: () => laborApi.attendance(projectId!, date!),
     enabled: isAuthenticated && !!projectId && !!date,
+    ...POLLED_LIST,
   });
 }
 

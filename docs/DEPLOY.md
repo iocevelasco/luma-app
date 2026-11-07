@@ -222,6 +222,37 @@ a `inactive`); una baja sin esa fecha cuenta desde `updatedAt`.
 Idempotente: una cuenta ya purgada (`purgedAt`) no se toca. A mano:
 `pnpm --filter @luma/api accounts:purge`.
 
+### Inventario: traspasos a medias del Depósito
+
+Un traspaso al Depósito General son dos escrituras sin transacción: si el
+proceso se corta entre las dos, el material queda «en tránsito» (salió de una
+obra y no entró al Depósito, o al revés). Esta tarea revierte los traspasos con
+una mitad faltante de hace entre 10 minutos y 3 días: el stock vuelve a donde
+estaba y la persona repite la acción.
+
+| Campo | Valor |
+|---|---|
+| Command | `node dist/scripts/repair-incomplete-transfers.js` |
+| Container | `app` |
+| Frequency | `0 8 * * *` — todos los días a las 4:00 de Caracas |
+
+Idempotente: un traspaso completo no se toca. A mano:
+`pnpm --filter @luma/api transfers:repair`.
+
+### Inventario: entradas de lo que ya estaba en obra (una sola vez)
+
+Al desplegar el inventario por primera vez, los materiales que ya estaban «En
+obra» no tienen entrada en el kardex (las nuevas se registran al pasar a «En
+obra»). Se corre **una vez**, a mano, después del deploy:
+
+```bash
+node dist/scripts/backfill-stock-entries.js
+# en local: pnpm --filter @luma/api stock:backfill
+```
+
+Es inofensivo repetirlo: cada material tiene una sola entrada. **Sin esto, el
+patio de las obras que ya tenían material en obra se ve vacío.**
+
 
 ## Verificar
 
@@ -230,6 +261,59 @@ curl https://<DOMINIO>/health      # {"status":"ok","database":"connected"}
 curl -I https://<DOMINIO>/         # 301 → /home
 curl -I https://<DOMINIO>/app/     # 200, la SPA
 ```
+
+## Tiempo real de obra (SSE)
+
+Actividades y Materiales avisan en vivo a quien tiene la obra abierta, con un
+stream SSE por pestaña (`GET /api/projects/:projectId/live`). Qué es y por qué
+así: `docs/adr/002-tiempo-real-por-obra.md`. El polling de 30 s de la SPA sigue
+debajo como red de seguridad, así que **si el canal no anda, la app sigue
+funcionando** — sólo se entera en 30 s en vez de en segundos.
+
+Variables opcionales del servicio `app` (todas tienen default; ver `LIVE_CONFIG`
+en `config/app.config.ts`):
+
+| Variable | Rol | Default |
+|---|---|---|
+| `LIVE_ENABLED` | `false` apaga el canal: responde 503 y la SPA hace polling | encendido |
+| `LIVE_MAX_CONNECTIONS` | tope de conexiones abiertas en todo el proceso | `500` |
+| `LIVE_MAX_CONNECTIONS_PER_USER` | pestañas por persona (se cierra la más vieja) | `4` |
+| `LIVE_HEARTBEAT_MS` | latido | `20000` |
+| `LIVE_MAX_LIFETIME_MS` | vida máxima de una conexión (obliga a revalidar el acceso) | `1200000` |
+| `LIVE_COALESCE_MS` | ventana en que se juntan los avisos de una ráfaga | `150` |
+| `LIVE_STATS_LOG_MS` | cada cuánto se loguea cuántas conexiones en vivo hay (sólo si hay alguna) | `300000` |
+
+Cambiar una variable exige redesplegar.
+
+**Una sola instancia.** El hub vive en la memoria del proceso: con más de una
+réplica de `app`, un cambio hecho en una no llega a los clientes de la otra. No
+escales `app` sin pasar antes el hub a Redis/Valkey (o Centrifugo).
+
+**Cada deploy corta los streams.** `SIGTERM` los avisa y la SPA reconecta sola.
+
+### Prueba de entorno (una vez, tras el primer deploy con esto)
+
+Es lo que no se pudo verificar sin el entorno real. Con una sesión válida:
+
+```bash
+# 1. ¿Llegan los latidos a través de Traefik, sin quedar retenidos? Tienen que
+#    aparecer `event: ready` al instante y `event: ping` cada ~20 s.
+curl -N -H "Authorization: Bearer <ACCESS_TOKEN>" -H "Accept: text/event-stream" \
+  https://<DOMINIO>/api/projects/<PROJECT_ID>/live
+
+# 2. Que dure: dejalo abierto más de 5 minutos. Si Traefik lo corta antes,
+#    revisar `writeTimeout` / `idleTimeout` del entrypoint.
+# 3. ¿HTTP/2 hacia el navegador? (con HTTP/1.1 el tope es de 6 conexiones por dominio)
+curl -sI --http2 https://<DOMINIO>/health | head -1
+```
+
+Y **en un iPhone real con la PWA instalada** (iOS 18 y 26.x): abrir una obra,
+bloquear la pantalla 30 s, volver y comprobar que lo que cambió mientras tanto
+aparece. `<html data-live-status>` dice el estado del canal (`live`, `retrying`,
+`paused`, `idle`, `unsupported`, `stopped`).
+
+Si el middleware de compresión de Traefik retuviera `text/event-stream` (no lo
+excluye por defecto), `ready` no llegaría: excluir ese tipo ahí.
 
 ## Versión de la SPA y aviso de actualización
 

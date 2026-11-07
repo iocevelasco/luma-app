@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { format } from 'date-fns';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createExpenseSchema,
@@ -10,16 +11,20 @@ import {
   type Expense,
   type ExpenseCategory,
 } from '@luma/shared';
-import { Download, Plus, Receipt, Trash2, TrendingUp, Upload, Users } from 'lucide-react';
+import { Download, Plus, Receipt, SearchX, Trash2, TrendingUp, Upload, Users, X } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import { toast } from '@/lib/toast';
 import { Can } from '@/components/permissions/can';
 import { EmptyState } from '@/components/common/empty-state';
 import { ExpenseMaterials } from '@/components/finance/expense-materials';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
+import { MovementDetail, RowOpenButton } from '@/components/finance/movement-detail';
+import { MovementExport } from '@/components/finance/movement-export';
+import { MovementFilterBar } from '@/components/finance/movement-filter-bar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,7 +66,22 @@ import {
 } from '@/hooks/finance/use-finance-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
+import { useCompactToolbar } from '@/hooks/use-compact-toolbar';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { currencyChoices } from '@/lib/currencies';
+import { FINANCE_LIST_LIMIT } from '@/lib/finance-limits';
+import { downloadBlob } from '@/lib/download-blob';
+import {
+  countActiveExpenseFilters,
+  EXPENSE_GROUP_BY,
+  filterExpenses,
+  groupExpenses,
+  NO_EXPENSE_FILTERS,
+  sumExpenses,
+  type ExpenseFilters,
+  type ExpenseGroup,
+  type ExpenseGroupBy,
+} from '@/lib/expenses-view';
 import { formatMoney } from '@/lib/format-money';
 import { cn, formatFileSize } from '@/lib/utils';
 
@@ -210,11 +230,31 @@ function NewExpenseDrawer({
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="expense-currency">{t('finance.fields.currency')}</Label>
-            <Input
-              id="expense-currency"
-              maxLength={3}
-              className="uppercase"
-              {...form.register('currency')}
+            <Controller
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(code) => {
+                    field.onChange(code);
+                    // La cotización sólo existe si la moneda no es la de la obra: si quedara
+                    // el valor tipeado con el campo ya oculto, se guardaría y inflaría el gasto.
+                    if (code === projectCurrency) form.setValue('exchangeRate', 1);
+                  }}
+                >
+                  <SelectTrigger id="expense-currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencyChoices(projectCurrency, field.value).map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             />
           </div>
         </div>
@@ -430,16 +470,21 @@ export function ProjectExpensesPage() {
   const { data: summaryData } = useFinanceSummary(projectId);
   const deleteExpense = useDeleteExpense(projectId!);
   const [deleting, setDeleting] = useState<Expense | null>(null);
+  // `detail` se conserva al cerrar: el panel sale con su animación y devuelve el foco.
+  const [detail, setDetail] = useState<Expense | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const compact = useCompactToolbar();
+  const hasExpenses = (data?.expenses.length ?? 0) > 0;
 
-  const byCategory = useMemo(() => {
-    const map = new Map<ExpenseCategory, typeof data extends undefined ? never : NonNullable<typeof data>['expenses']>();
-    for (const expense of data?.expenses ?? []) {
-      const list = map.get(expense.category) ?? [];
-      list.push(expense);
-      map.set(expense.category, list);
-    }
-    return map;
-  }, [data]);
+
+  const [filters, setFilters] = useState<ExpenseFilters>(NO_EXPENSE_FILTERS);
+  const [groupBy, setGroupBy] = useState<ExpenseGroupBy>('category');
+  const activeFilters = countActiveExpenseFilters(filters);
+
+  // Lo visible: filtrado y agrupado en el cliente, sobre la lista que ya llegó.
+  const visible = useMemo(() => filterExpenses(data?.expenses ?? [], filters), [data, filters]);
+  const groups = useMemo(() => groupExpenses(visible, groupBy), [visible, groupBy]);
 
   if (isError) return <PageLayout isError />;
   if (isLoading || !data || !projectData) return <PageLayout isLoading />;
@@ -447,8 +492,171 @@ export function ProjectExpensesPage() {
   const currency = projectData.project.currency;
   const summary = summaryData?.summary;
 
+  // `jspdf` pesa: se empieza a bajar cuando la persona se acerca al botón, no en cada visita.
+  function warmPdf() {
+    void import('@/lib/expenses-pdf');
+    void import('jspdf');
+    void import('jspdf-autotable');
+  }
+
+  async function handleDownloadCsv() {
+    if (visible.length === 0) return;
+    try {
+      const [{ buildExpensesCsv }, { expensesFileName }] = await Promise.all([
+        import('@/lib/movements-csv'),
+        import('@/lib/expenses-pdf'),
+      ]);
+      const now = new Date();
+      // Lo que la pantalla muestra, en su mismo orden.
+      const rows = groups.flatMap((group) => group.expenses);
+      const numberFormat = new Intl.NumberFormat(i18n.language, { useGrouping: false, maximumFractionDigits: 6 });
+      const csv = buildExpensesCsv(rows, currency, {
+        number: (value) => numberFormat.format(value),
+        header: {
+          date: t('finance.export.columnDate'),
+          description: t('finance.fields.description'),
+          category: t('finance.fields.category'),
+          method: t('finance.fields.method'),
+          provider: t('finance.fields.provider'),
+          activity: t('finance.fields.activity'),
+          amount: t('finance.export.columnAmount'),
+          currency: t('finance.export.columnCurrency'),
+          originalAmount: t('finance.export.columnOriginalAmount'),
+          originalCurrency: t('finance.export.columnOriginalCurrency'),
+          rate: t('finance.export.columnRate'),
+          notes: t('finance.export.columnNotes'),
+        },
+        category: (category) => t(`finance.category.${category}`),
+        method: (method) => t(`finance.method.${method}`),
+      });
+      downloadBlob(
+        new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+        expensesFileName(projectData?.project.name ?? '', now, 'csv'),
+      );
+      toast.success(t('finance.export.csvDownloaded'));
+    } catch {
+      toast.error(t('finance.export.csvError'));
+    }
+  }
+
+  async function handleDownloadPdf() {
+    if (generatingPdf || visible.length === 0) return;
+    setGeneratingPdf(true);
+    try {
+      const { buildExpensesPdf, expensesFileName } = await import('@/lib/expenses-pdf');
+      const now = new Date();
+      // Lo que la pantalla muestra, en su mismo orden.
+      const expenses = groups.flatMap((group) => group.expenses);
+      const blob = await buildExpensesPdf({
+        projectName: projectData?.project.name ?? '',
+        expenses,
+        total: sumExpenses(expenses),
+        labels: {
+          title: t('finance.expenses.pdf.title'),
+          filtered: activeFilters > 0 ? t('finance.expenses.pdf.filtered') : null,
+          summary: `${t('finance.expenses.pdf.summary', { count: expenses.length })} · ${format(now, 'PPPP', { locale: dateLocale })}`,
+          columns: {
+            date: t('finance.expenses.pdf.columnDate'),
+            description: t('finance.fields.description'),
+            category: t('finance.fields.category'),
+            detail: t('finance.expenses.pdf.columnDetail'),
+            amount: t('finance.expenses.pdf.columnAmount'),
+          },
+          total: t('finance.expenses.pdf.total'),
+          generated: t('finance.expenses.pdf.generated', { date: format(now, 'Pp', { locale: dateLocale }) }),
+          page: (page, total) => t('finance.expenses.pdf.page', { page, total }),
+          category: (category) => t(`finance.category.${category}`),
+          method: (method) => t(`finance.method.${method}`),
+          day: (dayKey) => format(fromDayKey(dayKey), 'P', { locale: dateLocale }),
+          money: (amount) => formatMoney(amount, currency, i18n.language),
+        },
+      });
+      downloadBlob(blob, expensesFileName(projectData?.project.name ?? '', now));
+      toast.success(t('finance.expenses.pdf.downloaded'));
+    } catch {
+      toast.error(t('finance.expenses.pdf.error'));
+    } finally {
+      setGeneratingPdf(false);
+    }
+  }
+
+  const exportControl = (
+    <MovementExport
+      compact={compact}
+      generatingPdf={generatingPdf}
+      disabled={visible.length === 0}
+      onPdf={() => void handleDownloadPdf()}
+      onCsv={() => void handleDownloadCsv()}
+      onWarm={warmPdf}
+      labels={{
+        download: t('finance.export.download'),
+        generating: t('finance.expenses.pdf.generating'),
+        pdf: t('finance.export.pdf'),
+        csv: t('finance.export.csv'),
+        pdfButton: t('finance.expenses.pdf.button'),
+        csvButton: t('finance.export.csvButton'),
+      }}
+    />
+  );
+
+  // Sin filtros y por categoría, el total sale del resumen de la obra: cuenta todos los gastos,
+  // no sólo los que llegaron en la lista (la API corta en `FINANCE_LIST_LIMIT.expenses`).
+  const groupTotal = (group: ExpenseGroup) =>
+    groupBy === 'category' && activeFilters === 0 && summary
+      ? (summary.expensesByCategory[group.key as ExpenseCategory] ?? group.total)
+      : group.total;
+  const truncated = data.expenses.length >= FINANCE_LIST_LIMIT.expenses;
+
+  const groupLabel = (group: ExpenseGroup) => {
+    if (group.name === null) return t(`finance.expenses.group.none.${groupBy}`);
+    if (groupBy === 'category') return t(`finance.category.${group.name}`);
+    if (groupBy === 'month') return format(fromDayKey(`${group.key}-01`), 'LLLL yyyy', { locale: dateLocale });
+    if (groupBy === 'day') return format(fromDayKey(group.key), 'PPPP', { locale: dateLocale });
+    return group.name;
+  };
+
   return (
     <PageLayout
+      toolbar={
+        hasExpenses ? (
+          <MovementFilterBar
+            search={filters.search}
+            onSearchChange={(search) => setFilters((prev) => ({ ...prev, search }))}
+            kind={{
+              value: filters.category,
+              onChange: (category) => setFilters((prev) => ({ ...prev, category })),
+              options: EXPENSE_CATEGORIES.map((value) => ({ value, label: t(`finance.category.${value}`) })),
+              allLabel: t('finance.expenses.filters.allCategories'),
+              ariaLabel: t('finance.expenses.filters.category'),
+            }}
+            from={filters.from}
+            to={filters.to}
+            onFromChange={(from) => setFilters((prev) => ({ ...prev, from }))}
+            onToChange={(to) => setFilters((prev) => ({ ...prev, to }))}
+            groupBy={{
+              value: groupBy,
+              onChange: setGroupBy,
+              options: EXPENSE_GROUP_BY.map((value) => ({ value, label: t(`finance.expenses.groupBy.${value}`) })),
+              ariaLabel: t('finance.expenses.groupBy.label'),
+            }}
+            activeCount={activeFilters}
+            onClear={() => setFilters(NO_EXPENSE_FILTERS)}
+            compact={compact}
+            actions={exportControl}
+            labels={{
+              search: t('finance.expenses.filters.search'),
+              from: t('finance.expenses.filters.from'),
+              to: t('finance.expenses.filters.to'),
+              clear: t('finance.expenses.filters.clear'),
+              button: t('finance.filters.button'),
+              done: t('finance.filters.done'),
+              actions: t('finance.filters.actions'),
+            }}
+          />
+        ) : undefined
+      }
+      // En el modo compacto la descarga vive en el panel de filtros.
+      secondaryActions={hasExpenses && !compact ? exportControl : undefined}
       action={
         <Can I="expense.write">
           <NewExpenseDrawer projectId={projectId!} projectCurrency={currency} />
@@ -462,22 +670,22 @@ export function ProjectExpensesPage() {
             <CardTitle className="text-base">{t('finance.result.title')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+            <dl className="grid gap-4 text-sm [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))]">
               <div>
                 <dt className="text-muted-foreground">{t('finance.result.paid')}</dt>
-                <dd className="text-lg font-semibold">
+                <dd className="break-words text-lg font-semibold tabular-nums">
                   {formatMoney(summary.paidTotal, currency, i18n.language)}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">{t('finance.result.spent')}</dt>
-                <dd className="text-lg font-semibold">
+                <dd className="break-words text-lg font-semibold tabular-nums">
                   {formatMoney(summary.expenseTotal, currency, i18n.language)}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">{t('finance.result.committed')}</dt>
-                <dd className="text-lg font-semibold">
+                <dd className="break-words text-lg font-semibold tabular-nums">
                   {formatMoney(summary.committedTotal, currency, i18n.language)}
                 </dd>
               </div>
@@ -487,7 +695,7 @@ export function ProjectExpensesPage() {
                     va con `expense.read`, que su rol no tiene. */}
                 <dd
                   className={cn(
-                    'text-lg font-semibold',
+                    'break-words text-lg font-semibold tabular-nums',
                     summary.marginTotal < 0 && 'text-destructive',
                   )}
                 >
@@ -501,53 +709,77 @@ export function ProjectExpensesPage() {
 
       <PayrollCard projectId={projectId!} currency={currency} />
 
+      {truncated && (
+        <p role="status" className="text-xs text-muted-foreground">
+          {t('finance.listTruncated', { count: FINANCE_LIST_LIMIT.expenses })}
+        </p>
+      )}
+
       {data.expenses.length === 0 ? (
         <EmptyState
           icon={Receipt}
           title={t('finance.expenses.emptyTitle')}
           description={t('finance.expenses.emptyDescription')}
         />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon={SearchX}
+          title={t('finance.expenses.filters.emptyTitle')}
+          description={t('finance.expenses.filters.emptyDescription')}
+          action={
+            <Button type="button" variant="outline" onClick={() => setFilters(NO_EXPENSE_FILTERS)}>
+              <X className="size-4" />
+              {t('finance.expenses.filters.clear')}
+            </Button>
+          }
+        />
       ) : (
         <ListSections>
-          {EXPENSE_CATEGORIES.map((category) => {
-            const expenses = byCategory.get(category);
-            if (!expenses || expenses.length === 0) return null;
-
-            return (
-              <ListSection
-                key={category}
-                label={t(`finance.category.${category}`)}
-                meta={
-                  <span className="tabular-nums">
-                    {formatMoney(
-                      summary?.expensesByCategory[category] ?? 0,
-                      currency,
-                      i18n.language,
-                    )}
-                  </span>
-                }
-              >
-                <RowCardList>
-                  {expenses.map((expense) => (
-                    <RowCard key={expense.id}>
+          {groups.map((group) => (
+            <ListSection
+              key={group.key}
+              label={groupLabel(group)}
+              meta={
+                <>
+                  {activeFilters > 0 || groupBy !== 'category' ? (
+                    <span>{t('finance.expenses.groupCount', { count: group.expenses.length })}</span>
+                  ) : null}
+                  <span className="tabular-nums">{formatMoney(groupTotal(group), currency, i18n.language)}</span>
+                </>
+              }
+            >
+              <RowCardList>
+                {group.expenses.map((expense) => {
+                  // La fila no repite lo que ya dice el rótulo del grupo.
+                  const detail = [
+                    groupBy !== 'category' && t(`finance.category.${expense.category}`),
+                    expense.method && t(`finance.method.${expense.method}`),
+                    groupBy !== 'provider' && expense.providerName,
+                    groupBy !== 'activity' && expense.activityName,
+                  ].filter(Boolean);
+                  return (
+                    <RowCard key={expense.id} className="relative">
                       {/* La fecha es el bloque de la izquierda: la línea 2 ya no la repite. */}
                       <RowCardDate date={fromDayKey(expense.spentOn)} locale={dateLocale} />
                       <RowCardBody
-                        title={<p className="truncate">{expense.description}</p>}
+                        title={
+                          <RowOpenButton
+                            onClick={() => {
+                              setDetail(expense);
+                              setDetailOpen(true);
+                            }}
+                          >{expense.description}</RowOpenButton>
+                        }
                         meta={
-                          (expense.method || expense.providerName || expense.activityName || expense.materials) && (
+                          (detail.length > 0 || expense.materials) && (
                             <p>
-                              {[
-                                expense.method && t(`finance.method.${expense.method}`),
-                                expense.providerName,
-                                expense.activityName,
-                              ]
-                                .filter(Boolean)
-                                .join(' · ')}
+                              {detail.join(' · ')}
                               {expense.materials && (
                                 <>
-                                  {(expense.method || expense.providerName || expense.activityName) && ' · '}
-                                  <ExpenseMaterials projectId={projectId!} materials={expense.materials} />
+                                  {detail.length > 0 && ' · '}
+                                  <span className="relative z-10">
+                                    <ExpenseMaterials projectId={projectId!} materials={expense.materials} />
+                                  </span>
                                 </>
                               )}
                             </p>
@@ -563,24 +795,17 @@ export function ProjectExpensesPage() {
 
                       <RowCardEnd>
                         <span className="text-sm tabular-nums">
-                          {formatMoney(
-                            expense.amountInProjectCurrency,
-                            currency,
-                            i18n.language,
-                          )}
+                          {formatMoney(expense.amountInProjectCurrency, currency, i18n.language)}
                         </span>
                         {expense.receipt?.url && (
                           <Button
                             variant="ghost"
                             size="icon"
                             asChild
+                            className="relative z-10"
                             aria-label={t('finance.expenses.openReceipt')}
                           >
-                            <a
-                              href={expense.receipt.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
+                            <a href={expense.receipt.url} target="_blank" rel="noopener noreferrer">
                               <Download className="size-4" />
                             </a>
                           </Button>
@@ -589,6 +814,7 @@ export function ProjectExpensesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="relative z-10"
                             onClick={() => setDeleting(expense)}
                             aria-label={t('finance.expenses.delete')}
                           >
@@ -597,12 +823,68 @@ export function ProjectExpensesPage() {
                         </Can>
                       </RowCardEnd>
                     </RowCard>
-                  ))}
-                </RowCardList>
-              </ListSection>
-            );
-          })}
+                  );
+                })}
+              </RowCardList>
+            </ListSection>
+          ))}
         </ListSections>
+      )}
+
+      {detail && (
+        <MovementDetail
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          title={detail.description}
+          caption={format(fromDayKey(detail.spentOn), 'PPPP', { locale: dateLocale })}
+          amount={formatMoney(detail.amountInProjectCurrency, currency, i18n.language)}
+          fields={[
+            {
+              label: t('finance.detail.originalAmount'),
+              value:
+                detail.currency !== currency
+                  ? `${formatMoney(detail.amount, detail.currency, i18n.language)} · ${t('finance.detail.rate', { rate: detail.exchangeRate })}`
+                  : undefined,
+            },
+            { label: t('finance.fields.category'), value: t(`finance.category.${detail.category}`) },
+            { label: t('finance.fields.methodOptional'), value: detail.method && t(`finance.method.${detail.method}`) },
+            { label: t('finance.fields.provider'), value: detail.providerName },
+            { label: t('finance.fields.activity'), value: detail.activityName },
+            {
+              label: t('finance.expenses.materialsTitle'),
+              value: detail.materials && (
+                <ul className="list-disc pl-4">
+                  {detail.materials.map((material) => (
+                    <li key={material.id}>{material.name}</li>
+                  ))}
+                </ul>
+              ),
+            },
+            { label: t('finance.detail.notes'), value: detail.notes },
+            {
+              label: t('finance.fields.receipt'),
+              value: detail.receipt?.url ? (
+                <a
+                  href={detail.receipt.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 underline underline-offset-2 max-sm:min-h-11"
+                >
+                  <Download aria-hidden className="size-4" />
+                  <span className="min-w-0 truncate">{detail.receipt.fileName}</span>
+                  <span className="text-xs text-muted-foreground">{formatFileSize(detail.receipt.sizeBytes)}</span>
+                </a>
+              ) : (
+                detail.receipt?.fileName
+              ),
+            },
+            { label: t('finance.detail.registeredBy'), value: detail.registeredByName },
+            {
+              label: t('finance.detail.registeredAt'),
+              value: format(new Date(detail.createdAt), 'Pp', { locale: dateLocale }),
+            },
+          ]}
+        />
       )}
 
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>

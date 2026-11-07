@@ -10,6 +10,7 @@ import type {
 import { milestonesApi } from '@/api/milestones';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { POLLED_LIST } from '@/lib/query-freshness';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-project-queries.ts`. */
@@ -21,6 +22,7 @@ export function useMilestones(projectId: string | undefined) {
     queryKey: [QueryKeys.milestones, projectId],
     queryFn: () => milestonesApi.list(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...POLLED_LIST,
   });
 }
 

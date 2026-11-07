@@ -14,6 +14,7 @@ import { projectsApi } from '@/api/projects';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { FRESH_30S } from '@/lib/query-freshness';
 import { projectDetailPath, ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -37,6 +38,7 @@ export function useProject(projectId: string | undefined) {
     queryKey: [QueryKeys.project, projectId],
     queryFn: () => projectsApi.get(projectId!),
     enabled: isAuthenticated && !!projectId,
+    ...FRESH_30S,
   });
 }
 

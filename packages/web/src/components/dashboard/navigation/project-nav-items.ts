@@ -10,6 +10,7 @@ import {
   UserCog,
   Users,
   Wallet,
+  Warehouse,
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ import {
   projectDetailPath,
   projectDocumentsPath,
   projectExpensesPath,
+  projectInventoryPath,
   projectLaborPath,
   projectMaterialsPath,
   projectMilestonesPath,
@@ -65,6 +67,7 @@ export const PROJECT_NAV_ITEMS: ProjectNavItem[] = [
   { labelKey: 'detail', path: projectDetailPath, icon: LayoutDashboard },
   { labelKey: 'activities', path: projectActivitiesPath, icon: CalendarRange, capability: 'activity.read' },
   { labelKey: 'materials', path: projectMaterialsPath, icon: Package, capability: 'material.read' },
+  { labelKey: 'inventory', path: projectInventoryPath, icon: Warehouse, capability: 'inventory.read' },
   { labelKey: 'labor', path: projectLaborPath, icon: Users, capability: 'crew.read' },
   { labelKey: 'milestones', path: projectMilestonesPath, icon: Flag, capability: 'milestone.read' },
   { labelKey: 'documents', path: projectDocumentsPath, icon: FileText, capability: 'document.read' },

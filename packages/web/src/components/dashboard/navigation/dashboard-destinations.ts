@@ -1,4 +1,4 @@
-import { HardHat, Truck, Users, type LucideIcon } from 'lucide-react';
+import { Boxes, HardHat, Truck, Users, type LucideIcon } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 
 /**
@@ -37,6 +37,12 @@ export const DASHBOARD_DESTINATIONS: DashboardDestination[] = [
     to: ROUTES.PROVIDERS,
     icon: Truck,
     testId: 'nav-providers',
+  },
+  {
+    labelKey: 'deposit',
+    to: ROUTES.DEPOSIT,
+    icon: Boxes,
+    testId: 'nav-deposit',
   },
   {
     labelKey: 'crew',

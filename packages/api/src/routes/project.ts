@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import { requireCapability, requireProjectAccess } from '../middleware/project.middleware.js';
 import {
+  changesProjectVisibility,
+  closeLiveOnAccessChange,
+  publishLiveChanges,
+} from '../middleware/live.middleware.js';
+import {
   createProject,
   createProjectSpecialty,
   updateProjectSpecialty,
@@ -17,6 +22,7 @@ import {
   updateProject,
 } from '../controllers/index.js';
 import { activityRouter } from './activity.js';
+import { inventoryRouter } from './inventory.js';
 import { materialRouter } from './material.js';
 import { laborRouter } from './labor.js';
 import { budgetRouter } from './budget.js';
@@ -26,6 +32,7 @@ import { crewRouter } from './crew.js';
 import { documentRouter } from './document.js';
 import { milestoneRouter } from './milestone.js';
 import { financeRouter } from './payment.js';
+import { liveRouter } from './live.js';
 
 export const projectRouter = Router();
 
@@ -37,7 +44,14 @@ projectRouter.get('/', listProjects);
 projectRouter.get('/papelera', listDeletedProjects);
 projectRouter.post('/papelera/:projectId/restaurar', restoreProject);
 projectRouter.get('/:projectId', requireProjectAccess, getProject);
-projectRouter.patch('/:projectId', requireProjectAccess, requireCapability('project.update'), updateProject);
+projectRouter.patch(
+  '/:projectId',
+  // Sólo los flags que le abren Compras o Proveedores al cliente mueven permisos.
+  closeLiveOnAccessChange({ when: changesProjectVisibility }),
+  requireProjectAccess,
+  requireCapability('project.update'),
+  updateProject,
+);
 projectRouter.post(
   '/:projectId/specialties',
   requireProjectAccess,
@@ -58,12 +72,15 @@ projectRouter.get(
 );
 projectRouter.delete(
   '/:projectId',
+  closeLiveOnAccessChange(),
   requireProjectAccess,
   requireCapability('project.delete'),
   deleteProject,
 );
 projectRouter.post(
   '/:projectId/members',
+  // Invitar no corta a nadie: la invitación a quien ya es miembro es un
+  // conflicto, así que nunca cambia el acceso de alguien ya conectado.
   requireProjectAccess,
   requireCapability('project.invite'),
   inviteProjectMember,
@@ -75,19 +92,26 @@ projectRouter.post(
 // idempotentes y así quedan autocontenidos si algún día se montan aparte.
 projectRouter.patch(
   '/:projectId/members/:membershipId',
+  closeLiveOnAccessChange(),
   requireProjectAccess,
   requireCapability('project.invite'),
   updateProjectMemberRole,
 );
 projectRouter.delete(
   '/:projectId/members/:membershipId',
+  closeLiveOnAccessChange(),
   requireProjectAccess,
   requireCapability('project.invite'),
   removeProjectMember,
 );
 
-projectRouter.use('/:projectId/activities', activityRouter);
-projectRouter.use('/:projectId/materials', materialRouter);
+// Tiempo real: Actividades y Materiales avisan a la obra tras cada escritura
+// exitosa (ver middleware/live.middleware.ts). El resto de los recursos se
+// refresca por polling en la SPA, así que no cuelga nada acá.
+projectRouter.use('/:projectId/activities', publishLiveChanges, activityRouter);
+projectRouter.use('/:projectId/materials', publishLiveChanges, materialRouter);
+projectRouter.use('/:projectId/inventory', inventoryRouter);
+projectRouter.use('/:projectId/live', liveRouter);
 projectRouter.use('/:projectId/labor', laborRouter);
 projectRouter.use('/:projectId/budget', budgetRouter);
 projectRouter.use('/:projectId/advisor', advisorRouter);

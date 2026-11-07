@@ -1,5 +1,15 @@
 import type { NextFunction, Request, Response } from 'express';
-import { platformUsersQuerySchema, setUnlimitedPlanSchema } from '@luma/shared';
+import {
+  platformFollowUpQuerySchema,
+  platformUsersQuerySchema,
+  setUnlimitedPlanSchema,
+} from '@luma/shared';
+import {
+  classifyAccounts,
+  platformCensus,
+  segmentsById,
+} from '../services/platform-accounts.service.js';
+import { platformFollowUp, platformFunnel } from '../services/platform-follow-up.service.js';
 import { listPlatformUsers, platformUsersOverview } from '../services/platform-users.service.js';
 import { setAccountUnlimited } from '../services/unlimited-plan.service.js';
 import { badRequest } from '../utils/errors.js';
@@ -13,13 +23,44 @@ export async function getPlatformUsersOverview(_req: Request, res: Response, nex
   }
 }
 
+/** `GET /api/admin/users/census` — cuentas por segmento y estado de la membresía. */
+export async function getPlatformCensus(_req: Request, res: Response, next: NextFunction) {
+  try {
+    return res.json({ success: true, data: await platformCensus() });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** `GET /api/admin/users/funnel` — el embudo de activación de las cuentas con membresía. */
+export async function getPlatformFunnel(_req: Request, res: Response, next: NextFunction) {
+  try {
+    return res.json({ success: true, data: await platformFunnel() });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** `GET /api/admin/users/follow-up` — las cuentas con membresía y cómo les va. */
+export async function listPlatformFollowUp(req: Request, res: Response, next: NextFunction) {
+  try {
+    const parsed = platformFollowUpQuerySchema.safeParse(req.query);
+    if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
+
+    return res.json({ success: true, data: await platformFollowUp(parsed.data) });
+  } catch (error) {
+    next(error);
+  }
+}
+
 /** `GET /api/admin/users` — las cuentas, de la más nueva a la más vieja. */
 export async function listPlatformUsersPage(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = platformUsersQuerySchema.safeParse(req.query);
     if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
 
-    return res.json({ success: true, data: await listPlatformUsers(parsed.data) });
+    const segments = segmentsById(await classifyAccounts());
+    return res.json({ success: true, data: await listPlatformUsers(parsed.data, segments) });
   } catch (error) {
     next(error);
   }

@@ -229,7 +229,11 @@ describe('arquitecto, ingeniero y diseñador', () => {
   it('hacen todo lo del supervisor y además planifican y cargan documentación', () => {
     for (const role of PROFESSIONALS) {
       const caps = PROJECT_CAPABILITIES[role];
-      for (const capability of PROJECT_CAPABILITIES.supervisor) expect(caps, role).toContain(capability);
+      for (const capability of PROJECT_CAPABILITIES.supervisor) {
+        // Excepción decidida: despachar del patio es del supervisor y del gerente.
+        if (capability === 'inventory.write') continue;
+        expect(caps, role).toContain(capability);
+      }
       expect(caps, role).toContain('document.write');
       expect(caps, role).toContain('activity.plan');
     }
@@ -350,6 +354,7 @@ describe('gerentes de una obra', () => {
     'project.manager.write',
     'provider.manage',
     'crew.directory.write',
+    'inventory.deposit.write',
   ];
 
   it('sin saber quién creó la obra se niega: el dueño pierde el botón, no otro gerente lo gana', () => {
@@ -438,6 +443,50 @@ describe('project.update — el flag que abre Compras', () => {
     expect(canInProject('gerente', 'project.update', OPEN_ALL)).toBe(true);
     for (const role of ['supervisor', 'contador', 'cliente'] as const) {
       expect(canInProject(role, 'project.update', OPEN_ALL)).toBe(false);
+    }
+  });
+});
+
+describe('inventario de obra', () => {
+  const OPEN_ALL = { providersVisibleToClient: true, purchasesVisibleToClient: true };
+
+  it('el gerente y el supervisor registran movimientos', () => {
+    for (const role of ['gerente', 'supervisor'] as const) {
+      expect(canInProject(role, 'inventory.read')).toBe(true);
+      expect(canInProject(role, 'inventory.write')).toBe(true);
+    }
+  });
+
+  it('arquitecto, ingeniero y diseñador lo ven pero no despachan', () => {
+    for (const role of ['arquitecto', 'ingeniero', 'disenador'] as const) {
+      expect(canInProject(role, 'inventory.read')).toBe(true);
+      expect(canInProject(role, 'inventory.write')).toBe(false);
+    }
+  });
+
+  it('el contador y el cliente no lo ven, ni con Compras abierta al cliente', () => {
+    for (const role of ['contador', 'cliente'] as const) {
+      expect(canInProject(role, 'inventory.read', OPEN_ALL)).toBe(false);
+      expect(canInProject(role, 'inventory.write', OPEN_ALL)).toBe(false);
+    }
+  });
+
+  it('con la suscripción vencida queda sólo lectura', () => {
+    const caps = capabilitiesInProject('supervisor', undefined, { readOnly: true });
+    expect(caps).toContain('inventory.read');
+    expect(caps).not.toContain('inventory.write');
+  });
+});
+
+describe('Depósito General', () => {
+  it('sólo el dueño de la obra manda o trae material: otro gerente no', () => {
+    expect(canInProject('gerente', 'inventory.deposit.write', undefined, { isOwner: true })).toBe(true);
+    expect(canInProject('gerente', 'inventory.deposit.write')).toBe(false);
+  });
+
+  it('ningún otro rol lo tiene, ni el supervisor que despacha del patio', () => {
+    for (const role of ['supervisor', 'arquitecto', 'ingeniero', 'disenador', 'contador', 'cliente'] as const) {
+      expect(canInProject(role, 'inventory.deposit.write', undefined, { isOwner: true }), role).toBe(false);
     }
   });
 });
