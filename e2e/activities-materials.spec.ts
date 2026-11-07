@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { alertDialog } from './helpers/dialog';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { requiresApi } from './helpers/api';
@@ -101,13 +102,13 @@ test.describe('planificación semanal y materiales', () => {
     await expect(toBuy.getByText(MATERIAL_NAME)).toBeVisible();
     await toBuy.getByRole('button', { name: /marcar solicitado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
-    await expect(page.getByRole('alertdialog')).toBeHidden();
+    await expect(alertDialog(page)).toBeHidden();
 
     // Sigue por comprar (solicitado todavía no es comprado); al marcarlo
     // comprado pasa a la otra pestaña.
     await toBuy.getByRole('button', { name: /marcar comprado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
-    await expect(page.getByRole('alertdialog')).toBeHidden();
+    await expect(alertDialog(page)).toBeHidden();
     // Antes de cambiar de pestaña: la inactiva se desmonta, y ahí un conteo en
     // cero no probaría nada.
     await expect(toBuy.getByText(MATERIAL_NAME)).toHaveCount(0);

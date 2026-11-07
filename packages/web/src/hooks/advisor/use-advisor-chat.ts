@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { ChatMessage } from '@luma/shared';
 import { advisorApi } from '@/api/advisor';
 import { errorMessage } from '@/lib/error-message';

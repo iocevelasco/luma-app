@@ -68,13 +68,13 @@ export function ProjectAssignmentDialog({
         <ul className="flex flex-col gap-2">
           {projects.map((project) => (
             <li key={project.id}>
-              <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
-                <Checkbox
-                  checked={selected.has(project.id)}
-                  onCheckedChange={() => toggle(project.id)}
-                />
+              <Checkbox
+                checked={selected.has(project.id)}
+                onCheckedChange={() => toggle(project.id)}
+                className="w-full rounded-md border border-border px-3 py-2 text-sm"
+              >
                 <span className="min-w-0 flex-1 truncate">{project.name}</span>
-              </label>
+              </Checkbox>
             </li>
           ))}
         </ul>

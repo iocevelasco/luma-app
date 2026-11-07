@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { tick } from './helpers/checkbox';
 import { appUrl } from './helpers/auth';
 
 /**
@@ -71,7 +72,7 @@ test.describe('términos y privacidad', () => {
     await expect(dialog.getByRole('checkbox')).not.toBeChecked();
     await expect(confirm).toBeDisabled();
 
-    await dialog.getByRole('checkbox').check();
+    await tick(dialog.getByRole('checkbox')).click();
     await expect(confirm).toBeEnabled();
   });
 

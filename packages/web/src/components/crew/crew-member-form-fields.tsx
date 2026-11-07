@@ -98,10 +98,13 @@ export function CrewMemberFormFields({
         control={control}
         name="isLead"
         render={({ field }) => (
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={field.value} onCheckedChange={(next) => field.onChange(next === true)} />
+          <Checkbox
+            checked={field.value}
+            onCheckedChange={(next) => field.onChange(next === true)}
+            className="text-sm"
+          >
             {t('crew.fields.isLead')}
-          </label>
+          </Checkbox>
         )}
       />
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { PlatformUserRow } from '@luma/shared';
 import { RowCard, RowCardBody, RowCardEnd } from '@/components/common/row-card-list';
 import {

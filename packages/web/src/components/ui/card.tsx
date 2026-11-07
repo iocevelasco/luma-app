@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Card as HeroCard } from '@heroui/react'
 
 import { cn } from '@/lib/utils'
 
@@ -11,18 +12,20 @@ interface CardProps extends React.ComponentProps<'div'> {
  * sombra pasa a la de lo que flota (`shadow-overlay`). Va sobre un `<a>`, un
  * `<button>` o con `role` y `tabIndex` propios; la card no los impone.
  */
-function Card({ className, variant = 'default', ...props }: CardProps) {
+function Card({ className, variant = 'default', children, ...props }: CardProps) {
   return (
-    <div
+    <HeroCard
       data-slot="card"
       className={cn(
-        'bg-surface text-surface-foreground flex flex-col gap-4 sm:gap-6 rounded-3xl border py-4 sm:py-6 shadow-surface',
+        'text-surface-foreground gap-4 sm:gap-6 rounded-3xl p-0 py-4 sm:py-6',
         variant === 'interactive' &&
           'cursor-pointer outline-none transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0',
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </HeroCard>
   )
 }
 
@@ -67,16 +70,18 @@ function CardList({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
+function CardHeader({ className, children, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div
+    <HeroCard.Header
       data-slot="card-header"
       className={cn(
-        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-4 sm:px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-4 sm:[.border-b]:pb-6  ',
+        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-4 sm:px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-4 sm:[.border-b]:pb-6',
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </HeroCard.Header>
   )
 }
 
@@ -84,7 +89,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-title"
-      className={cn('leading-none font-semibold font-mono', className)}
+      className={cn('card__title leading-none font-semibold font-mono', className)}
       {...props}
     />
   )
@@ -94,7 +99,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-description"
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cn('card__description text-muted-foreground text-sm', className)}
       {...props}
     />
   )
@@ -113,23 +118,27 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
+function CardContent({ className, children, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div
+    <HeroCard.Content
       data-slot="card-content"
-      className={cn('px-4 sm:px-6', className)}
+      className={cn('block flex-none px-4 sm:px-6', className)}
       {...props}
-    />
+    >
+      {children}
+    </HeroCard.Content>
   )
 }
 
-function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
+function CardFooter({ className, children, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div
+    <HeroCard.Footer
       data-slot="card-footer"
-      className={cn('flex items-center px-4 sm:px-6 [.border-t]:pt-4 sm:[.border-t]:pt-6', className)}
+      className={cn('px-4 sm:px-6 [.border-t]:pt-4 sm:[.border-t]:pt-6', className)}
       {...props}
-    />
+    >
+      {children}
+    </HeroCard.Footer>
   )
 }
 

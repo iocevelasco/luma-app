@@ -1,31 +1,50 @@
 'use client'
 
 import * as React from 'react'
-import * as SwitchPrimitive from '@radix-ui/react-switch'
+import { Switch as HeroSwitch } from '@heroui/react'
 
 import { cn } from '@/lib/utils'
 
-// ADR-003, lote C: comportamiento de Radix, aspecto con los tokens de HeroUI.
+type SwitchProps = Omit<
+  React.ComponentProps<typeof HeroSwitch>,
+  'isSelected' | 'defaultSelected' | 'onChange' | 'isDisabled' | 'className' | 'children'
+> & {
+  className?: string
+  checked?: boolean
+  defaultChecked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+  disabled?: boolean
+  children?: React.ReactNode
+}
+
+// ADR-003: Switch de HeroUI (React Aria). `checked`/`onCheckedChange`/`disabled`
+// se traducen a `isSelected`/`onChange`/`isDisabled`. Sin `children` el switch
+// queda sin texto y necesita `aria-label`.
 function Switch({
   className,
+  checked,
+  defaultChecked,
+  onCheckedChange,
+  disabled,
+  children,
   ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root>) {
+}: SwitchProps) {
   return (
-    <SwitchPrimitive.Root
-      data-slot="switch"
-      className={cn(
-        'peer inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent transition-colors outline-none data-[state=checked]:bg-accent data-[state=unchecked]:bg-default-hover focus-visible:status-focused disabled:status-disabled',
-        className,
-      )}
+    <HeroSwitch
+      isSelected={checked}
+      defaultSelected={defaultChecked}
+      onChange={onCheckedChange}
+      isDisabled={disabled}
+      className={cn('w-fit', className)}
       {...props}
     >
-      <SwitchPrimitive.Thumb
-        data-slot="switch-thumb"
-        className={
-          'bg-background data-[state=checked]:bg-accent-foreground pointer-events-none block size-4 rounded-full ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0'
-        }
-      />
-    </SwitchPrimitive.Root>
+      <HeroSwitch.Content>
+        <HeroSwitch.Control>
+          <HeroSwitch.Thumb />
+        </HeroSwitch.Control>
+        {children}
+      </HeroSwitch.Content>
+    </HeroSwitch>
   )
 }
 

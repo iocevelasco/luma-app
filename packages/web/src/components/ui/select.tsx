@@ -1,177 +1,204 @@
 'use client'
 
 import * as React from 'react'
-import * as SelectPrimitive from '@radix-ui/react-select'
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
+import { ListBox, Select as HeroSelect, Separator as HeroSeparator } from '@heroui/react'
 
-import { fieldBase } from '@/lib/field-styles'
 import { cn } from '@/lib/utils'
 
-function Select({
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+// ADR-003: Select de HeroUI (React Aria). La forma compuesta de siempre
+// (Select > SelectTrigger > SelectValue, SelectContent > SelectItem) se conserva;
+// lo que cambia por dentro:
+//  · `value` vacío ('') es "sin selección" (null en React Aria) y `onValueChange`
+//    recibe siempre un string ('' al limpiar).
+//  · El item necesita un texto plano para la búsqueda por teclado: si `children`
+//    no es un string, pasar `textValue`.
+//  · `SelectValue placeholder` se resuelve acá: React Aria lo toma de la raíz.
+//  · El trigger lleva `role="combobox"` (patrón select-only combobox), como el de Radix.
+type SelectProps = Omit<
+  React.ComponentProps<typeof HeroSelect>,
+  'value' | 'defaultValue' | 'onChange' | 'isDisabled' | 'children' | 'className' | 'placeholder'
+> & {
+  className?: string
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string) => void
+  disabled?: boolean
+  required?: boolean
+  children?: React.ReactNode
 }
 
-function SelectGroup({
+function Select({
+  value,
+  defaultValue,
+  onValueChange,
+  disabled,
+  required,
+  className,
+  children,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Group>) {
-  return <SelectPrimitive.Group data-slot="select-group" {...props} />
+}: SelectProps) {
+  return (
+    <HeroSelect
+      data-slot="select"
+      value={value === undefined ? undefined : value || null}
+      defaultValue={defaultValue || undefined}
+      onChange={(key) => onValueChange?.(key == null ? '' : String(key))}
+      isDisabled={disabled}
+      isRequired={required}
+      fullWidth
+      className={className}
+      {...props}
+    >
+      {children}
+    </HeroSelect>
+  )
+}
+
+function SelectGroup({ children, ...props }: React.ComponentProps<typeof ListBox.Section>) {
+  return (
+    <ListBox.Section data-slot="select-group" {...props}>
+      {children}
+    </ListBox.Section>
+  )
 }
 
 function SelectValue({
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Value>) {
-  return <SelectPrimitive.Value data-slot="select-value" {...props} />
+  placeholder,
+  className,
+  children,
+}: {
+  placeholder?: React.ReactNode
+  className?: string
+  /** Contenido propio en vez del item elegido (lo que antes admitía Radix). */
+  children?: React.ReactNode
+}) {
+  return (
+    <HeroSelect.Value data-slot="select-value" className={className}>
+      {({ isPlaceholder, defaultChildren }) =>
+        isPlaceholder ? placeholder : (children ?? defaultChildren)
+      }
+    </HeroSelect.Value>
+  )
 }
 
 function SelectTrigger({
   className,
   size = 'default',
   children,
+  'aria-invalid': ariaInvalid,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
+}: Omit<React.ComponentProps<typeof HeroSelect.Trigger>, 'className' | 'children'> & {
+  className?: string
   size?: 'sm' | 'default'
+  children?: React.ReactNode
+  'aria-invalid'?: boolean | 'true' | 'false'
 }) {
+  // El Button de React Aria descarta `role` y `aria-invalid`: se aplican sobre el
+  // nodo. `role="combobox"` es el patrón select-only y lo que ya veían los E2E.
+  const ref = React.useRef<HTMLButtonElement>(null)
+  const invalid = ariaInvalid === true || ariaInvalid === 'true'
+  React.useEffect(() => {
+    const node = ref.current
+    if (!node) return
+    node.setAttribute('role', 'combobox')
+    // Nombre accesible: un `<Label htmlFor={id}>` suelto (lo habitual en los formularios)
+    // no lo ve React Aria, que sólo nombra al botón por su valor.
+    const label = node.id ? document.querySelector<HTMLElement>(`label[for="${CSS.escape(node.id)}"]`) : null
+    if (label) {
+      if (!label.id) label.id = `${node.id}-label`
+      const rest = (node.getAttribute('aria-labelledby') ?? '').split(' ').filter((id) => id && id !== label.id)
+      node.setAttribute('aria-labelledby', [label.id, ...rest].join(' '))
+    }
+    if (invalid) {
+      node.setAttribute('aria-invalid', 'true')
+      node.setAttribute('data-invalid', 'true')
+    } else {
+      node.removeAttribute('aria-invalid')
+      node.removeAttribute('data-invalid')
+    }
+  })
   return (
-    <SelectPrimitive.Trigger
+    <HeroSelect.Trigger
+      ref={ref}
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground flex w-full items-center justify-between gap-2 text-sm whitespace-nowrap data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        fieldBase,
-        'enabled:not-aria-invalid:not-focus-visible:not-data-[placeholder]:border-foreground/90',
+        'w-full justify-between gap-2 text-sm whitespace-nowrap data-[size=default]:h-9 data-[size=sm]:h-8',
         className,
       )}
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="size-4 opacity-50" />
-      </SelectPrimitive.Icon>
-    </SelectPrimitive.Trigger>
+      <HeroSelect.Indicator />
+    </HeroSelect.Trigger>
   )
 }
 
 function SelectContent({
   className,
   children,
-  position = 'popper',
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Content>) {
+}: {
+  className?: string
+  children?: React.ReactNode
+  /** Sin efecto: antes elegían el posicionamiento de Radix. */
+  position?: 'popper' | 'item-aligned'
+  align?: 'start' | 'center' | 'end'
+}) {
   return (
-    <SelectPrimitive.Portal>
-      <SelectPrimitive.Content
-        data-slot="select-content"
-        className={cn(
-          'bg-overlay w-full text-overlay-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl shadow-overlay',
-          position === 'popper' &&
-            'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
-          className,
-        )}
-        position={position}
-        {...props}
-      >
-        <SelectScrollUpButton />
-        <SelectPrimitive.Viewport
-          className={cn(
-            'p-1',
-            position === 'popper' &&
-              'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1',
-          )}
-        >
-          {children}
-        </SelectPrimitive.Viewport>
-        <SelectScrollDownButton />
-      </SelectPrimitive.Content>
-    </SelectPrimitive.Portal>
+    <HeroSelect.Popover data-slot="select-content" className={cn('min-w-(--trigger-width)', className)}>
+      <ListBox>{children}</ListBox>
+    </HeroSelect.Popover>
   )
 }
 
-function SelectLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Label>) {
+function SelectLabel({ className, children }: { className?: string; children?: React.ReactNode }) {
   return (
-    <SelectPrimitive.Label
-      data-slot="select-label"
-      className={cn('text-muted-foreground px-2 py-1.5 text-xs', className)}
-      {...props}
-    />
+    <ListBox.Section>
+      <span data-slot="select-label" className={cn('text-muted-foreground px-2 py-1.5 text-xs', className)}>
+        {children}
+      </span>
+    </ListBox.Section>
   )
 }
 
 function SelectItem({
   className,
   children,
+  value,
+  textValue,
+  disabled,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Item>) {
+}: Omit<React.ComponentProps<typeof ListBox.Item>, 'id' | 'className' | 'children' | 'isDisabled'> & {
+  value: string
+  className?: string
+  children?: React.ReactNode
+  disabled?: boolean
+}) {
   return (
-    <SelectPrimitive.Item
+    <ListBox.Item
       data-slot="select-item"
-      className={cn(
-        "focus:bg-secondary  focus:text-secondary-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
-        className,
-      )}
+      id={value}
+      textValue={textValue ?? (typeof children === 'string' ? children : value)}
+      isDisabled={disabled}
+      className={className}
       {...props}
     >
-      <span className="absolute right-2 flex size-3.5 items-center justify-center">
-        <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4" />
-        </SelectPrimitive.ItemIndicator>
-      </span>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-    </SelectPrimitive.Item>
+      {children}
+      <ListBox.ItemIndicator />
+    </ListBox.Item>
   )
 }
 
-function SelectSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Separator>) {
-  return (
-    <SelectPrimitive.Separator
-      data-slot="select-separator"
-      className={cn('bg-border pointer-events-none -mx-1 my-1 h-px', className)}
-      {...props}
-    />
-  )
+function SelectSeparator({ className }: { className?: string }) {
+  return <HeroSeparator data-slot="select-separator" className={cn('my-1', className)} />
 }
 
-function SelectScrollUpButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
-  return (
-    <SelectPrimitive.ScrollUpButton
-      data-slot="select-scroll-up-button"
-      className={cn(
-        'flex cursor-default items-center justify-center py-1',
-        className,
-      )}
-      {...props}
-    >
-      <ChevronUpIcon className="size-4" />
-    </SelectPrimitive.ScrollUpButton>
-  )
+// Sin equivalente: la lista de React Aria ya hace scroll sola.
+function SelectScrollUpButton() {
+  return null
 }
-
-function SelectScrollDownButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
-  return (
-    <SelectPrimitive.ScrollDownButton
-      data-slot="select-scroll-down-button"
-      className={cn(
-        'flex cursor-default items-center justify-center py-1',
-        className,
-      )}
-      {...props}
-    >
-      <ChevronDownIcon className="size-4" />
-    </SelectPrimitive.ScrollDownButton>
-  )
+function SelectScrollDownButton() {
+  return null
 }
 
 export {

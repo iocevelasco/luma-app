@@ -2,12 +2,11 @@ import { useState } from 'react';
 import type { ProjectDeletionSummary } from '@luma/shared';
 import { AlertCircle, Copy, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -74,15 +73,13 @@ export function DeleteProjectDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('project.delete.dialogTitle', { name: projectName })}</AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div className="flex flex-col gap-3 text-left">
-              {isLoading || !summary ? (
-                <p>{t('common.loading')}</p>
-              ) : (
-                <DeletionSummary summary={summary} />
-              )}
-            </div>
-          </AlertDialogDescription>
+          <div className="flex flex-col gap-3 text-left text-sm text-muted-foreground">
+            {isLoading || !summary ? (
+              <p>{t('common.loading')}</p>
+            ) : (
+              <DeletionSummary summary={summary} />
+            )}
+          </div>
         </AlertDialogHeader>
 
         <div className="flex flex-col gap-2">

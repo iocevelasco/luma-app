@@ -4,6 +4,7 @@ import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { addCrewMember, addTask, boardColumn, moveTask, openBoard, taskCard } from './helpers/crew';
 import { requiresApi } from './helpers/api';
+import { tick } from './helpers/checkbox';
 
 /**
  * Una tarea es UNA entidad: lo que se crea en el Tablero aparece en el
@@ -274,7 +275,7 @@ test.describe('tareas', () => {
 
     // --- Se pone un filtro: el aviso aparece y el Cronograma se recorta ---
     await page.getByTestId('activity-filters-button').click();
-    await page.getByRole('checkbox', { name: /^atrasadas$/i }).click();
+    await tick(page.getByRole('checkbox', { name: /^atrasadas$/i })).click();
     await page.keyboard.press('Escape');
     const notice = page.getByTestId('activity-filters-notice');
     await expect(notice).toContainText(/1 filtro activo/i);
@@ -295,7 +296,7 @@ test.describe('tareas', () => {
 
     // --- Un filtro que deja todo afuera lo dice, en vez de mostrar una obra vacía ---
     await page.getByTestId('activity-filters-button').click();
-    await page.getByRole('checkbox', { name: /^completada$/i }).click();
+    await tick(page.getByRole('checkbox', { name: /^completada$/i })).click();
     await page.keyboard.press('Escape');
     await expect(page.getByText(/nada coincide con los filtros/i)).toBeVisible();
     await expect(notice).toContainText(/2 filtros activos/i);
@@ -721,7 +722,7 @@ test.describe('tareas', () => {
 
     await expect.poll(() => attempts, 'no se llegó a pedir el cambio').toBeGreaterThan(0);
     // Una falla sin formulario detrás va por toast, no por banner.
-    await expect(page.locator('[data-sonner-toast][data-type="error"]')).toBeVisible();
+    await expect(page.locator('[data-slot="toast"].toast--danger')).toBeVisible();
     await expect(cardIn(page, /^pendiente$/i, name)).toBeVisible();
     await expect(cardIn(page, /^en curso$/i, name)).toHaveCount(0);
 

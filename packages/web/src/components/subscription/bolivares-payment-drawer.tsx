@@ -206,10 +206,9 @@ export function BolivaresPaymentDrawer({
               render={({ field }) => (
                 <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4">
                   {methods.map((method) => (
-                    <label key={method} className="flex items-center gap-2 text-sm">
-                      <RadioGroupItem value={method} />
+                    <RadioGroupItem key={method} value={method} className="text-sm">
                       {t(`subscription.method.${method}`)}
-                    </label>
+                    </RadioGroupItem>
                   ))}
                 </RadioGroup>
               )}

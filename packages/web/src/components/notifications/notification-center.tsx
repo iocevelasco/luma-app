@@ -153,7 +153,7 @@ export function NotificationCenter() {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" aria-label={ariaLabel} className="w-80 p-0">
         <Tabs
           value={tab}
           onValueChange={(next) => {

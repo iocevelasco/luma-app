@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1724,15 +1724,15 @@ export function ProjectMaterialsPage() {
 
       <AlertDialog
         open={pendingBulk !== null && pendingBulk.kind !== 'provider'}
-        onOpenChange={(open) => !open && setPendingBulk(null)}
+        onOpenChange={(open) => {
+          if (open) return;
+          setPendingBulk(null);
+          // Las filas que abrieron el diálogo se van de la pestaña al confirmar:
+          // el foco va al panel de la lista (React Aria no tiene `onCloseAutoFocus`).
+          window.setTimeout(() => panelRef.current?.focus(), 0);
+        }}
       >
-        <AlertDialogContent
-          // Las filas que abrieron el diálogo se van de la pestaña al confirmar.
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            panelRef.current?.focus();
-          }}
-        >
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {pendingBulk?.kind === 'delete'
@@ -1765,15 +1765,17 @@ export function ProjectMaterialsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
-        <AlertDialogContent
+      <AlertDialog
+        open={deleting !== null}
+        onOpenChange={(open) => {
+          if (open) return;
+          setDeleting(null);
           // La fila que abrió el diálogo se desmonta al borrar: sin esto el
           // foco se pierde en el <body>. Va al panel de la lista.
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            panelRef.current?.focus();
-          }}
-        >
+          window.setTimeout(() => panelRef.current?.focus(), 0);
+        }}
+      >
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('material.list.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>

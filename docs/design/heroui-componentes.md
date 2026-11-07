@@ -167,32 +167,33 @@ verificado contra cada call-site**: antes de migrar uno, buscar sus usos con `gr
 | `badge` | `variant` (`default`, `secondary`, `destructive`, `outline`) y los tags de Luma → `Chip variant` + `color`; sin tipo `info` |
 | `card`, `alert` | Luma tiene su propia anatomía (`CardTile`, `CardList`, `interactive`; `Alert` con ícono en grilla): HeroUI usa `Card.Header`/`Content` y `Alert.Indicator`; migrarlos exige reescribir los call-sites o conservar el layout actual |
 
-## Lote D — overlays (restilizados, Radix se queda)
+## Lotes D, E y F — checkbox, switch, radio, select, overlays, toast, card, alert
 
-`tooltip`, `popover`, `dropdown-menu`, `dialog`, `alert-dialog`, `sheet` y `drawer`
-usan los tokens de HeroUI: `bg-overlay text-overlay-foreground shadow-overlay`,
-`bg-backdrop` para el velo, `rounded-xl` (menús, popover, tooltip) y `rounded-3xl`
-(diálogos). Se quitó el borde de 1px: la sombra de overlay ya lo trae.
+Estos componentes **ya usan los componentes de HeroUI** (React Aria) detrás de la misma
+ruta `@/components/ui/*`. Lo que cambia en cada API y en los call-sites:
 
-Por qué no se pasaron a `Modal`/`Popover`/`Dropdown` de React Aria: los call-sites
-usan `asChild` en los triggers, `onOpenChange` y `DropdownMenuItem onSelect`, que en
-RAC son `onPress`/`onAction`, y el editor de markdown envuelve botones en
-`PopoverTrigger asChild`. Migrarlos toca decenas de pantallas; queda como decisión.
+| Componente | Detrás | Cambia en la API | Call-sites tocados |
+|---|---|---|---|
+| `checkbox` | `Checkbox` (Field + Content + Control) | `checked` admite `'indeterminate'`; `onCheckedChange` recibe `boolean`; **el texto va como `children`** (el área clicable es una); `className` va a la raíz | 7 que envolvían la casilla en `<label>` pasan a `<Checkbox>texto</Checkbox>`; los de `id` + `<Label htmlFor>` quedan |
+| `tri-state-checkbox` | el `Checkbox` | ya no necesita lógica propia: dibuja guion en `indeterminate` | E2E: `data-state="indeterminate"` → `toBeChecked({ indeterminate: true })` |
+| `switch` | `Switch` | `checked/onCheckedChange/disabled` → `isSelected/onChange/isDisabled` | ninguno (usan `aria-label`) |
+| `radio-group` | `RadioGroup` + `Radio` | `onValueChange` → `onChange`; el texto va como `children` de `RadioGroupItem` | 2 que usaban `<label>` |
+| `select` | `Select` + `ListBox` | `value` vacío = sin selección (null); `SelectItem` necesita `textValue` si el hijo no es texto; `SelectValue placeholder` se resuelve en el adaptador; el trigger recibe `role="combobox"`, `aria-invalid` y el nombre de su `<Label htmlFor>` por efecto (el Button de React Aria los descarta) | ninguno |
+| `tooltip` | `Tooltip` | `delayDuration` del Provider va por contexto; `TooltipTrigger asChild` envuelve con `Focusable` (el hijo debe aceptar `ref`); `side` → `placement` | `nav-rail-item` (texto sobre fondo claro), `kbd` |
+| `popover` | `Popover` + `Dialog` | `open` → `isOpen`; el contenido es un diálogo y pide `aria-label`; `role="presentation"` para popups de combobox; `--radix-popover-trigger-width` → `--trigger-width`; `PopoverAnchor` fuera (sin usos) | 6, por `aria-label` y el ancho |
+| `dropdown-menu` | `Dropdown` | `onSelect` → `onAction`; `disabled` → `isDisabled`; `variant="destructive"` → `danger`; `asChild` se resuelve con `render` (RAC avisa en consola de desarrollo que el elemento es un `<a>`, no un `<div>`) | ninguno |
+| `dialog`, `alert-dialog` | `Modal`, `AlertDialog` | sólo controlados (`open` + `onOpenChange`); sin `Trigger/Close/Portal/Overlay`; `Action`/`Cancel` cierran salvo `preventDefault`; Escape y clic afuera no cierran un AlertDialog | `onCloseAutoFocus` (2, en `project-materials`) pasa a enfocar el panel al cerrar; `delete-project-dialog` (`asChild` en la descripción) |
+| `sheet`, `drawer` | `Drawer` | `side`/`direction` → `placement`; reemplaza a **vaul** (se quitó la dependencia); `DrawerTrigger asChild` agrega un `onClick` | ninguno |
+| `responsive-dialog` | los dos anteriores | `modal={false}` (checkout de Stripe) ya no deja interactuar afuera: sólo evita que tocar afuera cierre | — |
+| `form-panel` | primitivas de React Aria (`ModalOverlay`/`Modal`/`Dialog`) | un panel que tapa sólo el área de contenido no existe en HeroUI | — |
+| `toast` / `sonner` | `Toast` de HeroUI | nuevo `@/lib/toast` con la forma de siempre (`toast.error` = `danger`, `duration` → `timeout`, `action` → `actionProps`); `Toaster` pasa a `toast-region.tsx`; se quitó **sonner** | 29 imports, 2 tests, 1 selector de E2E (`.toast--danger`) |
+| `card` | `Card` | `CardHeader/Content/Footer` son las partes de HeroUI con el layout de Luma; título y descripción siguen siendo `div` | — |
+| `alert` | `Alert` | `variant="destructive"` → `status="danger"`; el contenido se arma dentro del adaptador | — |
 
-Cambio visual: el tooltip pasa de fondo invertido (`foreground`) a superficie
-`overlay`. Sin verificar en pantalla ni con E2E.
+**Siguen sin HeroUI:** `badge` (círculo con glifo, tono `info` y `asChild` que `Chip` no tiene,
+y DESIGN.md lo define así) y `command` (cmdk; HeroUI no tiene Command). `toggle` y
+`toggle-group` conservan Radix por `asChild`/`onMouseDown` del editor de markdown.
 
-## Lote E — card, alert, command, select (lista), sonner
-
-Restilizados con tokens de HeroUI (`bg-surface`, `bg-overlay`, `shadow-surface`,
-`shadow-overlay`); Card pierde el borde de 1px (la sombra de superficie lo reemplaza).
-`alert` conserva su grilla y usa `danger-soft-foreground` en la variante destructiva.
-`sonner` lee `--overlay` en vez de `--popover`.
-
-**Decisión: `badge` no pasa a `Chip`.** El Badge de Luma lleva círculo + glifo, el
-tono `info` y `asChild`, que Chip no tiene; DESIGN.md lo define así. Queda como está.
-
-**`toast` y `command` siguen con sonner y cmdk**: HeroUI Toast exige su
-`ToastProvider` y una cola propia (todas las llamadas `toast.success(...)` cambiarían),
-y no hay Command en HeroUI. La lista del Select sigue siendo Radix (el trigger ya
-usa HeroUI). Sin verificar en pantalla ni con E2E.
+**Riesgos sin verificar a mano:** el checkout de Stripe dentro de `ResponsiveDialog modal={false}`
+(captcha y 3D Secure); el tooltip por hover con puntero real; Safari/iOS (React Aria y los
+overlays no se probaron ahí); contraste de los diálogos en superficies oscuras.

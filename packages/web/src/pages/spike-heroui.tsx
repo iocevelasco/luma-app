@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,20 @@ import {
   toast,
 } from '@heroui/react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog as LumaDialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog as LumaAlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Drawer as LumaDrawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover as LumaPopover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip as LumaTooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select as LumaSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card as LumaCard, CardContent as LumaCardContent, CardHeader as LumaCardHeader, CardTitle as LumaCardTitle } from '@/components/ui/card';
+import { toast as lumaToast } from '@/lib/toast';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,6 +58,7 @@ const CURRENCIES = ['USD', 'EUR', 'VES'] as const;
 type FormValues = { name: string; currency: string | null };
 
 export function SpikeHeroUiPage() {
+  const [overlay, setOverlay] = useState<'dialog' | 'alert' | 'sheet' | 'drawer' | null>(null);
   const { t } = useTranslation();
 
   // Igual que DashboardLayout: Modal, Select y Tooltip salen por portal al <body>.
@@ -308,6 +323,114 @@ export function SpikeHeroUiPage() {
               </div>
               <Separator />
               <Progress value={60} />
+            </section>
+
+            <section className="flex flex-col gap-4" data-testid="lote-adapters">
+              <Label htmlFor="adapter-sel">{t('spikeHeroui.currencyLabel')}</Label>
+              <LumaSelect defaultValue="b">
+                <SelectTrigger id="adapter-sel" aria-invalid>
+                  <SelectValue placeholder={t('spikeHeroui.currencyPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="a">{t('spikeHeroui.saved')}</SelectItem>
+                  <SelectItem value="b">{t('spikeHeroui.cancel')}</SelectItem>
+                </SelectContent>
+              </LumaSelect>
+              <div className="flex gap-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" data-testid="adapter-menu">{t('spikeHeroui.details')}</Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuLabel>{t('spikeHeroui.formTitle')}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <a href="#adapter-link" data-testid="adapter-link">{t('spikeHeroui.saved')}</a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" onSelect={() => lumaToast.success(t('spikeHeroui.delete'))}>
+                      {t('spikeHeroui.delete')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <LumaPopover>
+                  <PopoverTrigger asChild>
+                    <Button variant="secondary" data-testid="adapter-popover">{t('spikeHeroui.openDialog')}</Button>
+                  </PopoverTrigger>
+                  <PopoverContent aria-label="pop" align="start">{t('spikeHeroui.dialogBody')}</PopoverContent>
+                </LumaPopover>
+                <LumaTooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" data-testid="adapter-tip">{t('spikeHeroui.cancel')}</Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('spikeHeroui.dialogBody')}</TooltipContent>
+                </LumaTooltip>
+              </div>
+              <div className="flex gap-3">
+                {(['dialog', 'alert', 'sheet', 'drawer'] as const).map((k) => (
+                  <Button key={k} variant="secondary" data-testid={`ov-${k}`} onPress={() => setOverlay(k)}>
+                    {k}
+                  </Button>
+                ))}
+              </div>
+              <LumaDialog open={overlay === 'dialog'} onOpenChange={(o) => !o && setOverlay(null)}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t('spikeHeroui.dialogTitle')}</DialogTitle>
+                    <DialogDescription>{t('spikeHeroui.dialogBody')}</DialogDescription>
+                  </DialogHeader>
+                  <Input aria-label="x" />
+                </DialogContent>
+              </LumaDialog>
+              <LumaAlertDialog open={overlay === 'alert'} onOpenChange={(o) => !o && setOverlay(null)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('spikeHeroui.dialogTitle')}</AlertDialogTitle>
+                    <AlertDialogDescription>{t('spikeHeroui.dialogBody')}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('spikeHeroui.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction>{t('spikeHeroui.delete')}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </LumaAlertDialog>
+              <Sheet open={overlay === 'sheet'} onOpenChange={(o) => !o && setOverlay(null)}>
+                <SheetContent side="right" className="sm:max-w-sm">
+                  <SheetHeader>
+                    <SheetTitle>{t('spikeHeroui.dialogTitle')}</SheetTitle>
+                    <SheetDescription>{t('spikeHeroui.dialogBody')}</SheetDescription>
+                  </SheetHeader>
+                </SheetContent>
+              </Sheet>
+              <LumaDrawer open={overlay === 'drawer'} onOpenChange={(o) => !o && setOverlay(null)}>
+                <DrawerContent>
+                  <DrawerHeader>
+                    <DrawerTitle>{t('spikeHeroui.dialogTitle')}</DrawerTitle>
+                    <DrawerDescription>{t('spikeHeroui.dialogBody')}</DrawerDescription>
+                  </DrawerHeader>
+                </DrawerContent>
+              </LumaDrawer>
+              <Checkbox>{t('spikeHeroui.saved')}</Checkbox>
+              <Checkbox defaultChecked>{t('spikeHeroui.cancel')}</Checkbox>
+              <Checkbox checked="indeterminate" aria-label="mixed" />
+              <Checkbox disabled>{t('spikeHeroui.delete')}</Checkbox>
+              <Switch aria-label="switch" defaultChecked />
+              <RadioGroup defaultValue="a">
+                <RadioGroupItem value="a">{t('spikeHeroui.saved')}</RadioGroupItem>
+                <RadioGroupItem value="b">{t('spikeHeroui.cancel')}</RadioGroupItem>
+              </RadioGroup>
+              <Alert variant="destructive">
+                <AlertTitle>{t('spikeHeroui.delete')}</AlertTitle>
+                <AlertDescription>{t('spikeHeroui.dialogBody')}</AlertDescription>
+              </Alert>
+              <LumaCard>
+                <LumaCardHeader>
+                  <LumaCardTitle>{t('spikeHeroui.formTitle')}</LumaCardTitle>
+                </LumaCardHeader>
+                <LumaCardContent>{t('spikeHeroui.dialogBody')}</LumaCardContent>
+              </LumaCard>
+              <Button variant="secondary" onPress={() => lumaToast.error(t('spikeHeroui.delete'))}>
+                {t('spikeHeroui.delete')}
+              </Button>
             </section>
 
             <Modal>

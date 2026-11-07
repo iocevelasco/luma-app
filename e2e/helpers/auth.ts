@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { e2eUser, type E2EUserKey } from './users';
+import { tick } from './checkbox';
 
 /**
  * URL absoluta a partir de un path.
@@ -45,7 +46,7 @@ export async function registerWith(page: Page, name: string, email: string, pass
   await page.getByRole('button', { name: /^crear cuenta$/i }).click();
   // Aceptar los Términos es parte del alta: el diálogo se abre al enviar.
   const terms = page.getByRole('dialog');
-  await terms.getByRole('checkbox').check();
+  await tick(terms.getByRole('checkbox')).click();
   await terms.getByRole('button', { name: /aceptar y crear cuenta/i }).click();
   await page.waitForURL((url) => /\/(check-email|login)$/.test(url.pathname), {
     timeout: 15_000,

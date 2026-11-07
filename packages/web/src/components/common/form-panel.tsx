@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEventHandler, type ReactNode } from 'react';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Dialog, Heading } from 'react-aria-components/Dialog';
+import { Modal, ModalOverlay } from 'react-aria-components/Modal';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FormShell } from '@/components/common/form-shell';
@@ -97,22 +98,29 @@ export function FormPanel({
   if (!contentArea) return null;
 
   return (
-    <DialogPrimitive.Root open onOpenChange={(open) => !open && requestClose()}>
-      <DialogPrimitive.Portal container={contentArea}>
-        <DialogPrimitive.Content
-          // Con descripción, Radix la enlaza solo. Sin ella hay que decirle
-          // explícitamente que no hay, o avisa por consola.
-          {...(description ? {} : { 'aria-describedby': undefined })}
-          onInteractOutside={(event) => event.preventDefault()}
-          onEscapeKeyDown={(event) => {
-            event.preventDefault();
-            requestClose();
-          }}
-          // En el celular tapa todo, header incluido: en 375px no queda área
-          // de contenido que valga la pena dejar a la vista. En desktop, sólo
-          // el área de contenido — por eso `absolute` dentro del portal.
-          className="fixed inset-0 z-50 flex flex-col bg-background pb-[env(safe-area-inset-bottom)] outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 md:absolute md:z-40"
-        >
+    <>
+      {/*
+        ADR-003: no hay equivalente en HeroUI (un panel que tapa sólo el área de
+        contenido), así que va sobre las primitivas de React Aria que HeroUI usa.
+        Siempre abierto (`isOpen`): Escape pide cerrar, pero cerrar es `requestClose`.
+        `UNSTABLE_portalContainer` lleva el panel al área de contenido.
+      */}
+      <ModalOverlay
+        isOpen
+        onOpenChange={(open) => !open && requestClose()}
+        isDismissable={false}
+        UNSTABLE_portalContainer={contentArea}
+        // En el celular tapa todo, header incluido: en 375px no queda área
+        // de contenido que valga la pena dejar a la vista. En desktop, sólo
+        // el área de contenido — por eso `absolute` dentro del portal.
+        className="fixed inset-0 z-50 md:absolute md:z-40"
+      >
+        <Modal className="h-full w-full">
+          <Dialog
+            // Sin descripción no hay `aria-describedby` que enlazar.
+            aria-label={title}
+            className="relative flex h-full flex-col bg-background pb-[env(safe-area-inset-bottom)] outline-none"
+          >
           <div className="absolute top-3 right-3 z-20 md:top-4 md:right-4">
             <Button
               type="button"
@@ -141,18 +149,17 @@ export function FormPanel({
           >
             <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
               <div className="flex flex-col gap-1 pt-6 pr-10 md:pt-10">
-                <DialogPrimitive.Title className="text-xl">{title}</DialogPrimitive.Title>
-                {description && (
-                  <DialogPrimitive.Description className="text-sm text-muted-foreground">
-                    {description}
-                  </DialogPrimitive.Description>
-                )}
+                <Heading slot="title" className="text-xl">
+                  {title}
+                </Heading>
+                {description && <p className="text-sm text-muted-foreground">{description}</p>}
               </div>
               {children}
             </div>
           </FormShell>
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
 
       <AlertDialog open={confirmingDiscard} onOpenChange={setConfirmingDiscard}>
         <AlertDialogContent>
@@ -173,7 +180,7 @@ export function FormPanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </DialogPrimitive.Root>
+    </>
   );
 }
 

@@ -234,15 +234,14 @@ export function MaterialInvoiceDialog({
             que ir a moverlos uno por uno antes.
           */}
           {requested.length > 0 && (
-            <label className="flex items-start gap-3 rounded-md border border-border p-3 text-sm">
-              <Checkbox
-                id="invoice-mark-bought"
-                checked={markBought}
-                onCheckedChange={(checked) => form.setValue('markBought', checked === true)}
-                className="mt-0.5"
-              />
+            <Checkbox
+              id="invoice-mark-bought"
+              checked={markBought}
+              onCheckedChange={(checked) => form.setValue('markBought', checked === true)}
+              className="w-full rounded-md border border-border p-3 text-sm"
+            >
               <span>{t('material.invoice.markBought', { count: requested.length })}</span>
-            </label>
+            </Checkbox>
           )}
         </div>
       </FormShell>

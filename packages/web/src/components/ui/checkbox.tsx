@@ -1,34 +1,57 @@
 'use client'
 
 import * as React from 'react'
-import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
-import { CheckIcon } from 'lucide-react'
+import { Checkbox as HeroCheckbox } from '@heroui/react'
 
 import { cn } from '@/lib/utils'
 
-// ADR-003, lote C: Radix da el comportamiento (y `id`/`htmlFor`, `<label>` envolvente);
-// el aspecto sale de los tokens y utilidades de HeroUI. El Checkbox de React Aria es
-// él mismo un <label>, y los call-sites lo anidan en otro: no se puede cambiar sin tocarlos.
+type HeroCheckboxProps = React.ComponentProps<typeof HeroCheckbox>
+
+type CheckboxProps = Omit<
+  HeroCheckboxProps,
+  'isSelected' | 'defaultSelected' | 'onChange' | 'isDisabled' | 'isIndeterminate' | 'className' | 'children'
+> & {
+  children?: React.ReactNode
+  className?: string
+  checked?: boolean | 'indeterminate'
+  defaultChecked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+  disabled?: boolean
+}
+
+// ADR-003: Checkbox de HeroUI (React Aria). Cambia respecto de Radix:
+//  · `checked` sigue aceptando `'indeterminate'` (pasa a `isIndeterminate`);
+//    `onCheckedChange` recibe sólo `boolean`.
+//  · El texto va como `children`: el área clicable es una sola (`Checkbox.Content`).
+//    Ya no se envuelve en un `<label>` aparte —sería un label dentro de otro—;
+//    para una casilla con `<Label htmlFor>` suelto, el `id` llega al input.
+//  · `className` va a la raíz (el contenedor), no al cuadrito.
 function Checkbox({
   className,
+  checked,
+  defaultChecked,
+  onCheckedChange,
+  disabled,
+  children,
   ...props
-}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+}: CheckboxProps) {
   return (
-    <CheckboxPrimitive.Root
-      data-slot="checkbox"
-      className={cn(
-        'peer size-4 shrink-0 rounded-xs border border-field-border bg-field shadow-field transition-colors outline-none data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground data-[state=indeterminate]:border-accent data-[state=indeterminate]:bg-accent data-[state=indeterminate]:text-accent-foreground focus-visible:status-focused aria-invalid:status-invalid-field disabled:status-disabled',
-        className,
-      )}
+    <HeroCheckbox
+      isSelected={checked === undefined ? undefined : checked === true}
+      isIndeterminate={checked === 'indeterminate'}
+      defaultSelected={defaultChecked}
+      onChange={onCheckedChange}
+      isDisabled={disabled}
+      className={cn('w-fit', className)}
       {...props}
     >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="flex items-center justify-center text-current transition-none"
-      >
-        <CheckIcon className="size-3.5" />
-      </CheckboxPrimitive.Indicator>
-    </CheckboxPrimitive.Root>
+      <HeroCheckbox.Content>
+        <HeroCheckbox.Control>
+          <HeroCheckbox.Indicator />
+        </HeroCheckbox.Control>
+        {children}
+      </HeroCheckbox.Content>
+    </HeroCheckbox>
   )
 }
 

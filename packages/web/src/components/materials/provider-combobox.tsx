@@ -98,7 +98,12 @@ export function ProviderCombobox({
           <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-(--radix-popover-trigger-width) min-w-64 p-0">
+      <PopoverContent
+        align="start"
+        aria-label={t('material.provider.search')}
+        role="presentation"
+        className="w-(--trigger-width) min-w-64 p-0"
+      >
         <Command>
           <CommandInput
             value={search}

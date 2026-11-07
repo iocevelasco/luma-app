@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { alertDialog } from './helpers/dialog';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
@@ -158,7 +159,7 @@ test.describe('Hitos y reuniones', () => {
     await page.getByRole('dialog').locator('#milestone-title').fill('Algo a medio escribir');
     await page.getByRole('button', { name: /^cerrar$/i }).click();
 
-    const confirm = page.getByRole('alertdialog');
+    const confirm = alertDialog(page);
     await expect(confirm.getByText(/descartar los cambios/i)).toBeVisible();
     await confirm.getByRole('button', { name: /seguir editando/i }).click();
     await expect(page.getByRole('dialog').locator('#milestone-title')).toHaveValue(
@@ -166,7 +167,7 @@ test.describe('Hitos y reuniones', () => {
     );
 
     await page.keyboard.press('Escape');
-    await page.getByRole('alertdialog').getByRole('button', { name: /^descartar$/i }).click();
+    await alertDialog(page).getByRole('button', { name: /^descartar$/i }).click();
     await expect(page).toHaveURL(/\/hitos$/);
     await expect(page.getByText('Algo a medio escribir')).toHaveCount(0);
   });

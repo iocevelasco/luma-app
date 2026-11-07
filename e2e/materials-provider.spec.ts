@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { alertDialog } from './helpers/dialog';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
 
@@ -103,7 +104,7 @@ test.describe('proveedor vinculado en Compras', () => {
     const oldRow = toBuy.getByRole('listitem').filter({ hasText: OLD });
     await oldRow.getByRole('button', { name: /marcar solicitado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
-    await expect(page.getByRole('alertdialog')).toBeHidden();
+    await expect(alertDialog(page)).toBeHidden();
     await oldRow.getByRole('button', { name: `Vincular a ${PROVIDER} de Proveedores` }).click();
     await expect(oldRow.getByRole('button', { name: /^vincular/i })).toHaveCount(0);
     await expect(oldRow).toContainText(PROVIDER);

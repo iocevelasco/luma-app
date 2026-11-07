@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { CrewMember } from '@luma/shared';
 import { Building2, UserMinus, UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { DirectoryPickerDialog } from '@/components/directory/directory-picker-dialog';
 import {

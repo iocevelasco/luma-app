@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { requiresApi } from './helpers/api';
-import { attachDialog } from './helpers/dialog';
+import { attachDialog, alertDialog } from './helpers/dialog';
 
 /**
  * Flujo completo del directorio de proveedores (electricidad, carpintería,
@@ -153,7 +153,7 @@ test.describe('directorio de proveedores', () => {
     await page.goto('/admin/proveedores');
     await expect(page).toHaveURL(/\/admin\/proveedores$/);
     await page.getByRole('button', { name: /dar de baja/i }).first().click();
-    await page.getByRole('alertdialog').getByRole('button', { name: /dar de baja/i }).click();
+    await alertDialog(page).getByRole('button', { name: /dar de baja/i }).click();
     await expect(page.getByText(/todavía no hay proveedores en tu empresa/i)).toBeVisible({
       timeout: 10_000,
     });
@@ -349,14 +349,14 @@ test.describe('directorio de proveedores', () => {
 
     // Sacarlo de la obra pide confirmación; cancelar lo deja donde estaba.
     await page.getByRole('button', { name: /sacar de la obra/i }).first().click();
-    const confirm = page.getByRole('alertdialog');
+    const confirm = alertDialog(page);
     await expect(confirm).toContainText(libraryProvider);
     await attachDialog(page, 'proveedor-sacar');
     await confirm.getByRole('button', { name: /cancelar/i }).click();
     await expect(page.getByText(libraryProvider).first()).toBeVisible();
 
     await page.getByRole('button', { name: /sacar de la obra/i }).first().click();
-    await page.getByRole('alertdialog').getByRole('button', { name: /sacar de la obra/i }).click();
+    await alertDialog(page).getByRole('button', { name: /sacar de la obra/i }).click();
     await expect(page.getByText(libraryProvider)).toHaveCount(0);
   });
 
@@ -428,14 +428,14 @@ test.describe('directorio de proveedores', () => {
 
     // Borrarla pide confirmación: lo cotizado deja de contar como comprometido.
     await dialog.getByRole('button', { name: /eliminar contratación/i }).click();
-    const confirm = page.getByRole('alertdialog');
+    const confirm = alertDialog(page);
     await expect(confirm).toContainText(/no se puede deshacer/i);
     await attachDialog(page, 'contratacion');
     await confirm.getByRole('button', { name: /cancelar/i }).click();
     await expect(dialog.getByText(/120\.000/)).toBeVisible();
 
     await dialog.getByRole('button', { name: /eliminar contratación/i }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: /eliminar contratación/i }).click();
+    await alertDialog(page).getByRole('button', { name: /eliminar contratación/i }).click();
     await expect(dialog.getByText(/todavía no has registrado una contratación/i)).toBeVisible();
   });
 });

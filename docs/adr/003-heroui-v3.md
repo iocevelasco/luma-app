@@ -267,3 +267,10 @@ dentro de una misma fase.
       los imports de `@heroui/styles`, y el bundle sin Radix.
 - [ ] Reescribir `DESIGN.md`, `CLAUDE.md` y `post-edit-check.sh` junto con la fase 1.
 - [ ] Probar los overlays en un iPhone real o en el simulador antes de la fase 3.
+
+## Actualización — migración de los componentes de interacción
+
+Los 28 componentes pedidos pasaron a HeroUI salvo `badge`, `command`, `toggle` y
+`toggle-group` (motivos en `docs/design/heroui-componentes.md`). Se quitaron `sonner` y
+`vaul` de `packages/web`; siguen `cmdk` (command) y `@radix-ui/*` de los componentes que no
+migraron. El detalle de props y call-sites tocados está en esa tabla.

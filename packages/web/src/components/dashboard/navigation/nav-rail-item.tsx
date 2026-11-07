@@ -63,7 +63,7 @@ export function NavRailItem({
       </TooltipTrigger>
       <TooltipContent side="right" sideOffset={8} className="max-w-64 py-2 text-left">
         <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-background/75">{description}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
       </TooltipContent>
     </Tooltip>
   );

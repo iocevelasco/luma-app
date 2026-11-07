@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { CampaignInput } from '@luma/shared';
 import { platformCampaignsApi } from '@/api/platform';
 import { errorMessage } from '@/lib/error-message';

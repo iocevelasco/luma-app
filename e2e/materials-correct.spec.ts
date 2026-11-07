@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { alertDialog } from './helpers/dialog';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
 
@@ -78,7 +79,7 @@ test.describe('corregir materiales y descargar la lista de compras', () => {
     // --- Eliminar: el duplicado, con confirmación.
     await toBuy.getByRole('button', { name: `Más acciones de ${DUPLICATE}` }).click();
     await page.getByRole('menuitem', { name: /^eliminar$/i }).click();
-    const confirm = page.getByRole('alertdialog');
+    const confirm = alertDialog(page);
     await expect(confirm).toContainText(DUPLICATE);
     await confirm.getByRole('button', { name: /^eliminar$/i }).click();
     await expect(toBuy.getByText(DUPLICATE)).toHaveCount(0);
@@ -89,9 +90,9 @@ test.describe('corregir materiales y descargar la lista de compras', () => {
       .filter({ hasText: REQUESTED })
       .getByRole('button', { name: /marcar solicitado/i })
       .click();
-    await expect(page.getByRole('alertdialog')).toContainText(/ya no vas a poder editarlo ni eliminarlo/i);
+    await expect(alertDialog(page)).toContainText(/ya no vas a poder editarlo ni eliminarlo/i);
     await page.getByRole('button', { name: /continuar/i }).click();
-    await expect(page.getByRole('alertdialog')).toBeHidden();
+    await expect(alertDialog(page)).toBeHidden();
 
     await expect(toBuy.getByRole('button', { name: `Editar ${REQUESTED}` })).toHaveCount(0);
     await toBuy.getByRole('button', { name: `Más acciones de ${REQUESTED}` }).click();
@@ -103,7 +104,7 @@ test.describe('corregir materiales y descargar la lista de compras', () => {
     await toBuy.getByRole('button', { name: `Más acciones de ${REQUESTED}` }).click();
     await page.getByRole('menuitem', { name: /^pendiente$/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
-    await expect(page.getByRole('alertdialog')).toBeHidden();
+    await expect(alertDialog(page)).toBeHidden();
     await expect(toBuy.getByText(REQUESTED)).toBeVisible();
     await expect(toBuy.getByRole('button', { name: `Editar ${REQUESTED}` })).toHaveCount(0);
 

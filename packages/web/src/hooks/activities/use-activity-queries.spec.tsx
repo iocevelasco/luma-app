@@ -14,7 +14,7 @@ const { update, toastSuccess, toastError } = vi.hoisted(() => ({
 
 vi.mock('@/api/activities', () => ({ activitiesApi: { update } }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-vi.mock('sonner', () => ({ toast: { success: toastSuccess, error: toastError } }));
+vi.mock('@/lib/toast', () => ({ toast: { success: toastSuccess, error: toastError } }));
 vi.mock('@/providers/auth-provider', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 
 const PROJECT = 'p1';

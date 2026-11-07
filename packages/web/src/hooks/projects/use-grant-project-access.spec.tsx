@@ -14,11 +14,11 @@ const inviteMember = vi.fn();
 vi.mock('@/api/projects', () => ({ projectsApi: { inviteMember } }));
 vi.mock('@/providers/auth-provider', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/lib/toast', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const { ApiError } = await import('@/lib/api-client');
 const { useGrantProjectAccess } = await import('./use-project-queries');
-const { toast } = await import('sonner');
+const { toast } = await import('@/lib/toast');
 
 function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });

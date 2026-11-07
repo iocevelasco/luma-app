@@ -381,7 +381,11 @@ export function ActivityFilterControls({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex max-h-[70dvh] w-80 flex-col gap-5 overflow-y-auto">
+        <PopoverContent
+          align="start"
+          aria-label={t('activity.filters.button')}
+          className="flex max-h-[70dvh] w-80 flex-col gap-5 overflow-y-auto"
+        >
           <FilterGroups
             filters={filters}
             onChange={onChange}

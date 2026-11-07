@@ -29,7 +29,7 @@ import {
 import { Controller, useForm, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { ResponsibleField } from '@/components/activities/responsible-field';
 import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityFilterControls, ActiveFiltersNotice } from '@/components/activities/activity-filter-bar';

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
+import { tick } from './helpers/checkbox';
 
 /**
  * Cargar la factura de una compra desde Compras. Es un gasto: después se ve
@@ -54,7 +55,7 @@ test.describe('facturas de materiales', () => {
     const toolbar = page.getByRole('toolbar', { name: /materiales seleccionados/i });
 
     // Lo Pendiente no se compró: no se ofrece cargarle factura.
-    await toBuy.getByRole('checkbox', { name: 'Seleccionar todos', exact: true }).click();
+    await tick(toBuy.getByRole('checkbox', { name: 'Seleccionar todos', exact: true })).click();
     await toolbar.getByRole('button', { name: /más acciones para la selección/i }).click();
     await expect(page.getByRole('menuitem', { name: /cargar factura/i })).toHaveCount(0);
     await page.keyboard.press('Escape');
@@ -65,7 +66,7 @@ test.describe('facturas de materiales', () => {
     await expect(toolbar).toHaveCount(0);
 
     // …y llega la factura.
-    await toBuy.getByRole('checkbox', { name: 'Seleccionar todos', exact: true }).click();
+    await tick(toBuy.getByRole('checkbox', { name: 'Seleccionar todos', exact: true })).click();
     await toolbar.getByRole('button', { name: /más acciones para la selección/i }).click();
     await page.getByRole('menuitem', { name: /cargar factura/i }).click();
 
