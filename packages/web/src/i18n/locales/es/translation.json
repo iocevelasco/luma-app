@@ -62,7 +62,9 @@
     "title": "Hay una versión nueva",
     "body": "Actualizá para tener las últimas mejoras.",
     "bodyWithVersion": "Ya está disponible la versión {{version}}. Actualizá para tener las últimas mejoras.",
-    "action": "Actualizar"
+    "action": "Actualizar",
+    "dismiss": "Cerrar aviso",
+    "later": "Más tarde"
   },
   "userMenu": {
     "account": "Mi cuenta",

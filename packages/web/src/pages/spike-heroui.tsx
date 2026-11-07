@@ -23,6 +23,7 @@ import {
 } from '@heroui/react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { UpdateBanner } from '@/components/update-notification';
 import { Dialog as LumaDialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog as LumaAlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -58,6 +59,7 @@ const CURRENCIES = ['USD', 'EUR', 'VES'] as const;
 type FormValues = { name: string; currency: string | null };
 
 export function SpikeHeroUiPage() {
+  const [showBanner, setShowBanner] = useState(true);
   const [overlay, setOverlay] = useState<'dialog' | 'alert' | 'sheet' | 'drawer' | null>(null);
   const { t } = useTranslation();
 
@@ -100,6 +102,7 @@ export function SpikeHeroUiPage() {
       <Toast.Provider />
 
       {/* Chrome oscuro: lo que en el panel es header + sidebar. */}
+      {showBanner && <UpdateBanner version="0.32.0" onRefresh={() => setShowBanner(false)} onDismiss={() => setShowBanner(false)} />}
       <header className="surface-dark flex items-center gap-4 bg-background px-6 py-3 text-foreground">
         <span className="text-sm text-muted">{t('spikeHeroui.chromeTitle')}</span>
         <Select className="w-52" placeholder={t('spikeHeroui.projectLabel')} aria-label={t('spikeHeroui.projectLabel')}>

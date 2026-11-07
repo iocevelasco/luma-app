@@ -62,7 +62,9 @@
     "title": "Há uma nova versão",
     "body": "Atualize para ter as últimas melhorias.",
     "bodyWithVersion": "A versão {{version}} já está disponível. Atualize para ter as últimas melhorias.",
-    "action": "Atualizar"
+    "action": "Atualizar",
+    "dismiss": "Fechar aviso",
+    "later": "Mais tarde"
   },
   "userMenu": {
     "account": "Minha conta",
