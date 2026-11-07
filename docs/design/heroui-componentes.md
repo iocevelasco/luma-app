@@ -181,3 +181,18 @@ RAC son `onPress`/`onAction`, y el editor de markdown envuelve botones en
 
 Cambio visual: el tooltip pasa de fondo invertido (`foreground`) a superficie
 `overlay`. Sin verificar en pantalla ni con E2E.
+
+## Lote E — card, alert, command, select (lista), sonner
+
+Restilizados con tokens de HeroUI (`bg-surface`, `bg-overlay`, `shadow-surface`,
+`shadow-overlay`); Card pierde el borde de 1px (la sombra de superficie lo reemplaza).
+`alert` conserva su grilla y usa `danger-soft-foreground` en la variante destructiva.
+`sonner` lee `--overlay` en vez de `--popover`.
+
+**Decisión: `badge` no pasa a `Chip`.** El Badge de Luma lleva círculo + glifo, el
+tono `info` y `asChild`, que Chip no tiene; DESIGN.md lo define así. Queda como está.
+
+**`toast` y `command` siguen con sonner y cmdk**: HeroUI Toast exige su
+`ToastProvider` y una cola propia (todas las llamadas `toast.success(...)` cambiarían),
+y no hay Command en HeroUI. La lista del Select sigue siendo Radix (el trigger ya
+usa HeroUI). Sin verificar en pantalla ni con E2E.

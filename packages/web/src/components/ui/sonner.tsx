@@ -12,8 +12,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group"
       style={
         {
-          '--normal-bg': 'var(--popover)',
-          '--normal-text': 'var(--popover-foreground)',
+          '--normal-bg': 'var(--overlay)',
+          '--normal-text': 'var(--overlay-foreground)',
           '--normal-border': 'var(--border)',
           // Éxito, error y aviso salían los tres del color de popover, así que
           // el usuario tenía que leer el texto para saber si algo había salido

@@ -16,7 +16,7 @@ function Card({ className, variant = 'default', ...props }: CardProps) {
     <div
       data-slot="card"
       className={cn(
-        'bg-card text-card-foreground flex flex-col gap-4 sm:gap-6 rounded-3xl border py-4 sm:py-6 shadow-surface',
+        'bg-surface text-surface-foreground flex flex-col gap-4 sm:gap-6 rounded-3xl border py-4 sm:py-6 shadow-surface',
         variant === 'interactive' &&
           'cursor-pointer outline-none transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0',
         className,
