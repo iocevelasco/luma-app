@@ -27,6 +27,11 @@
 @import '../../node_modules/@heroui/styles/dist/components/spinner.css' layer(components);
 @import '../../node_modules/@heroui/styles/dist/components/progress-bar.css' layer(components);
 @import '../../node_modules/@heroui/styles/dist/components/avatar.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/tabs.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/table.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/breadcrumbs.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/toggle-button.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/toggle-button-group.css' layer(components);
 
 /*
   Sin `@reference`: este archivo se importa DESDE index.css, así que es parte de
@@ -171,4 +176,26 @@
 .input,
 .textarea {
   --field-border: var(--input);
+}
+
+/*
+  Toggle / ToggleGroup: el comportamiento es de Radix (`data-state="on"`), el
+  aspecto de HeroUI (`data-selected`). Luma marca el activo con el gris
+  `secondary`, no con el verde suave de HeroUI.
+*/
+.toggle-button {
+  --toggle-button-bg-selected: var(--secondary);
+  --toggle-button-bg-selected-hover: var(--secondary);
+  --toggle-button-bg-selected-pressed: var(--secondary);
+  --toggle-button-fg-selected: var(--secondary-foreground);
+}
+
+.toggle-button[data-state='on'] {
+  background-color: var(--toggle-button-bg-selected);
+  color: var(--toggle-button-fg-selected);
+}
+
+/* Table: Luma marca la fila elegida con `data-state="selected"`; HeroUI, con `data-selected`. */
+.table__row[data-state='selected'] .table__cell {
+  background-color: var(--secondary);
 }

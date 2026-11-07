@@ -59,6 +59,21 @@ Cambios de API: `Spinner` pasa de `<svg>` a `<span>` (toma `currentColor`; el ta
 `className`); `Progress` exige etiqueta accesible (`aria-label="Progress"` por defecto) y
 acota `value` a 0–100; `AvatarFallback` pierde `delayMs`.
 
+**Lote B (hecho):** `tabs` sobre el componente `Tabs` de HeroUI (adaptador: `value` →
+`selectedKey`, `onValueChange` → `onSelectionChange`, `TabsTrigger value` → `Tab id`; el
+deslizamiento lo hace `Tabs.Indicator`). `table` y `breadcrumb` con las clases de HeroUI sobre
+el HTML semántico (el `Table` de React Aria no tiene `colSpan`, `tfoot` ni `caption`; el
+`Breadcrumbs`, ni `asChild` ni `pill`). `toggle` y `toggle-group` con `.toggle-button` pero
+**con Radix**: el editor de markdown los usa dentro de `PopoverTrigger asChild` y con
+`onMouseDown`, que un `ToggleButton` de React Aria no admite.
+Cambio en E2E: las aserciones de pestaña activa pasan de `data-state="active"` a
+`aria-selected="true"` (`platform-activity`, `platform-users`).
+
+**Lote C (parcial):** `checkbox`, `switch` y `radio-group` con los tokens y utilidades de HeroUI
+(`bg-accent`, `bg-field`, `status-focused`…), **sin cambiar de librería**: el `Checkbox` de
+React Aria es un `<label>` y los call-sites lo anidan en otro `<label>` o lo enlazan con
+`id`/`htmlFor`. Pasarlos exige tocar esos 11 usos. `select` (la lista) sigue en Radix.
+
 ## Fase 3 — superficies y avisos que se abren
 
 | Hoy | Pantallas | HeroUI | Notas y riesgo |

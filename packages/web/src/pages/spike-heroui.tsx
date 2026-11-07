@@ -26,6 +26,11 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { Table as LumaTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs as LumaTabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Toggle } from '@/components/ui/toggle';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import '@/styles/heroui-spike.css';
 
 /**
@@ -251,6 +256,47 @@ export function SpikeHeroUiPage() {
                 </form>
               </Card.Content>
             </Card>
+
+            <section className="flex flex-col gap-4" data-testid="lote-b">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>{t('spikeHeroui.navHome')}</BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>{t('spikeHeroui.navExpenses')}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+              <LumaTabs defaultValue="a">
+                <TabsList aria-label={t('spikeHeroui.tabsLabel')}>
+                  <TabsTrigger value="a" icon={Home}>{t('spikeHeroui.tabSummary')}</TabsTrigger>
+                  <TabsTrigger value="b" icon={Receipt}>{t('spikeHeroui.tabExpenses')}</TabsTrigger>
+                </TabsList>
+                <TabsContent value="a" className="pt-3">{t('spikeHeroui.tabSummary')}</TabsContent>
+                <TabsContent value="b" className="pt-3">{t('spikeHeroui.tabExpenses')}</TabsContent>
+              </LumaTabs>
+              <LumaTable>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('spikeHeroui.colConcept')}</TableHead>
+                    <TableHead>{t('spikeHeroui.colAmount')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell>{t('spikeHeroui.rowCement')}</TableCell>
+                    <TableCell>1.240,00</TableCell>
+                  </TableRow>
+                </TableBody>
+              </LumaTable>
+              <div className="flex gap-4">
+                <Toggle pressed aria-label={t('spikeHeroui.chip')}><Home /></Toggle>
+                <ToggleGroup type="single" size="sm" defaultValue="x" aria-label={t('spikeHeroui.tabsLabel')}>
+                  <ToggleGroupItem value="x">{t('spikeHeroui.statusPaid')}</ToggleGroupItem>
+                  <ToggleGroupItem value="y">{t('spikeHeroui.statusPending')}</ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+            </section>
 
             <section className="flex flex-col gap-4">
               <div className="flex items-center gap-4">

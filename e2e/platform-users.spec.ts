@@ -43,8 +43,8 @@ test.describe('cuentas de la plataforma: admin', () => {
     await page.getByRole('searchbox').fill('');
     await page.getByRole('tab', { name: 'Sin confirmar' }).click();
     await expect(page.getByRole('tab', { name: 'Sin confirmar' })).toHaveAttribute(
-      'data-state',
-      'active',
+      'aria-selected',
+      'true',
     );
 
     expect(consoleErrors).toEqual([]);

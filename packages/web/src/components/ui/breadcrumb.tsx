@@ -4,6 +4,8 @@ import { ChevronRight, MoreHorizontal } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
+// ADR-003, lote B: clases `.breadcrumbs*` de HeroUI sobre el <nav>/<ol> semántico (el
+// `Breadcrumbs` de React Aria no admite `asChild` ni la variante `pill`).
 function Breadcrumb({ ...props }: React.ComponentProps<'nav'>) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />
 }
@@ -25,7 +27,7 @@ function BreadcrumbList({
       data-slot="breadcrumb-list"
       data-variant={variant}
       className={cn(
-        'text-muted-foreground flex flex-wrap items-center gap-1.5 text-sm break-words sm:gap-2.5',
+        'breadcrumbs text-muted-foreground flex-wrap text-sm break-words sm:gap-2.5',
         variant === 'pill' &&
           [
             'bg-card shadow-surface w-fit gap-1 rounded-full border p-1 sm:gap-1',
@@ -44,7 +46,7 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
   return (
     <li
       data-slot="breadcrumb-item"
-      className={cn('inline-flex items-center gap-1.5', className)}
+      className={cn('breadcrumbs__item inline-flex items-center gap-1.5', className)}
       {...props}
     />
   )
@@ -63,7 +65,7 @@ function BreadcrumbLink({
     <Comp
       data-slot="breadcrumb-link"
       className={cn(
-        'text-foreground inline-flex items-center gap-1.5 rounded-xs underline decoration-current/40 underline-offset-4 transition-colors hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&>svg]:size-4 [&>svg]:shrink-0',
+        'breadcrumbs__link text-foreground inline-flex items-center gap-1.5 rounded-xs text-[length:inherit] leading-[inherit] underline decoration-current/40 underline-offset-4 transition-colors hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&>svg]:size-4 [&>svg]:shrink-0',
         className,
       )}
       {...props}
@@ -78,8 +80,9 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
       role="link"
       aria-disabled="true"
       aria-current="page"
+      data-current="true"
       className={cn(
-        'text-muted-foreground inline-flex items-center gap-1.5 font-normal [&>svg]:size-4 [&>svg]:shrink-0',
+        'breadcrumbs__link text-[length:inherit] leading-[inherit] text-muted-foreground inline-flex items-center gap-1.5 font-normal [&>svg]:size-4 [&>svg]:shrink-0',
         className,
       )}
       {...props}
@@ -97,7 +100,7 @@ function BreadcrumbSeparator({
       data-slot="breadcrumb-separator"
       role="presentation"
       aria-hidden="true"
-      className={cn('[&>svg]:size-3.5', className)}
+      className={cn('breadcrumbs__separator [&>svg]:size-3.5', className)}
       {...props}
     >
       {children ?? <ChevronRight />}
