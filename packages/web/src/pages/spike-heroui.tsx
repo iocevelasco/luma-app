@@ -21,6 +21,11 @@ import {
   Toast,
   toast,
 } from '@heroui/react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import '@/styles/heroui-spike.css';
 
 /**
@@ -246,6 +251,18 @@ export function SpikeHeroUiPage() {
                 </form>
               </Card.Content>
             </Card>
+
+            <section className="flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <Avatar>
+                  <AvatarFallback>{t('spikeHeroui.projectLabel')[0]}</AvatarFallback>
+                </Avatar>
+                <Spinner />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Separator />
+              <Progress value={60} />
+            </section>
 
             <Modal>
               <Button variant="secondary">{t('spikeHeroui.openDialog')}</Button>

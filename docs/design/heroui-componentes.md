@@ -53,6 +53,12 @@ distinto a su vecino se lee como un bug"): se migran en el mismo PR.
 | `radio-group` | 2 | `RadioGroup` | Idem. |
 | `switch` | 1 | `Switch` | Idem. |
 
+**Lote A (hecho):** `separator`, `skeleton`, `spinner`, `progress` y `avatar` sobre HeroUI.
+`separator` y `skeleton` con sus clases; `spinner`, `progress` y `avatar` con el componente.
+Cambios de API: `Spinner` pasa de `<svg>` a `<span>` (toma `currentColor`; el tamaño, por
+`className`); `Progress` exige etiqueta accesible (`aria-label="Progress"` por defecto) y
+acota `value` a 0–100; `AvatarFallback` pierde `delayMs`.
+
 ## Fase 3 — superficies y avisos que se abren
 
 | Hoy | Pantallas | HeroUI | Notas y riesgo |
@@ -104,3 +110,44 @@ motivo, así que no cambia nada.
 `pnpm typecheck`, `pnpm lint`, `pnpm test` y la suite E2E de Chromium; `pnpm bump:web
 minor`; sin errores de consola; y una captura por pantalla modificada con la cuenta fija
 del rol que la ve (CLAUDE.md, "Code review de un PR").
+
+## Apéndice — props y atributos que cambian al pasar de Radix a React Aria (HeroUI)
+
+Para los componentes que **todavía no** se migraron. Sale de las APIs de ambos lados, **no
+verificado contra cada call-site**: antes de migrar uno, buscar sus usos con `grep`.
+
+**Reglas generales**
+
+| Radix / shadcn | React Aria / HeroUI |
+|---|---|
+| `onClick` | `onPress` (el evento no es el del DOM: sin `stopPropagation()` directo) |
+| `disabled` | `isDisabled` (también `isInvalid`, `isRequired`, `isReadOnly`) |
+| `open` / `defaultOpen` | `isOpen` / `defaultOpen` (`onOpenChange` igual) |
+| `asChild` | no existe: el disparador es un hijo directo o se usa `render` |
+| `data-[state=open\|closed\|checked\|on]` (48 usos en el repo) | `data-[open]`, `data-[selected]`, `data-[pressed]`, `data-[disabled]` |
+| `side`, `align`, `sideOffset` | `placement`, `offset` |
+| `value` / `onValueChange(string)` | `selectedKey` / `onSelectionChange(Key \| null)`; en HeroUI v3 `value` / `onChange` |
+| `aria-invalid` | `isInvalid` (el puente de `heroui.css` cubre `.input` y `.textarea`) |
+
+**Por componente**
+
+| Componente | Cambios |
+|---|---|
+| `checkbox` | `checked` → `isSelected`; `onCheckedChange(bool)` → `onChange(bool)`; `checked="indeterminate"` → `isIndeterminate`; el rótulo va dentro de `Checkbox.Content` (3.2.0) |
+| `switch` | `checked`/`onCheckedChange` → `isSelected`/`onChange`; el `Thumb` va dentro de `Switch.Control` |
+| `radio-group` | `onValueChange` → `onChange`; `RadioGroupItem value` → `Radio value` con `Radio.Content`; `orientation` igual |
+| `select` | `SelectItem value` → `ListBox.Item id` (+ `textValue`); `SelectContent` → `Select.Popover` + `ListBox`; `placeholder` pasa a la raíz; sin selección el valor es `null`; `SelectGroup`/`SelectLabel` → `ListBox.Section` |
+| `tabs` | `TabsTrigger value` / `TabsContent value` → `Tabs.Tab id` / `Tabs.Panel id`; `TabsList` va dentro de `Tabs.ListContainer`; sin `forceMount` |
+| `toggle`, `toggle-group` | `pressed`/`onPressedChange` → `isSelected`/`onChange`; `type="single\|multiple"` → `selectionMode`; `value` (array) → `selectedKeys` (`Set`) |
+| `tooltip` | `TooltipProvider delayDuration` → `delay` por tooltip (HeroUI trae 1500 ms: `--tooltip-delay`); `side` → `placement` |
+| `popover` | `PopoverTrigger asChild` → `Popover.Trigger`; `PopoverAnchor` no existe |
+| `dropdown-menu` | `DropdownMenuItem onSelect` → `Menu.Item onAction`; ítems de checkbox y radio → `selectionMode`; `DropdownMenuSub` distinto |
+| `command` | cmdk → `ComboBox` / `Autocomplete`: el filtrado es propio y `onSelect` → `onSelectionChange` |
+| `dialog`, `alert-dialog` | `DialogContent` → `Modal.Backdrop` > `Modal.Container` > `Modal.Dialog`; `onInteractOutside`/`onEscapeKeyDown` → `isDismissable`/`isKeyboardDismissDisabled`; `DialogTitle` → `Modal.Heading`; `AlertDialogAction`/`Cancel` → `Button slot="close"` |
+| `responsive-dialog` | hoy cambia a Drawer con `vaul` en móvil: decisión abierta (ADR-003) |
+| `sheet`, `drawer` | `side` / `direction` → `placement`; `vaul` (`snapPoints`, `shouldScaleBackground`) sin equivalente |
+| `toast`, `sonner` | `toast.error` → `toast.danger`; `duration` → `timeout`; `Toaster` → `Toast.Provider`; `description`/`action` de sonner → opciones de `toast()` de HeroUI |
+| `table` | `<table>` HTML → `Table.Content` con `Column`, `Row`, `Cell` por `id` y `isRowHeader`; sin `TableCaption` |
+| `breadcrumb` | `BreadcrumbList`/`Item`/`Link asChild` → `Breadcrumbs` > `Breadcrumbs.Item href`; el separador es automático |
+| `badge` | `variant` (`default`, `secondary`, `destructive`, `outline`) y los tags de Luma → `Chip variant` + `color`; sin tipo `info` |
+| `card`, `alert` | Luma tiene su propia anatomía (`CardTile`, `CardList`, `interactive`; `Alert` con ícono en grilla): HeroUI usa `Card.Header`/`Content` y `Alert.Indicator`; migrarlos exige reescribir los call-sites o conservar el layout actual |

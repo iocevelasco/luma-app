@@ -22,6 +22,11 @@
 @import '../../node_modules/@heroui/styles/dist/components/input.css' layer(components);
 @import '../../node_modules/@heroui/styles/dist/components/textarea.css' layer(components);
 @import '../../node_modules/@heroui/styles/dist/components/label.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/separator.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/skeleton.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/spinner.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/progress-bar.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/components/avatar.css' layer(components);
 
 /*
   Sin `@reference`: este archivo se importa DESDE index.css, así que es parte de
