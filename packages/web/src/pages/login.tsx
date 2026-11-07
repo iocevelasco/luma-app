@@ -108,14 +108,19 @@ export function LoginPage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <Button asChild variant="secondary" size="lg" className="h-auto w-full justify-start py-3">
+        <Button
+          asChild
+          variant="secondary"
+          size="lg"
+          className="h-auto w-full justify-start bg-foreground py-3 text-background/70 hover:bg-foreground/90 hover:text-background/70"
+        >
           <Link to={ROUTES.REGISTER}>
             <Building2 aria-hidden="true" />
             <span className="flex flex-1 flex-col items-start text-left">
-              <span className="text-xs font-normal text-muted-foreground">
+              <span className="text-xs font-normal text-background/60">
                 {t('auth.cta.manageQuestion')}
               </span>
-              <span className="font-semibold">{t('auth.cta.manageAction')}</span>
+              <span className="font-semibold text-background/80">{t('auth.cta.manageAction')}</span>
             </span>
             <ArrowRight aria-hidden="true" />
           </Link>
