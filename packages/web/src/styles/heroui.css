@@ -74,6 +74,9 @@
   --cursor-interactive: pointer;
   --cursor-disabled: not-allowed;
   --backdrop: rgb(0 0 0 / 0.5);
+  /* Capas de HeroUI (modal, drawer, toast): sin esto `z-(--z-index-overlay)` queda en `auto` y el botón flotante (z-30) tapa el drawer. */
+  --z-index-overlay: 50;
+  --z-index-toast: 60;
 
   /* Base: salen de los tokens de Luma. */
   --default: var(--secondary);

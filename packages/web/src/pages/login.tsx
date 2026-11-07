@@ -108,7 +108,7 @@ export function LoginPage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <Button asChild variant="outline" size="lg" className="h-auto w-full justify-start py-3">
+        <Button asChild variant="secondary" size="lg" className="h-auto w-full justify-start py-3">
           <Link to={ROUTES.REGISTER}>
             <Building2 aria-hidden="true" />
             <span className="flex flex-1 flex-col items-start text-left">
