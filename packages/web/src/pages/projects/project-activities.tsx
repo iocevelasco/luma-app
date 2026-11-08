@@ -1223,14 +1223,6 @@ export function ProjectActivitiesPage() {
 
   return (
     <>
-      <Tabs
-        value={view}
-        onValueChange={(next) => {
-          const param = VIEW_PARAM[next as ActivitiesView];
-          // `replace`: cambiar de vista no es navegar, y "atrás" vuelve a la pantalla anterior.
-          setSearchParams(param ? { vista: param } : {}, { replace: true });
-        }}
-      >
         <PageLayout
           // Barra de arriba → contenido: 12 px en mobile, en vez de 24.
           className="max-sm:gap-3"
@@ -1244,6 +1236,17 @@ export function ProjectActivitiesPage() {
           toolbar={
             <>
               <div className="flex w-full items-center gap-2 md:contents">
+              {/* `Tabs` sólo envuelve la lista: con `PageLayout` adentro, React Aria arma la colección
+                  renderizando los hijos dos veces y el dock (un portal) salía duplicado. */}
+              <Tabs
+                value={view}
+                className="contents"
+                onValueChange={(next) => {
+                  const param = VIEW_PARAM[next as ActivitiesView];
+                  // `replace`: cambiar de vista no es navegar, y "atrás" vuelve a la pantalla anterior.
+                  setSearchParams(param ? { vista: param } : {}, { replace: true });
+                }}
+              >
               <TabsList aria-label={t('activity.views.aria')} className="h-10 min-w-0 p-1 max-md:flex-1">
                 {views.map((name) => (
                   <TabsTrigger
@@ -1258,6 +1261,7 @@ export function ProjectActivitiesPage() {
                   </TabsTrigger>
                 ))}
               </TabsList>
+              </Tabs>
               <ActivityFilterControls
                 filters={effectiveFilters}
                 onChange={updateFilters}
@@ -1332,7 +1336,6 @@ export function ProjectActivitiesPage() {
             />
           )}
         </PageLayout>
-      </Tabs>
 
       <ActivityDetailModal
         projectId={projectId!}

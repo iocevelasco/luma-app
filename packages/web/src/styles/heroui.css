@@ -18,6 +18,9 @@
 */
 @import '../../node_modules/@heroui/styles/dist/themes/shared/theme.css';
 @import '../../node_modules/@heroui/styles/dist/utilities/index.css';
+/* Las animaciones de entrada y salida de los overlays: sin ellas el `animation` de un popover o un menú
+   apunta a unos keyframes que no existen, nunca termina y el overlay se queda "saliendo" para siempre. */
+@import '../../node_modules/@heroui/styles/dist/base/overlay-motion.css' layer(base);
 @import '../../node_modules/@heroui/styles/dist/components/button.css' layer(components);
 @import '../../node_modules/@heroui/styles/dist/components/input.css' layer(components);
 @import '../../node_modules/@heroui/styles/dist/components/textarea.css' layer(components);

@@ -67,20 +67,31 @@ function PopoverContent({
   const placement = (align === 'center' ? side : `${side} ${align}`) as React.ComponentProps<
     typeof HeroPopover.Content
   >['placement']
+  const presentation = role === 'presentation'
   return (
     <HeroPopover.Content
       data-slot="popover-content"
       placement={placement}
       offset={sideOffset}
       className={cn('text-overlay-foreground z-50 w-72 rounded-xl p-4 outline-hidden', className)}
+      // El popup de un combobox es la lista, no un segundo diálogo (que además rompe a quien busca
+      // "el" diálogo de la pantalla): React Aria le pone `role="dialog"` al contenedor, así que se
+      // reemplaza el elemento y no se dibuja el `Dialog` de adentro.
+      {...(presentation
+        ? {
+            render: (domProps: React.HTMLAttributes<HTMLElement>) => (
+              <div {...domProps} role="presentation" aria-label={undefined} aria-labelledby={undefined} />
+            ),
+          }
+        : {})}
     >
-      <HeroPopover.Dialog
-        aria-label={ariaLabel}
-        {...(role === 'presentation' ? ({ role } as object) : {})}
-        className="outline-hidden"
-      >
-        {children}
-      </HeroPopover.Dialog>
+      {presentation ? (
+        children
+      ) : (
+        <HeroPopover.Dialog aria-label={ariaLabel} className="outline-hidden">
+          {children}
+        </HeroPopover.Dialog>
+      )}
     </HeroPopover.Content>
   )
 }

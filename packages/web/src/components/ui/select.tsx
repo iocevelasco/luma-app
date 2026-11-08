@@ -165,7 +165,15 @@ function SelectContent({
   align?: 'start' | 'center' | 'end'
 }) {
   return (
-    <HeroSelect.Popover data-slot="select-content" className={cn('min-w-(--trigger-width)', className)}>
+    <HeroSelect.Popover
+      data-slot="select-content"
+      className={cn('min-w-(--trigger-width)', className)}
+      // La lista es el popup del combobox, no un diálogo: React Aria le pone `role="dialog"` al
+      // contenedor, y mientras sale (o si queda) rompe a quien busca "el" diálogo de la pantalla.
+      render={(domProps: React.HTMLAttributes<HTMLElement>) => (
+        <div {...domProps} role="presentation" aria-label={undefined} aria-labelledby={undefined} />
+      )}
+    >
       <ListBox>{children}</ListBox>
     </HeroSelect.Popover>
   )
