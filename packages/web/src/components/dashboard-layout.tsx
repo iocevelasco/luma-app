@@ -88,11 +88,16 @@ export function DashboardLayout() {
         la barra del navegador y dejaba parte del contenido tapada.
       */}
       <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground supports-[height:100dvh]:h-dvh">
-        <header className="surface-dark flex h-14 bg-background text-foreground shrink-0 items-center justify-between gap-4 border-b border-border px-4">
-          <div className="flex min-w-0 items-center gap-3">
+        <header className="surface-dark flex h-14 bg-background text-foreground shrink-0 items-center justify-between gap-4 border-b border-border px-4 md:pl-0">
+          {/*
+            En desktop el logo ocupa el ancho del riel (`RAIL_WIDTH`) y su borde derecho es la
+            misma línea vertical que el borde del riel: así la separación del header y la del
+            riel quedan alineadas, una sola línea de arriba a abajo.
+          */}
+          <div className="flex min-w-0 items-center gap-3 self-stretch md:gap-0">
             {/* Mobile: sólo el isotipo, para que el título de la sección se lea entero. */}
             {/* El logo lleva al listado de obras, el inicio del panel. */}
-            <Link to={ROUTES.ADMIN} aria-label={t('common.appName')} className="flex shrink-0 items-center">
+            <Link to={ROUTES.ADMIN} aria-label={t('common.appName')} className="flex shrink-0 items-center md:w-28 md:justify-center md:self-stretch md:border-r md:border-border">
               <AppLogo className="max-md:hidden" />
               <AppLogo isotypeOnly className="md:hidden" />
             </Link>
