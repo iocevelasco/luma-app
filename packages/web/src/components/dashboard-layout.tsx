@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@/lib/routes';
 import { AppLogo } from '@/components/app-logo';
 import { DashboardBottomNav } from '@/components/dashboard/navigation/dashboard-bottom-nav';
+import { ProjectSectionTabs } from '@/components/dashboard/navigation/project-section-tabs';
 import { DashboardRail } from '@/components/dashboard/navigation/dashboard-rail';
 import { HeaderTitle } from '@/components/dashboard/navigation/page-header';
 import {
@@ -19,6 +21,7 @@ import { useProjectLive } from '@/hooks/live/use-project-live';
 import { ContentAreaContext } from '@/components/layout/content-area-context';
 import { SubscriptionNotice } from '@/components/subscription/subscription-notice';
 import { LiveChat } from '@/components/chat/live-chat';
+import { OnboardingTour } from '@/components/onboarding/onboarding-tour';
 
 /**
  * Chrome del panel: header, navegación lateral en desktop, barra inferior en
@@ -34,6 +37,7 @@ import { LiveChat } from '@/components/chat/live-chat';
  * header y no entraban: se partían en dos filas y se comían la cabecera.
  */
 export function DashboardLayout() {
+  const { t } = useTranslation();
   const projectId = useCurrentProjectId();
   // Avisos en vivo de la obra abierta (Actividades y Materiales). Una sola vez
   // acá, junto al `projectId`: cambiar de sección no reabre la conexión.
@@ -87,8 +91,11 @@ export function DashboardLayout() {
         <header className="surface-dark flex h-14 bg-background text-foreground shrink-0 items-center justify-between gap-4 border-b border-border px-4">
           <div className="flex min-w-0 items-center gap-3">
             {/* Mobile: sólo el isotipo, para que el título de la sección se lea entero. */}
-            <AppLogo className="max-md:hidden" />
-            <AppLogo isotypeOnly className="md:hidden" />
+            {/* El logo lleva al listado de obras, el inicio del panel. */}
+            <Link to={ROUTES.ADMIN} aria-label={t('common.appName')} className="flex shrink-0 items-center">
+              <AppLogo className="max-md:hidden" />
+              <AppLogo isotypeOnly className="md:hidden" />
+            </Link>
             <HeaderTitle />
           </div>
           <div className="flex shrink-0 items-center gap-3">
@@ -135,6 +142,7 @@ export function DashboardLayout() {
                 )}
               >
                 <ContentAreaContext.Provider value={contentArea}>
+                  {insideProject && <ProjectSectionTabs />}
                   <SubscriptionNotice />
                   <SpecialtyLabelProvider>
                     <Outlet />
@@ -152,6 +160,7 @@ export function DashboardLayout() {
         )}
       </div>
       <LiveChat />
+      <OnboardingTour />
     </TooltipProvider>
   );
 }

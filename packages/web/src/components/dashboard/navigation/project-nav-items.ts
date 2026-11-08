@@ -3,6 +3,7 @@ import {
   Calculator,
   FileText,
   Flag,
+  HardHat,
   LayoutDashboard,
   Package,
   Receipt,
@@ -41,9 +42,18 @@ import {
  * después lo que se carga a diario, al final plata y administración —que se
  * miran con otra frecuencia y por otra gente.
  */
+/**
+ * Bloques del riel. `milestones` y `documents` son grupos de una sola sección:
+ * destinos propios, con el nombre y el ícono de la sección. `labor` junta Personal y
+ * Equipo (la gente que trabaja y la que tiene acceso a la obra).
+ */
+export type ProjectNavGroup = 'overview' | 'work' | 'milestones' | 'labor' | 'supply' | 'money' | 'documents';
+
 export interface ProjectNavItem {
   /** Clave i18n bajo `project.nav`. */
   labelKey: string;
+  /** Bloque del riel de desktop: los grupos se separan con una línea. */
+  group: ProjectNavGroup;
   path: (projectId: string) => string;
   icon: LucideIcon;
   /**
@@ -64,26 +74,27 @@ export interface ProjectNavItem {
 }
 
 export const PROJECT_NAV_ITEMS: ProjectNavItem[] = [
-  { labelKey: 'detail', path: projectDetailPath, icon: LayoutDashboard },
-  { labelKey: 'activities', path: projectActivitiesPath, icon: CalendarRange, capability: 'activity.read' },
-  { labelKey: 'materials', path: projectMaterialsPath, icon: Package, capability: 'material.read' },
-  { labelKey: 'inventory', path: projectInventoryPath, icon: Warehouse, capability: 'inventory.read' },
-  { labelKey: 'labor', path: projectLaborPath, icon: Users, capability: 'crew.read' },
-  { labelKey: 'milestones', path: projectMilestonesPath, icon: Flag, capability: 'milestone.read' },
-  { labelKey: 'documents', path: projectDocumentsPath, icon: FileText, capability: 'document.read' },
-  { labelKey: 'providers', path: projectProvidersPath, icon: Wrench, capability: 'provider.read' },
-  { labelKey: 'payments', path: projectPaymentsPath, icon: Wallet, capability: 'payment.read' },
-  { labelKey: 'expenses', path: projectExpensesPath, icon: Receipt, capability: 'expense.read' },
-  { labelKey: 'budget', path: projectBudgetPath, icon: Calculator, capability: 'budget.read' },
+  { labelKey: 'detail', group: 'overview', path: projectDetailPath, icon: LayoutDashboard },
+  { labelKey: 'activities', group: 'work', path: projectActivitiesPath, icon: CalendarRange, capability: 'activity.read' },
+  { labelKey: 'milestones', group: 'milestones', path: projectMilestonesPath, icon: Flag, capability: 'milestone.read' },
+  { labelKey: 'labor', group: 'labor', path: projectLaborPath, icon: Users, capability: 'crew.read' },
+  { labelKey: 'team', group: 'labor', path: projectTeamPath, icon: UserCog, capability: 'project.invite' },
+  { labelKey: 'materials', group: 'supply', path: projectMaterialsPath, icon: Package, capability: 'material.read' },
+  { labelKey: 'providers', group: 'supply', path: projectProvidersPath, icon: Wrench, capability: 'provider.read' },
+  { labelKey: 'inventory', group: 'supply', path: projectInventoryPath, icon: Warehouse, capability: 'inventory.read' },
+  { labelKey: 'payments', group: 'money', path: projectPaymentsPath, icon: Wallet, capability: 'payment.read' },
+  { labelKey: 'expenses', group: 'money', path: projectExpensesPath, icon: Receipt, capability: 'expense.read' },
+  { labelKey: 'budget', group: 'money', path: projectBudgetPath, icon: Calculator, capability: 'budget.read' },
+  { labelKey: 'documents', group: 'documents', path: projectDocumentsPath, icon: FileText, capability: 'document.read' },
   {
     labelKey: 'advisor',
+    group: 'documents',
     path: projectAdvisorPath,
     icon: Sparkles,
     capability: 'advisor.use',
     // Oculto por ahora: no está listo para mostrarse al cliente.
     hidden: true,
   },
-  { labelKey: 'team', path: projectTeamPath, icon: UserCog, capability: 'project.invite' },
 ];
 
 /** Las secciones que este rol puede ver en esta obra, en orden. */
@@ -107,4 +118,54 @@ export function isProjectSectionActive(
   const to = item.path(projectId);
   if (pathname === to) return true;
   return item.labelKey !== 'detail' && pathname.startsWith(`${to}/`);
+}
+
+/**
+ * Los destinos del riel de desktop: uno por grupo, con sus secciones como
+ * pestañas arriba de la pantalla (`ProjectSectionTabs`). Sin grupos vacíos: un
+ * rol que no ve nada de "dinero" no tiene ese destino. La tira de mobile sigue
+ * usando la lista plana.
+ */
+export interface ProjectNavGroupEntry {
+  group: ProjectNavGroup;
+  icon: LucideIcon;
+  items: ProjectNavItem[];
+}
+
+const GROUP_ICONS: Partial<Record<ProjectNavGroup, LucideIcon>> = {
+  overview: LayoutDashboard,
+  work: HardHat,
+  labor: Users,
+  supply: Package,
+  money: Wallet,
+};
+
+export function projectNavGroups(capabilities: readonly Capability[]): ProjectNavGroupEntry[] {
+  const byGroup = new Map<ProjectNavGroup, ProjectNavItem[]>();
+  for (const item of visibleProjectNavItems(capabilities)) {
+    byGroup.set(item.group, [...(byGroup.get(item.group) ?? []), item]);
+  }
+  return [...byGroup.entries()].map(([group, items]) => ({
+    group,
+    // Sin ícono de grupo = destino de una sola sección: usa el de la sección.
+    icon: GROUP_ICONS[group] ?? items[0].icon,
+    items,
+  }));
+}
+
+/**
+ * Claves i18n del nombre y del tooltip de un destino del riel. Un grupo de una sola
+ * sección (Hitos, Documentación) se nombra como ella; el resto tiene nombre propio.
+ */
+export function projectGroupTextKeys({ group, items }: ProjectNavGroupEntry): { label: string; hint: string } {
+  const single = group === 'milestones' || group === 'documents';
+  return single
+    ? { label: `project.nav.${items[0].labelKey}`, hint: `project.navHint.${items[0].labelKey}` }
+    : { label: `project.nav.groups.${group}`, hint: `project.navHint.groups.${group}` };
+}
+
+/** Todos los destinos, sin filtrar por permisos: para explicar qué hay (el recorrido de bienvenida). */
+export function allProjectNavGroups(): ProjectNavGroupEntry[] {
+  const all = PROJECT_NAV_ITEMS.flatMap((item) => (item.capability ? [item.capability] : []));
+  return projectNavGroups(all);
 }
