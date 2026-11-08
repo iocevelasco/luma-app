@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type {
   CreateProjectInput,
   DeleteProjectInput,
@@ -15,7 +15,7 @@ import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
 import { FRESH_30S } from '@/lib/query-freshness';
-import { projectDetailPath, ROUTES } from '@/lib/routes';
+import { ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Capa 2: mismo patrón que `use-auth-queries.ts`. */
@@ -44,18 +44,18 @@ export function useProject(projectId: string | undefined) {
 
 export function useCreateProject() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const { t } = useTranslation();
 
   return useMutation({
     mutationFn: (payload: CreateProjectInput) => projectsApi.create(payload),
-    onSuccess: ({ project }) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.projects] });
       // Una obra nueva cambia la suscripción: la primera arranca el mes
       // gratis, y cada una cuenta para el límite y para el próximo cobro.
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.subscription] });
       toast.success(t('project.new.created'));
-      navigate(projectDetailPath(project.id));
+      // No navega: el alta es un recorrido que termina en su propia pantalla de "¿por dónde
+      // seguimos?" (`ProjectNewPage`), y es ella quien lleva a la persona a donde elija.
     },
       // Sin `onError`: esta mutación se envía desde un formulario y el banner
       // de `FormShell` muestra la falla ahí mismo. Un toast sería el mismo

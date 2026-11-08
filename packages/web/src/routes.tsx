@@ -133,6 +133,11 @@ const PlatformActivityPage = lazy(() =>
 const PlatformAssistantPage = lazy(() =>
   import('./pages/platform/platform-assistant').then((m) => ({ default: m.PlatformAssistantPage })),
 );
+// SPIKE (HeroUI v3): sólo en desarrollo, nunca llega al bundle de producción.
+// `VITE_HEROUI_SPIKE=1` lo incluye en un build, sólo para medir el peso.
+const SpikeHeroUiPage = import.meta.env.DEV || import.meta.env.VITE_HEROUI_SPIKE === '1'
+  ? lazy(() => import('./pages/spike-heroui').then((m) => ({ default: m.SpikeHeroUiPage })))
+  : null;
 const NotFoundPage = lazy(() =>
   import('./pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -157,6 +162,9 @@ export function AppRoutes() {
       {/* Públicas que valen con sesión o sin ella: las abre un enlace de un mail. */}
       <Route path={ROUTES.RESET_PASSWORD} element={<LazyRoute><ResetPasswordPage /></LazyRoute>} />
       <Route path={ROUTES.ACTIVATE} element={<LazyRoute><ActivatePage /></LazyRoute>} />
+      {SpikeHeroUiPage && (
+        <Route path="/spike/heroui" element={<LazyRoute><SpikeHeroUiPage /></LazyRoute>} />
+      )}
       <Route path={ROUTES.LEGAL} element={<LazyRoute><LegalPage /></LazyRoute>} />
       <Route path={ROUTES.CHECK_EMAIL} element={<LazyRoute><CheckEmailPage /></LazyRoute>} />
       <Route path={ROUTES.VERIFY_EMAIL} element={<LazyRoute><VerifyEmailPage /></LazyRoute>} />

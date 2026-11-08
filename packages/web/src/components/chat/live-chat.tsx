@@ -61,8 +61,8 @@ export function LiveChat() {
 
   return (
     <>
-      {/* Misma esquina que la acción principal, un escalón arriba (ver `PageLayout`). */}
-      <span className="fixed end-4 bottom-[calc(5rem+2.25rem+0.75rem+env(safe-area-inset-bottom))] z-40 md:end-8 md:bottom-[calc(2rem+2.25rem+0.75rem)]">
+      {/* Esquina inferior derecha. En mobile sube un escalón: ahí el grupo de acciones de la pantalla (`PageLayout`) puede ocupar todo el ancho. */}
+      <span className="fixed end-4 bottom-[calc(5rem+2.25rem+0.75rem+env(safe-area-inset-bottom))] z-40 md:end-8 md:bottom-8">
         {/* El aro se anima una sola vez al cargar la vista, para avisar que hay ayuda. */}
         <span aria-hidden className="ai-attention-ring pointer-events-none absolute inset-0 rounded-md bg-primary" />
         <Button type="button" size="icon-lg" aria-label={t('secureChat.openLive')} onClick={() => setOpen(true)} className="relative">

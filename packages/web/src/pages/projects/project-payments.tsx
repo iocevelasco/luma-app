@@ -17,7 +17,7 @@ import { Controller, useForm } from 'react-hook-form';
 import type { FieldErrors, FieldValues, Path, UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Can } from '@/components/permissions/can';
 import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
@@ -84,6 +84,7 @@ import {
   type PaymentGroupBy,
 } from '@/lib/payments-view';
 import { cn } from '@/lib/utils';
+import { numberField } from '@/lib/form-fields';
 
 /**
  * `destructive` es peligro, no marca — ver DESIGN.md. Una cuota vencida es lo
@@ -139,7 +140,7 @@ function MoneyFields<T extends MoneyFormValues>({
             aria-invalid={Boolean(errors.amount)}
             id={`${prefix}-amount`}
             inputMode="decimal"
-            {...register('amount' as Path<T>, { valueAsNumber: true })}
+            {...register('amount' as Path<T>, numberField)}
           />
           {errors.amount && (
             <p className="text-sm text-destructive">{String(errors.amount.message)}</p>
@@ -171,7 +172,7 @@ function MoneyFields<T extends MoneyFormValues>({
             aria-invalid={Boolean(errors.exchangeRate)}
             id={`${prefix}-rate`}
             inputMode="decimal"
-            {...register('exchangeRate' as Path<T>, { valueAsNumber: true })}
+            {...register('exchangeRate' as Path<T>, numberField)}
           />
           <p className="text-2xs text-muted-foreground">{t('finance.fields.exchangeRateHint')}</p>
           {errors.exchangeRate && (
@@ -526,8 +527,8 @@ export function ProjectPaymentsPage() {
       ? Math.round((summary.paidTotal / summary.scheduledTotal) * 100)
       : 0;
 
-  // Las dos altas de la pantalla van arriba, siempre: registrar un cobro es la
-  // principal; la cuota del cronograma acordado, la de segundo orden.
+  // Las dos altas de la pantalla flotan juntas abajo al centro: registrar un cobro es la
+  // principal; la cuota del cronograma acordado, la de segundo orden (`dockActions`).
   const scheduleButton = (
     <Can I="payment.write">
       <Button variant="outline" onClick={() => setScheduleOpen(true)}>
@@ -575,20 +576,18 @@ export function ProjectPaymentsPage() {
 
   if (items.length === 0 && payments.length === 0) {
     return (
-      <PageLayout
-        {...actions}
-        secondaryActions={
-          <>
-            {scheduleButton}
-            {scheduleDrawer}
-          </>
-        }
-        empty={{
-          icon: Wallet,
-          title: t('finance.empty.title'),
-          description: t('finance.empty.description'),
-        }}
-      />
+      <>
+        <PageLayout
+          {...actions}
+          dockActions={scheduleButton}
+          empty={{
+            icon: Wallet,
+            title: t('finance.empty.title'),
+            description: t('finance.empty.description'),
+          }}
+        />
+        {scheduleDrawer}
+      </>
     );
   }
 
@@ -638,15 +637,9 @@ export function ProjectPaymentsPage() {
           />
         ) : undefined
       }
-      secondaryActions={
-        // En el modo compacto las acciones viven en el panel de filtros.
-        hasPayments && compact ? undefined : (
-          <>
-            {hasPayments && exportControl}
-            {scheduleButton}
-          </>
-        )
-      }
+      // En el modo compacto las acciones viven en el panel de filtros.
+      secondaryActions={hasPayments && !compact ? exportControl : undefined}
+      dockActions={hasPayments && compact ? undefined : scheduleButton}
     >
       {scheduleDrawer}
       <Card>

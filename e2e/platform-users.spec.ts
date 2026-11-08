@@ -25,7 +25,7 @@ test.describe('cuentas de la plataforma: admin', () => {
     await page.goto(appUrl(USERS_PATH));
 
     // El censo es la vista de entrada: con membresía, clientes, empleados y pruebas.
-    await expect(page.getByRole('tab', { name: 'Censo' })).toHaveAttribute('data-state', 'active');
+    await expect(page.getByRole('tab', { name: 'Censo' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('dl dt')).toHaveCount(4);
     await expect(page.locator('dl dd').first()).toHaveText(/^\d/);
     await expect(page.getByText('Estado de la membresía')).toBeVisible();
@@ -56,7 +56,7 @@ test.describe('cuentas de la plataforma: admin', () => {
     await page.getByRole('tab', { name: 'Seguimiento' }).click();
     await expect(page.getByRole('tab', { name: /Necesitan atención/ })).toBeVisible();
     await page.getByRole('tab', { name: /En prueba/ }).click();
-    await expect(page.getByRole('tab', { name: /En prueba/ })).toHaveAttribute('data-state', 'active');
+    await expect(page.getByRole('tab', { name: /En prueba/ })).toHaveAttribute('aria-selected', 'true');
 
     // Una cuenta de prueba no aparece ni buscándola.
     const { email } = e2eUser('admin');
@@ -92,8 +92,8 @@ test.describe('cuentas de la plataforma: admin', () => {
     await page.getByRole('searchbox').fill('');
     await page.getByRole('tab', { name: 'Sin confirmar' }).click();
     await expect(page.getByRole('tab', { name: 'Sin confirmar' })).toHaveAttribute(
-      'data-state',
-      'active',
+      'aria-selected',
+      'true',
     );
 
     // El segmento también: la lista se acota a las cuentas de ese tipo.

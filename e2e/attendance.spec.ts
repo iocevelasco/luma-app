@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
+import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { addCrewMember } from './helpers/crew';
@@ -34,19 +36,17 @@ test.describe('asistencia contra la cuadrilla', () => {
     await registerWith(page, `Ejecutante E2E ${RUN_ID}`, ownerEmail, PASSWORD);
     await loginWith(page, ownerEmail, PASSWORD);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(projectName);
-    await page.locator('#description').fill('Obra para probar la asistencia.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2027-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: projectName,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2027-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
     // Una actividad vigente hoy, para que aparezca en la asistencia.
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     const today = new Date();
     await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(activityName);
@@ -59,7 +59,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     await page.getByRole('button', { name: /crear tarea/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
-    await page.getByRole('link', { name: /^personal$/i }).click();
+    await openSection(page, 'labor');
     await expect(page).toHaveURL(/\/personal$/);
 
     // --- Roster: uno de ellos con teléfono, para poder llamarlo ---

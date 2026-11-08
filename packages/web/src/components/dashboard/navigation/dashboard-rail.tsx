@@ -1,7 +1,8 @@
 import { useMatch } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DASHBOARD_DESTINATIONS, type DashboardDestination } from './dashboard-destinations';
-import { NavRailItem } from './nav-rail-item';
+import { cn } from '@/lib/utils';
+import { NavRailItem, RAIL_WIDTH } from './nav-rail-item';
 
 function DashboardRailItem({ labelKey, to, icon, testId, prefix }: DashboardDestination) {
   const { t } = useTranslation();
@@ -27,7 +28,10 @@ export function DashboardRail() {
   return (
     <nav
       aria-label={t('layout.openMenu')}
-      className="hidden w-16 shrink-0 flex-col items-center gap-2 border-r border-border bg-card py-4 md:flex"
+      className={cn(
+        RAIL_WIDTH,
+        'hidden shrink-0 flex-col items-center gap-1 border-r border-border bg-card px-2 py-4 md:flex',
+      )}
     >
       {DASHBOARD_DESTINATIONS.map((destination) => (
         <DashboardRailItem key={destination.to} {...destination} />

@@ -1,31 +1,52 @@
 'use client'
 
 import * as React from 'react'
-import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
-import { CheckIcon } from 'lucide-react'
+import { Checkbox as HeroCheckbox } from '@heroui/react'
 
 import { cn } from '@/lib/utils'
 
-function Checkbox({
-  className,
-  ...props
-}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+type HeroCheckboxProps = React.ComponentProps<typeof HeroCheckbox>
+
+type CheckboxProps = Omit<
+  HeroCheckboxProps,
+  'isSelected' | 'defaultSelected' | 'onChange' | 'isDisabled' | 'isIndeterminate' | 'className' | 'children'
+> & {
+  children?: React.ReactNode
+  className?: string
+  checked?: boolean | 'indeterminate'
+  defaultChecked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+  disabled?: boolean
+}
+
+// ADR-003: Checkbox de HeroUI (React Aria). Cambia respecto de Radix:
+//  · `checked` sigue aceptando `'indeterminate'` (pasa a `isIndeterminate`);
+//    `onCheckedChange` recibe sólo `boolean`.
+//  · El texto va como `children`: el área clicable es una sola (`Checkbox.Content`).
+//    Ya no se envuelve en un `<label>` aparte —sería un label dentro de otro—;
+//    para una casilla con `<Label htmlFor>` suelto, el `id` llega al input.
+//  · `className` va a la raíz (el contenedor), no al cuadrito.
+function Checkbox(allProps: CheckboxProps) {
+  const { className, checked, defaultChecked, onCheckedChange, disabled, children, ...props } = allProps
+  // Controlado si `checked` está presente, aunque valga `undefined` (campo vacío o tras un `reset()`).
+  const controlled = 'checked' in allProps
   return (
-    <CheckboxPrimitive.Root
-      data-slot="checkbox"
-      className={cn(
-        'peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-xs border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
-        className,
-      )}
+    <HeroCheckbox
+      isSelected={controlled ? checked === true : undefined}
+      isIndeterminate={checked === 'indeterminate'}
+      defaultSelected={defaultChecked}
+      onChange={onCheckedChange}
+      isDisabled={disabled}
+      className={cn('w-fit', className)}
       {...props}
     >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="flex items-center justify-center text-current transition-none"
-      >
-        <CheckIcon className="size-3.5" />
-      </CheckboxPrimitive.Indicator>
-    </CheckboxPrimitive.Root>
+      <HeroCheckbox.Content>
+        <HeroCheckbox.Control>
+          <HeroCheckbox.Indicator />
+        </HeroCheckbox.Control>
+        {children}
+      </HeroCheckbox.Content>
+    </HeroCheckbox>
   )
 }
 

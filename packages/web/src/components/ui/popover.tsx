@@ -1,48 +1,99 @@
 'use client'
 
 import * as React from 'react'
-import * as PopoverPrimitive from '@radix-ui/react-popover'
+import { Popover as HeroPopover } from '@heroui/react'
+import { Pressable } from 'react-aria-components/Pressable'
 
 import { cn } from '@/lib/utils'
 
+// ADR-003: Popover de HeroUI (React Aria). Cambia respecto de Radix:
+//  · `open` pasa a `isOpen`; `onOpenChange` se mantiene.
+//  · `PopoverTrigger asChild` envuelve al hijo con `Pressable`: el hijo debe
+//    aceptar `ref` y props del DOM. (`Popover.Trigger` de HeroUI pinta un
+//    `<div role="button">` y se descarta.)
+//  · `align`/`side` se combinan en `placement` ("bottom start"); `sideOffset` en `offset`.
+//  · El contenido es un diálogo: necesita `aria-label` (o un encabezado dentro).
+//  · `--radix-popover-trigger-width` pasa a `--trigger-width`.
+//  · `PopoverAnchor` no existe en React Aria: no había usos y se quitó.
 function Popover({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />
+  open,
+  defaultOpen,
+  onOpenChange,
+  children,
+}: {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  children?: React.ReactNode
+}) {
+  return (
+    <HeroPopover isOpen={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
+      {children}
+    </HeroPopover>
+  )
 }
 
 function PopoverTrigger({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+  children,
+}: {
+  asChild?: boolean
+  children: React.ReactElement<React.DOMAttributes<Element>>
+}) {
+  return (
+    <Pressable>
+      {children as unknown as React.ReactElement<React.DOMAttributes<Element>, string>}
+    </Pressable>
+  )
 }
 
 function PopoverContent({
   className,
   align = 'center',
+  side = 'bottom',
   sideOffset = 4,
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+  'aria-label': ariaLabel,
+  role = 'dialog',
+  children,
+}: {
+  className?: string
+  align?: 'start' | 'center' | 'end'
+  side?: 'top' | 'bottom' | 'left' | 'right'
+  sideOffset?: number
+  'aria-label'?: string
+  /** `presentation` para el popup de un combobox: la lista es el popup, no un segundo diálogo. */
+  role?: 'dialog' | 'presentation'
+  children?: React.ReactNode
+}) {
+  const placement = (align === 'center' ? side : `${side} ${align}`) as React.ComponentProps<
+    typeof HeroPopover.Content
+  >['placement']
+  const presentation = role === 'presentation'
   return (
-    <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
-        data-slot="popover-content"
-        align={align}
-        sideOffset={sideOffset}
-        className={cn(
-          'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-lg border p-4 shadow-md outline-hidden',
-          className,
-        )}
-        {...props}
-      />
-    </PopoverPrimitive.Portal>
+    <HeroPopover.Content
+      data-slot="popover-content"
+      placement={placement}
+      offset={sideOffset}
+      className={cn('text-overlay-foreground z-50 w-72 rounded-xl p-4 outline-hidden', className)}
+      // El popup de un combobox es la lista, no un segundo diálogo (que además rompe a quien busca
+      // "el" diálogo de la pantalla): React Aria le pone `role="dialog"` al contenedor, así que se
+      // reemplaza el elemento y no se dibuja el `Dialog` de adentro.
+      {...(presentation
+        ? {
+            render: (domProps: React.HTMLAttributes<HTMLElement>) => (
+              <div {...domProps} role="presentation" aria-label={undefined} aria-labelledby={undefined} />
+            ),
+          }
+        : {})}
+    >
+      {presentation ? (
+        children
+      ) : (
+        <HeroPopover.Dialog aria-label={ariaLabel} className="outline-hidden">
+          {children}
+        </HeroPopover.Dialog>
+      )}
+    </HeroPopover.Content>
   )
 }
 
-function PopoverAnchor({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />
-}
-
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor }
+export { Popover, PopoverTrigger, PopoverContent }

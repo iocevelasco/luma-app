@@ -1,4 +1,6 @@
 import path from 'node:path';
+import { createProjectViaForm } from './helpers/projects';
+import { alertDialog } from './helpers/dialog';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
@@ -63,16 +65,13 @@ test.describe('Hitos y reuniones', () => {
 
     await registerWith(page, OWNER_NAME, OWNER_EMAIL, PASSWORD);
     await loginWith(page, OWNER_EMAIL, PASSWORD);
-    // La acción principal flota abajo a la derecha, esté la pantalla vacía o no.
-    await page.getByRole('link', { name: /^nueva obra$/i }).click();
-    await page.locator('#name').fill(PROJECT_NAME);
-    await page.locator('#description').fill('Obra para probar hitos y reuniones.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: PROJECT_NAME,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
     const projectUrl = page.url();
     milestonesUrl = `${projectUrl}/hitos`;
@@ -158,15 +157,16 @@ test.describe('Hitos y reuniones', () => {
     await page.getByRole('dialog').locator('#milestone-title').fill('Algo a medio escribir');
     await page.getByRole('button', { name: /^cerrar$/i }).click();
 
-    const confirm = page.getByRole('alertdialog');
+    const confirm = alertDialog(page);
     await expect(confirm.getByText(/descartar los cambios/i)).toBeVisible();
     await confirm.getByRole('button', { name: /seguir editando/i }).click();
+    await expect(alertDialog(page)).toBeHidden();
     await expect(page.getByRole('dialog').locator('#milestone-title')).toHaveValue(
       'Algo a medio escribir',
     );
 
     await page.keyboard.press('Escape');
-    await page.getByRole('alertdialog').getByRole('button', { name: /^descartar$/i }).click();
+    await alertDialog(page).getByRole('button', { name: /^descartar$/i }).click();
     await expect(page).toHaveURL(/\/hitos$/);
     await expect(page.getByText('Algo a medio escribir')).toHaveCount(0);
   });

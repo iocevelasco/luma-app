@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
+import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
 
@@ -26,18 +28,16 @@ test.describe('presupuesto (carga manual)', () => {
     await loginWith(page, OWNER_EMAIL, PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(PROJECT_NAME);
-    await page.locator('#description').fill('Obra para probar la carga de presupuesto.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: PROJECT_NAME,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^presupuesto$/i }).click();
+    await openSection(page, 'budget');
     await expect(page).toHaveURL(/\/presupuesto$/);
     await expect(page.getByText(/todavía no has cargado el presupuesto/i)).toBeVisible();
 

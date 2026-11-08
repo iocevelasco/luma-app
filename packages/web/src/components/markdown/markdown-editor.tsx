@@ -244,7 +244,7 @@ function LinkButton({ editor, active }: { editor: Editor; active: boolean }) {
           <Link2 />
         </Toggle>
       </PopoverTrigger>
-      <PopoverContent align="start" className="flex w-72 flex-col gap-2">
+      <PopoverContent align="start" aria-label={t('markdownEditor.link')} className="flex w-72 flex-col gap-2">
         <Input
           type="url"
           inputMode="url"

@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { CreditCard, ExternalLink, Landmark, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { PLAN } from '@luma/shared';
 import type {
   ChargeQuote,
@@ -283,19 +283,19 @@ function UpgradeCard({
           aria-label={t('subscription.upgrade.when')}
         >
           {options.map((option) => (
-            <label
+            <RadioGroupItem
               key={option.value}
+              value={option.value}
               className={cn(
-                'flex cursor-pointer items-start gap-3 rounded-2xl border bg-background p-4 transition-colors',
+                'w-full cursor-pointer rounded-2xl border bg-background p-4 transition-colors',
                 start === option.value ? 'border-primary' : 'border-border',
               )}
             >
-              <RadioGroupItem value={option.value} className="mt-0.5" />
               <span className="flex flex-col gap-0.5">
                 <span className="font-medium">{option.title}</span>
                 <span className="text-sm text-muted-foreground">{option.hint}</span>
               </span>
-            </label>
+            </RadioGroupItem>
           ))}
         </RadioGroup>
 

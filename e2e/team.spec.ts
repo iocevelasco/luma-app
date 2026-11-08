@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { expectSectionHidden } from './helpers/nav';
+import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { addCrewMember, addTask, boardColumn, moveTask, openBoard, taskCard } from './helpers/crew';
@@ -43,15 +45,13 @@ test.describe('Supervisor de obra', () => {
     await loginWith(page, OWNER_EMAIL, PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(PROJECT_NAME);
-    await page.locator('#description').fill('Obra para probar el rol de Supervisor de obra.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: PROJECT_NAME,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
     // El gerente planifica. El supervisor reporta sobre esto, no lo crea.
@@ -92,16 +92,16 @@ test.describe('Supervisor de obra', () => {
     await detail.getByRole('button', { name: /^atrás$/i }).click();
 
     // No ve plata: ni presupuesto ni Consultor IA, ni como pestaña ni por URL.
-    await expect(supervisorPage.getByRole('link', { name: /^presupuesto$/i })).toHaveCount(0);
+    await expectSectionHidden(supervisorPage, 'budget');
     await expect(supervisorPage.getByRole('link', { name: /consultor/i })).toHaveCount(0);
 
     // Tampoco ve plata de ningún lado: ni cobros ni gastos.
-    await expect(supervisorPage.getByRole('link', { name: /^pagos$/i })).toHaveCount(0);
-    await expect(supervisorPage.getByRole('link', { name: /^gastos$/i })).toHaveCount(0);
+    await expectSectionHidden(supervisorPage, 'payments');
+    await expectSectionHidden(supervisorPage, 'expenses');
 
     // Y no administra accesos: la pestaña de equipo no existe para él.
     await supervisorPage.goto(projectUrl);
-    await expect(supervisorPage.getByRole('link', { name: /^equipo$/i })).toHaveCount(0);
+    await expectSectionHidden(supervisorPage, 'team');
 
     // Suma personal a SU obra —es quien está cuando llega alguien nuevo—, pero
     // no administra el roster: ni sacar, ni dar de baja, ni traer de la Empresa.

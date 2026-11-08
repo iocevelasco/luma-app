@@ -1,19 +1,39 @@
 "use client";
 
 import * as React from "react";
-import * as TabsPrimitive from "@radix-ui/react-tabs";
+import { Tabs as HeroTabs } from "@heroui/react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-function Tabs({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+// ADR-003, lote B. Tabs de HeroUI (React Aria) con la API de siempre —`value`,
+// `defaultValue`, `onValueChange(string)`, `TabsTrigger value`, `TabsContent
+// value`, `icon`— traducida a `selectedKey`/`onSelectionChange`/`id`. El fondo
+// que se desliza ahora es el `Tabs.Indicator` de HeroUI: se acabó el
+// MutationObserver/ResizeObserver que lo medía a mano.
+//
+// Qué cambia para quien lo usa:
+//   · `TabsContent forceMount` ya no existe (sólo se monta el panel activo);
+//   · `data-state="active"` pasa a `data-selected` (y `aria-selected`, igual);
+//   · `TabsTrigger disabled` es `isDisabled`: el adaptador traduce `disabled`.
+
+type TabsProps = Omit<
+  React.ComponentProps<typeof HeroTabs>,
+  "selectedKey" | "defaultSelectedKey" | "onSelectionChange"
+> & {
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+};
+
+function Tabs({ className, value, defaultValue, onValueChange, ...props }: TabsProps) {
   return (
-    <TabsPrimitive.Root
+    <HeroTabs
       data-slot="tabs"
       className={cn("flex flex-col", className)}
+      selectedKey={value}
+      defaultSelectedKey={defaultValue}
+      onSelectionChange={onValueChange ? (key) => onValueChange(String(key)) : undefined}
       {...props}
     />
   );
@@ -22,137 +42,78 @@ function Tabs({
 /**
  * Los tabs de la app: un contenedor blanco y suave, y cada pestaña un cuadrado
  * de esquinas redondeadas (no una píldora) con su ícono. La activa se marca con
- * un gris apenas más oscuro que el lienzo, no con un color: la pestaña elegida
- * se lee por el relleno y el resto queda atenuado. El relleno se desliza de una
- * pestaña a la otra al cambiar.
- *
- * Es un cambio del sistema y por eso vive acá y no en cada pantalla (ver
- * "shadcn/ui" en CLAUDE.md). El hijo va un escalón abajo del padre:
- * `rounded-md` adentro de `rounded-lg`.
+ * un gris apenas más oscuro que el lienzo. El hijo va un escalón abajo del
+ * padre: `rounded-md` adentro de `rounded-lg`.
  */
 function TabsList({
   className,
+  containerClassName,
   children,
-  ref,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.List>) {
-  const listRef = React.useRef<HTMLDivElement | null>(null);
-  const [box, setBox] = React.useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  // La transición se enciende después de la primera medición: si no, el fondo
-  // "viajaría" desde la esquina al montar la pantalla.
-  const [animate, setAnimate] = React.useState(false);
-
-  // El fondo de la pestaña activa es un solo elemento que se desliza de una a
-  // otra, en vez de apagarse en una y encenderse en la siguiente. Se mide la
-  // pestaña activa (`data-state="active"`, que es de Radix) cada vez que cambia
-  // o que algo cambia de tamaño.
-  const measure = React.useCallback(() => {
-    const active = listRef.current?.querySelector<HTMLElement>(
-      '[data-slot="tabs-trigger"][data-state="active"]',
-    );
-    setBox(
-      active
-        ? { x: active.offsetLeft, y: active.offsetTop, w: active.offsetWidth, h: active.offsetHeight }
-        : null,
-    );
-  }, []);
-
-  React.useLayoutEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
-    measure();
-    const mutations = new MutationObserver(measure);
-    mutations.observe(list, {
-      attributes: true,
-      attributeFilter: ["data-state"],
-      childList: true,
-      subtree: true,
-    });
-    // `ResizeObserver` falta en Safari anterior al 13.1: leerlo como identificador suelto
-    // tira `ReferenceError` y voltea toda pantalla con tabs. Sin él, el fondo se mide con
-    // los cambios de pestaña y al montar, que es lo que importa; sólo no sigue un cambio
-    // de tamaño de la ventana.
-    const sizes =
-      typeof window.ResizeObserver === 'function' ? new window.ResizeObserver(measure) : null;
-    if (sizes) {
-      sizes.observe(list);
-      list.querySelectorAll('[data-slot="tabs-trigger"]').forEach((trigger) => sizes.observe(trigger));
-    }
-    const timer = window.setTimeout(() => setAnimate(true), 0);
-    return () => {
-      mutations.disconnect();
-      sizes?.disconnect();
-      window.clearTimeout(timer);
-    };
-  }, [measure]);
-
+}: React.ComponentProps<typeof HeroTabs.List> & {
+  /** Para el contenedor blanco (por ejemplo `w-full`): `className` va a la lista de adentro. */
+  containerClassName?: string;
+}) {
   return (
-    <TabsPrimitive.List
+    <HeroTabs.ListContainer
       data-slot="tabs-list"
-      ref={(node) => {
-        listRef.current = node;
-        if (typeof ref === "function") ref(node);
-        else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }}
-      className={cn(
-        "bg-card text-muted-foreground shadow-surface relative inline-flex w-fit items-center gap-1 rounded-lg p-1.5",
-        className,
-      )}
-      {...props}
+      className={cn("bg-card shadow-surface relative w-fit max-w-full rounded-lg p-1.5", containerClassName)}
     >
-      <span
-        aria-hidden
-        data-slot="tabs-indicator"
-        className={cn(
-          "bg-muted pointer-events-none absolute top-0 left-0 rounded-md",
-          animate &&
-            "transition-[transform,width,height] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none",
-        )}
-        style={
-          box
-            ? { width: box.w, height: box.h, transform: `translate(${box.x}px, ${box.y}px)` }
-            : { display: "none" }
-        }
-      />
-      {children}
-    </TabsPrimitive.List>
+      <HeroTabs.List
+        className={cn("text-muted-foreground inline-flex w-fit items-center gap-1 bg-transparent p-0", className)}
+        {...props}
+      >
+        {children}
+      </HeroTabs.List>
+    </HeroTabs.ListContainer>
   );
 }
 
 /**
  * Siempre lleva ícono: es obligatorio en el tipo. Una pestaña sin él se lee
- * distinto a las demás de la app, y el ícono es lo que se reconoce de un
- * vistazo cuando hay varias.
+ * distinto a las demás de la app.
  */
 function TabsTrigger({
   className,
   icon: Icon,
   children,
+  value,
+  disabled,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Trigger> & { icon: LucideIcon }) {
+}: Omit<React.ComponentProps<typeof HeroTabs.Tab>, "id" | "children"> & {
+  children?: React.ReactNode;
+  icon: LucideIcon;
+  value: string;
+  disabled?: boolean;
+}) {
   return (
-    <TabsPrimitive.Trigger
+    <HeroTabs.Tab
       data-slot="tabs-trigger"
+      id={value}
+      isDisabled={disabled}
       className={cn(
-        "text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 data-[state=active]:text-foreground relative inline-flex h-9 flex-1 items-center justify-center gap-2.5 rounded-md px-4 text-sm font-medium whitespace-nowrap transition-colors duration-300 outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[18px]",
-        className,
+        "text-muted-foreground hover:text-foreground data-[selected=true]:text-foreground relative inline-flex h-9 flex-1 items-center justify-center gap-2.5 rounded-md px-4 text-sm font-medium whitespace-nowrap [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[18px]",
+        className as string,
       )}
       {...props}
     >
       <Icon aria-hidden />
       {children}
-    </TabsPrimitive.Trigger>
+      <HeroTabs.Indicator className="bg-secondary rounded-md" />
+    </HeroTabs.Tab>
   );
 }
 
 function TabsContent({
   className,
+  value,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+}: Omit<React.ComponentProps<typeof HeroTabs.Panel>, "id"> & { value: string }) {
   return (
-    <TabsPrimitive.Content
+    <HeroTabs.Panel
       data-slot="tabs-content"
-      className={cn("flex-1 outline-none", className)}
+      id={value}
+      className={cn("flex-1 outline-none", className as string)}
       {...props}
     />
   );

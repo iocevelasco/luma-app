@@ -80,7 +80,7 @@ export function HeaderTitle() {
   if (!title) return null;
 
   return (
-    <div className="flex min-w-0 items-center gap-3 border-l border-border pl-3">
+    <div className="flex min-w-0 items-center gap-3 border-l border-border pl-3 md:border-l-0 md:pl-4">
       {crumbs.length > 0 && (
         <Breadcrumb className="hidden sm:block">
           <BreadcrumbList className="flex-nowrap text-xs">

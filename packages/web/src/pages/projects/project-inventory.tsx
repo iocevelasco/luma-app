@@ -95,7 +95,7 @@ export function ProjectInventoryPage() {
     <>
       <PageLayout
         width="default"
-        secondaryActions={
+        dockActions={
           canUseDeposit ? (
             <Button variant="outline" onClick={() => setImportOpen(true)}>
               <Download className="size-4" />
@@ -111,36 +111,37 @@ export function ProjectInventoryPage() {
             </Button>
           ) : undefined
         }
+        viewTabs={
+          <Tabs
+            value={tab}
+            onValueChange={(value) =>
+              setSearchParams(value === 'kardex' ? { tab: 'kardex' } : {}, { replace: true })
+            }
+          >
+            <TabsList>
+              <TabsTrigger value="stock" icon={Warehouse}>
+                {t('inventory.tabs.stock')}
+              </TabsTrigger>
+              <TabsTrigger value="kardex" icon={ClipboardList}>
+                {t('inventory.tabs.kardex')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        }
         toolbar={
-          <div className="flex w-full flex-col gap-3">
-            <Tabs
-              value={tab}
-              onValueChange={(value) =>
-                setSearchParams(value === 'kardex' ? { tab: 'kardex' } : {}, { replace: true })
-              }
-            >
-              <TabsList>
-                <TabsTrigger value="stock" icon={Warehouse}>
-                  {t('inventory.tabs.stock')}
-                </TabsTrigger>
-                <TabsTrigger value="kardex" icon={ClipboardList}>
-                  {t('inventory.tabs.kardex')}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            {items.length > 0 &&
-              (tab === 'stock' ? (
-                <SearchField
-                  wrapperClassName="max-w-sm"
-                  placeholder={t('inventory.stock.search')}
-                  aria-label={t('inventory.stock.search')}
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              ) : (
-                <KardexFilters items={items} filters={filters} onChange={setFilter} />
-              ))}
-          </div>
+          items.length > 0 ? (
+            tab === 'stock' ? (
+              <SearchField
+                wrapperClassName="max-w-sm"
+                placeholder={t('inventory.stock.search')}
+                aria-label={t('inventory.stock.search')}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            ) : (
+              <KardexFilters items={items} filters={filters} onChange={setFilter} />
+            )
+          ) : undefined
         }
         empty={
           items.length === 0
@@ -285,13 +286,19 @@ function StockRow({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {canWrite && (
-                  <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onRegister('devolucion')}>
+                  <DropdownMenuItem
+                    className="max-sm:min-h-11"
+                    onSelect={() => onRegister('devolucion')}
+                  >
                     <ArrowRightLeft className="size-4" />
                     {t('inventory.kind.devolucion')}
                   </DropdownMenuItem>
                 )}
                 {canWrite && item.stock > 0 && (
-                  <DropdownMenuItem className="max-sm:min-h-11" onSelect={() => onRegister('merma')}>
+                  <DropdownMenuItem
+                    className="max-sm:min-h-11"
+                    onSelect={() => onRegister('merma')}
+                  >
                     {t('inventory.kind.merma')}
                   </DropdownMenuItem>
                 )}
@@ -327,7 +334,10 @@ function MovementRow({ movement }: { movement: StockMovement }) {
 
   return (
     <RowCard>
-      <RowCardBody title={<span className="truncate">{movement.name}</span>} meta={meta.join(' · ')} />
+      <RowCardBody
+        title={<span className="truncate">{movement.name}</span>}
+        meta={meta.join(' · ')}
+      />
       <RowCardEnd>
         <MovementKindBadge kind={movement.kind} />
         <p className="tabular-nums">

@@ -1,9 +1,19 @@
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createProjectSchema, type CreateProjectInput } from '@luma/shared';
+import {
+  Calculator,
+  CalendarRange,
+  Check,
+  Package,
+  UserPlus,
+  type LucideIcon,
+} from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { isApiError } from '@/lib/api-client';
+import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { Button } from '@/components/ui/button';
 import { useMySubscription } from '@/hooks/subscription/use-subscription-queries';
 import { nextProjectState } from '@/lib/subscription';
@@ -17,27 +27,66 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { useCreateProject } from '@/hooks/projects/use-project-queries';
-import { ROUTES } from '@/lib/routes';
+import { useCreateProject, useProject } from '@/hooks/projects/use-project-queries';
+import { CURRENCY_OPTIONS } from '@/lib/currencies';
+import { toDayKey } from '@/lib/day-key';
+import {
+  projectActivitiesPath,
+  projectBudgetPath,
+  projectDetailPath,
+  projectMaterialsPath,
+  projectTeamPath,
+  ROUTES,
+} from '@/lib/routes';
+import { cn } from '@/lib/utils';
+
+type Field = keyof CreateProjectInput;
 
 /**
- * Monedas comunes de arranque, no un catálogo exhaustivo — fácil de sumar más
- * cuando haga falta. La validación de `currency` en el schema compartido es
- * un string libre a propósito: la UI cura la lista, el contrato no la fija.
+ * El alta es un recorrido de tres pasos: la obra, plazos y moneda, y la pantalla de
+ * "¿por dónde seguimos?" como tercero. Antes era una sola pantalla con todo: la decisión
+ * cambió porque quien llega a crear su primera obra necesita sentirse guiado, y ver una
+ * pared de campos no ayuda. Los campos y las reglas son los mismos
+ * (`createProjectSchema`); sólo cambia cuándo se piden.
  */
-const CURRENCY_OPTIONS = ['ARS', 'USD', 'MXN', 'COP', 'CLP', 'PEN'];
+const STEPS: { key: 'basics' | 'dates'; fields: Field[] }[] = [
+  { key: 'basics', fields: ['name', 'location', 'size'] },
+  { key: 'dates', fields: ['estimatedStartDate', 'estimatedEndDate', 'currency'] },
+];
 
-/**
- * Separador con título entre bloques del formulario. Es un `<h2>` y no un
- * `<p>` con estilo: para quien navega con lector de pantalla, la estructura
- * del formulario es la única pista de cuántas partes tiene.
- */
-function FieldGroup({ title }: { title: string }) {
+/** Los pasos que ve la persona: los del formulario y, de tercero, la pantalla de "¿por dónde seguimos?". */
+const TOTAL_STEPS = STEPS.length + 1;
+
+/** Lo que se ofrece al terminar: la primera actividad es la principal; el resto, otras formas de empezar. */
+const NEXT_STEPS: {
+  key: 'activities' | 'materials' | 'budget' | 'team';
+  icon: LucideIcon;
+  path: (projectId: string) => string;
+}[] = [
+  { key: 'activities', icon: CalendarRange, path: projectActivitiesPath },
+  { key: 'materials', icon: Package, path: projectMaterialsPath },
+  { key: 'budget', icon: Calculator, path: projectBudgetPath },
+  { key: 'team', icon: UserPlus, path: projectTeamPath },
+];
+
+/** Un campo con su etiqueta y su error: la unidad que se repite en cada paso. */
+function FieldRow({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <h2 className="border-b border-border pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground first:pt-0">
-      {title}
-    </h2>
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      {children}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
   );
 }
 
@@ -47,6 +96,16 @@ export function ProjectNewPage() {
   const createProject = useCreateProject();
   const { data: subscription } = useMySubscription();
   const isExtra = nextProjectState(subscription) === 'extra';
+  const [step, setStep] = useState(0);
+  // La pantalla final vive en la URL (`?creada=<id>`) y no en el estado: así un "atrás" del
+  // navegador o una recarga la vuelven a mostrar en vez de dejar un formulario vacío desde el
+  // que es fácil crear la misma obra dos veces.
+  const [searchParams] = useSearchParams();
+  const createdId = searchParams.get('creada');
+  const { data: createdData, isLoading: createdLoading } = useProject(createdId ?? undefined);
+  // Sólo vale si es una obra de esta persona: una obra eliminada, o de otra cuenta, no carga y se
+  // ignora el parámetro (se ve el formulario), en vez de mostrar «¡Tu obra está lista!» con un nombre vacío.
+  const showCreated = Boolean(createdId && createdData);
   // Si el alta choca con la suscripción (se llegó por URL a la cuarta obra en
   // la prueba, o venció), la salida es la pantalla de Suscripción.
   const blockedBySubscription =
@@ -57,8 +116,97 @@ export function ProjectNewPage() {
     register,
     handleSubmit,
     control,
+    trigger,
     formState: { errors },
-  } = useForm<CreateProjectInput>({ resolver: zodResolver(createProjectSchema) });
+  } = useForm<CreateProjectInput>({
+    resolver: zodResolver(createProjectSchema),
+    // Hoy, en hora local: es lo más probable y un campo menos que pensar. La entrega no
+    // tiene valor por defecto: inventarla haría decir a la tarjeta de la obra algo que nadie dijo.
+    defaultValues: { estimatedStartDate: toDayKey(new Date()) },
+  });
+
+  if (createdId && createdLoading) return <LoadingIndicator />;
+
+  if (showCreated && createdId) {
+    return (
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-6 py-6" data-testid="project-created">
+        {/* Tercero de tres: la barra llena y el mismo "Paso X de Y" de los pasos anteriores. */}
+        <div className="flex flex-col gap-3">
+          <ol aria-label={t('project.new.step', { current: TOTAL_STEPS, total: TOTAL_STEPS })} className="flex gap-1.5">
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+              <li key={i} aria-hidden="true" className="h-1.5 flex-1 rounded-full bg-primary" />
+            ))}
+          </ol>
+          <p className="text-center text-xs uppercase tracking-wide text-muted-foreground">
+            {t('project.new.step', { current: TOTAL_STEPS, total: TOTAL_STEPS })}
+          </p>
+        </div>
+        <div className="flex flex-col items-center gap-3 text-center">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <Check aria-hidden className="size-6" />
+          </span>
+          <h2 className="text-2xl leading-tight">{t('project.new.done.title')}</h2>
+          <p className="text-muted-foreground">{t('project.new.done.subtitle', { name: createdData?.project.name ?? '' })}</p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {NEXT_STEPS.map(({ key, icon: Icon, path }, index) => (
+            <Button
+              key={key}
+              asChild
+              size="lg"
+              variant={index === 0 ? 'default' : 'outline'}
+              className="h-auto w-full justify-start py-3"
+            >
+              <Link to={path(createdId)} data-testid={`next-step-${key}`}>
+                <Icon aria-hidden />
+                <span className="flex flex-1 flex-col items-start text-left">
+                  <span>{t(`project.new.done.${key}.title`)}</span>
+                  <span className="text-xs font-normal opacity-80">
+                    {t(`project.new.done.${key}.hint`)}
+                  </span>
+                </span>
+              </Link>
+            </Button>
+          ))}
+          <Button asChild variant="ghost">
+            <Link to={projectDetailPath(createdId)} data-testid="next-step-detail">
+              {t('project.new.done.detail')}
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const current = STEPS[step];
+  const isLast = step === STEPS.length - 1;
+
+  // Si el servidor o el schema rechazan al enviar y el campo con error está en un paso anterior,
+  // se vuelve a ese paso: un error en un campo que no se ve parece un botón que no hace nada.
+  const stepWithError = (fields: Field[]) => STEPS.findIndex((s) => s.fields.some((f) => fields.includes(f)));
+  const submit = handleSubmit(
+    (values) =>
+      createProject.mutate(values, {
+        // `replace`: la pantalla final reemplaza al formulario en el historial.
+        onSuccess: ({ project }) => navigate(`${ROUTES.PROJECT_NEW}?creada=${project.id}`, { replace: true }),
+      }),
+    (invalid) => {
+      const at = stepWithError(Object.keys(invalid) as Field[]);
+      if (at >= 0) setStep(at);
+    },
+  );
+
+  // El primer paso valida sus campos antes de dejar avanzar; el último crea la obra, y el schema
+  // vuelve a validar todo, incluida la entrega contra el inicio (está en el mismo paso).
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!isLast) {
+      if (await trigger(current.fields)) setStep(step + 1);
+      return;
+    }
+    await submit(event);
+  };
 
   return (
     /*
@@ -74,17 +222,20 @@ export function ProjectNewPage() {
       Con `-mx-4` el pie va de borde a borde del área de trabajo.
     */
     <div className="-mx-4 flex h-[calc(100dvh-13.5rem)] flex-col bg-background md:-mb-28 md:h-[calc(100dvh-4.5rem)]">
-      {/*
-        Sin tarjeta ni título propio: el nombre de la sección ya está en el
-        header (ver `Breadcrumbs`), y repetirlo acá gastaba el alto que el
-        formulario necesita. El formulario scrollea y las acciones quedan
-        pegadas al fondo.
-      */}
       <FormShell
         variant="bare"
-        onSubmit={handleSubmit((values) => createProject.mutate(values))}
-        submitLabel={t('project.new.submit')}
-        onCancel={() => navigate(ROUTES.ADMIN)}
+        onSubmit={onSubmit}
+        submitLabel={isLast ? t('project.new.submit') : t('project.new.next')}
+        // Atrás vuelve un paso; en el primero, Cancelar sale al listado.
+        onCancel={() => {
+          if (step === 0) navigate(ROUTES.ADMIN);
+          else {
+            // El banner de una falla del alta no sigue a la persona a los pasos anteriores.
+            createProject.reset();
+            setStep(step - 1);
+          }
+        }}
+        cancelLabel={step === 0 ? undefined : t('project.new.back')}
         isSubmitting={createProject.isPending}
         error={createProject.error}
         errorActions={
@@ -95,92 +246,79 @@ export function ProjectNewPage() {
           ) : undefined
         }
       >
-        {/*
-              Tres bloques en una sola pantalla, no tres pasos.
-              Ocho campos entran de sobra en una vista, ninguno depende de una
-              respuesta anterior y todos son obligatorios salvo el metraje: un
-              asistente agregaría dos clicks y le sacaría a la persona la
-              posibilidad de ver de una el compromiso completo antes de
-              empezar a escribir. Los subtítulos resuelven lo que molestaba
-              —que se leía como una pared— sin ese costo.
-            */}
-        {/* El formulario es una columna angosta y centrada; el pie no. */}
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-2">
           {isExtra && (
             <p className="rounded-2xl border border-info/40 bg-info/10 px-4 py-3 text-sm">
               {t('project.new.extraNotice')}
             </p>
           )}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="name">{t('project.fields.name')}</Label>
-            <Input aria-invalid={Boolean(errors.name)} id="name" {...register('name')} />
-            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+
+          {/* Dónde está la persona: el nombre del paso, cuántos faltan y una barra. */}
+          <div className="flex flex-col gap-3" data-testid="project-new-progress">
+            <ol
+              aria-label={t('project.new.step', { current: step + 1, total: TOTAL_STEPS })}
+              className="flex gap-1.5"
+            >
+              {[...STEPS.map((s) => s.key), 'done'].map((key, i) => (
+                <li
+                  key={key}
+                  aria-hidden="true"
+                  className={cn('h-1.5 flex-1 rounded-full transition-colors', i <= step ? 'bg-primary' : 'bg-border')}
+                />
+              ))}
+            </ol>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t('project.new.step', { current: step + 1, total: TOTAL_STEPS })}
+              </p>
+              <h2 className="text-2xl leading-tight">{t(`project.new.steps.${current.key}.title`)}</h2>
+              <p className="text-muted-foreground">{t(`project.new.steps.${current.key}.hint`)}</p>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="description">{t('project.fields.description')}</Label>
-            <Textarea
-              aria-invalid={Boolean(errors.description)}
-              id="description"
-              rows={3}
-              {...register('description')}
-            />
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description.message}</p>
-            )}
-          </div>
+          {current.key === 'basics' && (
+            <>
+              <FieldRow id="name" label={t('project.fields.name')} error={errors.name?.message}>
+                <Input aria-invalid={Boolean(errors.name)} id="name" autoFocus {...register('name')} />
+              </FieldRow>
+              <FieldRow id="location" label={t('project.fields.location')} error={errors.location?.message}>
+                <Input aria-invalid={Boolean(errors.location)} id="location" {...register('location')} />
+              </FieldRow>
+              <FieldRow id="size" label={t('project.fields.size')} error={errors.size?.message}>
+                <Input id="size" {...register('size')} />
+              </FieldRow>
+            </>
+          )}
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="location">{t('project.fields.location')}</Label>
-            <Input
-              aria-invalid={Boolean(errors.location)}
-              id="location"
-              {...register('location')}
-            />
-            {errors.location && (
-              <p className="text-sm text-destructive">{errors.location.message}</p>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="size">{t('project.fields.size')}</Label>
-            <Input id="size" {...register('size')} />
-          </div>
-
-          <FieldGroup title={t('project.new.sections.when')} />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="estimatedStartDate">{t('project.fields.startDate')}</Label>
-              <Input
-                aria-invalid={Boolean(errors.estimatedStartDate)}
+          {current.key === 'dates' && (
+            <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FieldRow
                 id="estimatedStartDate"
-                type="date"
-                {...register('estimatedStartDate')}
-              />
-              {errors.estimatedStartDate && (
-                <p className="text-sm text-destructive">{errors.estimatedStartDate.message}</p>
-              )}
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="estimatedEndDate">{t('project.fields.endDate')}</Label>
-              <Input
-                aria-invalid={Boolean(errors.estimatedEndDate)}
+                label={t('project.fields.startDate')}
+                error={errors.estimatedStartDate?.message}
+              >
+                <Input
+                  aria-invalid={Boolean(errors.estimatedStartDate)}
+                  id="estimatedStartDate"
+                  type="date"
+                  {...register('estimatedStartDate')}
+                />
+              </FieldRow>
+              <FieldRow
                 id="estimatedEndDate"
-                type="date"
-                {...register('estimatedEndDate')}
-              />
-              {errors.estimatedEndDate && (
-                <p className="text-sm text-destructive">{errors.estimatedEndDate.message}</p>
-              )}
+                label={t('project.fields.endDate')}
+                error={errors.estimatedEndDate?.message}
+              >
+                <Input
+                  aria-invalid={Boolean(errors.estimatedEndDate)}
+                  id="estimatedEndDate"
+                  type="date"
+                  {...register('estimatedEndDate')}
+                />
+              </FieldRow>
             </div>
-          </div>
-
-          <FieldGroup title={t('project.new.sections.money')} />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="currency">{t('project.fields.currency')}</Label>
+            <FieldRow id="currency" label={t('project.fields.currency')} error={errors.currency?.message}>
               <Controller
                 control={control}
                 name="currency"
@@ -199,11 +337,9 @@ export function ProjectNewPage() {
                   </Select>
                 )}
               />
-              {errors.currency && (
-                <p className="text-sm text-destructive">{errors.currency.message}</p>
-              )}
-            </div>
-          </div>
+            </FieldRow>
+            </>
+          )}
         </div>
       </FormShell>
     </div>

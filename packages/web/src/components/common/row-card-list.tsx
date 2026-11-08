@@ -92,7 +92,7 @@ export function RowCardEnd({ className, ...props }: ComponentProps<'div'>) {
 }
 
 const LEAD_TONE = {
-  neutral: 'bg-muted text-foreground',
+  neutral: 'bg-secondary text-foreground',
   brand: 'bg-primary/15 text-foreground',
   success: 'bg-success/10 text-success',
   warning: 'bg-warning/10 text-warning',

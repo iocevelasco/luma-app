@@ -178,6 +178,12 @@ export interface ProjectListResponse {
   projects: ProjectListItem[];
   /** Obras en la papelera donde la persona es miembro invitado (no las suyas). */
   removedProjects: RemovedProjectNotice[];
+  /**
+   * La API ya resolvió que esta persona llegó a gestionar su propia obra y todavía no creó
+   * ninguna (cuenta `noProject` del censo, sin obras): el inicio la lleva derecho al alta.
+   * La UI no lo deriva de "0 obras", que también describe a un cliente o un empleado.
+   */
+  firstProjectPrompt: boolean;
 }
 
 export interface ProjectDetailResponse {

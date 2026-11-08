@@ -219,10 +219,14 @@ function EngagementForm({
         <Label>{t('engagement.fields.requirements')}</Label>
         <div className="flex flex-col gap-2 rounded-md border border-input p-3">
           {STANDARD_REQUIREMENTS.map((type) => (
-            <label key={type} className="flex items-center gap-2 text-sm">
-              <Checkbox checked={selectedTypes.has(type)} onCheckedChange={() => toggleType(type)} />
+            <Checkbox
+              key={type}
+              checked={selectedTypes.has(type)}
+              onCheckedChange={() => toggleType(type)}
+              className="text-sm"
+            >
               {t(`engagement.requirement.${type}`)}
-            </label>
+            </Checkbox>
           ))}
         </div>
       </div>
@@ -324,19 +328,20 @@ function EngagementCard({
               : t('engagement.requirementsPending', { count: pending })}
           </p>
           {engagement.requirements.map((requirement) => (
-            <label key={requirement.id} className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={requirement.met}
-                onCheckedChange={(next) =>
-                  setRequirementMet.mutate({
-                    engagementId: engagement.id,
-                    requirementId: requirement.id,
-                    met: next === true,
-                  })
-                }
-              />
+            <Checkbox
+              key={requirement.id}
+              checked={requirement.met}
+              onCheckedChange={(next) =>
+                setRequirementMet.mutate({
+                  engagementId: engagement.id,
+                  requirementId: requirement.id,
+                  met: next === true,
+                })
+              }
+              className="text-sm"
+            >
               {requirement.detail ?? t(`engagement.requirement.${requirement.type}`)}
-            </label>
+            </Checkbox>
           ))}
         </div>
       )}

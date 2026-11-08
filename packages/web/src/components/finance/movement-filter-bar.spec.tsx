@@ -80,10 +80,8 @@ describe('MovementFilterBar — compacto', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Descargar PDF' }));
     expect(onAction).toHaveBeenCalledOnce();
-    // En jsdom no hay animación de salida, así que el contenido sigue en el DOM: se mira su estado.
-    await vi.waitFor(() =>
-      expect(document.querySelector('[data-slot=drawer-content]')?.getAttribute('data-state')).toBe('closed'),
-    );
+    // El Drawer de HeroUI (React Aria) desmonta el panel al cerrarse.
+    await vi.waitFor(() => expect(document.querySelector('[data-slot=drawer-content]')).toBeNull());
   });
 
   it('Quitar filtros vive en el pie del panel y no lo cierra', async () => {

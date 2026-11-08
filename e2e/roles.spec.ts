@@ -32,6 +32,17 @@ const SECTIONS = [
 
 type Section = (typeof SECTIONS)[number];
 
+/** Los destinos del riel y las secciones que cada uno agrupa (inventario no se afirma acá). */
+const SECTION_GROUPS: readonly { group: string; sections: readonly Section[] }[] = [
+  { group: 'overview', sections: ['detail'] },
+  { group: 'work', sections: ['activities'] },
+  { group: 'milestones', sections: ['milestones'] },
+  { group: 'labor', sections: ['labor', 'team'] },
+  { group: 'supply', sections: ['materials', 'providers'] },
+  { group: 'money', sections: ['payments', 'expenses', 'budget'] },
+  { group: 'documents', sections: ['documents'] },
+];
+
 const VISIBLE_SECTIONS: Record<E2EProjectRoleKey, readonly Section[]> = {
   gerente: SECTIONS,
   // Reporta, no maneja plata ni accesos.
@@ -61,13 +72,25 @@ for (const [role, visible] of Object.entries(VISIBLE_SECTIONS) as [
       // detalle: alcanza con estar dentro de la obra.
       await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+/);
 
-      // Primero las que tiene: esperan a que lleguen las capacidades. Recién
-      // ahí tiene sentido afirmar que las otras no están.
-      for (const section of visible) {
-        await expect(page.getByTestId(`project-nav-${section}`)).toBeVisible();
+      // El riel muestra grupos; las secciones de cada uno son pestañas arriba de la pantalla.
+      // Primero lo que tiene: espera a que lleguen las capacidades. Recién ahí tiene sentido
+      // afirmar que lo otro no está.
+      const withAccess = SECTION_GROUPS.filter(({ sections }) => sections.some((s) => visible.includes(s)));
+      for (const { group, sections } of withAccess) {
+        const group$ = page.getByTestId(`project-group-${group}`);
+        await expect(group$).toBeVisible();
+        const mine = sections.filter((s) => visible.includes(s));
+        // Con una sola sección no hay pestañas: el grupo lleva directo a ella.
+        if (mine.length < 2) continue;
+        await group$.click();
+        for (const section of sections) {
+          const tab = page.getByTestId(`project-nav-${section}`);
+          if (mine.includes(section)) await expect(tab).toBeVisible();
+          else await expect(tab).toHaveCount(0);
+        }
       }
-      for (const section of SECTIONS.filter((s) => !visible.includes(s))) {
-        await expect(page.getByTestId(`project-nav-${section}`)).toHaveCount(0);
+      for (const { group } of SECTION_GROUPS.filter((g) => !withAccess.includes(g))) {
+        await expect(page.getByTestId(`project-group-${group}`)).toHaveCount(0);
       }
     });
   });

@@ -23,7 +23,7 @@ import {
   useCreateCustomSpecialty,
   useUpdateCustomSpecialty,
 } from '@/hooks/projects/use-project-queries';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { errorMessage } from '@/lib/error-message';
 import { cn } from '@/lib/utils';
 import { FormDrawer } from '@/components/common/form-drawer';

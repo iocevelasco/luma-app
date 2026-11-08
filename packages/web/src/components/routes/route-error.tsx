@@ -48,7 +48,7 @@ export function RouteError({ error, resetErrorBoundary }: RouteErrorProps) {
         </CardHeader>
         {error && (
           <CardContent>
-            <div className="rounded-md bg-muted p-3">
+            <div className="rounded-md bg-secondary p-3">
               <p className="text-sm font-mono text-muted-foreground break-all">
                 {error.message || t('routeError.unknown')}
               </p>

@@ -21,6 +21,7 @@ import {
   confirmManagerSlot,
 } from '../services/project-managers.service.js';
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
+import { firstProjectPrompt } from '../services/first-project.service.js';
 import { removedProjectsForMember } from '../services/project-deletion.service.js';
 import { decideProjectCreation, statesFor } from '../services/subscription.service.js';
 import { syncStripeExtras } from '../services/stripe.service.js';
@@ -47,7 +48,7 @@ export function toProjectDTO(project: IProject): ProjectDTO {
     organizationId: String(project.organization),
     createdBy: String(project.createdBy),
     name: project.name,
-    description: project.description,
+    description: project.description ?? '',
     location: project.location,
     size: project.size,
     estimatedStartDate: project.estimatedStartDate,
@@ -178,6 +179,7 @@ export async function listProjects(req: Request, res: Response) {
       success: true,
       data: {
         removedProjects: await removedProjectsForMember(userId),
+        firstProjectPrompt: await firstProjectPrompt(userId, projects.length),
         projects: projects.map((project) => {
           // El dueño no tiene fila: sale de `createdBy` y gana sobre cualquier
           // membresía (mismo criterio que `requireProjectAccess`). Otro gerente

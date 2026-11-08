@@ -1,9 +1,11 @@
 import fs from 'node:fs';
+import { createProjectViaForm } from './helpers/projects';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { addCrewMember, addTask, boardColumn, moveTask, openBoard, taskCard } from './helpers/crew';
 import { requiresApi } from './helpers/api';
+import { tick } from './helpers/checkbox';
 
 /**
  * Una tarea es UNA entidad: lo que se crea en el Tablero aparece en el
@@ -41,14 +43,13 @@ async function startProject(
   await loginWith(page, email, PASSWORD);
 
   await page.goto(appUrl('/admin/proyectos/nuevo'));
-  await page.locator('#name').fill(`Obra tareas ${label} ${RUN_ID}`);
-  await page.locator('#description').fill('Obra para probar las tareas.');
-  await page.locator('#location').fill('CABA');
-  await page.locator('#estimatedStartDate').fill(start);
-  await page.locator('#estimatedEndDate').fill('2027-12-15');
-  await page.locator('#currency').click();
-  await page.getByRole('option', { name: 'ARS' }).click();
-  await page.getByRole('button', { name: /crear obra/i }).click();
+  await createProjectViaForm(page, {
+    name: `Obra tareas ${label} ${RUN_ID}`,
+    location: 'CABA',
+    start: start,
+    end: '2027-12-15',
+    currency: 'ARS',
+  });
   await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
   return page.url();
 }
@@ -274,7 +275,7 @@ test.describe('tareas', () => {
 
     // --- Se pone un filtro: el aviso aparece y el Cronograma se recorta ---
     await page.getByTestId('activity-filters-button').click();
-    await page.getByRole('checkbox', { name: /^atrasadas$/i }).click();
+    await tick(page.getByRole('checkbox', { name: /^atrasadas$/i })).click();
     await page.keyboard.press('Escape');
     const notice = page.getByTestId('activity-filters-notice');
     await expect(notice).toContainText(/1 filtro activo/i);
@@ -295,7 +296,7 @@ test.describe('tareas', () => {
 
     // --- Un filtro que deja todo afuera lo dice, en vez de mostrar una obra vacía ---
     await page.getByTestId('activity-filters-button').click();
-    await page.getByRole('checkbox', { name: /^completada$/i }).click();
+    await tick(page.getByRole('checkbox', { name: /^completada$/i })).click();
     await page.keyboard.press('Escape');
     await expect(page.getByText(/nada coincide con los filtros/i)).toBeVisible();
     await expect(notice).toContainText(/2 filtros activos/i);
@@ -381,13 +382,14 @@ test.describe('tareas', () => {
 
       const chart = (await gantt.boundingBox())!;
       const main = (await page.locator('main').boundingBox())!;
-      // Sin un hueco grande abajo: el diagrama termina a pocos píxeles del borde del área.
+      // Sin un hueco grande abajo: el diagrama termina a poco del borde del área, salvo el lugar
+      // del grupo de acciones (4.5rem = 72px), que `PageLayout` le reserva en `fill`.
       // En el celular `<main>` reserva su propio relleno (`pb-24`), así que sólo se mide en escritorio.
       if ((page.viewportSize()?.width ?? 0) >= 768) {
         expect(
           main.y + main.height - (chart.y + chart.height),
           'el diagrama deja un hueco abajo',
-        ).toBeLessThanOrEqual(24);
+        ).toBeLessThanOrEqual(24 + 72);
       }
 
       // La fila de la tarea, la última real, queda por encima del botón.
@@ -721,7 +723,7 @@ test.describe('tareas', () => {
 
     await expect.poll(() => attempts, 'no se llegó a pedir el cambio').toBeGreaterThan(0);
     // Una falla sin formulario detrás va por toast, no por banner.
-    await expect(page.locator('[data-sonner-toast][data-type="error"]')).toBeVisible();
+    await expect(page.locator('[data-slot="toast"].toast--danger')).toBeVisible();
     await expect(cardIn(page, /^pendiente$/i, name)).toBeVisible();
     await expect(cardIn(page, /^en curso$/i, name)).toHaveCount(0);
 

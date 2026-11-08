@@ -32,7 +32,7 @@ const badgeVariants = cva(
         danger: 'bg-tag-danger-bg text-tag-danger-fg [a&]:hover:brightness-95',
         solid: 'bg-tag-solid-bg text-tag-solid-fg [a&]:hover:brightness-110',
         outline:
-          'border-border text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+          'border-border text-foreground [a&]:hover:bg-secondary [a&]:hover:text-secondary-foreground',
       },
     },
     defaultVariants: {

@@ -1,4 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSection } from './helpers/nav';
+import { alertDialog } from './helpers/dialog';
+import { createProjectViaForm } from './helpers/projects';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
 
@@ -20,22 +23,20 @@ requiresApi();
 
 async function createProject(page: Page, name: string) {
   await page.goto(appUrl('/admin'));
-  await page.getByRole('link', { name: /nueva obra/i }).click();
-  await page.locator('#name').fill(name);
-  await page.locator('#description').fill('Obra para el depósito.');
-  await page.locator('#location').fill('CABA');
-  await page.locator('#estimatedStartDate').fill('2026-09-01');
-  await page.locator('#estimatedEndDate').fill('2026-12-15');
-  await page.locator('#currency').click();
-  await page.getByRole('option', { name: 'ARS' }).click();
-  await page.getByRole('button', { name: /crear obra/i }).click();
+  await createProjectViaForm(page, {
+    name: name,
+    location: 'CABA',
+    start: '2026-09-01',
+    end: '2026-12-15',
+    currency: 'ARS',
+  });
   await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 }
 
 async function advance(page: Page, button: RegExp) {
   await page.getByRole('button', { name: button }).first().click();
   await page.getByRole('button', { name: /continuar/i }).click();
-  await expect(page.getByRole('alertdialog')).toBeHidden();
+  await expect(alertDialog(page)).toBeHidden();
 }
 
 test.describe('depósito general', () => {
@@ -48,7 +49,7 @@ test.describe('depósito general', () => {
 
     // --- Obra de origen: 10 bolsas llegan al patio.
     await createProject(page, SOURCE);
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     await page.getByRole('button', { name: /(añadir|agregar) material/i }).click();
     await page.locator('#material-name').fill(MATERIAL);
     await page.locator('#material-quantity').fill('10');
@@ -62,7 +63,7 @@ test.describe('depósito general', () => {
     await advance(page, /llegó a obra/i);
 
     // --- Mandar 4 al Depósito, con un costo de referencia de 9.
-    await page.getByRole('link', { name: /^inventario$/i }).click();
+    await openSection(page, 'inventory');
     const row = page.getByRole('listitem').filter({ hasText: MATERIAL });
     await expect(row).toContainText('10');
     await row.getByRole('button', { name: /más acciones/i }).click();
@@ -84,13 +85,15 @@ test.describe('depósito general', () => {
 
     // --- Otra obra lo importa: costo 0, y el flete es un gasto suyo.
     await createProject(page, TARGET);
-    await page.getByRole('link', { name: /^inventario$/i }).click();
+    await openSection(page, 'inventory');
     await expect(page.getByText(/(aún|todavía) no hay material en el patio/i)).toBeVisible();
     await page.getByRole('button', { name: /importar del depósito/i }).click();
     await page.getByLabel(new RegExp(`cantidad de ${MATERIAL} a importar`, 'i')).fill('3');
     // Con coma decimal, como se escribe en es-ES, es-AR y pt.
     await page.locator('#freight-amount').fill('50,5');
     await page.getByRole('button', { name: /^importar$/i }).click();
+    // El drawer sale con animación: mientras tanto su lista (con el mismo material) sigue en el DOM.
+    await expect(page.getByRole('dialog')).toBeHidden();
     const imported = page.getByRole('listitem').filter({ hasText: MATERIAL });
     await expect(imported).toContainText('3');
 
@@ -99,7 +102,7 @@ test.describe('depósito general', () => {
     await expect(page.getByRole('listitem').filter({ hasText: /del depósito/i })).toContainText('+3');
 
     // El flete aparece como gasto de esta obra.
-    await page.getByRole('link', { name: /^gastos$/i }).click();
+    await openSection(page, 'expenses');
     await expect(page.getByText(/flete de traslado/i)).toBeVisible();
 
     // --- El Depósito quedó con 1 y el ahorro es 3 × 9 = 27, en la obra destino.

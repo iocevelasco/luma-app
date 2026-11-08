@@ -1,8 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createProjectViaForm } from './helpers/projects';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
 import { addCrewMember } from './helpers/crew';
-import { attachDialog } from './helpers/dialog';
+import { attachDialog, alertDialog } from './helpers/dialog';
 
 /**
  * Nada se borra al primer toque: el botón abre una confirmación que nombra lo
@@ -26,14 +27,13 @@ async function startProject(page: Page, label: string): Promise<string> {
   await expect(page).toHaveURL(/\/admin$/);
 
   await page.goto(appUrl('/admin/proyectos/nuevo'));
-  await page.locator('#name').fill(`Obra borrados ${label} ${RUN_ID}`);
-  await page.locator('#description').fill('Obra para probar las confirmaciones de borrado.');
-  await page.locator('#location').fill('CABA');
-  await page.locator('#estimatedStartDate').fill('2026-09-01');
-  await page.locator('#estimatedEndDate').fill('2026-12-15');
-  await page.locator('#currency').click();
-  await page.getByRole('option', { name: 'ARS' }).click();
-  await page.getByRole('button', { name: /crear obra/i }).click();
+  await createProjectViaForm(page, {
+    name: `Obra borrados ${label} ${RUN_ID}`,
+    location: 'CABA',
+    start: '2026-09-01',
+    end: '2026-12-15',
+    currency: 'ARS',
+  });
   await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
   return page.url();
 }
@@ -51,15 +51,16 @@ test.describe('borrar pide confirmación', () => {
     await expect(page.getByText(EXPENSE)).toBeVisible();
 
     await page.getByRole('button', { name: /eliminar gasto/i }).click();
-    const expenseDialog = page.getByRole('alertdialog');
+    const expenseDialog = alertDialog(page);
     await expect(expenseDialog).toContainText(EXPENSE);
     await expect(expenseDialog).toContainText(/no se puede deshacer/i);
     await attachDialog(page, 'gasto');
     await expenseDialog.getByRole('button', { name: /cancelar/i }).click();
+    await expect(alertDialog(page)).toBeHidden();
     await expect(page.getByText(EXPENSE)).toBeVisible();
 
     await page.getByRole('button', { name: /eliminar gasto/i }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: /eliminar gasto/i }).click();
+    await alertDialog(page).getByRole('button', { name: /eliminar gasto/i }).click();
     await expect(page.getByText(EXPENSE)).toHaveCount(0);
 
     // --- Cuota y cobro ---
@@ -79,18 +80,18 @@ test.describe('borrar pide confirmación', () => {
     await expect(page.getByRole('button', { name: /eliminar cobro/i })).toBeVisible();
 
     await page.getByRole('button', { name: /eliminar cobro/i }).click();
-    const paymentDialog = page.getByRole('alertdialog');
+    const paymentDialog = alertDialog(page);
     await expect(paymentDialog).toContainText(/eliminar este cobro/i);
     await attachDialog(page, 'cobro');
     await paymentDialog.getByRole('button', { name: /cancelar/i }).click();
     await expect(page.getByRole('button', { name: /eliminar cobro/i })).toBeVisible();
 
     await page.getByRole('button', { name: /eliminar cobro/i }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: /eliminar cobro/i }).click();
+    await alertDialog(page).getByRole('button', { name: /eliminar cobro/i }).click();
     await expect(page.getByRole('button', { name: /eliminar cobro/i })).toHaveCount(0);
 
     await page.getByRole('button', { name: /eliminar cuota/i }).click();
-    const installmentDialog = page.getByRole('alertdialog');
+    const installmentDialog = alertDialog(page);
     await expect(installmentDialog).toContainText(INSTALLMENT);
     await attachDialog(page, 'cuota');
     await installmentDialog.getByRole('button', { name: /eliminar cuota/i }).click();
@@ -108,14 +109,14 @@ test.describe('borrar pide confirmación', () => {
     await expect(roster.getByText(worker)).toBeVisible();
 
     await roster.getByRole('button', { name: /sacar de la obra/i }).click();
-    const confirm = page.getByRole('alertdialog');
+    const confirm = alertDialog(page);
     await expect(confirm).toContainText(worker);
     await attachDialog(page, 'plantel');
     await confirm.getByRole('button', { name: /cancelar/i }).click();
     await expect(roster.getByText(worker)).toBeVisible();
 
     await roster.getByRole('button', { name: /sacar de la obra/i }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: /sacar de la obra/i }).click();
+    await alertDialog(page).getByRole('button', { name: /sacar de la obra/i }).click();
     await expect(roster.getByText(worker)).toHaveCount(0);
   });
 });

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { tick } from './helpers/checkbox';
 import { appUrl } from './helpers/auth';
 
 /**
@@ -29,7 +30,7 @@ test.describe('login', () => {
 
   test('llega a recuperar contraseña desde el login', async ({ page }) => {
     await page.goto(appUrl('/login'));
-    await page.getByRole('link', { name: /has olvidado/i }).click();
+    await page.getByRole('link', { name: /(has olvidado|olvidaste)/i }).click();
 
     await expect(page).toHaveURL(/\/forgot-password/);
     await expect(page.locator('#email')).toBeVisible();
@@ -71,7 +72,7 @@ test.describe('términos y privacidad', () => {
     await expect(dialog.getByRole('checkbox')).not.toBeChecked();
     await expect(confirm).toBeDisabled();
 
-    await dialog.getByRole('checkbox').check();
+    await tick(dialog.getByRole('checkbox')).click();
     await expect(confirm).toBeEnabled();
   });
 

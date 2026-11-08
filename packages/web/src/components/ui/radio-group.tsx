@@ -1,44 +1,60 @@
 'use client'
 
 import * as React from 'react'
-import * as RadioGroupPrimitive from '@radix-ui/react-radio-group'
-import { CircleIcon } from 'lucide-react'
+import { Radio, RadioGroup as HeroRadioGroup } from '@heroui/react'
 
 import { cn } from '@/lib/utils'
 
-function RadioGroup({
-  className,
-  ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
+type RadioGroupProps = Omit<
+  React.ComponentProps<typeof HeroRadioGroup>,
+  'onChange' | 'isDisabled' | 'className' | 'children'
+> & {
+  className?: string
+  onValueChange?: (value: string) => void
+  disabled?: boolean
+  children?: React.ReactNode
+}
+
+// ADR-003: RadioGroup de HeroUI (React Aria). `onValueChange` pasa a `onChange`
+// y `disabled` a `isDisabled`; `value`/`defaultValue` se mantienen.
+function RadioGroup(allProps: RadioGroupProps) {
+  const { className, onValueChange, disabled, children, value, ...props } = allProps
+  // Controlado si `value` está presente, aunque valga `undefined` (nada elegido todavía).
+  const controlled = 'value' in allProps
   return (
-    <RadioGroupPrimitive.Root
-      data-slot="radio-group"
+    <HeroRadioGroup
+      value={controlled ? (value ?? null) : undefined}
+      onChange={onValueChange}
+      isDisabled={disabled}
       className={cn('grid gap-3', className)}
       {...props}
-    />
+    >
+      {children}
+    </HeroRadioGroup>
   )
 }
 
-function RadioGroupItem({
-  className,
-  ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+type RadioGroupItemProps = Omit<
+  React.ComponentProps<typeof Radio>,
+  'isDisabled' | 'className' | 'children'
+> & {
+  className?: string
+  disabled?: boolean
+  children?: React.ReactNode
+}
+
+// El texto de la opción va como `children`: el área clicable es una sola
+// (`Radio.Content`); ya no se envuelve en un `<label>` aparte.
+function RadioGroupItem({ className, disabled, children, ...props }: RadioGroupItemProps) {
   return (
-    <RadioGroupPrimitive.Item
-      data-slot="radio-group-item"
-      className={cn(
-        'border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
-        className,
-      )}
-      {...props}
-    >
-      <RadioGroupPrimitive.Indicator
-        data-slot="radio-group-indicator"
-        className="relative flex items-center justify-center"
-      >
-        <CircleIcon className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
-      </RadioGroupPrimitive.Indicator>
-    </RadioGroupPrimitive.Item>
+    <Radio isDisabled={disabled} className={cn('w-fit', className)} {...props}>
+      <Radio.Content>
+        <Radio.Control>
+          <Radio.Indicator />
+        </Radio.Control>
+        {children}
+      </Radio.Content>
+    </Radio>
   )
 }
 

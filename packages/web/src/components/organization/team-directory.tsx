@@ -7,7 +7,7 @@ import { CrewList } from '@/components/crew/crew-list';
 import { PageLayout } from '@/components/layout/page-layout';
 import { InviteMemberDialog, StaffList } from '@/components/organization/organization-panel';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useOrganizationCrew,
   useOrganizationMembers,
@@ -40,19 +40,32 @@ export function TeamDirectory() {
 
   const staffCount = staffData?.members.length ?? 0;
   const crewCount = crewData?.crewMembers.length ?? 0;
+  // La pestaña abierta sin nadie: el botón de sumar va dentro del vacío (`PageLayout empty`).
+  const currentEmpty =
+    tab === 'crew'
+      ? crewData !== undefined && crewCount === 0
+        ? { icon: HardHat, title: t('directory.crewEmpty') }
+        : undefined
+      : staffData !== undefined && staffCount === 0
+        ? { icon: Briefcase, title: t('team.empty') }
+        : undefined;
 
   return (
-    <Tabs value={tab} onValueChange={(value) => setTab(value as TeamTab)}>
     <PageLayout
+      empty={currentEmpty}
       toolbar={
-        <TabsList>
-          <TabsTrigger value="crew" icon={HardHat}>
-            {t('team.groupCrew')} ({crewCount})
-          </TabsTrigger>
-          <TabsTrigger value="staff" icon={Briefcase}>
-            {t('team.groupStaff')} ({staffCount})
-          </TabsTrigger>
-        </TabsList>
+        // Las pestañas van en su propio `Tabs`: con `PageLayout` adentro, React Aria arma la
+        // colección renderizando los hijos dos veces y el dock (un portal) salía duplicado.
+        <Tabs value={tab} onValueChange={(value) => setTab(value as TeamTab)}>
+          <TabsList>
+            <TabsTrigger value="crew" icon={HardHat}>
+              {t('team.groupCrew')} ({crewCount})
+            </TabsTrigger>
+            <TabsTrigger value="staff" icon={Briefcase}>
+              {t('team.groupStaff')} ({staffCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       }
       action={
         <Button
@@ -70,17 +83,16 @@ export function TeamDirectory() {
         </Button>
       }
     >
-        <TabsContent value="crew">
-          <CrewList
-            onEdit={(member) => {
-              setEditingCrew(member);
-              setCrewDrawerOpen(true);
-            }}
-          />
-        </TabsContent>
-        <TabsContent value="staff">
-          <StaffList />
-        </TabsContent>
+      {tab === 'crew' ? (
+        <CrewList
+          onEdit={(member) => {
+            setEditingCrew(member);
+            setCrewDrawerOpen(true);
+          }}
+        />
+      ) : (
+        <StaffList />
+      )}
 
       <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} />
       <CrewDrawer
@@ -92,6 +104,5 @@ export function TeamDirectory() {
         }}
       />
     </PageLayout>
-    </Tabs>
   );
 }

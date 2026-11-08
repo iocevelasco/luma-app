@@ -38,7 +38,7 @@ export function AuthSplitLayout({ children, width = 'sm' }: AuthSplitLayoutProps
       <GridBackground size={4} opacity={0.02} />
       <div className="relative grid h-full overflow-hidden rounded-3xl text-card-foreground shadow-[var(--shadow-surface)] lg:grid-cols-2">
         <aside className="relative hidden bg-card p-3 lg:block">
-          <div className="relative h-full overflow-hidden rounded-2xl bg-muted">
+          <div className="relative h-full overflow-hidden rounded-2xl bg-secondary">
             {/* `lazy`: bajo `lg` el panel está oculto y así el navegador no la descarga. */}
             <img
               src={`${baseUrl}auth/hero-desktop.webp`}

@@ -98,7 +98,7 @@ function SearchWithSuggestions({
             <li key={name} role="option" aria-selected={false}>
               <button
                 type="button"
-                className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+                className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm hover:bg-secondary focus-visible:bg-secondary focus-visible:outline-none"
                 onClick={() => onChange(name)}
               >
                 <Search aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
@@ -377,7 +377,11 @@ export function ActivityFilterControls({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex max-h-[70dvh] w-80 flex-col gap-5 overflow-y-auto">
+        <PopoverContent
+          align="start"
+          aria-label={t('activity.filters.button')}
+          className="flex max-h-[70dvh] w-80 flex-col gap-5 overflow-y-auto"
+        >
           <FilterGroups
             filters={filters}
             onChange={onChange}
@@ -472,11 +476,10 @@ export function ActiveFiltersNotice({
     <div
       role="status"
       data-testid="activity-filters-notice"
-      // Flota abajo a la izquierda, frente a la acción principal (que va abajo a la
-      // derecha): no ocupa lugar en la pantalla, así que ponerlo o quitarlo no
-      // mueve la lista, el tablero ni el cronograma. `left` deja pasar la barra de
-      // secciones (4rem) y `right`, el botón principal.
-      className="pointer-events-none fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-40 z-30 md:bottom-8 md:left-24 md:right-52"
+      // Flota abajo, justo encima del grupo de acciones (que va abajo al centro): no ocupa
+      // lugar en la pantalla, así que ponerlo o quitarlo no mueve la lista, el tablero ni
+      // el cronograma. `bottom` deja pasar el botón principal (2.75rem de alto + aire).
+      className="pointer-events-none fixed bottom-[calc(1rem+2.75rem+0.75rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 md:bottom-[calc(2rem+2.75rem+0.75rem)] md:left-28 md:right-8"
     >
       <div className="pointer-events-auto flex w-fit max-w-full items-center gap-2 overflow-x-auto rounded-lg bg-card py-1.5 pl-4 pr-2 text-sm shadow-lg">
         <span className="shrink-0 whitespace-nowrap text-muted-foreground">
@@ -485,7 +488,7 @@ export function ActiveFiltersNotice({
         {chips.map((chip) => (
           <span
             key={chip.id}
-            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md bg-muted py-1 pl-3 pr-1 text-xs"
+            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md bg-secondary py-1 pl-3 pr-1 text-xs"
           >
             {chip.label}
             <button

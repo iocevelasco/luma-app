@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
+import { createProjectViaForm } from './helpers/projects';
+import { alertDialog } from './helpers/dialog';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { requiresApi } from './helpers/api';
@@ -33,18 +36,16 @@ test.describe('planificación semanal y materiales', () => {
     await loginWith(page, OWNER_EMAIL, PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(PROJECT_NAME);
-    await page.locator('#description').fill('Obra para probar actividades y materiales.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: PROJECT_NAME,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
@@ -72,7 +73,7 @@ test.describe('planificación semanal y materiales', () => {
 
     // Evidencia fotográfica (RF-04): sin storage configurado en este entorno,
     // igual tiene que renderizar el vacío en vez de romper la pantalla.
-    await expect(detailDialog.getByText(/todavía no se han subido fotos/i)).toBeVisible();
+    await expect(detailDialog.getByText(/todavía no se (han subido|subieron) fotos/i)).toBeVisible();
     await expect(detailDialog.getByRole('button', { name: /agregar foto/i })).toBeVisible();
 
     await detailDialog.getByRole('button', { name: /atrás/i }).click();
@@ -80,7 +81,7 @@ test.describe('planificación semanal y materiales', () => {
 
     // Agrega un material asociado a esa actividad.
     await page.goto(page.url().replace(/\/actividades$/, ''));
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     await expect(page).toHaveURL(/\/materiales$/);
 
     // El alta vive en el drawer lateral, no en la cabecera de la página.
@@ -101,13 +102,13 @@ test.describe('planificación semanal y materiales', () => {
     await expect(toBuy.getByText(MATERIAL_NAME)).toBeVisible();
     await toBuy.getByRole('button', { name: /marcar solicitado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
-    await expect(page.getByRole('alertdialog')).toBeHidden();
+    await expect(alertDialog(page)).toBeHidden();
 
     // Sigue por comprar (solicitado todavía no es comprado); al marcarlo
     // comprado pasa a la otra pestaña.
     await toBuy.getByRole('button', { name: /marcar comprado/i }).click();
     await page.getByRole('button', { name: /continuar/i }).click();
-    await expect(page.getByRole('alertdialog')).toBeHidden();
+    await expect(alertDialog(page)).toBeHidden();
     // Antes de cambiar de pestaña: la inactiva se desmonta, y ahí un conteo en
     // cero no probaría nada.
     await expect(toBuy.getByText(MATERIAL_NAME)).toHaveCount(0);

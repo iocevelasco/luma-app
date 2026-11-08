@@ -21,6 +21,14 @@ describe('createProjectSchema', () => {
     expect(createProjectSchema.safeParse(validProject).success).toBe(true);
   });
 
+  it('no pide descripción: se ocultó del alta, y sólo se rechaza si es demasiado larga', () => {
+    const { description: _omitida, ...sinDescripcion } = validProject;
+    expect(createProjectSchema.safeParse(sinDescripcion).success).toBe(true);
+    expect(
+      createProjectSchema.safeParse({ ...validProject, description: 'x'.repeat(2001) }).success,
+    ).toBe(false);
+  });
+
   it('ignora un budgetType viejo en vez de rechazar la obra', () => {
     const result = createProjectSchema.safeParse({ ...validProject, budgetType: 'cerrado' });
     expect(result.success).toBe(true);

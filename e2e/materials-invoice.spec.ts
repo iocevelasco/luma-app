@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
+import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
+import { tick } from './helpers/checkbox';
 
 /**
  * Cargar la factura de una compra desde Compras. Es un gasto: después se ve
@@ -28,18 +31,16 @@ test.describe('facturas de materiales', () => {
     await registerWith(page, `Ejecutante factura ${RUN_ID}`, OWNER_EMAIL, PASSWORD);
     await loginWith(page, OWNER_EMAIL, PASSWORD);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(`Obra factura ${RUN_ID}`);
-    await page.locator('#description').fill('Obra para cargar facturas.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: `Obra factura ${RUN_ID}`,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     for (const name of [BRICK, SAND]) {
       await page.getByRole('button', { name: /agregar material/i }).click();
       await page.locator('#material-name').fill(name);
@@ -54,7 +55,7 @@ test.describe('facturas de materiales', () => {
     const toolbar = page.getByRole('toolbar', { name: /materiales seleccionados/i });
 
     // Lo Pendiente no se compró: no se ofrece cargarle factura.
-    await toBuy.getByRole('checkbox', { name: 'Seleccionar todos', exact: true }).click();
+    await tick(toBuy.getByRole('checkbox', { name: 'Seleccionar todos', exact: true })).click();
     await toolbar.getByRole('button', { name: /más acciones para la selección/i }).click();
     await expect(page.getByRole('menuitem', { name: /cargar factura/i })).toHaveCount(0);
     await page.keyboard.press('Escape');
@@ -65,7 +66,7 @@ test.describe('facturas de materiales', () => {
     await expect(toolbar).toHaveCount(0);
 
     // …y llega la factura.
-    await toBuy.getByRole('checkbox', { name: 'Seleccionar todos', exact: true }).click();
+    await tick(toBuy.getByRole('checkbox', { name: 'Seleccionar todos', exact: true })).click();
     await toolbar.getByRole('button', { name: /más acciones para la selección/i }).click();
     await page.getByRole('menuitem', { name: /cargar factura/i }).click();
 
@@ -95,7 +96,7 @@ test.describe('facturas de materiales', () => {
     await expect(bought.getByRole('button', { name: `Factura de ${SAND}` })).toBeVisible();
 
     // Es un gasto: aparece una sola vez en Gastos.
-    await page.getByRole('link', { name: /^gastos$/i }).click();
+    await openSection(page, 'expenses');
     await expect(page.getByText(DESCRIPTION)).toHaveCount(1);
 
     // Desde Finanzas se ve qué paga, y cada material lleva a Compras.

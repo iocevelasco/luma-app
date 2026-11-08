@@ -30,7 +30,7 @@ import { Controller, useForm, useWatch, type Control, type FieldErrors, type Use
 import { useTranslation } from 'react-i18next';
 import { usePinnedWhileOpen } from '@/hooks/use-pinned-while-open';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { ResponsibleField } from '@/components/activities/responsible-field';
 import { SpecialtyLabel } from '@/components/activities/specialty-label';
 import { ActivityFilterControls, ActiveFiltersNotice } from '@/components/activities/activity-filter-bar';
@@ -597,7 +597,7 @@ function ActivityProvidersSection({
           {assigned.map((provider) => (
             <li
               key={provider.id}
-              className="flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-sm"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1 text-sm"
             >
               <span>{provider.name}</span>
               <span className="text-muted-foreground">
@@ -959,7 +959,7 @@ const TOOLBAR_H = 'h-10';
 /** El selector de escala del Cronograma, con la misma superficie suave que los tabs (`ui/tabs.tsx`). */
 const SEGMENT_LIST = 'h-10 gap-1 rounded-lg bg-card p-1 shadow-surface';
 const SEGMENT_TOGGLE =
-  'h-full rounded-md px-4 text-muted-foreground transition-colors duration-300 hover:bg-transparent hover:text-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground';
+  'h-full rounded-md px-4 text-muted-foreground transition-colors duration-300 hover:bg-transparent hover:text-foreground data-[state=on]:bg-secondary data-[state=on]:text-foreground';
 
 const VIEW_ICON: Record<'gantt' | 'board' | 'list', LucideIcon> = {
   gantt: CalendarRange,
@@ -1223,14 +1223,6 @@ export function ProjectActivitiesPage() {
 
   return (
     <>
-      <Tabs
-        value={view}
-        onValueChange={(next) => {
-          const param = VIEW_PARAM[next as ActivitiesView];
-          // `replace`: cambiar de vista no es navegar, y "atrás" vuelve a la pantalla anterior.
-          setSearchParams(param ? { vista: param } : {}, { replace: true });
-        }}
-      >
         <PageLayout
           // Barra de arriba → contenido: 12 px en mobile, en vez de 24.
           className="max-sm:gap-3"
@@ -1244,6 +1236,17 @@ export function ProjectActivitiesPage() {
           toolbar={
             <>
               <div className="flex w-full items-center gap-2 md:contents">
+              {/* `Tabs` sólo envuelve la lista: con `PageLayout` adentro, React Aria arma la colección
+                  renderizando los hijos dos veces y el dock (un portal) salía duplicado. */}
+              <Tabs
+                value={view}
+                className="contents"
+                onValueChange={(next) => {
+                  const param = VIEW_PARAM[next as ActivitiesView];
+                  // `replace`: cambiar de vista no es navegar, y "atrás" vuelve a la pantalla anterior.
+                  setSearchParams(param ? { vista: param } : {}, { replace: true });
+                }}
+              >
               <TabsList aria-label={t('activity.views.aria')} className="h-10 min-w-0 p-1 max-md:flex-1">
                 {views.map((name) => (
                   <TabsTrigger
@@ -1258,6 +1261,7 @@ export function ProjectActivitiesPage() {
                   </TabsTrigger>
                 ))}
               </TabsList>
+              </Tabs>
               <ActivityFilterControls
                 filters={effectiveFilters}
                 onChange={updateFilters}
@@ -1332,7 +1336,6 @@ export function ProjectActivitiesPage() {
             />
           )}
         </PageLayout>
-      </Tabs>
 
       <ActivityDetailModal
         projectId={projectId!}

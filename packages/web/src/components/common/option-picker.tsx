@@ -157,13 +157,11 @@ export function OptionPicker({
           <ChevronDown aria-hidden className="size-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      {/* `presentation` y no el `dialog` de Radix: el popup de un combobox es la lista,
-          y durante su animación de salida un segundo `dialog` junto al drawer
-          rompe a quien busca "el" diálogo de la pantalla. */}
       <PopoverContent
         align="start"
+        aria-label={placeholder}
         role="presentation"
-        className="w-[var(--radix-popover-trigger-width)] min-w-[var(--radix-popover-trigger-width)] p-0"
+        className="w-[var(--trigger-width)] min-w-[var(--trigger-width)] p-0"
       >
         <Command
           filter={(itemValue, query) => (fold(itemValue).includes(fold(query)) ? 1 : 0)}

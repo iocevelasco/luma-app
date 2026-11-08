@@ -2,12 +2,11 @@ import { useState } from 'react';
 import type { ProjectDeletionSummary } from '@luma/shared';
 import { AlertCircle, Copy, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -74,22 +73,20 @@ export function DeleteProjectDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('project.delete.dialogTitle', { name: projectName })}</AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div className="flex flex-col gap-3 text-left">
-              {isLoading || !summary ? (
-                <p>{t('common.loading')}</p>
-              ) : (
-                <DeletionSummary summary={summary} />
-              )}
-            </div>
-          </AlertDialogDescription>
+          <div className="flex flex-col gap-3 text-left text-sm text-muted-foreground">
+            {isLoading || !summary ? (
+              <p>{t('common.loading')}</p>
+            ) : (
+              <DeletionSummary summary={summary} />
+            )}
+          </div>
         </AlertDialogHeader>
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="delete-project-confirm">{t('project.delete.confirmLabel')}</Label>
           <div className="flex items-center gap-2">
             {/* `select-all`: un toque o un triple click lo marca entero para copiarlo a mano. */}
-            <code className="min-w-0 flex-1 select-all break-words rounded-md bg-muted px-3 py-1.5 font-mono text-sm">
+            <code className="min-w-0 flex-1 select-all break-words rounded-md bg-secondary px-3 py-1.5 font-mono text-sm">
               {projectName}
             </code>
             <Button
@@ -212,7 +209,7 @@ export function DeleteProjectSection({
         <p className="min-w-0 flex-1 basis-64 text-sm text-muted-foreground">
           {t('project.delete.sectionHint')}
         </p>
-        <Button variant="outline" onClick={() => setOpen(true)}>
+        <Button variant="outline" className="h-9 shrink-0" onClick={() => setOpen(true)}>
           <Trash2 className="size-4" />
           {t('project.delete.action')}
         </Button>

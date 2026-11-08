@@ -34,7 +34,7 @@ export function BlockedImage({ alt, className }: { alt: string; className?: stri
       aria-label={t('secureChat.blockedImage')}
       data-testid="blocked-image"
       className={cn(
-        'inline-flex max-w-full items-center gap-2 rounded-md border border-dashed border-border bg-muted px-3 py-2 text-xs text-muted-foreground',
+        'inline-flex max-w-full items-center gap-2 rounded-md border border-dashed border-border bg-secondary px-3 py-2 text-xs text-muted-foreground',
         className,
       )}
     >

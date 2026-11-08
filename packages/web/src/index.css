@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+/* HeroUI v3: va antes de nuestro @theme para que, en los nombres que comparten, gane el de Luma. */
+@import './styles/heroui.css';
 
 /*
   `dark:` aplica en todo lo que cuelga de `.dark`, salvo dentro de una
@@ -55,10 +57,13 @@
   --secondary: #242424;
   --secondary-foreground: #f2f2f2;
 
-  --muted: #242424;
+  /*
+    `--muted` y `--accent` no están acá a propósito: en HeroUI son el texto
+    secundario y el color de marca, y el puente (`styles/heroui.css`) los define
+    a partir de `--muted-foreground` y `--primary`. La superficie de hover que
+    antes se llamaba `accent`/`muted` es `secondary` (mismo valor).
+  */
   --muted-foreground: #bdbdbd; /* body — texto secundario */
-  --accent: #242424;
-  --accent-foreground: #f2f2f2;
 
   --destructive: #e8455a;
   --destructive-foreground: #101010;
@@ -183,10 +188,7 @@
 
   --secondary: #ececef; /* un escalón sobre el lienzo: si no, TabsList y hovers desaparecen */
   --secondary-foreground: #18181b;
-  --muted: #ececef; /* un escalón sobre el lienzo: si no, TabsList y hovers desaparecen */
   --muted-foreground: #52525b;
-  --accent: #ececef; /* un escalón sobre el lienzo: si no, TabsList y hovers desaparecen */
-  --accent-foreground: #18181b;
 
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
@@ -459,6 +461,42 @@ select:-webkit-autofill {
   * {
     @apply border-border outline-ring/50;
   }
+
+  /*
+    Scrollbars delicadas, iguales en todos lados. Windows y Linux dibujan una barra
+    clásica de 15-17px que pesa más que el contenido; macOS e iOS ya usan una fina que
+    aparece al scrollear. Se unifica en una barra angosta, sin pista, con un pulgar
+    suave que toma su color de la superficie donde está (claro sobre el chrome oscuro,
+    oscuro sobre el área clara): `--foreground` cambia con `.surface-dark/.surface-light`.
+    · Estándar (Firefox, Chrome 121+, Safari 18.2+): `scrollbar-width` y `scrollbar-color`.
+    · Resto (Safari anterior, Chrome viejo): `::-webkit-scrollbar`. En iOS no hay barra
+      que estilar: queda la del sistema, que ya es un trazo fino y transitorio.
+  */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 28%, transparent) transparent;
+  }
+  @supports not (scrollbar-color: auto) {
+    *::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+      background-color: color-mix(in oklab, var(--foreground) 28%, transparent);
+      border-radius: 9999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background-color: color-mix(in oklab, var(--foreground) 45%, transparent);
+    }
+    *::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+  }
   body {
     @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
@@ -544,7 +582,7 @@ select:-webkit-autofill {
 .luma-filemanager .wx-theme {
   --wx-font-family: var(--font-sans);
   --wx-background: var(--card);
-  --wx-background-alt: var(--muted);
+  --wx-background-alt: var(--secondary);
   --wx-color-primary: var(--primary);
   /* Texto sobre el verde: #101010 (10.3:1), nunca blanco. */
   --wx-color-primary-font: var(--primary-foreground);
@@ -586,7 +624,7 @@ select:-webkit-autofill {
     que pasan por debajo—. Fondo blanco (`card`).
   */
   --wx-background: var(--card);
-  --wx-background-alt: var(--muted);
+  --wx-background-alt: var(--secondary);
   --wx-gantt-border-color: var(--luma-gantt-line);
   --wx-gantt-border: 1px solid var(--luma-gantt-line);
   --wx-grid-body-row-border: 1px solid var(--luma-gantt-line);

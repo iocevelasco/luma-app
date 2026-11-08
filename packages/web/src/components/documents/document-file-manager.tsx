@@ -16,7 +16,7 @@ import {
   type ProjectDocument,
 } from '@luma/shared';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   useCreateProjectDocument,
   useDeleteProjectDocuments,

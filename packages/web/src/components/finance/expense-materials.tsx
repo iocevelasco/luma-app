@@ -36,7 +36,7 @@ export function ExpenseMaterials({
           {t('finance.expenses.materialsCount', { count: materials.length })}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 p-2">
+      <PopoverContent align="start" aria-label={t('finance.expenses.materialsTitle')} className="w-64 p-2">
         <p className="px-2 pb-1 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
           {t('finance.expenses.materialsTitle')}
         </p>
@@ -46,7 +46,7 @@ export function ExpenseMaterials({
               {canOpenPurchases ? (
                 <Link
                   to={projectMaterialPath(projectId, material.id)}
-                  className="block truncate rounded-sm px-2 py-1.5 hover:bg-accent"
+                  className="block truncate rounded-sm px-2 py-1.5 hover:bg-secondary"
                 >
                   {material.name}
                 </Link>

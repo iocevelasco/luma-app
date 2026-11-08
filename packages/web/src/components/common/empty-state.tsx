@@ -9,10 +9,10 @@ interface EmptyStateProps {
   /** Qué puede hacer la persona. Un vacío sin salida es una pared. */
   description?: string;
   /**
-   * Sólo para vacíos que viven DENTRO de un bloque (una tabla que cargó sin
-   * filas, un error con "reintentar"). El vacío de una pantalla no lo usa: la
-   * acción principal de la pantalla va siempre en el mismo lugar —arriba a la
-   * derecha, ver `PageLayout`— y repetirla acá la duplicaría.
+   * La salida del vacío: el botón que crea lo que falta, debajo del texto. En el
+   * vacío de una pantalla lo pone `PageLayout` con las altas de la pantalla
+   * (`action` y `dockActions`); en uno dentro de un bloque (una tabla sin filas,
+   * un error con "reintentar") lo pone quien lo dibuja.
    */
   action?: ReactNode;
   className?: string;
@@ -41,7 +41,7 @@ export function EmptyState({
       )}
       data-testid="empty-state"
     >
-      <div className="flex size-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <div className="flex size-16 items-center justify-center rounded-full bg-secondary text-muted-foreground">
         <Icon className="size-7" aria-hidden="true" />
       </div>
 

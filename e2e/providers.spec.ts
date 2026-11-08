@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
+import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { requiresApi } from './helpers/api';
-import { attachDialog } from './helpers/dialog';
+import { attachDialog, alertDialog } from './helpers/dialog';
 
 /**
  * Flujo completo del directorio de proveedores (electricidad, carpintería,
@@ -39,15 +41,13 @@ test.describe('directorio de proveedores', () => {
     await loginWith(page, OWNER_EMAIL, PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(PROJECT_NAME);
-    await page.locator('#description').fill('Obra para probar el directorio de proveedores.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: PROJECT_NAME,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
     const projectDetailUrl = page.url();
 
@@ -55,7 +55,7 @@ test.describe('directorio de proveedores', () => {
     await expect(page.getByText(/todavía no has añadido proveedores/i)).toBeVisible();
 
     // --- CRUD: crear ---
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
 
     await page.getByRole('button', { name: /nuevo proveedor/i }).click();
@@ -85,7 +85,7 @@ test.describe('directorio de proveedores', () => {
     await expect(page.getByText(/^electricidad$/i).first()).toBeVisible();
 
     // Crea DOS actividades para asignarles el mismo proveedor.
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
@@ -153,7 +153,7 @@ test.describe('directorio de proveedores', () => {
     await page.goto('/admin/proveedores');
     await expect(page).toHaveURL(/\/admin\/proveedores$/);
     await page.getByRole('button', { name: /dar de baja/i }).first().click();
-    await page.getByRole('alertdialog').getByRole('button', { name: /dar de baja/i }).click();
+    await alertDialog(page).getByRole('button', { name: /dar de baja/i }).click();
     await expect(page.getByText(/todavía no hay proveedores en tu empresa/i)).toBeVisible({
       timeout: 10_000,
     });
@@ -180,20 +180,18 @@ test.describe('directorio de proveedores', () => {
     await loginWith(page, ownerEmail, PASSWORD);
     await expect(page).toHaveURL(/\/admin$/);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(projectName);
-    await page.locator('#description').fill('Obra para probar la asignación desde el proveedor.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: projectName,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
     // Dos actividades: una se asigna al crear el proveedor (C), la otra desde
     // el diálogo del listado (B).
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
@@ -212,7 +210,7 @@ test.describe('directorio de proveedores', () => {
     }
 
     // --- C: crear el proveedor y asignarlo a la Actividad A de una ---
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
 
     await page.getByRole('button', { name: /nuevo proveedor/i }).click();
@@ -226,7 +224,7 @@ test.describe('directorio de proveedores', () => {
     await expect(createDialog).toBeHidden();
 
     // Confirma desde el lado de la Actividad que C efectivamente asignó.
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
     await page.getByRole('gridcell', { name: activityA, exact: true }).click();
     let activityDetail = page.getByRole('dialog');
@@ -235,7 +233,7 @@ test.describe('directorio de proveedores', () => {
     await expect(activityDetail).toBeHidden();
 
     // --- B: desde el listado de Proveedores, asigna la Actividad B ---
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
 
     await page
@@ -262,7 +260,7 @@ test.describe('directorio de proveedores', () => {
     await activitiesDialog.getByRole('button', { name: /close/i }).click();
 
     // Confirma la simetría: Actividad A ya no lo tiene, Actividad B sí.
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
     await page.getByRole('gridcell', { name: activityA, exact: true }).click();
     activityDetail = page.getByRole('dialog');
@@ -284,15 +282,13 @@ test.describe('directorio de proveedores', () => {
     const clientProvider = `Cristalería del cliente ${runId}`;
 
     async function createProject(name: string) {
-      await page.getByRole('link', { name: /nueva obra/i }).click();
-      await page.locator('#name').fill(name);
-      await page.locator('#description').fill('Obra para probar el alcance de proveedores.');
-      await page.locator('#location').fill('CABA');
-      await page.locator('#estimatedStartDate').fill('2026-09-01');
-      await page.locator('#estimatedEndDate').fill('2026-12-15');
-      await page.locator('#currency').click();
-      await page.getByRole('option', { name: 'ARS' }).click();
-      await page.getByRole('button', { name: /crear obra/i }).click();
+      await createProjectViaForm(page, {
+        name: name,
+        location: 'CABA',
+        start: '2026-09-01',
+        end: '2026-12-15',
+        currency: 'ARS',
+      });
       await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
     }
 
@@ -316,7 +312,7 @@ test.describe('directorio de proveedores', () => {
 
     // Obra A: uno de la libreta y uno que "trae el cliente".
     await createProject(projectA);
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
     await createProvider(libraryProvider, /^electricidad$/i, false);
     await createProvider(clientProvider, /^cristalería$/i, true);
@@ -331,7 +327,7 @@ test.describe('directorio de proveedores', () => {
     await page.goto('/admin');
     await expect(page).toHaveURL(/\/admin$/);
     await createProject(projectB);
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
 
     await expect(page.getByText(libraryProvider)).toHaveCount(0);
@@ -349,14 +345,14 @@ test.describe('directorio de proveedores', () => {
 
     // Sacarlo de la obra pide confirmación; cancelar lo deja donde estaba.
     await page.getByRole('button', { name: /sacar de la obra/i }).first().click();
-    const confirm = page.getByRole('alertdialog');
+    const confirm = alertDialog(page);
     await expect(confirm).toContainText(libraryProvider);
     await attachDialog(page, 'proveedor-sacar');
     await confirm.getByRole('button', { name: /cancelar/i }).click();
     await expect(page.getByText(libraryProvider).first()).toBeVisible();
 
     await page.getByRole('button', { name: /sacar de la obra/i }).first().click();
-    await page.getByRole('alertdialog').getByRole('button', { name: /sacar de la obra/i }).click();
+    await alertDialog(page).getByRole('button', { name: /sacar de la obra/i }).click();
     await expect(page.getByText(libraryProvider)).toHaveCount(0);
   });
 
@@ -369,18 +365,16 @@ test.describe('directorio de proveedores', () => {
     await registerWith(page, `Ejecutante E2E ${runId}`, ownerEmail, PASSWORD);
     await loginWith(page, ownerEmail, PASSWORD);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(projectName);
-    await page.locator('#description').fill('Obra para probar la contratación.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: projectName,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await page.getByRole('button', { name: /nuevo proveedor/i }).click();
     await page.locator('#provider-name').fill(providerName);
     await page.locator('#provider-specialty').click();
@@ -428,14 +422,14 @@ test.describe('directorio de proveedores', () => {
 
     // Borrarla pide confirmación: lo cotizado deja de contar como comprometido.
     await dialog.getByRole('button', { name: /eliminar contratación/i }).click();
-    const confirm = page.getByRole('alertdialog');
+    const confirm = alertDialog(page);
     await expect(confirm).toContainText(/no se puede deshacer/i);
     await attachDialog(page, 'contratacion');
     await confirm.getByRole('button', { name: /cancelar/i }).click();
     await expect(dialog.getByText(/120\.000/)).toBeVisible();
 
     await dialog.getByRole('button', { name: /eliminar contratación/i }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: /eliminar contratación/i }).click();
+    await alertDialog(page).getByRole('button', { name: /eliminar contratación/i }).click();
     await expect(dialog.getByText(/todavía no has registrado una contratación/i)).toBeVisible();
   });
 });

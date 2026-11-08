@@ -64,7 +64,8 @@
     "title": "Há uma nova versão",
     "body": "Atualize para ter as últimas melhorias.",
     "bodyWithVersion": "A versão {{version}} já está disponível. Atualize para ter as últimas melhorias.",
-    "action": "Atualizar"
+    "action": "Atualizar",
+    "continue": "Continuar sem atualizar"
   },
   "userMenu": {
     "account": "Minha conta",
@@ -99,16 +100,45 @@
       "title": "Nova obra",
       "submit": "Criar obra",
       "created": "Obra criada",
-      "sections": {
-        "when": "Prazos",
-        "money": "Dinheiro"
-      },
       "extraNotice": "Esta obra passa das 3 incluídas: soma $8 por mês (neste mês, só pelos dias restantes).",
-      "seeSubscription": "Ver assinatura"
+      "seeSubscription": "Ver assinatura",
+      "next": "Próximo",
+      "back": "Voltar",
+      "step": "Passo {{current}} de {{total}}",
+      "steps": {
+        "basics": {
+          "title": "Conte sobre a sua obra",
+          "hint": "Vamos ao básico: como se chama e onde fica."
+        },
+        "dates": {
+          "title": "Prazos e moeda",
+          "hint": "Uma estimativa: quando começa, quando você pensa em entregá-la e em que moeda levará as contas."
+        }
+      },
+      "done": {
+        "title": "Sua obra está pronta!",
+        "subtitle": "«{{name}}» já existe. Por onde quer continuar?",
+        "detail": "Ir ao resumo da obra",
+        "activities": {
+          "title": "Criar a primeira atividade",
+          "hint": "Planeje a primeira tarefa no cronograma."
+        },
+        "materials": {
+          "title": "Adicionar materiais",
+          "hint": "Peça o que falta e acompanhe cada compra."
+        },
+        "budget": {
+          "title": "Carregar o orçamento",
+          "hint": "Importe ou registre à mão o que planeja gastar."
+        },
+        "team": {
+          "title": "Convidar a equipe",
+          "hint": "Dê acesso a supervisores, contadores e ao cliente."
+        }
+      }
     },
     "fields": {
       "name": "Nome",
-      "description": "Descrição",
       "location": "Localização",
       "size": "Metragem ou dimensão (opcional)",
       "startDate": "Início estimado",
@@ -130,7 +160,14 @@
       "payments": "Pagamentos",
       "expenses": "Despesas",
       "aria": "Seções da obra",
-      "inventory": "Estoque"
+      "inventory": "Estoque",
+      "groups": {
+        "overview": "Resumo",
+        "work": "Trabalho",
+        "supply": "Abastecimento",
+        "money": "Contabilidade",
+        "labor": "Pessoal"
+      }
     },
     "navHint": {
       "back": "Volte para a lista de todas as suas obras.",
@@ -146,7 +183,14 @@
       "budget": "Cadastre ou importe o orçamento e compare com o comprometido.",
       "advisor": "Consulte a IA sobre a obra, com seu orçamento e seu avanço.",
       "team": "Dê acesso à obra a supervisores, contadores e ao cliente.",
-      "inventory": "O que há no pátio da obra e quem retirou cada material."
+      "inventory": "O que há no pátio da obra e quem retirou cada material.",
+      "groups": {
+        "overview": "A obra num relance: andamento, dinheiro, compras e pendências.",
+        "work": "As atividades da obra: cronograma, quadro e lista.",
+        "supply": "Compras, fornecedores e estoque: o que chega à obra.",
+        "money": "Pagamentos, despesas e orçamento: quanto entra e quanto sai.",
+        "labor": "Pessoal e equipe: a presença na obra e quem tem acesso."
+      }
     },
     "detail": {
       "gantt": "Cronograma de tarefas",
@@ -2475,6 +2519,54 @@
       "money": "Qual a diferença entre gasto e recebido?"
     }
   },
+  "spikeHeroui": {
+    "title": "Spike do HeroUI v3",
+    "intro": "Componentes do HeroUI com os tokens da Luma. Tela de teste, só em desenvolvimento.",
+    "buttons": "Botões",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "export": "Exportar",
+    "details": "Ver detalhe",
+    "delete": "Excluir",
+    "cardTitle": "Dados da obra",
+    "chip": "Em obra",
+    "fieldLabel": "Nome da obra",
+    "fieldPlaceholder": "Torre Norte",
+    "fieldHint": "Aparece na lista de obras.",
+    "openDialog": "Abrir diálogo",
+    "dialogTitle": "Excluir a obra?",
+    "dialogBody": "Você poderá restaurá-la pela lixeira durante 90 dias.",
+    "tabSummary": "Resumo",
+    "tabExpenses": "Despesas",
+    "tabPayments": "Recebimentos",
+    "tabsLabel": "Seções",
+    "tableLabel": "Movimentos de exemplo",
+    "colConcept": "Conceito",
+    "colStatus": "Status",
+    "colAmount": "Valor",
+    "rowCement": "Cimento",
+    "rowSand": "Areia",
+    "rowRebar": "Ferro",
+    "statusPaid": "Pago",
+    "statusPending": "Pendente",
+    "formTitle": "Formulário com validação",
+    "currencyLabel": "Moeda",
+    "currencyPlaceholder": "Escolha uma moeda",
+    "currencyUsd": "Dólar (USD)",
+    "currencyEur": "Euro (EUR)",
+    "currencyVes": "Bolívar (VES)",
+    "nameTooShort": "Escreva pelo menos 3 caracteres.",
+    "currencyRequired": "Escolha uma moeda.",
+    "showToast": "Mostrar aviso",
+    "saved": "Alterações salvas",
+    "projectLabel": "Obra",
+    "projectNorth": "Torre Norte",
+    "projectSouth": "Edifício Sul",
+    "navHome": "Início",
+    "navExpenses": "Despesas",
+    "chromeTitle": "Chrome escuro",
+    "contentTitle": "Conteúdo claro"
+  },
   "inventory": {
     "tabs": {
       "stock": "No pátio",
@@ -2598,5 +2690,20 @@
       "title": "Você não tem um Depósito",
       "description": "O Depósito Geral é da Empresa e é visto pelos seus donos. Se você trabalha na obra de outra Empresa, o material excedente é gerenciado pelo dono dela."
     }
+  },
+  "tour": {
+    "welcomeTitle": "Boas-vindas ao Luma",
+    "welcomeBody": "Um passeio curto pelo que há em cada seção. Leva um minuto.",
+    "projectTitle": "Dentro de cada obra",
+    "finalTitle": "Comece pela sua primeira obra",
+    "finalBody": "Crie uma obra e vá registrando o que acontece nela: atividades, compras e pagamentos, num só lugar.",
+    "next": "Próximo",
+    "back": "Voltar",
+    "skip": "Pular o passeio",
+    "create": "Criar minha primeira obra",
+    "later": "Agora não",
+    "stepOf": "Passo {{current}} de {{total}}",
+    "projectIntro": "Um olhar rápido pelas seções desta obra.",
+    "done": "Entendi"
   }
 }

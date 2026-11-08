@@ -244,7 +244,7 @@ function AttachmentRowShell({
   href?: string | null;
 }) {
   const preview = (
-    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xs bg-muted text-muted-foreground">
+    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xs bg-secondary text-muted-foreground">
       {isImage && thumbnail ? (
         <img src={thumbnail} alt="" className="size-full object-cover" />
       ) : (

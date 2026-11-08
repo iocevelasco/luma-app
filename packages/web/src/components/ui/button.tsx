@@ -1,57 +1,71 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
+import { buttonVariants as heroButtonVariants } from "@heroui/styles";
 
 import { cn } from "@/lib/utils";
 
-// Píldora con relieve: la forma la comparte con el badge, así que lo que dice
-// "esto se toca" es el volumen. El foco es un anillo verde separado del botón
-// por 2px de aire — sobre un relleno verde, un anillo pegado no se vería.
-// `outline` y no `ring`: el ring es box-shadow y pisaría el relieve.
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-  {
-    variants: {
-      variant: {
-        // El CTA primario es el verde de marca (#00d992). Texto on-primary
-        // (#101010) da ~10.3:1 — pasa AA con margen de sobra, así que no hace
-        // falta que --primary cambie de hex por tema. Ver DESIGN.md.
-        default:
-          "border border-primary-pressed bg-primary text-primary-foreground shadow-cta hover:bg-primary-pressed active:shadow-cta-pressed",
-        destructive:
-          "bg-destructive text-white shadow-cta hover:bg-destructive/90 active:shadow-cta-pressed focus-visible:outline-destructive dark:bg-destructive/60",
-        // Superficie blanca (`card`) con la sombra suave de los tabs y sin
-        // borde: no hay variante "de contorno". Sobre el lienzo gris se lee
-        // como un botón por el relleno y la sombra, no por un marco. Va en
-        // `foreground` y no en verde — son los "Cancelar" y "Volver" del
-        // panel, y el verde se reserva para la acción principal. En una
-        // superficie oscura `card` es el oscuro del tema.
-        // Sobre una Card blanca el botón y su fondo son el mismo blanco y la
-        // sombra suave deja el borde en ~1,2:1. Ahí (y sólo ahí) suma un aro de
-        // 1px al 20%: ~1,6–1,8:1, sin llegar a ser un marco. Medido en Chromium.
-        outline:
-          "bg-card text-foreground shadow-surface in-data-[slot=card]:shadow-[0_0_0_1px_rgb(24_24_27/0.2),var(--shadow-surface)] hover:bg-accent active:bg-accent",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-raised hover:brightness-125 active:shadow-cta-pressed",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline rounded-none",
-      },
-      size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3.5",
-        sm: "h-8 gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  },
-);
+// Adaptador sobre HeroUI v3 (ADR-003, fase 1). La API es la de siempre —los
+// nombres de variante y de tamaño de shadcn, `asChild`, `onClick`, `disabled`—,
+// el aspecto sale de las clases de HeroUI (`.button--primary`…) y sus colores,
+// de los tokens de Luma vía `styles/heroui.css`. No usa el componente de React
+// Aria: es un <button> nativo, así que ningún call-site cambia de comportamiento.
+
+type Variant =
+  | "default"
+  | "destructive"
+  | "outline"
+  | "secondary"
+  | "ghost"
+  | "link"
+  // Nombres de HeroUI, para pantallas nuevas.
+  | "primary"
+  | "tertiary"
+  | "danger"
+  | "danger-soft";
+
+type Size = "default" | "sm" | "lg" | "icon" | "icon-sm" | "icon-lg";
+
+const HERO_VARIANT = {
+  default: "primary",
+  primary: "primary",
+  destructive: "danger",
+  danger: "danger",
+  "danger-soft": "danger-soft",
+  outline: "outline",
+  secondary: "secondary",
+  tertiary: "tertiary",
+  ghost: "ghost",
+} as const;
+
+const HERO_SIZE = {
+  default: { size: "md", isIconOnly: false },
+  sm: { size: "sm", isIconOnly: false },
+  lg: { size: "lg", isIconOnly: false },
+  icon: { size: "md", isIconOnly: true },
+  "icon-sm": { size: "sm", isIconOnly: true },
+  "icon-lg": { size: "lg", isIconOnly: true },
+} as const;
+
+// `link` no existe en HeroUI: es texto subrayado, sin la caja del botón.
+const LINK =
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap text-sm font-medium text-brand underline-offset-4 outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0";
+
+function buttonVariants({
+  variant = "default",
+  size = "default",
+  className,
+}: { variant?: Variant | null; size?: Size | null; className?: string } = {}) {
+  const v = variant ?? "default";
+  if (v === "link") return cn(LINK, className);
+  const { size: heroSize, isIconOnly } = HERO_SIZE[size ?? "default"];
+  return cn(
+    heroButtonVariants({ variant: HERO_VARIANT[v], size: heroSize, isIconOnly }),
+    // `shrink-0` y `pointer-events-none` eran de Luma; HeroUI sólo marca el
+    // deshabilitado con opacidad y cursor.
+    "shrink-0 disabled:pointer-events-none",
+    className,
+  );
+}
 
 function Button({
   className,
@@ -59,16 +73,17 @@ function Button({
   size,
   asChild = false,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
+}: React.ComponentProps<"button"> & {
+  variant?: Variant | null;
+  size?: Size | null;
+  asChild?: boolean;
+}) {
   const Comp = asChild ? Slot : "button";
 
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={buttonVariants({ variant, size, className })}
       {...props}
     />
   );

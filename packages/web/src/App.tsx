@@ -1,4 +1,4 @@
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ui/toast-region';
 import { RouteErrorBoundary } from '@/components/error-boundary';
 import { UpdateNotification } from '@/components/update-notification';
 import { AppProvider } from '@/providers/app-provider';

@@ -63,13 +63,13 @@ export function ProjectLaborPage() {
     /*
       Personal: quién vino hoy. Las tareas —el Tablero, el Cronograma— viven en
       Actividades; acá queda sólo la asistencia del día y la gestión de la
-      gente. "Agregar personal" es la acción principal y "Personal fijo" la de
-      segundo orden, a su izquierda.
+      gente. "Agregar personal" es la acción principal y "Personal fijo" la otra
+      alta, junto a ella: las dos flotan abajo al centro.
     */
     <>
       <PageLayout
         width="default"
-        secondaryActions={
+        dockActions={
           can('crew.create') ? (
             <Button variant="outline" onClick={() => setRosterOpen(true)}>
               <Users className="size-4" />

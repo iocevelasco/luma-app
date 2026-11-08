@@ -73,7 +73,7 @@ export function DocumentPreview({ projectId, doc, onClose }: DocumentPreviewProp
           <DialogDescription className="sr-only">{doc?.fileName}</DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-hidden rounded-md bg-muted">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-md bg-secondary">
           {isImage && doc?.url ? (
             <LazyImage
               src={doc.url}

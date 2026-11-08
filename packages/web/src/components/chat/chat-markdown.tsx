@@ -84,11 +84,11 @@ function urlTransform(url: string, key: string): string {
 
 const PROSE = cn(
   MARKDOWN_PROSE_COMPACT,
-  '[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3',
+  '[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-secondary [&_pre]:p-3',
   '[&_code]:font-mono [&_code]:text-xs [&_pre_code]:whitespace-pre',
-  '[&_:not(pre)>code]:rounded-sm [&_:not(pre)>code]:bg-muted [&_:not(pre)>code]:px-1',
+  '[&_:not(pre)>code]:rounded-sm [&_:not(pre)>code]:bg-secondary [&_:not(pre)>code]:px-1',
   '[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground',
-  '[&_table]:w-full [&_table]:text-xs [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1 [&_th]:text-left',
+  '[&_table]:w-full [&_table]:text-xs [&_th]:border [&_th]:border-border [&_th]:bg-secondary [&_th]:px-2 [&_th]:py-1 [&_th]:text-left',
   '[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1',
   '[&_hr]:my-3 [&_hr]:border-border',
 );

@@ -96,13 +96,14 @@ function AssignOnCreateField({
       <Label>{t('provider.fields.assignActivities')}</Label>
       <div className="flex max-h-40 flex-col gap-2 overflow-y-auto rounded-md border border-input p-3">
         {activities.map((activity) => (
-          <label key={activity.id} className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={selected.has(activity.id)}
-              onCheckedChange={() => onToggle(activity.id)}
-            />
+          <Checkbox
+            key={activity.id}
+            checked={selected.has(activity.id)}
+            onCheckedChange={() => onToggle(activity.id)}
+            className="text-sm"
+          >
             {activity.name}
-          </label>
+          </Checkbox>
         ))}
       </div>
     </div>
@@ -524,7 +525,7 @@ export function ProjectProvidersPage() {
       <PageLayout
         isLoading={isLoading}
         action={canCreate ? <NewProviderDialog projectId={projectId!} canManage={canManage} /> : undefined}
-        secondaryActions={
+        dockActions={
           canManage ? (
             <Button variant="outline" onClick={() => setPickerOpen(true)}>
               <Building2 className="size-4" />

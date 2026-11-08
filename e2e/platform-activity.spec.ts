@@ -37,13 +37,13 @@ test.describe('actividad por rol: admin', () => {
     ).toBeVisible();
 
     // Selector de período: 7 días / 30 días / desde siempre.
-    await expect(page.getByRole('tab', { name: '30 días' })).toHaveAttribute('data-state', 'active');
+    await expect(page.getByRole('tab', { name: '30 días' })).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('tab', { name: '7 días' }).click();
-    await expect(page.getByRole('tab', { name: '7 días' })).toHaveAttribute('data-state', 'active');
+    await expect(page.getByRole('tab', { name: '7 días' })).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('tab', { name: 'Desde siempre' }).click();
     await expect(page.getByRole('tab', { name: 'Desde siempre' })).toHaveAttribute(
-      'data-state',
-      'active',
+      'aria-selected',
+      'true',
     );
 
     expect(consoleErrors).toEqual([]);

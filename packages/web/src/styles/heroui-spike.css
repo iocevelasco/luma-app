@@ -1,0 +1,10 @@
+/*
+  SPIKE — galería dev-only (`/spike/heroui`) con TODO el CSS de HeroUI, para ver
+  los componentes que todavía no se migraron (Select, Tabs, Table, Toast, Modal).
+  Los tokens ya no se redeclaran acá: salen de `heroui.css`, que los deriva de los
+  de Luma. Se borra junto con la página cuando esos componentes pasen a producción.
+*/
+@import '../../node_modules/@heroui/styles/dist/components/index.css' layer(components);
+@import '../../node_modules/@heroui/styles/dist/themes/default/components/index.css' layer(components);
+
+@reference '../index.css';
