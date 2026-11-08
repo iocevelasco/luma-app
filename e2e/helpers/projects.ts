@@ -9,7 +9,7 @@ export interface NewProject {
 }
 
 /**
- * Crea una obra por el alta guiada: tres pasos (datos, plazos, moneda) y la pantalla de
+ * Crea una obra por el alta guiada: dos pasos (la obra; plazos y moneda) y la pantalla de
  * "¿por dónde seguimos?", de la que sale por "Ir al resumen de la obra". Termina en el
  * detalle de la obra, como terminaba el alta de una sola pantalla.
  *
@@ -25,12 +25,9 @@ export async function createProjectViaForm(page: Page, project: NewProject) {
   await page.locator('#location').fill(project.location);
   await page.getByRole('button', { name: /siguiente/i }).click();
 
-  // Paso 2: plazos (el inicio viene con hoy; se pisa con el de la prueba).
+  // Paso 2: plazos y moneda (el inicio viene con hoy; se pisa con el de la prueba), y crear.
   await page.locator('#estimatedStartDate').fill(project.start);
   await page.locator('#estimatedEndDate').fill(project.end);
-  await page.getByRole('button', { name: /siguiente/i }).click();
-
-  // Paso 3: moneda y crear.
   await page.locator('#currency').click();
   await page.getByRole('option', { name: project.currency }).click();
   await page.getByRole('button', { name: /crear obra/i }).click();

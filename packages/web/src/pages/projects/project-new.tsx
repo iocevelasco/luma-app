@@ -42,17 +42,19 @@ import { cn } from '@/lib/utils';
 type Field = keyof CreateProjectInput;
 
 /**
- * El alta es un recorrido de tres pasos, uno por bloque de datos, y termina en una
- * pantalla de "¿por dónde seguimos?". Antes era una sola pantalla con todo: la decisión
+ * El alta es un recorrido de tres pasos: la obra, plazos y moneda, y la pantalla de
+ * "¿por dónde seguimos?" como tercero. Antes era una sola pantalla con todo: la decisión
  * cambió porque quien llega a crear su primera obra necesita sentirse guiado, y ver una
  * pared de campos no ayuda. Los campos y las reglas son los mismos
  * (`createProjectSchema`); sólo cambia cuándo se piden.
  */
-const STEPS: { key: 'basics' | 'dates' | 'money'; fields: Field[] }[] = [
+const STEPS: { key: 'basics' | 'dates'; fields: Field[] }[] = [
   { key: 'basics', fields: ['name', 'location', 'size'] },
-  { key: 'dates', fields: ['estimatedStartDate', 'estimatedEndDate'] },
-  { key: 'money', fields: ['currency'] },
+  { key: 'dates', fields: ['estimatedStartDate', 'estimatedEndDate', 'currency'] },
 ];
+
+/** Los pasos que ve la persona: los del formulario y, de tercero, la pantalla de "¿por dónde seguimos?". */
+const TOTAL_STEPS = STEPS.length + 1;
 
 /** Lo que se ofrece al terminar: la primera actividad es la principal; el resto, otras formas de empezar. */
 const NEXT_STEPS: {
@@ -111,8 +113,6 @@ export function ProjectNewPage() {
     handleSubmit,
     control,
     trigger,
-    getValues,
-    setError,
     formState: { errors },
   } = useForm<CreateProjectInput>({
     resolver: zodResolver(createProjectSchema),
@@ -124,6 +124,17 @@ export function ProjectNewPage() {
   if (createdId) {
     return (
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6 py-6" data-testid="project-created">
+        {/* Tercero de tres: la barra llena y el mismo "Paso X de Y" de los pasos anteriores. */}
+        <div className="flex flex-col gap-3">
+          <ol aria-label={t('project.new.step', { current: TOTAL_STEPS, total: TOTAL_STEPS })} className="flex gap-1.5">
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+              <li key={i} aria-hidden="true" className="h-1.5 flex-1 rounded-full bg-primary" />
+            ))}
+          </ol>
+          <p className="text-center text-xs uppercase tracking-wide text-muted-foreground">
+            {t('project.new.step', { current: TOTAL_STEPS, total: TOTAL_STEPS })}
+          </p>
+        </div>
         <div className="flex flex-col items-center gap-3 text-center">
           <span className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <Check aria-hidden className="size-6" />
@@ -180,21 +191,12 @@ export function ProjectNewPage() {
     },
   );
 
-  // Cada paso valida sus campos antes de dejar avanzar; el último crea la obra. La regla de
-  // fechas (la entrega no puede ser anterior al inicio) es del schema entero, y `trigger`
-  // no la corre mientras falte la moneda: en el paso de plazos se comprueba a mano.
+  // El primer paso valida sus campos antes de dejar avanzar; el último crea la obra, y el schema
+  // vuelve a validar todo, incluida la entrega contra el inicio (está en el mismo paso).
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isLast) {
-      if (!(await trigger(current.fields))) return;
-      if (current.key === 'dates') {
-        const { estimatedStartDate, estimatedEndDate } = getValues();
-        if (estimatedEndDate < estimatedStartDate) {
-          setError('estimatedEndDate', { message: t('project.new.endBeforeStart') });
-          return;
-        }
-      }
-      setStep(step + 1);
+      if (await trigger(current.fields)) setStep(step + 1);
       return;
     }
     await submit(event);
@@ -248,12 +250,12 @@ export function ProjectNewPage() {
           {/* Dónde está la persona: el nombre del paso, cuántos faltan y una barra. */}
           <div className="flex flex-col gap-3" data-testid="project-new-progress">
             <ol
-              aria-label={t('project.new.step', { current: step + 1, total: STEPS.length })}
+              aria-label={t('project.new.step', { current: step + 1, total: TOTAL_STEPS })}
               className="flex gap-1.5"
             >
-              {STEPS.map((s, i) => (
+              {[...STEPS.map((s) => s.key), 'done'].map((key, i) => (
                 <li
-                  key={s.key}
+                  key={key}
                   aria-hidden="true"
                   className={cn('h-1.5 flex-1 rounded-full transition-colors', i <= step ? 'bg-primary' : 'bg-border')}
                 />
@@ -261,7 +263,7 @@ export function ProjectNewPage() {
             </ol>
             <div className="flex flex-col gap-1">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                {t('project.new.step', { current: step + 1, total: STEPS.length })}
+                {t('project.new.step', { current: step + 1, total: TOTAL_STEPS })}
               </p>
               <h2 className="text-2xl leading-tight">{t(`project.new.steps.${current.key}.title`)}</h2>
               <p className="text-muted-foreground">{t(`project.new.steps.${current.key}.hint`)}</p>
@@ -283,6 +285,7 @@ export function ProjectNewPage() {
           )}
 
           {current.key === 'dates' && (
+            <>
             <div className="grid gap-4 sm:grid-cols-2">
               <FieldRow
                 id="estimatedStartDate"
@@ -309,9 +312,6 @@ export function ProjectNewPage() {
                 />
               </FieldRow>
             </div>
-          )}
-
-          {current.key === 'money' && (
             <FieldRow id="currency" label={t('project.fields.currency')} error={errors.currency?.message}>
               <Controller
                 control={control}
@@ -332,6 +332,7 @@ export function ProjectNewPage() {
                 )}
               />
             </FieldRow>
+            </>
           )}
         </div>
       </FormShell>

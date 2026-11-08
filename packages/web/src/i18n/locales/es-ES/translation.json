@@ -110,12 +110,8 @@
           "hint": "Empecemos por lo básico: cómo se llama y dónde queda."
         },
         "dates": {
-          "title": "¿Cuándo?",
-          "hint": "Una estimación: cuándo arranca y cuándo piensas entregarla."
-        },
-        "money": {
-          "title": "¿En qué moneda?",
-          "hint": "La moneda en la que llevarás las cuentas de esta obra."
+          "title": "Plazos y moneda",
+          "hint": "Una estimación: cuándo arranca y cuándo piensas entregarla, y en qué moneda llevarás las cuentas."
         }
       },
       "done": {
@@ -138,8 +134,7 @@
           "title": "Invitar al equipo",
           "hint": "Da acceso a supervisores, contables y al cliente."
         }
-      },
-      "endBeforeStart": "La entrega no puede ser anterior al inicio."
+      }
     },
     "fields": {
       "name": "Nombre",

@@ -17,42 +17,39 @@ const PASSWORD = 'Pasos1234!';
 test.describe('alta de obra guiada', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test('recorre los tres pasos, valida cada uno y ofrece cómo seguir', async ({ page }) => {
+  test('recorre los pasos, valida cada uno y ofrece cómo seguir', async ({ page }) => {
     await registerWith(page, 'Pasos E2E', EMAIL, PASSWORD);
     await loginWith(page, EMAIL, PASSWORD);
     await page.goto(appUrl('/admin/proyectos/nuevo'));
 
-    // Paso 1: sin nombre no avanza, y el error aparece junto al campo.
+    // Paso 1 de 3: sin nombre no avanza, y el error aparece junto al campo.
     await page.getByRole('button', { name: /siguiente/i }).click();
     await expect(page.locator('#name')).toHaveAttribute('aria-invalid', 'true');
     await page.locator('#name').fill(`Obra pasos ${RUN_ID}`);
     await page.locator('#location').fill('CABA');
     await page.getByRole('button', { name: /siguiente/i }).click();
 
-    // Paso 2: el inicio viene con hoy; la entrega no se inventa.
+    // Paso 2 de 3, plazos y moneda: el inicio viene con hoy; la entrega y la moneda no se inventan.
     await expect(page.locator('#estimatedStartDate')).not.toHaveValue('');
     await expect(page.locator('#estimatedEndDate')).toHaveValue('');
-    await page.getByRole('button', { name: /siguiente/i }).click();
+    await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page.locator('#estimatedEndDate')).toHaveAttribute('aria-invalid', 'true');
-    await page.locator('#estimatedEndDate').fill('2030-12-31');
+    await expect(page.locator('#currency')).toHaveAttribute('aria-invalid', 'true');
 
-    // Una entrega anterior al inicio no deja avanzar: el error está en el paso de plazos.
+    // Una entrega anterior al inicio no deja crear: el error está en este mismo paso.
     await page.locator('#estimatedEndDate').fill('2020-01-01');
-    await page.getByRole('button', { name: /siguiente/i }).click();
-    await expect(page.locator('#estimatedEndDate')).toHaveAttribute('aria-invalid', 'true');
+    await page.locator('#currency').click();
+    await expect(page.getByRole('option', { name: 'VES' })).toBeVisible();
+    await page.getByRole('option', { name: 'USD' }).click();
+    await page.getByRole('button', { name: /crear obra/i }).click();
     await expect(page.getByText(/no puede ser anterior al inicio/i)).toBeVisible();
-    await page.locator('#estimatedEndDate').fill('2030-12-31');
+    await expect(page.getByTestId('project-created')).toHaveCount(0);
 
     // Atrás conserva lo escrito.
     await page.getByRole('button', { name: /^atrás$/i }).click();
     await expect(page.locator('#name')).toHaveValue(`Obra pasos ${RUN_ID}`);
     await page.getByRole('button', { name: /siguiente/i }).click();
-    await page.getByRole('button', { name: /siguiente/i }).click();
-
-    // Paso 3: la lista de monedas incluye VES.
-    await page.locator('#currency').click();
-    await expect(page.getByRole('option', { name: 'VES' })).toBeVisible();
-    await page.getByRole('option', { name: 'USD' }).click();
+    await page.locator('#estimatedEndDate').fill('2030-12-31');
     await page.getByRole('button', { name: /crear obra/i }).click();
 
     // Pantalla final: la primera actividad es la principal y lleva a Actividades.
