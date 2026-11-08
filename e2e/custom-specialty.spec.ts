@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible } from './helpers/activity';
@@ -43,7 +44,7 @@ test.describe('especialidades propias de la obra', () => {
   test('se crea desde el selector, queda elegida y se ve en la tarea', async ({ page }) => {
     await createOwnProject(page, 'a');
 
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(`Cielorraso ${RUN_ID}`);
 
@@ -65,7 +66,7 @@ test.describe('especialidades propias de la obra', () => {
 
   test('el panel de la lista se abre sobre "Nueva tarea": agrega y renombra sin perder lo escrito', async ({ page }) => {
     await createOwnProject(page, 'b');
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(`Revoque ${RUN_ID}`);
 

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { addCrewMember } from './helpers/crew';
@@ -25,7 +26,7 @@ async function createProject(page: Page, name: string) {
     currency: 'ARS',
   });
   await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
-  await page.getByRole('link', { name: /^personal$/i }).click();
+  await openSection(page, 'labor');
   await expect(page).toHaveURL(/\/personal$/);
 }
 

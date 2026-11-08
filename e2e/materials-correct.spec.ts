@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { alertDialog } from './helpers/dialog';
 import { loginWith, registerWith } from './helpers/auth';
@@ -52,7 +53,7 @@ test.describe('corregir materiales y descargar la lista de compras', () => {
     });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     await expect(page).toHaveURL(/\/materiales$/);
 
     await addMaterial(page, TYPO, '10', 'Corralón Sur');

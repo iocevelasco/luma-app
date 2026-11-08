@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { expectSectionHidden } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
@@ -91,16 +92,16 @@ test.describe('Supervisor de obra', () => {
     await detail.getByRole('button', { name: /^atrás$/i }).click();
 
     // No ve plata: ni presupuesto ni Consultor IA, ni como pestaña ni por URL.
-    await expect(supervisorPage.getByRole('link', { name: /^presupuesto$/i })).toHaveCount(0);
+    await expectSectionHidden(supervisorPage, 'budget');
     await expect(supervisorPage.getByRole('link', { name: /consultor/i })).toHaveCount(0);
 
     // Tampoco ve plata de ningún lado: ni cobros ni gastos.
-    await expect(supervisorPage.getByRole('link', { name: /^pagos$/i })).toHaveCount(0);
-    await expect(supervisorPage.getByRole('link', { name: /^gastos$/i })).toHaveCount(0);
+    await expectSectionHidden(supervisorPage, 'payments');
+    await expectSectionHidden(supervisorPage, 'expenses');
 
     // Y no administra accesos: la pestaña de equipo no existe para él.
     await supervisorPage.goto(projectUrl);
-    await expect(supervisorPage.getByRole('link', { name: /^equipo$/i })).toHaveCount(0);
+    await expectSectionHidden(supervisorPage, 'team');
 
     // Suma personal a SU obra —es quien está cuando llega alguien nuevo—, pero
     // no administra el roster: ni sacar, ni dar de baja, ni traer de la Empresa.

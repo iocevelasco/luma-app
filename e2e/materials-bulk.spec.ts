@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { alertDialog } from './helpers/dialog';
 import { loginWith, registerWith } from './helpers/auth';
@@ -49,7 +50,7 @@ test.describe('selección múltiple de materiales', () => {
     });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     await expect(page).toHaveURL(/\/materiales$/);
 
     for (const name of [TUBE, ELBOW, TAPE, BRICK]) await addMaterial(page, name);

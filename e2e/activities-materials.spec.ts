@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { alertDialog } from './helpers/dialog';
 import { loginWith, registerWith } from './helpers/auth';
@@ -44,7 +45,7 @@ test.describe('planificación semanal y materiales', () => {
     });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
@@ -72,7 +73,7 @@ test.describe('planificación semanal y materiales', () => {
 
     // Evidencia fotográfica (RF-04): sin storage configurado en este entorno,
     // igual tiene que renderizar el vacío en vez de romper la pantalla.
-    await expect(detailDialog.getByText(/todavía no se han subido fotos/i)).toBeVisible();
+    await expect(detailDialog.getByText(/todavía no se (han subido|subieron) fotos/i)).toBeVisible();
     await expect(detailDialog.getByRole('button', { name: /agregar foto/i })).toBeVisible();
 
     await detailDialog.getByRole('button', { name: /atrás/i }).click();
@@ -80,7 +81,7 @@ test.describe('planificación semanal y materiales', () => {
 
     // Agrega un material asociado a esa actividad.
     await page.goto(page.url().replace(/\/actividades$/, ''));
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     await expect(page).toHaveURL(/\/materiales$/);
 
     // El alta vive en el drawer lateral, no en la cabecera de la página.

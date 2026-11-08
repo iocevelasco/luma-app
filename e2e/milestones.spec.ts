@@ -160,6 +160,7 @@ test.describe('Hitos y reuniones', () => {
     const confirm = alertDialog(page);
     await expect(confirm.getByText(/descartar los cambios/i)).toBeVisible();
     await confirm.getByRole('button', { name: /seguir editando/i }).click();
+    await expect(alertDialog(page)).toBeHidden();
     await expect(page.getByRole('dialog').locator('#milestone-title')).toHaveValue(
       'Algo a medio escribir',
     );

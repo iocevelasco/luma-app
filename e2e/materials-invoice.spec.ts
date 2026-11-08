@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
@@ -39,7 +40,7 @@ test.describe('facturas de materiales', () => {
     });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     for (const name of [BRICK, SAND]) {
       await page.getByRole('button', { name: /agregar material/i }).click();
       await page.locator('#material-name').fill(name);
@@ -95,7 +96,7 @@ test.describe('facturas de materiales', () => {
     await expect(bought.getByRole('button', { name: `Factura de ${SAND}` })).toBeVisible();
 
     // Es un gasto: aparece una sola vez en Gastos.
-    await page.getByRole('link', { name: /^gastos$/i }).click();
+    await openSection(page, 'expenses');
     await expect(page.getByText(DESCRIPTION)).toHaveCount(1);
 
     // Desde Finanzas se ve qué paga, y cada material lleva a Compras.

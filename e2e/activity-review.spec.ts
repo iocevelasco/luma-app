@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
@@ -46,7 +47,7 @@ test.describe('validación del supervisor', () => {
     });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();

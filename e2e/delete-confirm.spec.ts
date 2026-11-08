@@ -56,6 +56,7 @@ test.describe('borrar pide confirmación', () => {
     await expect(expenseDialog).toContainText(/no se puede deshacer/i);
     await attachDialog(page, 'gasto');
     await expenseDialog.getByRole('button', { name: /cancelar/i }).click();
+    await expect(alertDialog(page)).toBeHidden();
     await expect(page.getByText(EXPENSE)).toBeVisible();
 
     await page.getByRole('button', { name: /eliminar gasto/i }).click();

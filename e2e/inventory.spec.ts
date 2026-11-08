@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSection } from './helpers/nav';
+import { alertDialog } from './helpers/dialog';
 import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
@@ -22,7 +24,7 @@ requiresApi();
 async function advance(page: Page, button: RegExp) {
   await page.getByRole('button', { name: button }).first().click();
   await page.getByRole('button', { name: /continuar/i }).click();
-  await expect(page.getByRole('alertdialog')).toBeHidden();
+  await expect(alertDialog(page)).toBeHidden();
 }
 
 test.describe('inventario de obra', () => {
@@ -43,12 +45,12 @@ test.describe('inventario de obra', () => {
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
     // Sin nada en obra, el inventario está vacío.
-    await page.getByRole('link', { name: /^inventario$/i }).click();
+    await openSection(page, 'inventory');
     await expect(page).toHaveURL(/\/inventario$/);
     await expect(page.getByText(/(aún|todavía) no hay material en el patio/i)).toBeVisible();
 
     // Compras: el material llega a obra.
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     await page.getByRole('button', { name: /(añadir|agregar) material/i }).click();
     await page.locator('#material-name').fill(MATERIAL);
     await page.locator('#material-quantity').fill('10');
@@ -62,7 +64,7 @@ test.describe('inventario de obra', () => {
     await advance(page, /llegó a obra/i);
 
     // Inventario: entró solo, con las 10 bolsas.
-    await page.getByRole('link', { name: /^inventario$/i }).click();
+    await openSection(page, 'inventory');
     const row = page.getByRole('listitem').filter({ hasText: MATERIAL });
     await expect(row).toContainText('10');
     await expect(row).toContainText(/en stock/i);

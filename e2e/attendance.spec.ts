@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
@@ -45,7 +46,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
     // Una actividad vigente hoy, para que aparezca en la asistencia.
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     const today = new Date();
     await page.getByRole('button', { name: /nueva tarea/i }).click();
     await page.locator('#activity-name').fill(activityName);
@@ -58,7 +59,7 @@ test.describe('asistencia contra la cuadrilla', () => {
     await page.getByRole('button', { name: /crear tarea/i }).click();
     await expect(page.getByRole('dialog')).toBeHidden();
 
-    await page.getByRole('link', { name: /^personal$/i }).click();
+    await openSection(page, 'labor');
     await expect(page).toHaveURL(/\/personal$/);
 
     // --- Roster: uno de ellos con teléfono, para poder llamarlo ---

@@ -30,7 +30,7 @@ test.describe('login', () => {
 
   test('llega a recuperar contraseña desde el login', async ({ page }) => {
     await page.goto(appUrl('/login'));
-    await page.getByRole('link', { name: /has olvidado/i }).click();
+    await page.getByRole('link', { name: /(has olvidado|olvidaste)/i }).click();
 
     await expect(page).toHaveURL(/\/forgot-password/);
     await expect(page.locator('#email')).toBeVisible();

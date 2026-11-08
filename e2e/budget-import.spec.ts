@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
@@ -39,7 +40,7 @@ test.describe('presupuesto (importador de planilla)', () => {
     });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^presupuesto$/i }).click();
+    await openSection(page, 'budget');
     await expect(page).toHaveURL(/\/presupuesto$/);
 
     // "Importar planilla" es la pestaña por defecto.

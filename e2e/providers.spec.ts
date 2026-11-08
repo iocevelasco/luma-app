@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
@@ -54,7 +55,7 @@ test.describe('directorio de proveedores', () => {
     await expect(page.getByText(/todavía no has añadido proveedores/i)).toBeVisible();
 
     // --- CRUD: crear ---
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
 
     await page.getByRole('button', { name: /nuevo proveedor/i }).click();
@@ -84,7 +85,7 @@ test.describe('directorio de proveedores', () => {
     await expect(page.getByText(/^electricidad$/i).first()).toBeVisible();
 
     // Crea DOS actividades para asignarles el mismo proveedor.
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
@@ -190,7 +191,7 @@ test.describe('directorio de proveedores', () => {
 
     // Dos actividades: una se asigna al crear el proveedor (C), la otra desde
     // el diálogo del listado (B).
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
 
     const today = new Date();
@@ -209,7 +210,7 @@ test.describe('directorio de proveedores', () => {
     }
 
     // --- C: crear el proveedor y asignarlo a la Actividad A de una ---
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
 
     await page.getByRole('button', { name: /nuevo proveedor/i }).click();
@@ -223,7 +224,7 @@ test.describe('directorio de proveedores', () => {
     await expect(createDialog).toBeHidden();
 
     // Confirma desde el lado de la Actividad que C efectivamente asignó.
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
     await page.getByRole('gridcell', { name: activityA, exact: true }).click();
     let activityDetail = page.getByRole('dialog');
@@ -232,7 +233,7 @@ test.describe('directorio de proveedores', () => {
     await expect(activityDetail).toBeHidden();
 
     // --- B: desde el listado de Proveedores, asigna la Actividad B ---
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
 
     await page
@@ -259,7 +260,7 @@ test.describe('directorio de proveedores', () => {
     await activitiesDialog.getByRole('button', { name: /close/i }).click();
 
     // Confirma la simetría: Actividad A ya no lo tiene, Actividad B sí.
-    await page.getByRole('link', { name: /^actividades$/i }).click();
+    await openSection(page, 'activities');
     await expect(page).toHaveURL(/\/actividades$/);
     await page.getByRole('gridcell', { name: activityA, exact: true }).click();
     activityDetail = page.getByRole('dialog');
@@ -311,7 +312,7 @@ test.describe('directorio de proveedores', () => {
 
     // Obra A: uno de la libreta y uno que "trae el cliente".
     await createProject(projectA);
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
     await createProvider(libraryProvider, /^electricidad$/i, false);
     await createProvider(clientProvider, /^cristalería$/i, true);
@@ -326,7 +327,7 @@ test.describe('directorio de proveedores', () => {
     await page.goto('/admin');
     await expect(page).toHaveURL(/\/admin$/);
     await createProject(projectB);
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await expect(page).toHaveURL(/\/proveedores$/);
 
     await expect(page.getByText(libraryProvider)).toHaveCount(0);
@@ -373,7 +374,7 @@ test.describe('directorio de proveedores', () => {
     });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await page.getByRole('button', { name: /nuevo proveedor/i }).click();
     await page.locator('#provider-name').fill(providerName);
     await page.locator('#provider-specialty').click();

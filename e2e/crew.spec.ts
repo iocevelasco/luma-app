@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { addCrewMember, addTask, boardColumn, moveTask, openBoard, taskCard } from './helpers/crew';
@@ -44,7 +45,7 @@ test.describe('personal fijo y tareas', () => {
     await expect(page.getByText(/sumá personal a la obra para asignarle tareas/i)).toBeVisible();
 
     // Personal es la asistencia del día: arriba va el resumen de la obra.
-    await page.getByRole('link', { name: /^personal$/i }).click();
+    await openSection(page, 'labor');
     await expect(page).toHaveURL(/\/personal$/);
     await expect(page.getByText(/^presentes$/i)).toBeVisible();
     await expect(page.getByText(/tareas hoy/i)).toBeVisible();

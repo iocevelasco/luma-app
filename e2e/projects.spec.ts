@@ -1,4 +1,5 @@
 import { createProjectViaForm } from './helpers/projects';
+import { openSection, expectSectionHidden, expectSectionVisible } from './helpers/nav';
 import { expect, test } from '@playwright/test';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
@@ -93,20 +94,20 @@ test.describe('empresa, obra e invitación del cliente', () => {
     // estricto de Playwright lo toma como ambigüedad.
     await expect(clientPage.getByText(PROJECT_NAME).first()).toBeVisible();
     // Ni la pestaña de equipo ni la de gastos existen para el cliente.
-    await expect(clientPage.getByRole('link', { name: /^equipo$/i })).toHaveCount(0);
-    await expect(clientPage.getByRole('link', { name: /^gastos$/i })).toHaveCount(0);
+    await expectSectionHidden(clientPage, 'team');
+    await expectSectionHidden(clientPage, 'expenses');
     // Pero sí ve su cronograma de pagos: es su fila de la matriz de roles.
-    await expect(clientPage.getByRole('link', { name: /^pagos$/i })).toBeVisible();
+    await expectSectionVisible(clientPage, 'payments');
 
     // Ve las tareas de la semana —las mismas del cronograma que ya ve—, pero
     // no el Tablero ni la Jornada: quién trabaja y quién vino es interno
     // (regla 4). Personal no está en su menú y Actividades no le ofrece la
     // vista Tablero.
-    await expect(clientPage.getByRole('link', { name: /^personal$/i })).toHaveCount(0);
-    await clientPage.getByRole('link', { name: /^actividades$/i }).click();
+    await expectSectionHidden(clientPage, 'labor');
+    await openSection(clientPage, 'activities');
     await expect(clientPage.getByRole('tab', { name: /^cronograma$/i })).toBeVisible();
     await expect(clientPage.getByRole('tab', { name: /^actividades$/i })).toHaveCount(0);
-    await clientPage.getByRole('link', { name: /^detalle$/i }).click();
+    await openSection(clientPage, 'detail');
     await expect(clientPage.getByText(/avance general/i)).toBeVisible();
     await expect(clientPage.getByText(/tareas de la semana/i)).toBeVisible();
     await expect(clientPage.getByRole('button', { name: /agregar personal/i })).toHaveCount(0);

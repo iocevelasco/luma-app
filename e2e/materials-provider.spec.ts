@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSection } from './helpers/nav';
 import { createProjectViaForm } from './helpers/projects';
 import { alertDialog } from './helpers/dialog';
 import { loginWith, registerWith } from './helpers/auth';
@@ -43,7 +44,7 @@ test.describe('proveedor vinculado en Compras', () => {
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
     // --- Un material viejo, con el proveedor escrito a mano antes de cargarlo.
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     await page.getByRole('button', { name: /agregar material/i }).click();
     await page.locator('#material-name').fill(OLD);
     await page.locator('#material-quantity').fill('4');
@@ -56,7 +57,7 @@ test.describe('proveedor vinculado en Compras', () => {
     await expect(page.getByText(OLD)).toBeVisible();
 
     // --- Se carga el proveedor, de los que venden materiales.
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await page.getByRole('button', { name: /nuevo proveedor/i }).click();
     await page.locator('#provider-name').fill(PROVIDER);
     await page.locator('#provider-specialty').click();
@@ -66,7 +67,7 @@ test.describe('proveedor vinculado en Compras', () => {
     await expect(page.getByRole('dialog')).toBeHidden();
 
     // --- Material nuevo: el proveedor se elige de la lista.
-    await page.getByRole('link', { name: /^compras$/i }).click();
+    await openSection(page, 'materials');
     await page.getByRole('button', { name: /agregar material/i }).click();
     await page.locator('#material-name').fill(BOARD);
     await page.locator('#material-quantity').fill('10');
@@ -109,7 +110,7 @@ test.describe('proveedor vinculado en Compras', () => {
     await expect(oldRow).toContainText(PROVIDER);
 
     // --- Desde Proveedores: los dos materiales, ya vinculados.
-    await page.getByRole('link', { name: /^proveedores$/i }).click();
+    await openSection(page, 'providers');
     await page.getByRole('button', { name: `Materiales de ${PROVIDER}` }).first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByText(BOARD)).toBeVisible();
