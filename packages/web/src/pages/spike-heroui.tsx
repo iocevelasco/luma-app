@@ -102,7 +102,7 @@ export function SpikeHeroUiPage() {
       <Toast.Provider />
 
       {/* Chrome oscuro: lo que en el panel es header + sidebar. */}
-      {showBanner && <UpdateBanner version="0.32.0" onRefresh={() => setShowBanner(false)} onDismiss={() => setShowBanner(false)} />}
+      {showBanner && <UpdateBanner version="0.32.0" onRefresh={() => setShowBanner(false)} />}
       <header className="surface-dark flex items-center gap-4 bg-background px-6 py-3 text-foreground">
         <span className="text-sm text-muted">{t('spikeHeroui.chromeTitle')}</span>
         <Select className="w-52" placeholder={t('spikeHeroui.projectLabel')} aria-label={t('spikeHeroui.projectLabel')}>
