@@ -664,7 +664,7 @@ export function ProjectDetailPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <p className="text-sm">{project.description}</p>
+            {project.description && <p className="text-sm">{project.description}</p>}
 
             <dl className="grid grid-cols-2 gap-4 text-sm">
               <div>

@@ -79,11 +79,9 @@ export const createProjectSchema = z
       .trim()
       .min(1, 'El nombre es obligatorio')
       .max(120, 'El nombre es demasiado largo'),
-    description: z
-      .string()
-      .trim()
-      .min(1, 'La descripción es obligatoria')
-      .max(2000, 'La descripción es demasiado larga'),
+    // Ya no se pide al crear la obra (se ocultó del formulario): sigue aceptándose por si
+    // llega de una API o de una obra vieja, pero no es obligatoria.
+    description: z.string().trim().max(2000, 'La descripción es demasiado larga').optional(),
     location: z
       .string()
       .trim()

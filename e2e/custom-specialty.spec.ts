@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible } from './helpers/activity';
 import { requiresApi } from './helpers/api';
@@ -25,15 +26,13 @@ async function createOwnProject(page: Page, tag: string) {
     await registerWith(page, `Ejecutante E2E ${RUN_ID}`, email, PASSWORD);
     await loginWith(page, email, PASSWORD);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(`Obra especialidades ${tag} ${RUN_ID}`);
-    await page.locator('#description').fill('Obra para probar las especialidades propias.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: `Obra especialidades ${tag} ${RUN_ID}`,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
 }

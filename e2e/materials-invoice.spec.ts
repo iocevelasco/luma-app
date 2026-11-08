@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
 import { tick } from './helpers/checkbox';
@@ -29,15 +30,13 @@ test.describe('facturas de materiales', () => {
     await registerWith(page, `Ejecutante factura ${RUN_ID}`, OWNER_EMAIL, PASSWORD);
     await loginWith(page, OWNER_EMAIL, PASSWORD);
 
-    await page.getByRole('link', { name: /nueva obra/i }).click();
-    await page.locator('#name').fill(`Obra factura ${RUN_ID}`);
-    await page.locator('#description').fill('Obra para cargar facturas.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-12-15');
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: `Obra factura ${RUN_ID}`,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-12-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
 
     await page.getByRole('link', { name: /^compras$/i }).click();

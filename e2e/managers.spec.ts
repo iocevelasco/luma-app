@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
 import { authFile, E2E_PROJECT_NAME } from './helpers/users';
@@ -57,15 +58,13 @@ test.describe('Gerentes de la obra', () => {
       await registerWith(page, `Dueño gerentes ${RUN_ID}`, owner, PASSWORD);
       await loginWith(page, owner, PASSWORD);
 
-      await page.getByRole('link', { name: /nueva obra/i }).click();
-      await page.locator('#name').fill(`Obra gerentes ${RUN_ID}`);
-      await page.locator('#description').fill('Obra para probar el tope de gerentes.');
-      await page.locator('#location').fill('CABA');
-      await page.locator('#estimatedStartDate').fill('2026-09-01');
-      await page.locator('#estimatedEndDate').fill('2026-12-15');
-      await page.locator('#currency').click();
-      await page.getByRole('option', { name: 'ARS' }).click();
-      await page.getByRole('button', { name: /crear obra/i }).click();
+      await createProjectViaForm(page, {
+        name: `Obra gerentes ${RUN_ID}`,
+        location: 'CABA',
+        start: '2026-09-01',
+        end: '2026-12-15',
+        currency: 'ARS',
+      });
       await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
       const teamUrl = `${page.url()}/equipo`;
 

@@ -60,7 +60,8 @@ const projectSchema = new Schema<IProject>(
     },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
+    // Opcional desde que se ocultó del alta; las obras viejas conservan la que tenían.
+    description: { type: String, trim: true, default: '' },
     location: { type: String, required: true, trim: true },
     size: { type: String, trim: true },
     estimatedStartDate: { type: String, required: true },

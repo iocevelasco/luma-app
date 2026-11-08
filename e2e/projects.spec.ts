@@ -1,3 +1,4 @@
+import { createProjectViaForm } from './helpers/projects';
 import { expect, test } from '@playwright/test';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
@@ -61,16 +62,13 @@ test.describe('empresa, obra e invitación del cliente', () => {
     await page.getByRole('link', { name: /nueva obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/nuevo/);
 
-    await page.locator('#name').fill(PROJECT_NAME);
-    await page.locator('#description').fill('Remodelación completa del baño principal.');
-    await page.locator('#location').fill('CABA');
-    await page.locator('#estimatedStartDate').fill('2026-09-01');
-    await page.locator('#estimatedEndDate').fill('2026-10-15');
-
-    await page.locator('#currency').click();
-    await page.getByRole('option', { name: 'ARS' }).click();
-
-    await page.getByRole('button', { name: /crear obra/i }).click();
+    await createProjectViaForm(page, {
+      name: PROJECT_NAME,
+      location: 'CABA',
+      start: '2026-09-01',
+      end: '2026-10-15',
+      currency: 'ARS',
+    });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
     await expect(page.getByText(PROJECT_NAME)).toBeVisible();
 

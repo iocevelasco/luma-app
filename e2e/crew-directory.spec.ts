@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createProjectViaForm } from './helpers/projects';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { addCrewMember } from './helpers/crew';
 import { requiresApi } from './helpers/api';
@@ -16,14 +17,13 @@ const PASSWORD = 'E2eProyecto1234!';
 
 async function createProject(page: Page, name: string) {
   await page.goto(appUrl('/admin/proyectos/nuevo'));
-  await page.locator('#name').fill(name);
-  await page.locator('#description').fill('Obra para probar el directorio de empleados.');
-  await page.locator('#location').fill('CABA');
-  await page.locator('#estimatedStartDate').fill('2026-09-01');
-  await page.locator('#estimatedEndDate').fill('2026-12-15');
-  await page.locator('#currency').click();
-  await page.getByRole('option', { name: 'ARS' }).click();
-  await page.getByRole('button', { name: /crear obra/i }).click();
+  await createProjectViaForm(page, {
+    name: name,
+    location: 'CABA',
+    start: '2026-09-01',
+    end: '2026-12-15',
+    currency: 'ARS',
+  });
   await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
   await page.getByRole('link', { name: /^personal$/i }).click();
   await expect(page).toHaveURL(/\/personal$/);

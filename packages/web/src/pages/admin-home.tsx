@@ -1,9 +1,9 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { format, formatDistanceStrict } from 'date-fns';
 import type { Project } from '@luma/shared';
 import { ArrowRight, HardHat, MapPin, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { fromDayKey } from '@/lib/day-key';
 import { RemovedProjectsNotice } from '@/components/projects/removed-projects-notice';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -129,6 +129,27 @@ function ProjectCard({ project }: { project: Project }) {
  * ruido en el único momento en que la pantalla tiene una sola cosa para
  * decir.
  */
+const FIRST_PROJECT_REDIRECT_KEY = 'luma.firstProjectRedirect';
+
+// `sessionStorage` puede faltar o tirar (modo privado): sin él se cuenta como ya enviada,
+// así nunca queda atrapada en un bucle entre el listado y el alta. Las cuentas de E2E
+// (`@luma.test`) no rebotan porque la API no se lo pide: no hace falta distinguir a Playwright.
+function hasBeenSentToFirstProject(): boolean {
+  try {
+    return window.sessionStorage.getItem(FIRST_PROJECT_REDIRECT_KEY) !== null;
+  } catch {
+    return true;
+  }
+}
+
+function markSentToFirstProject() {
+  try {
+    window.sessionStorage.setItem(FIRST_PROJECT_REDIRECT_KEY, '1');
+  } catch {
+    /* sin almacenamiento: no hay nada que recordar */
+  }
+}
+
 export function AdminHomePage() {
   const { t } = useTranslation();
   const { data, isLoading } = useProjects();
@@ -138,6 +159,19 @@ export function AdminHomePage() {
 
   const projects = data?.projects ?? [];
   const removed = data?.removedProjects ?? [];
+  // A quien llegó a gestionar su propia obra y todavía no creó ninguna, lo único que tiene
+  // sentido es crear la primera: se la lleva directo al alta. La API decide quién es esa
+  // persona (`firstProjectPrompt`): no un cliente ni un empleado, ni quien ya tiene
+  // membresía —venza o no—, ni las cuentas de prueba. Una sola vez por sesión: si cancela
+  // y vuelve al listado, ve la invitación y no rebota otra vez.
+  const sendToFirstProject =
+    !isLoading && data?.firstProjectPrompt === true && !hasBeenSentToFirstProject();
+
+  // Se marca en un efecto y no durante el render: en desarrollo React renderiza dos veces
+  // (`StrictMode`), y la segunda pasada vería la marca y devolvería el listado sin rebotar.
+  useEffect(() => {
+    if (sendToFirstProject) markSentToFirstProject();
+  }, [sendToFirstProject]);
   // "Nueva obra" hace lo que corresponde según la suscripción: en la prueba
   // con 3 activas abre el pase al plan (la cuarta no se puede crear gratis)
   // y vencida lleva a pagar. El resto entra al alta como siempre.
@@ -148,6 +182,8 @@ export function AdminHomePage() {
       {t('project.list.new')}
     </>
   );
+
+  if (sendToFirstProject) return <Navigate to={ROUTES.PROJECT_NEW} replace />;
 
   return (
     <>
