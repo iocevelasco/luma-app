@@ -16,12 +16,12 @@ export function RocketArt() {
       {/* cuerpo */}
       <path
         d="M160 8c14 12 22 30 22 52v14h-44V60c0-22 8-40 22-52Z"
-        fill="#fff"
+        className="fill-background"
       />
-      <path d="M138 62l-14 18 14-2ZM182 62l14 18-14-2Z" fill="#fff" />
+      <path d="M138 62l-14 18 14-2ZM182 62l14 18-14-2Z" className="fill-background" />
       <circle cx="160" cy="46" r="9" className="fill-primary" />
       {/* nubes */}
-      <g fill="#fff" className="text-background">
+      <g className="fill-background">
         <circle cx="40" cy="116" r="30" opacity=".95" />
         <circle cx="86" cy="120" r="24" opacity=".9" />
         <circle cx="240" cy="120" r="26" opacity=".9" />
