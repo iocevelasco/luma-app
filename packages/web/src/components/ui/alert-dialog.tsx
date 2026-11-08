@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 //  · `AlertDialogAction` y `AlertDialogCancel` siguen cerrando al hacer clic, salvo que
 //    el `onClick` llame a `event.preventDefault()`.
 //  · No hay `onCloseAutoFocus`: el foco vuelve solo a quien abrió el diálogo.
-//  · Escape y tocar afuera no cierran (un AlertDialog pide una respuesta explícita).
+//  · Escape y tocar afuera cierran, igual que con Radix (se reactivan: HeroUI los apaga).
 type AlertDialogState = { open: boolean; onOpenChange: (open: boolean) => void }
 
 const AlertDialogContext = React.createContext<AlertDialogState | null>(null)
@@ -45,7 +45,14 @@ function AlertDialogContent({
 }: Omit<React.ComponentProps<'div'>, 'title'>) {
   const { open, onOpenChange } = useAlertDialogState()
   return (
-    <HeroAlertDialog.Backdrop isOpen={open} onOpenChange={onOpenChange}>
+    // Escape y el clic afuera cierran, como con Radix: HeroUI los apaga por defecto en un
+    // AlertDialog, y una confirmación de la que no se puede salir con el teclado es una trampa.
+    <HeroAlertDialog.Backdrop
+      isOpen={open}
+      onOpenChange={onOpenChange}
+      isDismissable
+      isKeyboardDismissDisabled={false}
+    >
       <HeroAlertDialog.Container size="md">
         <HeroAlertDialog.Dialog
           data-slot="alert-dialog-content"

@@ -57,9 +57,25 @@ function TooltipTrigger({
   asChild?: boolean
   children: React.ReactElement<React.DOMAttributes<Element>>
 }) {
-  // `Focusable` pide un elemento del DOM; los componentes que reenvían `ref` y props también sirven.
-  return <Focusable>{children as unknown as React.ReactElement<React.DOMAttributes<Element>, string>}</Focusable>
+  // Un texto o un badge con tooltip no era una parada de Tab con Radix: `Focusable` le agrega
+  // `tabIndex=0`, y en una lista larga son decenas de paradas. Se quita del orden de tabulación
+  // lo que es un elemento del DOM no interactivo; el tooltip sigue saliendo al pasar el mouse.
+  // Un componente (Button, NavLink…) o un `<a>`/`<button>` ya es enfocable y no se toca.
+  // Si quien lo usa le puso `tabIndex` a propósito (el `span` de `Can`, para que un control
+  // deshabilitado explique su motivo con el teclado), se respeta.
+  const plainElement =
+    typeof children.type === 'string' &&
+    !INTERACTIVE_TAGS.has(children.type) &&
+    (children.props as { tabIndex?: number }).tabIndex === undefined
+  return (
+    <Focusable excludeFromTabOrder={plainElement}>
+      {/* `Focusable` pide un elemento del DOM; los componentes que reenvían `ref` y props también sirven. */}
+      {children as unknown as React.ReactElement<React.DOMAttributes<Element>, string>}
+    </Focusable>
+  )
 }
+
+const INTERACTIVE_TAGS = new Set(['a', 'button', 'input', 'select', 'textarea', 'summary'])
 
 function TooltipContent({
   className,

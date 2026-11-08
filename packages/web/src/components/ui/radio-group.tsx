@@ -17,9 +17,13 @@ type RadioGroupProps = Omit<
 
 // ADR-003: RadioGroup de HeroUI (React Aria). `onValueChange` pasa a `onChange`
 // y `disabled` a `isDisabled`; `value`/`defaultValue` se mantienen.
-function RadioGroup({ className, onValueChange, disabled, children, ...props }: RadioGroupProps) {
+function RadioGroup(allProps: RadioGroupProps) {
+  const { className, onValueChange, disabled, children, value, ...props } = allProps
+  // Controlado si `value` está presente, aunque valga `undefined` (nada elegido todavía).
+  const controlled = 'value' in allProps
   return (
     <HeroRadioGroup
+      value={controlled ? (value ?? null) : undefined}
       onChange={onValueChange}
       isDisabled={disabled}
       className={cn('grid gap-3', className)}

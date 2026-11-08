@@ -27,20 +27,16 @@ type SelectProps = Omit<
   children?: React.ReactNode
 }
 
-function Select({
-  value,
-  defaultValue,
-  onValueChange,
-  disabled,
-  required,
-  className,
-  children,
-  ...props
-}: SelectProps) {
+function Select(allProps: SelectProps) {
+  const { value, defaultValue, onValueChange, disabled, required, className, children, ...props } = allProps
+  // Controlado si la prop `value` está presente, aunque valga `undefined`: es lo que pasa un
+  // formulario con el campo todavía vacío o después de un `reset()`. Tratar `undefined` como
+  // "no controlado" dejaba el Select mostrando la selección anterior con el formulario vacío.
+  const controlled = 'value' in allProps
   return (
     <HeroSelect
       data-slot="select"
-      value={value === undefined ? undefined : value || null}
+      value={controlled ? value || null : undefined}
       defaultValue={defaultValue || undefined}
       onChange={(key) => onValueChange?.(key == null ? '' : String(key))}
       isDisabled={disabled}

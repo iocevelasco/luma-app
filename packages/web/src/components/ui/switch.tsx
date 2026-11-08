@@ -20,18 +20,13 @@ type SwitchProps = Omit<
 // ADR-003: Switch de HeroUI (React Aria). `checked`/`onCheckedChange`/`disabled`
 // se traducen a `isSelected`/`onChange`/`isDisabled`. Sin `children` el switch
 // queda sin texto y necesita `aria-label`.
-function Switch({
-  className,
-  checked,
-  defaultChecked,
-  onCheckedChange,
-  disabled,
-  children,
-  ...props
-}: SwitchProps) {
+function Switch(allProps: SwitchProps) {
+  const { className, checked, defaultChecked, onCheckedChange, disabled, children, ...props } = allProps
+  // Controlado si `checked` está presente, aunque valga `undefined`.
+  const controlled = 'checked' in allProps
   return (
     <HeroSwitch
-      isSelected={checked}
+      isSelected={controlled ? checked === true : undefined}
       defaultSelected={defaultChecked}
       onChange={onCheckedChange}
       isDisabled={disabled}

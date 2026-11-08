@@ -26,18 +26,13 @@ type CheckboxProps = Omit<
 //    Ya no se envuelve en un `<label>` aparte —sería un label dentro de otro—;
 //    para una casilla con `<Label htmlFor>` suelto, el `id` llega al input.
 //  · `className` va a la raíz (el contenedor), no al cuadrito.
-function Checkbox({
-  className,
-  checked,
-  defaultChecked,
-  onCheckedChange,
-  disabled,
-  children,
-  ...props
-}: CheckboxProps) {
+function Checkbox(allProps: CheckboxProps) {
+  const { className, checked, defaultChecked, onCheckedChange, disabled, children, ...props } = allProps
+  // Controlado si `checked` está presente, aunque valga `undefined` (campo vacío o tras un `reset()`).
+  const controlled = 'checked' in allProps
   return (
     <HeroCheckbox
-      isSelected={checked === undefined ? undefined : checked === true}
+      isSelected={controlled ? checked === true : undefined}
       isIndeterminate={checked === 'indeterminate'}
       defaultSelected={defaultChecked}
       onChange={onCheckedChange}
