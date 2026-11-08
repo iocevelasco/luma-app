@@ -47,13 +47,17 @@ function Tabs({ className, value, defaultValue, onValueChange, ...props }: TabsP
  */
 function TabsList({
   className,
+  containerClassName,
   children,
   ...props
-}: React.ComponentProps<typeof HeroTabs.List>) {
+}: React.ComponentProps<typeof HeroTabs.List> & {
+  /** Para el contenedor blanco (por ejemplo `w-full`): `className` va a la lista de adentro. */
+  containerClassName?: string;
+}) {
   return (
     <HeroTabs.ListContainer
       data-slot="tabs-list"
-      className="bg-card shadow-surface relative w-fit rounded-lg p-1.5"
+      className={cn("bg-card shadow-surface relative w-fit max-w-full rounded-lg p-1.5", containerClassName)}
     >
       <HeroTabs.List
         className={cn("text-muted-foreground inline-flex w-fit items-center gap-1 bg-transparent p-0", className)}

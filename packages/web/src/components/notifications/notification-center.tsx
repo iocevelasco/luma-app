@@ -166,11 +166,15 @@ export function NotificationCenter() {
         >
           {notes.length > 0 && (
             <div className="border-b border-border p-2">
-              <TabsList aria-label={t('releaseNotes.tabsAria')} className="w-full">
-                <TabsTrigger value="avisos" icon={Bell}>
+              <TabsList
+                aria-label={t('releaseNotes.tabsAria')}
+                containerClassName="w-full"
+                className="w-full"
+              >
+                <TabsTrigger value="avisos" icon={Bell} className="min-w-0 gap-1.5 px-2">
                   {t('notification.title')}
                 </TabsTrigger>
-                <TabsTrigger value="novedades" icon={Sparkles}>
+                <TabsTrigger value="novedades" icon={Sparkles} className="min-w-0 gap-1.5 px-2">
                   {t('releaseNotes.title')}
                   {/* Con avisos sin leer la campana abre en Avisos y el número tapa el
                       punto: sin esta marca, quien más avisos tiene nunca vería la novedad. */}
