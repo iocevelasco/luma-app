@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useViewTabsSlot } from '@/components/layout/view-tabs-slot-context';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { useProject } from '@/hooks/projects/use-project-queries';
 import { isProjectSectionActive, projectNavGroups } from './project-nav-items';
@@ -19,6 +20,7 @@ export function ProjectSectionTabs() {
   const navigate = useNavigate();
   const projectId = useCurrentProjectId();
   const { data } = useProject(projectId);
+  const { setSlot } = useViewTabsSlot();
 
   if (!projectId) return null;
 
@@ -30,27 +32,31 @@ export function ProjectSectionTabs() {
   const active = entry.items.find((item) => isProjectSectionActive(item, projectId, pathname));
 
   return (
-    <div className="mb-4 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <Tabs
-        value={active?.labelKey}
-        onValueChange={(key) => {
-          const target = entry.items.find((item) => item.labelKey === key);
-          if (target) navigate(target.path(projectId));
-        }}
-      >
-        <TabsList aria-label={t(`project.nav.groups.${entry.group}`)}>
-          {entry.items.map(({ labelKey, icon }) => (
-            <TabsTrigger
-              key={labelKey}
-              value={labelKey}
-              icon={icon}
-              data-testid={`project-nav-${labelKey}`}
-            >
-              {t(`project.nav.${labelKey}`)}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+    <div className="mb-4 flex max-w-full flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Tabs
+          value={active?.labelKey}
+          onValueChange={(key) => {
+            const target = entry.items.find((item) => item.labelKey === key);
+            if (target) navigate(target.path(projectId));
+          }}
+        >
+          <TabsList aria-label={t(`project.nav.groups.${entry.group}`)}>
+            {entry.items.map(({ labelKey, icon }) => (
+              <TabsTrigger
+                key={labelKey}
+                value={labelKey}
+                icon={icon}
+                data-testid={`project-nav-${labelKey}`}
+              >
+                {t(`project.nav.${labelKey}`)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
+      {/* Las pestañas de vista de la pantalla (`PageLayout viewTabs`) van acá, en la misma fila. */}
+      <div ref={setSlot} className="contents" />
     </div>
   );
 }

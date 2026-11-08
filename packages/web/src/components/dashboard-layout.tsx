@@ -19,6 +19,7 @@ import { SpecialtyLabelProvider } from '@/hooks/activities/use-specialty-label';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { useProjectLive } from '@/hooks/live/use-project-live';
 import { ContentAreaContext } from '@/components/layout/content-area-context';
+import { ViewTabsSlotContext } from '@/components/layout/view-tabs-slot-context';
 import { SubscriptionNotice } from '@/components/subscription/subscription-notice';
 import { LiveChat } from '@/components/chat/live-chat';
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour';
@@ -76,6 +77,7 @@ export function DashboardLayout() {
   }, []);
 
   const [contentArea, setContentArea] = useState<HTMLDivElement | null>(null);
+  const [viewTabsSlot, setViewTabsSlot] = useState<HTMLElement | null>(null);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -147,11 +149,13 @@ export function DashboardLayout() {
                 )}
               >
                 <ContentAreaContext.Provider value={contentArea}>
-                  {insideProject && <ProjectSectionTabs />}
-                  <SubscriptionNotice />
-                  <SpecialtyLabelProvider>
-                    <Outlet />
-                  </SpecialtyLabelProvider>
+                  <ViewTabsSlotContext.Provider value={{ slot: viewTabsSlot, setSlot: setViewTabsSlot }}>
+                    {insideProject && <ProjectSectionTabs />}
+                    <SubscriptionNotice />
+                    <SpecialtyLabelProvider>
+                      <Outlet />
+                    </SpecialtyLabelProvider>
+                  </ViewTabsSlotContext.Provider>
                 </ContentAreaContext.Provider>
               </div>
             </main>
