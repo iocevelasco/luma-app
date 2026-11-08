@@ -22,6 +22,7 @@ import { useCreateMaterialInvoice } from '@/hooks/materials/use-material-queries
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { supplierName } from '@/lib/materials';
 import { formatFileSize } from '@/lib/utils';
+import { numberField } from '@/lib/form-fields';
 
 interface MaterialInvoiceDialogProps {
   projectId: string;
@@ -174,7 +175,7 @@ export function MaterialInvoiceDialog({
                 id="invoice-amount"
                 inputMode="decimal"
                 aria-invalid={Boolean(errors.amount)}
-                {...form.register('amount', { valueAsNumber: true })}
+                {...form.register('amount', numberField)}
               />
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
@@ -193,7 +194,7 @@ export function MaterialInvoiceDialog({
               <Input
                 id="invoice-rate"
                 inputMode="decimal"
-                {...form.register('exchangeRate', { valueAsNumber: true })}
+                {...form.register('exchangeRate', numberField)}
               />
               <p className="text-2xs text-muted-foreground">{t('finance.fields.exchangeRateHint')}</p>
             </div>

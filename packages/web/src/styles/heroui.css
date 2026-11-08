@@ -76,7 +76,7 @@
   --backdrop: rgb(0 0 0 / 0.5);
   /* Capas de HeroUI (modal, drawer, toast): sin esto `z-(--z-index-overlay)` queda en `auto` y el botón flotante (z-30) tapa el drawer. */
   --z-index-overlay: 50;
-  --z-index-toast: 60;
+  --z-index-toast: 90; /* sobre el banner de versión (70) y el recorrido (80) */
 
   /* Base: salen de los tokens de Luma. */
   --default: var(--secondary);
@@ -194,6 +194,20 @@
   @apply status-invalid-field;
   --input-bg: var(--input-bg-focus);
   background-color: var(--input-bg);
+}
+
+/*
+  El relleno de HeroUI sale de `--color-field`, que Luma declara en `@theme` y por eso se
+  resuelve una sola vez en `:root` (el tema oscuro): en una superficie clara seguiría oscuro.
+  Sólo se nota donde HeroUI lo usa de verdad —el autocompletado del navegador cubre su
+  fondo con `--input-bg`—, y quedaban los campos autocompletados en negro. Se redefine acá
+  con `--field` (que sí cambia con `.surface-light`/`.surface-dark`) y `--card` al enfocar.
+*/
+.input,
+.textarea {
+  --input-bg: var(--field);
+  --input-bg-hover: var(--field);
+  --input-bg-focus: var(--card);
 }
 
 /* Luma: el campo vacío y en reposo lleva el borde del token `input` (3,3:1 sobre blanco, WCAG 1.4.11). */

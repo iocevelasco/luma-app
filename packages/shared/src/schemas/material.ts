@@ -38,7 +38,7 @@ export const createMaterialSchema = z
   .object({
     activityId: z.string().trim().min(1).optional().nullable(),
     name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Es demasiado largo'),
-    quantity: z.number({ invalid_type_error: 'La cantidad es obligatoria' }).positive('Tiene que ser mayor a 0'),
+    quantity: z.number({ invalid_type_error: 'La cantidad es obligatoria', required_error: 'La cantidad es obligatoria' }).positive('Tiene que ser mayor a 0'),
     unit: materialUnitSchema,
     status: materialStatusSchema.default('pendiente'),
     estimatedCost: z.number().min(0, 'No puede ser negativo').optional(),
@@ -71,7 +71,7 @@ export const editMaterialSchema = updateMaterialFields
   .omit({ status: true })
   .extend({
     name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Es demasiado largo'),
-    quantity: z.number({ invalid_type_error: 'La cantidad es obligatoria' }).positive('Tiene que ser mayor a 0'),
+    quantity: z.number({ invalid_type_error: 'La cantidad es obligatoria', required_error: 'La cantidad es obligatoria' }).positive('Tiene que ser mayor a 0'),
     unit: materialUnitSchema,
   })
   .refine(oneSupplierSource, ONE_SUPPLIER_SOURCE);

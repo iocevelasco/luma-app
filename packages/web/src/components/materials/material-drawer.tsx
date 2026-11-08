@@ -27,6 +27,7 @@ import {
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { isApiError } from '@/lib/api-client';
+import { numberField } from '@/lib/form-fields';
 
 export const MATERIAL_UNITS = ['un', 'm', 'm2', 'm3', 'kg', 'l', 'bolsa', 'rollo', 'global'] as const;
 
@@ -199,7 +200,7 @@ export function MaterialDrawer({ projectId, material, open, onOpenChange }: Mate
             id="material-quantity"
             inputMode="decimal"
             aria-invalid={Boolean(errors.quantity)}
-            {...register('quantity', { valueAsNumber: true })}
+            {...register('quantity', numberField)}
           />
           {errors.quantity && <p className="text-sm text-destructive">{errors.quantity.message}</p>}
         </div>

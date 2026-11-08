@@ -84,6 +84,7 @@ import {
   type PaymentGroupBy,
 } from '@/lib/payments-view';
 import { cn } from '@/lib/utils';
+import { numberField } from '@/lib/form-fields';
 
 /**
  * `destructive` es peligro, no marca — ver DESIGN.md. Una cuota vencida es lo
@@ -139,7 +140,7 @@ function MoneyFields<T extends MoneyFormValues>({
             aria-invalid={Boolean(errors.amount)}
             id={`${prefix}-amount`}
             inputMode="decimal"
-            {...register('amount' as Path<T>, { valueAsNumber: true })}
+            {...register('amount' as Path<T>, numberField)}
           />
           {errors.amount && (
             <p className="text-sm text-destructive">{String(errors.amount.message)}</p>
@@ -171,7 +172,7 @@ function MoneyFields<T extends MoneyFormValues>({
             aria-invalid={Boolean(errors.exchangeRate)}
             id={`${prefix}-rate`}
             inputMode="decimal"
-            {...register('exchangeRate' as Path<T>, { valueAsNumber: true })}
+            {...register('exchangeRate' as Path<T>, numberField)}
           />
           <p className="text-2xs text-muted-foreground">{t('finance.fields.exchangeRateHint')}</p>
           {errors.exchangeRate && (

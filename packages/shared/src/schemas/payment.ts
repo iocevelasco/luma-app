@@ -14,7 +14,7 @@ const currencySchema = z
   .length(3, 'La moneda es un código de 3 letras');
 
 const amountSchema = z
-  .number({ invalid_type_error: 'El monto es obligatorio' })
+  .number({ invalid_type_error: 'El monto es obligatorio', required_error: 'El monto es obligatorio' })
   .positive('El monto tiene que ser mayor a cero')
   .max(1_000_000_000, 'El monto es demasiado grande');
 
@@ -26,7 +26,7 @@ const amountSchema = z
  * al cálculo da `NaN` en vez de un error visible.
  */
 const exchangeRateSchema = z
-  .number({ invalid_type_error: 'La cotización es obligatoria' })
+  .number({ invalid_type_error: 'La cotización es obligatoria', required_error: 'La cotización es obligatoria' })
   .positive('La cotización tiene que ser mayor a cero')
   .default(1);
 

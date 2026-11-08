@@ -84,6 +84,7 @@ import {
 } from '@/lib/expenses-view';
 import { formatMoney } from '@/lib/format-money';
 import { cn, formatFileSize } from '@/lib/utils';
+import { numberField } from '@/lib/form-fields';
 
 /** Primer y último día del mes en curso, para el rango por default de la nómina. */
 function currentMonthRange() {
@@ -221,7 +222,7 @@ function NewExpenseDrawer({
               aria-invalid={Boolean(form.formState.errors.amount)}
               id="expense-amount"
               inputMode="decimal"
-              {...form.register('amount', { valueAsNumber: true })}
+              {...form.register('amount', numberField)}
             />
             {form.formState.errors.amount && (
               <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>
@@ -269,7 +270,7 @@ function NewExpenseDrawer({
             <Input
               id="expense-rate"
               inputMode="decimal"
-              {...form.register('exchangeRate', { valueAsNumber: true })}
+              {...form.register('exchangeRate', numberField)}
             />
             <p className="text-2xs text-muted-foreground">
               {t('finance.fields.exchangeRateHint')}
@@ -615,6 +616,12 @@ export function ProjectExpensesPage() {
     return group.name;
   };
 
+  const addExpense = (
+    <Can I="expense.write">
+      <NewExpenseDrawer projectId={projectId!} projectCurrency={currency} />
+    </Can>
+  );
+
   return (
     <PageLayout
       toolbar={
@@ -657,11 +664,8 @@ export function ProjectExpensesPage() {
       }
       // En el modo compacto la descarga vive en el panel de filtros.
       secondaryActions={hasExpenses && !compact ? exportControl : undefined}
-      action={
-        <Can I="expense.write">
-          <NewExpenseDrawer projectId={projectId!} projectCurrency={currency} />
-        </Can>
-      }
+      // Sin gastos, el botón de registrar va dentro del vacío de abajo, no flotando.
+      action={hasExpenses ? addExpense : undefined}
     >
       {summary && (
         <Card>
@@ -720,6 +724,7 @@ export function ProjectExpensesPage() {
           icon={Receipt}
           title={t('finance.expenses.emptyTitle')}
           description={t('finance.expenses.emptyDescription')}
+          action={addExpense}
         />
       ) : visible.length === 0 ? (
         <EmptyState
