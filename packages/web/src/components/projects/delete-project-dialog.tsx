@@ -209,7 +209,7 @@ export function DeleteProjectSection({
         <p className="min-w-0 flex-1 basis-64 text-sm text-muted-foreground">
           {t('project.delete.sectionHint')}
         </p>
-        <Button variant="outline" onClick={() => setOpen(true)}>
+        <Button variant="outline" className="h-9 shrink-0" onClick={() => setOpen(true)}>
           <Trash2 className="size-4" />
           {t('project.delete.action')}
         </Button>

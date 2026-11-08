@@ -122,7 +122,9 @@ function CardContent({ className, children, ...props }: React.ComponentProps<'di
   return (
     <HeroCard.Content
       data-slot="card-content"
-      className={cn('block flex-none px-4 sm:px-6', className)}
+      // `.card__content` de HeroUI es una columna con gap; el de Luma es un bloque (o la fila que
+      // pida quien lo usa): se resetean dirección y gap para que `basis-*` y `flex-wrap` no cambien de eje.
+      className={cn('block flex-none flex-row gap-0 px-4 sm:px-6', className)}
       {...props}
     >
       {children}
