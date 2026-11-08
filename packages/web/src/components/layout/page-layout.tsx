@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { useContentArea } from '@/components/layout/content-area-context';
+import { useViewTabsSlot } from '@/components/layout/view-tabs-slot-context';
 import { RouteError } from '@/components/routes/route-error';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { cn } from '@/lib/utils';
@@ -30,15 +31,17 @@ export interface PageLayoutEmpty {
 interface PageLayoutProps {
   /**
    * La acción principal de la pantalla: "Nueva tarea", "Agregar material".
-   * Va SIEMPRE abajo al centro, flotando, con el mismo botón, esté la
-   * pantalla vacía o llena. Una por pantalla: con dos, ninguna es "la"
-   * principal.
+   * Con contenido, va abajo al centro, flotando, siempre con el mismo botón.
+   * Con la pantalla vacía (`empty`), va **dentro del vacío**, debajo del texto:
+   * es la única salida y tiene que estar donde se mira. Una por pantalla: con
+   * dos, ninguna es "la" principal.
    */
   action?: ReactNode;
   /**
    * Las demás altas de la pantalla ("Agregar cuota", "Agregar desde la
-   * Empresa"). Flotan junto a la principal, en el mismo grupo y a su izquierda:
-   * quien viene a agregar algo encuentra todas las opciones en un solo lugar.
+   * Empresa"). Van junto a la principal, en el mismo grupo y a su izquierda
+   * (flotando abajo con contenido; dentro del vacío si no lo hay): quien viene
+   * a agregar algo encuentra todas las opciones en un solo lugar.
    * Son botones `outline`; la principal es la única llena.
    */
   dockActions?: ReactNode;
@@ -49,14 +52,20 @@ interface PageLayoutProps {
   secondaryActions?: ReactNode;
   /** Filtros y controles de la vista. Arriba a la izquierda, en la misma fila que las acciones de segundo orden. */
   toolbar?: ReactNode;
+  /**
+   * Las pestañas de vista de la pantalla (En patio / Kardex). Si la obra muestra la fila de
+   * pestañas de sección (Compras / Proveedores / Inventario), van **en esa misma fila**, a la
+   * misma altura; si no, abren la barra de arriba. Los filtros siguen en `toolbar`.
+   */
+  viewTabs?: ReactNode;
   /** Muestra la carga unificada en lugar del contenido. */
   isLoading?: boolean;
   /** Muestra el error de ruta en lugar del contenido. */
   isError?: boolean;
   /**
    * Si viene, la pantalla no tiene nada para mostrar: se dibuja este vacío en
-   * lugar de `children`. La barra de arriba (filtros y acción) se mantiene:
-   * la salida de un vacío es la misma acción de siempre, en su lugar.
+   * lugar de `children`, con las altas (`action` y `dockActions`) debajo del
+   * texto. La barra de arriba (filtros) se mantiene.
    *
    * Por eso un diálogo que abre una acción de la barra **no va en
    * `children`**: con la pantalla vacía no se monta, y el botón queda sin
@@ -99,6 +108,7 @@ export function PageLayout({
   dockActions,
   secondaryActions,
   toolbar,
+  viewTabs,
   isLoading = false,
   isError = false,
   empty,
@@ -110,18 +120,29 @@ export function PageLayout({
 }: PageLayoutProps) {
   const insideProject = Boolean(useCurrentProjectId());
   const contentArea = useContentArea();
+  const { slot: viewTabsSlot } = useViewTabsSlot();
 
   if (isError) return <RouteError />;
   if (isLoading) return <LoadingIndicator />;
 
-  const hasBar = Boolean(toolbar || secondaryActions);
+  const tabsInSlot = Boolean(viewTabs && viewTabsSlot);
+  const hasBar = Boolean(toolbar || secondaryActions || (viewTabs && !tabsInSlot));
 
   // Las altas de la pantalla, juntas y flotando abajo al centro. En mobile, fuera de una
   // obra sube lo que mide la barra inferior de navegación; adentro de una obra esa barra no
   // está (la navegación es la tira de arriba). `safe-area-inset-bottom` evita que el home
   // indicator de iOS lo tape.
-  const dock =
+  const actions =
     action || dockActions ? (
+      <>
+        {dockActions}
+        {action && <div data-testid="primary-action">{action}</div>}
+      </>
+    ) : null;
+
+  // Con la pantalla vacía las altas van dentro del vacío, no flotando.
+  const dock =
+    actions && !empty ? (
       <div
         data-testid="action-dock"
         className={cn(
@@ -132,8 +153,7 @@ export function PageLayout({
             : 'bottom-[calc(5rem+env(safe-area-inset-bottom))]',
         )}
       >
-        {dockActions}
-        {action && <div data-testid="primary-action">{action}</div>}
+        {actions}
       </div>
     ) : null;
 
@@ -149,9 +169,13 @@ export function PageLayout({
         className,
       )}
     >
+      {tabsInSlot && viewTabsSlot && createPortal(viewTabs, viewTabsSlot)}
       {hasBar && (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">{toolbar}</div>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {!tabsInSlot && viewTabs}
+            {toolbar}
+          </div>
           <div
             className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-2"
             data-testid="page-actions"
@@ -171,14 +195,28 @@ export function PageLayout({
           // Lugar para que el botón flotante no tape lo último de la lista.
           // En `fill` el grupo (centrado) taparía el medio del diagrama o la parte vacía de las
           // columnas del Tablero donde se suelta una tarea: el contenido le deja su lugar.
-          (action || dockActions) && (fill ? 'pb-[4.5rem]' : 'pb-16'),
+          dock && (fill ? 'pb-[4.5rem]' : 'pb-16'),
           // El aviso flota encima del grupo de acciones (2rem + ~2.75rem + aire) y tapaba la
           // última fila.
           reserveBottom && 'pb-[calc(8rem+env(safe-area-inset-bottom))]',
         )}
       >
         {empty ? (
-          <EmptyState icon={empty.icon} title={empty.title} description={empty.description} />
+          <EmptyState
+            icon={empty.icon}
+            title={empty.title}
+            description={empty.description}
+            action={
+              actions && (
+                <div
+                  data-testid="action-dock"
+                  className="flex flex-wrap items-center justify-center gap-2"
+                >
+                  {actions}
+                </div>
+              )
+            }
+          />
         ) : (
           children
         )}

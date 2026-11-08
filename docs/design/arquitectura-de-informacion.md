@@ -31,14 +31,17 @@ Por qué: el nombre de la sección ya está en el menú y en el header; repetirl
 empuja la lista abajo. Implementa: `HeaderTitle`
 (`components/dashboard/navigation/page-header.tsx`).
 
-**IA-2. Una sola acción primaria por pantalla, flotando abajo al centro, y las
-demás altas junto a ella.** La primaria es siempre `PageLayout action`, esté la
-pantalla vacía o llena; las otras altas ("Agregar cuota", "Agregar desde la
+**IA-2. Una sola acción primaria por pantalla; las altas van juntas y flotan
+abajo al centro, salvo que la pantalla esté vacía.** La primaria es siempre
+`PageLayout action`; las otras altas ("Agregar cuota", "Agregar desde la
 Empresa") van en `PageLayout dockActions`, en el mismo grupo y a su izquierda,
-como botones `outline`. Por qué: con dos primarias, ninguna es "la" principal;
-y quien viene a agregar algo encuentra todas las opciones en un solo lugar fijo.
-El grupo se centra sobre el área de contenido, no sobre la ventana. Implementa:
-`PageLayout`.
+como botones `outline`. **Con contenido** el grupo flota abajo al centro del área
+de contenido. **Con la pantalla vacía** (`PageLayout empty`) el mismo grupo va
+**dentro del vacío, debajo del texto**: es la única salida y tiene que estar donde
+se mira, no flotando lejos. Por qué: con dos primarias, ninguna es "la" principal;
+y quien viene a agregar algo encuentra todas las opciones en un solo lugar.
+Aplica a todos los listados: obras, proveedores, depósito, empleados y las
+secciones de una obra. Implementa: `PageLayout`, `EmptyState action`.
 
 **IA-3. Los controles de la vista que no agregan nada van en
 `secondaryActions`, arriba a la derecha, y son pocos.** Exportar (PDF, copiar,
@@ -55,8 +58,8 @@ pierde dónde estaba. Implementa: Personal (`project-labor.tsx`), Documentos
 
 **IA-5. Vacío de pantalla = `PageLayout empty`; vacío de un bloque =
 `EmptyState` dentro del bloque.** El vacío dice qué falta **y** qué hacer
-(`description`); si la persona no puede actuar, dice eso. El vacío no repite el
-botón de la acción primaria: ya está en su lugar. Por qué: un vacío sin salida
+(`description`); si la persona no puede actuar, dice eso. El vacío de una pantalla
+lleva debajo las altas de la pantalla (ver IA-2): es su salida. Por qué: un vacío sin salida
 es una pared, y un vacío distinto en cada pantalla parece un error distinto.
 Implementa: `PageLayout`, `EmptyState`.
 

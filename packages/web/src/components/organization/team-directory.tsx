@@ -40,10 +40,20 @@ export function TeamDirectory() {
 
   const staffCount = staffData?.members.length ?? 0;
   const crewCount = crewData?.crewMembers.length ?? 0;
+  // La pestaña abierta sin nadie: el botón de sumar va dentro del vacío (`PageLayout empty`).
+  const currentEmpty =
+    tab === 'crew'
+      ? crewData !== undefined && crewCount === 0
+        ? { icon: HardHat, title: t('directory.crewEmpty') }
+        : undefined
+      : staffData !== undefined && staffCount === 0
+        ? { icon: Briefcase, title: t('team.empty') }
+        : undefined;
 
   return (
     <Tabs value={tab} onValueChange={(value) => setTab(value as TeamTab)}>
     <PageLayout
+      empty={currentEmpty}
       toolbar={
         <TabsList>
           <TabsTrigger value="crew" icon={HardHat}>
