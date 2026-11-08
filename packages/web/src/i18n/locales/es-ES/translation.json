@@ -64,9 +64,7 @@
     "title": "Hay una versión nueva",
     "body": "Actualiza para tener las últimas mejoras.",
     "bodyWithVersion": "Ya está disponible la versión {{version}}. Actualiza para tener las últimas mejoras.",
-    "action": "Actualizar",
-    "dismiss": "Cerrar aviso",
-    "later": "Más tarde"
+    "action": "Actualizar"
   },
   "userMenu": {
     "account": "Mi cuenta",
@@ -101,16 +99,50 @@
       "title": "Nueva obra",
       "submit": "Crear obra",
       "created": "Obra creada",
-      "sections": {
-        "when": "Plazos",
-        "money": "Dinero"
-      },
       "extraNotice": "Esta obra supera las 3 incluidas: suma 8 $ al mes (este mes, solo por los días que quedan).",
-      "seeSubscription": "Ver suscripción"
+      "seeSubscription": "Ver suscripción",
+      "next": "Siguiente",
+      "back": "Atrás",
+      "step": "Paso {{current}} de {{total}}",
+      "steps": {
+        "basics": {
+          "title": "Cuéntanos de tu obra",
+          "hint": "Empecemos por lo básico: cómo se llama y dónde queda."
+        },
+        "dates": {
+          "title": "¿Cuándo?",
+          "hint": "Una estimación: cuándo arranca y cuándo piensas entregarla."
+        },
+        "money": {
+          "title": "¿En qué moneda?",
+          "hint": "La moneda en la que llevarás las cuentas de esta obra."
+        }
+      },
+      "done": {
+        "title": "¡Tu obra está lista!",
+        "subtitle": "«{{name}}» ya existe. ¿Por dónde quieres seguir?",
+        "detail": "Ir al resumen de la obra",
+        "activities": {
+          "title": "Crear la primera actividad",
+          "hint": "Planifica la primera tarea en el cronograma."
+        },
+        "materials": {
+          "title": "Añadir materiales",
+          "hint": "Pide lo que hace falta y sigue cada compra."
+        },
+        "budget": {
+          "title": "Cargar el presupuesto",
+          "hint": "Importa o carga a mano lo que planeas gastar."
+        },
+        "team": {
+          "title": "Invitar al equipo",
+          "hint": "Da acceso a supervisores, contables y al cliente."
+        }
+      },
+      "endBeforeStart": "La entrega no puede ser anterior al inicio."
     },
     "fields": {
       "name": "Nombre",
-      "description": "Descripción",
       "location": "Ubicación",
       "size": "Metraje o dimensión (opcional)",
       "startDate": "Inicio estimado",
@@ -132,7 +164,14 @@
       "payments": "Pagos",
       "expenses": "Gastos",
       "aria": "Secciones de la obra",
-      "inventory": "Inventario"
+      "inventory": "Inventario",
+      "groups": {
+        "overview": "Resumen",
+        "work": "Trabajo",
+        "supply": "Abastecimiento",
+        "money": "Contaduría",
+        "labor": "Personal"
+      }
     },
     "navHint": {
       "back": "Vuelve al listado de todas tus obras.",
@@ -148,7 +187,14 @@
       "budget": "Carga o importa el presupuesto y compáralo con lo comprometido.",
       "advisor": "Consulta a la IA sobre la obra, con su presupuesto y su avance.",
       "team": "Da acceso a la obra a supervisores, contables y al cliente.",
-      "inventory": "Lo que hay en el patio de la obra y quién se ha llevado cada material."
+      "inventory": "Lo que hay en el patio de la obra y quién se ha llevado cada material.",
+      "groups": {
+        "overview": "La obra de un vistazo: avance, dinero, compras y pendientes.",
+        "work": "Las actividades de la obra: cronograma, tablero y lista.",
+        "supply": "Compras, proveedores e inventario: lo que llega a la obra.",
+        "money": "Pagos, gastos y presupuesto: cuánto entra y cuánto sale.",
+        "labor": "Personal y equipo: la asistencia de la obra y quién tiene acceso."
+      }
     },
     "detail": {
       "gantt": "Cronograma de tareas",
@@ -2648,5 +2694,20 @@
       "title": "No tienes un Depósito",
       "description": "El Depósito General es de la Empresa y lo ven sus dueños. Si trabajas en la obra de otra Empresa, el material sobrante lo gestiona su dueño."
     }
+  },
+  "tour": {
+    "welcomeTitle": "Te damos la bienvenida a Luma",
+    "welcomeBody": "Un recorrido corto por lo que hay en cada sección. Dura un minuto.",
+    "projectTitle": "Dentro de cada obra",
+    "finalTitle": "Empieza por tu primera obra",
+    "finalBody": "Crea una obra y ve cargando lo que pasa en ella: actividades, compras y pagos, en un solo lugar.",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "skip": "Omitir recorrido",
+    "create": "Crear mi primera obra",
+    "later": "Ahora no",
+    "stepOf": "Paso {{current}} de {{total}}",
+    "projectIntro": "Un vistazo rápido a las secciones de esta obra.",
+    "done": "Entendido"
   }
 }
