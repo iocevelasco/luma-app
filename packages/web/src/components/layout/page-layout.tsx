@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { LoadingIndicator } from '@/components/common/loading-indicator';
+import { useContentArea } from '@/components/layout/content-area-context';
 import { RouteError } from '@/components/routes/route-error';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
 import { cn } from '@/lib/utils';
@@ -28,12 +30,22 @@ export interface PageLayoutEmpty {
 interface PageLayoutProps {
   /**
    * La acción principal de la pantalla: "Nueva tarea", "Agregar material".
-   * Va SIEMPRE abajo a la derecha, flotando, con el mismo botón, esté la
+   * Va SIEMPRE abajo al centro, flotando, con el mismo botón, esté la
    * pantalla vacía o llena. Una por pantalla: con dos, ninguna es "la"
    * principal.
    */
   action?: ReactNode;
-  /** Acciones de segundo orden. Van en la barra de arriba, a la derecha. */
+  /**
+   * Las demás altas de la pantalla ("Agregar cuota", "Agregar desde la
+   * Empresa"). Flotan junto a la principal, en el mismo grupo y a su izquierda:
+   * quien viene a agregar algo encuentra todas las opciones en un solo lugar.
+   * Son botones `outline`; la principal es la única llena.
+   */
+  dockActions?: ReactNode;
+  /**
+   * Controles de la vista que no agregan nada: exportar, zoom, "Ir a hoy".
+   * Van en la barra de arriba, a la derecha.
+   */
   secondaryActions?: ReactNode;
   /** Filtros y controles de la vista. Arriba a la izquierda, en la misma fila que las acciones de segundo orden. */
   toolbar?: ReactNode;
@@ -59,10 +71,9 @@ interface PageLayoutProps {
    */
   fill?: boolean;
   /**
-   * Deja lugar abajo para algo que flota sobre el contenido y no es la acción
-   * principal: el aviso de filtros de Actividades. Va aparte de `action` porque
-   * ése no se reserva en `fill` (el botón de una esquina no tapa lo que importa
-   * de un diagrama), y porque el aviso depende del estado, no de la pantalla.
+   * Deja lugar abajo para algo que flota sobre el contenido encima del grupo de
+   * acciones: el aviso de filtros de Actividades. Va aparte de `action` porque el
+   * aviso depende del estado, no de la pantalla.
    */
   reserveBottom?: boolean;
   className?: string;
@@ -71,12 +82,12 @@ interface PageLayoutProps {
 
 /**
  * El esqueleto de toda pantalla del panel: barra superior (filtros a la
- * izquierda, acciones de segundo orden a la derecha), contenido, la acción
- * principal flotando abajo a la derecha, y los tres estados que todas
- * comparten —cargando, error, vacío—.
+ * izquierda, controles de la vista a la derecha), contenido, las altas
+ * (la principal y las demás) juntas y flotando abajo al centro, y los tres
+ * estados que todas comparten —cargando, error, vacío—.
  *
- * Existe porque cada pantalla armaba el suyo: el botón principal flotaba abajo
- * a la derecha en unas, estaba arriba en otras y en otras aparecía en el medio
+ * Existe porque cada pantalla armaba el suyo: el botón principal flotaba en
+ * un lado en unas, estaba arriba en otras y en otras aparecía en el medio
  * del vacío; el padding variaba de una a otra; y el vacío y la carga eran
  * distintos en cada una. Todo eso es una sola decisión y vive acá.
  *
@@ -85,6 +96,7 @@ interface PageLayoutProps {
  */
 export function PageLayout({
   action,
+  dockActions,
   secondaryActions,
   toolbar,
   isLoading = false,
@@ -97,11 +109,33 @@ export function PageLayout({
   children,
 }: PageLayoutProps) {
   const insideProject = Boolean(useCurrentProjectId());
+  const contentArea = useContentArea();
 
   if (isError) return <RouteError />;
   if (isLoading) return <LoadingIndicator />;
 
   const hasBar = Boolean(toolbar || secondaryActions);
+
+  // Las altas de la pantalla, juntas y flotando abajo al centro. En mobile, fuera de una
+  // obra sube lo que mide la barra inferior de navegación; adentro de una obra esa barra no
+  // está (la navegación es la tira de arriba). `safe-area-inset-bottom` evita que el home
+  // indicator de iOS lo tape.
+  const dock =
+    action || dockActions ? (
+      <div
+        data-testid="action-dock"
+        className={cn(
+          contentArea ? 'absolute' : 'fixed',
+          'left-1/2 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 md:bottom-8 [&_a]:shadow-lg [&_button]:shadow-lg',
+          insideProject
+            ? 'bottom-[calc(1rem+env(safe-area-inset-bottom))]'
+            : 'bottom-[calc(5rem+env(safe-area-inset-bottom))]',
+        )}
+      >
+        {dockActions}
+        {action && <div data-testid="primary-action">{action}</div>}
+      </div>
+    ) : null;
 
   return (
     <div
@@ -135,10 +169,12 @@ export function PageLayout({
           WIDTH_CLASS[width],
           fill && 'min-h-0 flex-1',
           // Lugar para que el botón flotante no tape lo último de la lista.
-          action && !fill && 'pb-16',
-          // Lo que flota abajo a la izquierda (a 2rem del borde y ~2.75rem de alto) tapaba la
-          // última fila: en `fill` el contenido llega hasta el borde de la ventana.
-          reserveBottom && 'pb-[calc(4.5rem+env(safe-area-inset-bottom))]',
+          // En `fill` el grupo (centrado) taparía el medio del diagrama o la parte vacía de las
+          // columnas del Tablero donde se suelta una tarea: el contenido le deja su lugar.
+          (action || dockActions) && (fill ? 'pb-[4.5rem]' : 'pb-16'),
+          // El aviso flota encima del grupo de acciones (2rem + ~2.75rem + aire) y tapaba la
+          // última fila.
+          reserveBottom && 'pb-[calc(8rem+env(safe-area-inset-bottom))]',
         )}
       >
         {empty ? (
@@ -148,26 +184,10 @@ export function PageLayout({
         )}
       </div>
 
-      {/*
-        Acción principal: flotando en la esquina inferior derecha del área de
-        trabajo. En mobile, fuera de una obra sube lo que mide la barra
-        inferior de navegación; adentro de una obra esa barra no está (la
-        navegación es la tira de arriba). `safe-area-inset-bottom` evita que
-        el home indicator de iOS lo tape.
-      */}
-      {action && (
-        <div
-          data-testid="primary-action"
-          className={cn(
-            'fixed right-4 z-30 md:bottom-8 md:right-8 [&_a]:shadow-lg [&_button]:shadow-lg',
-            insideProject
-              ? 'bottom-[calc(1rem+env(safe-area-inset-bottom))]'
-              : 'bottom-[calc(5rem+env(safe-area-inset-bottom))]',
-          )}
-        >
-          {action}
-        </div>
-      )}
+      {dock &&
+        // En el área de contenido (no en la ventana): el centro es el de lo que se ve, con
+        // el riel a un lado. Sin ella (la plataforma, que no tiene riel) flota sobre la ventana.
+        (contentArea ? createPortal(dock, contentArea) : dock)}
     </div>
   );
 }

@@ -525,7 +525,7 @@ export function ProjectProvidersPage() {
       <PageLayout
         isLoading={isLoading}
         action={canCreate ? <NewProviderDialog projectId={projectId!} canManage={canManage} /> : undefined}
-        secondaryActions={
+        dockActions={
           canManage ? (
             <Button variant="outline" onClick={() => setPickerOpen(true)}>
               <Building2 className="size-4" />

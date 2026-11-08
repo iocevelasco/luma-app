@@ -476,11 +476,10 @@ export function ActiveFiltersNotice({
     <div
       role="status"
       data-testid="activity-filters-notice"
-      // Flota abajo a la izquierda, frente a la acción principal (que va abajo a la
-      // derecha): no ocupa lugar en la pantalla, así que ponerlo o quitarlo no
-      // mueve la lista, el tablero ni el cronograma. `left` deja pasar la barra de
-      // secciones (4rem) y `right`, el botón principal.
-      className="pointer-events-none fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-40 z-30 md:bottom-8 md:left-24 md:right-52"
+      // Flota abajo, justo encima del grupo de acciones (que va abajo al centro): no ocupa
+      // lugar en la pantalla, así que ponerlo o quitarlo no mueve la lista, el tablero ni
+      // el cronograma. `bottom` deja pasar el botón principal (2.75rem de alto + aire).
+      className="pointer-events-none fixed bottom-[calc(1rem+2.75rem+0.75rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 md:bottom-[calc(2rem+2.75rem+0.75rem)] md:left-28 md:right-8"
     >
       <div className="pointer-events-auto flex w-fit max-w-full items-center gap-2 overflow-x-auto rounded-lg bg-card py-1.5 pl-4 pr-2 text-sm shadow-lg">
         <span className="shrink-0 whitespace-nowrap text-muted-foreground">

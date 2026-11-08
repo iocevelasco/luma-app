@@ -526,8 +526,8 @@ export function ProjectPaymentsPage() {
       ? Math.round((summary.paidTotal / summary.scheduledTotal) * 100)
       : 0;
 
-  // Las dos altas de la pantalla van arriba, siempre: registrar un cobro es la
-  // principal; la cuota del cronograma acordado, la de segundo orden.
+  // Las dos altas de la pantalla flotan juntas abajo al centro: registrar un cobro es la
+  // principal; la cuota del cronograma acordado, la de segundo orden (`dockActions`).
   const scheduleButton = (
     <Can I="payment.write">
       <Button variant="outline" onClick={() => setScheduleOpen(true)}>
@@ -575,20 +575,18 @@ export function ProjectPaymentsPage() {
 
   if (items.length === 0 && payments.length === 0) {
     return (
-      <PageLayout
-        {...actions}
-        secondaryActions={
-          <>
-            {scheduleButton}
-            {scheduleDrawer}
-          </>
-        }
-        empty={{
-          icon: Wallet,
-          title: t('finance.empty.title'),
-          description: t('finance.empty.description'),
-        }}
-      />
+      <>
+        <PageLayout
+          {...actions}
+          dockActions={scheduleButton}
+          empty={{
+            icon: Wallet,
+            title: t('finance.empty.title'),
+            description: t('finance.empty.description'),
+          }}
+        />
+        {scheduleDrawer}
+      </>
     );
   }
 
@@ -638,15 +636,9 @@ export function ProjectPaymentsPage() {
           />
         ) : undefined
       }
-      secondaryActions={
-        // En el modo compacto las acciones viven en el panel de filtros.
-        hasPayments && compact ? undefined : (
-          <>
-            {hasPayments && exportControl}
-            {scheduleButton}
-          </>
-        )
-      }
+      // En el modo compacto las acciones viven en el panel de filtros.
+      secondaryActions={hasPayments && !compact ? exportControl : undefined}
+      dockActions={hasPayments && compact ? undefined : scheduleButton}
     >
       {scheduleDrawer}
       <Card>

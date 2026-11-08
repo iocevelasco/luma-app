@@ -22,7 +22,7 @@ implementa, si existe.
 │       fila                                                           │
 │       fila                                                           │
 │                                                                     │
-│                                              [ + acción primaria ]  │
+│                   [ + dockActions ] [ + acción primaria ]            │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -31,16 +31,21 @@ Por qué: el nombre de la sección ya está en el menú y en el header; repetirl
 empuja la lista abajo. Implementa: `HeaderTitle`
 (`components/dashboard/navigation/page-header.tsx`).
 
-**IA-2. Una sola acción primaria por pantalla, flotando abajo a la derecha.**
-Siempre `PageLayout action`, esté la pantalla vacía o llena. Por qué: con dos,
-ninguna es "la" principal, y el lugar fijo es lo que la hace encontrable.
-Implementa: `PageLayout`.
+**IA-2. Una sola acción primaria por pantalla, flotando abajo al centro, y las
+demás altas junto a ella.** La primaria es siempre `PageLayout action`, esté la
+pantalla vacía o llena; las otras altas ("Agregar cuota", "Agregar desde la
+Empresa") van en `PageLayout dockActions`, en el mismo grupo y a su izquierda,
+como botones `outline`. Por qué: con dos primarias, ninguna es "la" principal;
+y quien viene a agregar algo encuentra todas las opciones en un solo lugar fijo.
+El grupo se centra sobre el área de contenido, no sobre la ventana. Implementa:
+`PageLayout`.
 
-**IA-3. Las acciones de segundo orden van en `secondaryActions`, arriba a la
-derecha, y son pocas.** Exportar (PDF, copiar, compartir) es de segundo orden y
-va en **un** control con menú, no en tres botones. Por qué: una acción de
+**IA-3. Los controles de la vista que no agregan nada van en
+`secondaryActions`, arriba a la derecha, y son pocos.** Exportar (PDF, copiar,
+compartir) va en **un** control con menú, no en tres botones; también el zoom y
+"Ir a hoy" del Cronograma. Por qué: una acción de
 segundo orden con el peso de una primaria le roba la mirada a la lista.
-Implementa: `PageLayout secondaryActions` (Proveedores, Cobros, Personal).
+Implementa: `PageLayout secondaryActions` (Cobros, Gastos, Cronograma).
 
 **IA-4. Pestañas y filtros van en `toolbar`, arriba a la izquierda.** Las
 pestañas llevan conteo y se reflejan en la URL (`?tab=`). Por qué: el mismo
@@ -242,9 +247,7 @@ miró que usa pestañas con conteo dentro de una Card).
 ### Inconsistencias de documentación encontradas
 
 - `EmptyState` (comentario de `action`) dice que la acción principal va
-  "arriba a la derecha"; `PageLayout` la pone abajo a la derecha, flotando.
+  "arriba a la derecha"; `PageLayout` la pone abajo al centro, flotando, junto a las demás altas.
   Manda `PageLayout`.
-- `project-payments.tsx` comenta que "las dos altas van arriba, siempre"; la
-  primaria flota abajo.
 - `CLAUDE.md` y `DESIGN.md` nombran `PageHeader`; el componente es
   `HeaderTitle`, en `components/dashboard/navigation/page-header.tsx`.

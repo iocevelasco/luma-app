@@ -95,7 +95,7 @@ export function ProjectInventoryPage() {
     <>
       <PageLayout
         width="default"
-        secondaryActions={
+        dockActions={
           canUseDeposit ? (
             <Button variant="outline" onClick={() => setImportOpen(true)}>
               <Download className="size-4" />
