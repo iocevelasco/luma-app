@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useHref, useLocation, useNavigate } from 'react-router-dom';
+import { RouterProvider } from 'react-aria-components';
 import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@/lib/routes';
 import { AppLogo } from '@/components/app-logo';
@@ -39,6 +40,7 @@ import { OnboardingTour } from '@/components/onboarding/onboarding-tour';
  */
 export function DashboardLayout() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const projectId = useCurrentProjectId();
   // Avisos en vivo de la obra abierta (Actividades y Materiales). Una sola vez
   // acá, junto al `projectId`: cambiar de sección no reabre la conexión.
@@ -80,6 +82,9 @@ export function DashboardLayout() {
   const [viewTabsSlot, setViewTabsSlot] = useState<HTMLElement | null>(null);
 
   return (
+    // Los enlaces de React Aria (las pestañas de sección, los ítems con `href`) navegan por el router
+    // de la app, sin recargar; `useHref` respeta el `basename`.
+    <RouterProvider navigate={navigate} useHref={useHref}>
     <TooltipProvider delayDuration={300}>
       {/*
         La altura es la de la ventana y nada más scrollea que el contenido:
@@ -171,5 +176,6 @@ export function DashboardLayout() {
       <LiveChat />
       <OnboardingTour />
     </TooltipProvider>
+    </RouterProvider>
   );
 }

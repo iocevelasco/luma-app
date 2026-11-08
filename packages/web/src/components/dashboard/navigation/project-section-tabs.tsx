@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useViewTabsSlot } from '@/components/layout/view-tabs-slot-context';
 import { useCurrentProjectId } from '@/hooks/projects/use-current-project-id';
@@ -17,7 +17,6 @@ import { isProjectSectionActive, projectNavGroups } from './project-nav-items';
 export function ProjectSectionTabs() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   const projectId = useCurrentProjectId();
   const { data } = useProject(projectId);
   const { setSlot } = useViewTabsSlot();
@@ -34,18 +33,15 @@ export function ProjectSectionTabs() {
   return (
     <div className="mb-4 flex max-w-full flex-wrap items-center gap-x-3 gap-y-2">
       <div className="max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <Tabs
-          value={active?.labelKey}
-          onValueChange={(key) => {
-            const target = entry.items.find((item) => item.labelKey === key);
-            if (target) navigate(target.path(projectId));
-          }}
-        >
+        <Tabs value={active?.labelKey}>
           <TabsList aria-label={t(`project.nav.groups.${entry.group}`)}>
-            {entry.items.map(({ labelKey, icon }) => (
+            {entry.items.map(({ labelKey, icon, path }) => (
               <TabsTrigger
                 key={labelKey}
                 value={labelKey}
+                // Enlace de verdad: clic medio, Cmd+clic y copiar la dirección andan; la navegación
+                // la hace el `RouterProvider` del layout.
+                href={path(projectId)}
                 icon={icon}
                 data-testid={`project-nav-${labelKey}`}
               >

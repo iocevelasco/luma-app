@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { ActivatePlanDialog } from '@/components/subscription/activate-plan-dialog';
 import { BolivaresPaymentDrawer } from '@/components/subscription/bolivares-payment-drawer';
 import { useMySubscription } from '@/hooks/subscription/use-subscription-queries';
+import { hasBeenSentToFirstProject, markSentToFirstProject } from '@/lib/first-project-redirect';
 import { nextProjectState } from '@/lib/subscription';
 
 const PHASE_DOT: Record<ProjectPhase, string> = {
@@ -129,27 +130,6 @@ function ProjectCard({ project }: { project: Project }) {
  * ruido en el único momento en que la pantalla tiene una sola cosa para
  * decir.
  */
-const FIRST_PROJECT_REDIRECT_KEY = 'luma.firstProjectRedirect';
-
-// `sessionStorage` puede faltar o tirar (modo privado): sin él se cuenta como ya enviada,
-// así nunca queda atrapada en un bucle entre el listado y el alta. Las cuentas de E2E
-// (`@luma.test`) no rebotan porque la API no se lo pide: no hace falta distinguir a Playwright.
-function hasBeenSentToFirstProject(): boolean {
-  try {
-    return window.sessionStorage.getItem(FIRST_PROJECT_REDIRECT_KEY) !== null;
-  } catch {
-    return true;
-  }
-}
-
-function markSentToFirstProject() {
-  try {
-    window.sessionStorage.setItem(FIRST_PROJECT_REDIRECT_KEY, '1');
-  } catch {
-    /* sin almacenamiento: no hay nada que recordar */
-  }
-}
-
 export function AdminHomePage() {
   const { t } = useTranslation();
   const { data, isLoading } = useProjects();

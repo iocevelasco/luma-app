@@ -17,7 +17,8 @@ export interface NewProject {
  */
 export async function createProjectViaForm(page: Page, project: NewProject) {
   const newProjectLink = page.getByRole('link', { name: /nueva obra/i });
-  await expect(page.locator('#name').or(newProjectLink)).toBeVisible();
+  // `.first()`: en la transición de ruta pueden verse los dos a la vez (modo estricto).
+  await expect(page.locator('#name').or(newProjectLink).first()).toBeVisible();
   if (await newProjectLink.isVisible()) await newProjectLink.click();
 
   // Paso 1: la obra (la descripción ya no se pide).

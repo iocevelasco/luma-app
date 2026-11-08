@@ -13,6 +13,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { isApiError } from '@/lib/api-client';
+import { LoadingIndicator } from '@/components/common/loading-indicator';
 import { Button } from '@/components/ui/button';
 import { useMySubscription } from '@/hooks/subscription/use-subscription-queries';
 import { nextProjectState } from '@/lib/subscription';
@@ -101,7 +102,10 @@ export function ProjectNewPage() {
   // que es fácil crear la misma obra dos veces.
   const [searchParams] = useSearchParams();
   const createdId = searchParams.get('creada');
-  const { data: createdData } = useProject(createdId ?? undefined);
+  const { data: createdData, isLoading: createdLoading } = useProject(createdId ?? undefined);
+  // Sólo vale si es una obra de esta persona: una obra eliminada, o de otra cuenta, no carga y se
+  // ignora el parámetro (se ve el formulario), en vez de mostrar «¡Tu obra está lista!» con un nombre vacío.
+  const showCreated = Boolean(createdId && createdData);
   // Si el alta choca con la suscripción (se llegó por URL a la cuarta obra en
   // la prueba, o venció), la salida es la pantalla de Suscripción.
   const blockedBySubscription =
@@ -121,7 +125,9 @@ export function ProjectNewPage() {
     defaultValues: { estimatedStartDate: toDayKey(new Date()) },
   });
 
-  if (createdId) {
+  if (createdId && createdLoading) return <LoadingIndicator />;
+
+  if (showCreated && createdId) {
     return (
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6 py-6" data-testid="project-created">
         {/* Tercero de tres: la barra llena y el mismo "Paso X de Y" de los pasos anteriores. */}
@@ -136,7 +142,7 @@ export function ProjectNewPage() {
           </p>
         </div>
         <div className="flex flex-col items-center gap-3 text-center">
-          <span className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
             <Check aria-hidden className="size-6" />
           </span>
           <h2 className="text-2xl leading-tight">{t('project.new.done.title')}</h2>

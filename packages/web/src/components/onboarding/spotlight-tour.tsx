@@ -55,9 +55,19 @@ export function SpotlightTour({
   const isLast = index === steps.length - 1;
 
   const measure = useCallback(() => {
-    setRect(findTarget(step.target));
+    // Sólo se actualiza si el rectángulo cambió: `getBoundingClientRect` devuelve un objeto nuevo
+    // cada vez, y guardarlo tal cual re-renderizaría el recorrido cada 300 ms sin motivo.
+    const next = findTarget(step.target);
+    setRect((prev) =>
+      prev && next && prev.x === next.x && prev.y === next.y && prev.width === next.width && prev.height === next.height
+        ? prev
+        : next,
+    );
     const card = cardRef.current;
-    if (card) setSize({ width: card.offsetWidth, height: card.offsetHeight });
+    if (card) {
+      const { offsetWidth: width, offsetHeight: height } = card;
+      setSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
+    }
   }, [step.target]);
 
   // El elemento puede montarse un instante después (llegan los datos) o moverse (resize).
@@ -138,7 +148,7 @@ export function SpotlightTour({
         style={cardStyle}
       >
         <div className="flex h-16 items-center justify-center bg-primary text-primary-foreground" aria-hidden="true">
-          <span className="flex size-10 items-center justify-center rounded-full bg-white/30">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-background/30">
             <Icon className="size-5" />
           </span>
         </div>
