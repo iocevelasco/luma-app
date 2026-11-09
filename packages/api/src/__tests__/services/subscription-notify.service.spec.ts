@@ -10,7 +10,7 @@ vi.mock('../../models/Organization.js', () => ({
 vi.mock('../../models/User.js', () => ({ User: { findById: vi.fn(), find: vi.fn() } }));
 vi.mock('../../services/email.service.js', () => ({
   EmailService: {
-    sendSubscriptionPaymentApproved: vi.fn().mockResolvedValue(true),
+    sendSubscriptionPaymentReceipt: vi.fn().mockResolvedValue(true),
     sendSubscriptionPaymentRejected: vi.fn().mockResolvedValue(true),
     sendSubscriptionPaymentToReview: vi.fn().mockResolvedValue(true),
     sendTrialEnding: vi.fn().mockResolvedValue(true),
@@ -43,10 +43,66 @@ beforeEach(() => {
 });
 
 describe('avisos de un pago revisado', () => {
-  it('aprobado: le avisa al dueño hasta cuándo es Pro', async () => {
-    const periodEnd = d('2026-11-20T00:00:00Z');
-    await notify.notifyPaymentReviewed({ organization: 'org-1', status: 'aprobado', periodEnd } as never);
-    expect(EmailService.sendSubscriptionPaymentApproved).toHaveBeenCalledWith('ana@obra.test', 'Ana', periodEnd);
+  const approved = {
+    _id: '65f0a1b2c3d4e5f6a7b8c9d0',
+    organization: 'org-1',
+    status: 'aprobado',
+    plan: 'pro',
+    method: 'pago_movil',
+    periodStart: d('2026-10-20T00:00:00Z'),
+    periodEnd: d('2026-11-20T00:00:00Z'),
+    paidOn: '2026-10-20',
+    submittedAt: d('2026-10-20T15:00:00Z'),
+    lines: [
+      { kind: 'base', quantity: 1, unitUsd: 39, amountUsd: 39 },
+      { kind: 'extra', quantity: 7, unitUsd: 8, amountUsd: 56 },
+    ],
+    totalUsd: 95,
+    amountBs: 83778.3,
+    declaredAmountUsdt: null,
+  };
+
+  it('aprobado: le manda al dueño el recibo con lo congelado en el pago', async () => {
+    await notify.notifyPaymentReviewed(approved as never);
+    expect(EmailService.sendSubscriptionPaymentReceipt).toHaveBeenCalledWith(
+      'ana@obra.test',
+      'Ana',
+      expect.objectContaining({
+        number: 'LUMA-A7B8C9D0',
+        organization: 'Obras Ana',
+        plan: 'Pro',
+        method: 'Pago Móvil',
+        periodEnd: approved.periodEnd,
+        lines: [
+          { label: 'Plan Pro', value: '$39.00' },
+          { label: '7 × obra extra a $8.00', value: '$56.00' },
+        ],
+        total: '$95.00',
+        paidAmount: 'Bs. 83.778,30',
+      }),
+    );
+  });
+
+  it('un pago por Binance muestra lo enviado en USDT', async () => {
+    await notify.notifyPaymentReceipt({
+      ...approved,
+      method: 'binance',
+      plan: 'unlimited',
+      lines: [{ kind: 'unlimited', quantity: 1, unitUsd: 149, amountUsd: 149 }],
+      totalUsd: 149,
+      amountBs: null,
+      declaredAmountUsdt: 149,
+    } as never);
+    expect(EmailService.sendSubscriptionPaymentReceipt).toHaveBeenLastCalledWith(
+      'ana@obra.test',
+      'Ana',
+      expect.objectContaining({
+        plan: 'Ilimitado',
+        method: 'Binance (USDT)',
+        lines: [{ label: 'Plan Ilimitado', value: '$149.00' }],
+        paidAmount: '149 USDT',
+      }),
+    );
   });
 
   it('rechazado: le manda el motivo', async () => {
@@ -63,11 +119,9 @@ describe('avisos de un pago revisado', () => {
   });
 
   it('un fallo del mail no se propaga: la revisión ya quedó hecha', async () => {
-    vi.mocked(EmailService.sendSubscriptionPaymentApproved).mockRejectedValueOnce(new Error('Resend caído'));
+    vi.mocked(EmailService.sendSubscriptionPaymentReceipt).mockRejectedValueOnce(new Error('Resend caído'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    await expect(
-      notify.notifyPaymentReviewed({ organization: 'org-1', status: 'aprobado', periodEnd: new Date() } as never),
-    ).resolves.toBeUndefined();
+    await expect(notify.notifyPaymentReviewed(approved as never)).resolves.toBeUndefined();
   });
 });
 
@@ -88,7 +142,7 @@ describe('aviso a los admins', () => {
     expect(EmailService.sendSubscriptionPaymentToReview).toHaveBeenCalledWith('a1@luma.test', {
       organization: 'Obras Ana',
       owner: 'ana@obra.test',
-      amountBs: 'Bs. 32.673,54',
+      amount: 'Bs. 32.673,54',
       totalUsd: '$39.00',
       mismatch: true,
     });

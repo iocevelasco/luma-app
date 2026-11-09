@@ -1,5 +1,10 @@
 import { test } from '@playwright/test';
 
+/** Para los specs que usan las cuentas por estado de la suscripción. Sólo existen en local. */
+export function requiresSubscriptionDemo() {
+  test.skip(process.env.E2E_SUBSCRIPTION_DEMO !== '1', 'Sin las cuentas de `seed:subscription-demo`');
+}
+
 /**
  * Para los specs que necesitan la API: registran cuentas, inician sesión,
  * crean obras. Se llama una vez, arriba del `test.describe`.

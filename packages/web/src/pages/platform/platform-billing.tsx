@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BadgeCheck, CircleX, Clock, Inbox, Landmark, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, CircleX, Clock, Inbox, Landmark, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { SubscriptionPaymentStatus } from '@luma/shared';
 import { EmptyState } from '@/components/common/empty-state';
@@ -9,7 +9,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { ExchangeRatesPanel } from '@/components/platform/exchange-rates-panel';
 import { PaymentReviewCard } from '@/components/platform/payment-review-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePlatformPayments } from '@/hooks/platform/use-platform-billing-queries';
+import { usePaymentSetup, usePlatformPayments } from '@/hooks/platform/use-platform-billing-queries';
 
 const STATUSES: SubscriptionPaymentStatus[] = ['pendiente', 'aprobado', 'rechazado'];
 
@@ -38,6 +38,33 @@ function PaymentList({ status }: { status: SubscriptionPaymentStatus }) {
   );
 }
 
+/** Lo que impide cobrar o recibir comprobantes en este entorno. Sin problemas, no ocupa lugar. */
+function PaymentSetupNotice() {
+  const { t } = useTranslation();
+  const { data: setup } = usePaymentSetup();
+  if (!setup) return null;
+
+  const notices = [
+    ...(!setup.card && !setup.pagoMovil && !setup.transferencia && !setup.binance ? [t('platform.payments.noMethods')] : []),
+    ...(!setup.receipts ? [t('platform.payments.noReceiptStorage')] : []),
+  ];
+  if (notices.length === 0) return null;
+
+  return (
+    <div className="mb-4 flex flex-col gap-2">
+      {notices.map((notice) => (
+        <p
+          key={notice}
+          className="flex items-center gap-2 rounded-2xl border border-warning/50 bg-warning/10 px-3 py-2 text-sm"
+        >
+          <AlertTriangle className="size-4 shrink-0" />
+          {notice}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Lo que opera el admin de la plataforma: los pagos de la suscripción en
  * bolívares (aprobar o rechazar) y la tasa BCV. Sólo con `role: 'admin'`: la
@@ -49,6 +76,7 @@ export function PlatformBillingPage() {
 
   return (
     <PageLayout width="default">
+      <PaymentSetupNotice />
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           {STATUSES.map((status) => (

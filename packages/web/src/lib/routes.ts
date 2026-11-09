@@ -39,6 +39,7 @@ export const ROUTES = {
   PLATFORM_FEEDBACK: '/plataforma/feedback',
   /** La cola de pagos en Bs y la tasa BCV. */
   PLATFORM_BILLING: '/plataforma/pagos',
+  PLATFORM_PLANS: '/plataforma/planes',
   /** El prompt del asistente. Uno solo, para todas las cuentas. */
   PLATFORM_ASSISTANT: '/plataforma/asistente',
   /** Dónde vivía la cola de pagos antes de separar la administración: sigue redirigiendo. */

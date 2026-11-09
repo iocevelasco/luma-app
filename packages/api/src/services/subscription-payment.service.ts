@@ -2,17 +2,20 @@ import mongoose from 'mongoose';
 import {
   addMonths,
   nextPeriodStart,
+  pricingFor,
   quoteCharge,
   subscriptionState,
   usdToBolivares,
   type AdminSubscriptionPayment,
+  type BinancePaymentInput,
+  type BinanceQuote,
   type BolivaresPaymentInput,
   type BolivaresQuote,
   type BolivaresReceivingAccounts,
-  type ChargeQuote,
+  type PlanCode,
   type SubscriptionPaymentSummary,
 } from '@luma/shared';
-import { BS_PAYMENT_CONFIG } from '../config/app.config.js';
+import { BINANCE_PAYMENT_CONFIG, BS_PAYMENT_CONFIG, STORAGE_CONFIG } from '../config/app.config.js';
 import { Organization } from '../models/Organization.js';
 import { Subscription } from '../models/Subscription.js';
 import {
@@ -22,9 +25,15 @@ import {
 } from '../models/SubscriptionPayment.js';
 import { User } from '../models/User.js';
 import { badRequest, conflict, notFound, serviceUnavailable } from '../utils/errors.js';
-import { ensureCurrentRate } from './bcv.service.js';
+import { caracasDayKey, ensureCurrentRate } from './bcv.service.js';
 import { deleteObject, signObjectUrl } from './storage.service.js';
-import { billableProjects, loadFacts, previousPaidPeriod } from './subscription.service.js';
+import { resolvePricing } from './plan-config.service.js';
+import {
+  billableProjects,
+  loadFacts,
+  quoteNextPeriod,
+  type PricedCharge,
+} from './subscription.service.js';
 
 /**
  * Pagos de la suscripción en bolívares: cotizar, registrar y revisar.
@@ -37,6 +46,9 @@ type OrgId = mongoose.Types.ObjectId | string;
 
 /** Diferencia entre lo cotizado y lo que dice haber pagado que ya amerita mirar. */
 const AMOUNT_TOLERANCE = 0.01;
+
+/** Hace de banco en el índice de referencias: una orden de Binance no se usa dos veces. */
+const BINANCE_BANK = 'BINANCE';
 
 export function receivingAccounts(): BolivaresReceivingAccounts {
   return {
@@ -60,7 +72,8 @@ export async function chargeFor(
   activateNow: boolean,
   now: Date = new Date(),
   includeNextProject = false,
-): Promise<ChargeQuote> {
+  requestedPlan?: PlanCode,
+): Promise<PricedCharge> {
   const [facts, projects] = await Promise.all([
     loadFacts(organizationId),
     billableProjects(organizationId),
@@ -81,15 +94,21 @@ export async function chargeFor(
     const charged = includeNextProject
       ? [...projects, { id: 'proxima-obra', createdAt: now, archivedAt: null }]
       : projects;
-    return quoteCharge({ periodStart: now, projects: charged, previousPeriod: null });
+    const pricing = await resolvePricing(pricingFor(facts, now, requestedPlan));
+    return {
+      plan: pricing.plan,
+      planVersion: pricing.version,
+      quote: quoteCharge({
+        periodStart: now,
+        projects: charged,
+        config: pricing.config,
+        plan: pricing.plan,
+        previousPeriod: null,
+      }),
+    };
   }
 
-  const periodStart = nextPeriodStart(facts, now);
-  return quoteCharge({
-    periodStart,
-    projects,
-    previousPeriod: previousPaidPeriod(facts, periodStart),
-  });
+  return quoteNextPeriod(facts, projects, now, requestedPlan);
 }
 
 /** La cotización completa en bolívares, con la tasa vigente y dónde pagar. */
@@ -98,6 +117,7 @@ export async function bolivaresQuote(
   activateNow: boolean,
   now: Date = new Date(),
   includeNextProject = false,
+  requestedPlan?: PlanCode,
 ): Promise<BolivaresQuote> {
   const accounts = receivingAccounts();
   if (!accounts.pagoMovil && !accounts.transferencia) {
@@ -111,13 +131,52 @@ export async function bolivaresQuote(
     );
   }
 
-  const quote = await chargeFor(organizationId, activateNow, now, activateNow && includeNextProject);
+  const { quote, plan, planVersion } = await chargeFor(
+    organizationId,
+    activateNow,
+    now,
+    activateNow && includeNextProject,
+    requestedPlan,
+  );
   return {
     quote,
+    plan,
+    planVersion,
     rate,
     amountBs: usdToBolivares(quote.totalUsd, rate.usd),
     activatesNow: activateNow,
     accounts,
+    receiptRequired: STORAGE_CONFIG.ENABLED,
+  };
+}
+
+/** La cotización en USDT: 1 por dólar, sin tasa. */
+export async function binanceQuote(
+  organizationId: OrgId,
+  activateNow: boolean,
+  now: Date = new Date(),
+  includeNextProject = false,
+  requestedPlan?: PlanCode,
+): Promise<BinanceQuote> {
+  if (!BINANCE_PAYMENT_CONFIG) {
+    throw serviceUnavailable('El pago con Binance todavía no está habilitado.');
+  }
+
+  const { quote, plan, planVersion } = await chargeFor(
+    organizationId,
+    activateNow,
+    now,
+    activateNow && includeNextProject,
+    requestedPlan,
+  );
+  return {
+    quote,
+    amountUsdt: quote.totalUsd,
+    activatesNow: activateNow,
+    account: BINANCE_PAYMENT_CONFIG,
+    plan,
+    planVersion,
+    receiptRequired: STORAGE_CONFIG.ENABLED,
   };
 }
 
@@ -144,25 +203,18 @@ export async function submitBolivaresPayment(params: {
   const now = params.now ?? new Date();
   const { input } = params;
 
-  const pending = await SubscriptionPayment.exists({
-    organization: params.organizationId,
-    status: 'pendiente',
-  });
-  if (pending) {
-    throw conflict('Ya tienes un pago en revisión. Espera a que lo revisemos antes de enviar otro.');
-  }
+  await assertNoPendingPayment(params.organizationId);
 
-  const { quote, rate, amountBs } = await bolivaresQuote(
+  const { quote, rate, amountBs, plan, planVersion } = await bolivaresQuote(
     params.organizationId,
     input.activateNow,
     now,
     input.includeNextProject,
+    input.plan,
   );
 
-  const receipt = params.uploadReceipt ? await params.uploadReceipt() : null;
-
-  try {
-    return await SubscriptionPayment.create({
+  return freezePayment(
+    {
       organization: params.organizationId,
       method: input.method,
       status: 'pendiente',
@@ -171,6 +223,8 @@ export async function submitBolivaresPayment(params: {
       activatesNow: input.activateNow,
       lines: quote.lines,
       totalUsd: quote.totalUsd,
+      plan,
+      planVersion,
       bcvRate: rate.usd,
       rateValueDate: rate.valueDate,
       amountBs,
@@ -179,15 +233,85 @@ export async function submitBolivaresPayment(params: {
       reference: input.reference,
       payerId: input.payerId,
       paidOn: input.paidOn,
-      receipt,
       submittedBy: params.userId,
       submittedAt: now,
-    });
+    },
+    params.uploadReceipt,
+    'Esa referencia de ese banco ya está registrada en otro pago.',
+  );
+}
+
+/** Registra un pago en USDT como `pendiente`. Mismo recorrido que en bolívares, sin tasa. */
+export async function submitBinancePayment(params: {
+  organizationId: OrgId;
+  userId: string;
+  input: BinancePaymentInput;
+  uploadReceipt?: () => Promise<IReceipt>;
+  now?: Date;
+}): Promise<ISubscriptionPayment> {
+  const now = params.now ?? new Date();
+  const { input } = params;
+
+  await assertNoPendingPayment(params.organizationId);
+
+  const { quote, amountUsdt, plan, planVersion } = await binanceQuote(
+    params.organizationId,
+    input.activateNow,
+    now,
+    input.includeNextProject,
+    input.plan,
+  );
+
+  return freezePayment(
+    {
+      organization: params.organizationId,
+      method: 'binance',
+      status: 'pendiente',
+      periodStart: new Date(quote.periodStart),
+      periodEnd: new Date(quote.periodEnd),
+      activatesNow: input.activateNow,
+      lines: quote.lines,
+      totalUsd: quote.totalUsd,
+      plan,
+      planVersion,
+      // Lo que no se le pide a quien paga sale del propio cobro.
+      declaredAmountUsdt: input.amountUsdt ?? amountUsdt,
+      bank: BINANCE_BANK,
+      reference: input.orderId ?? null,
+      payerId: input.payerBinanceId ?? null,
+      paidOn: input.paidOn ?? caracasDayKey(now),
+      submittedBy: params.userId,
+      submittedAt: now,
+    },
+    params.uploadReceipt,
+    'Esa orden de Binance ya está registrada en otro pago.',
+  );
+}
+
+/** Una Empresa tiene un solo pago en revisión a la vez. */
+async function assertNoPendingPayment(organizationId: OrgId): Promise<void> {
+  const pending = await SubscriptionPayment.exists({
+    organization: organizationId,
+    status: 'pendiente',
+  });
+  if (pending) {
+    throw conflict('Ya tienes un pago en revisión. Espera a que lo revisemos antes de enviar otro.');
+  }
+}
+
+/** Sube el comprobante recién cuando todo validó, y lo borra si el alta falla. */
+async function freezePayment(
+  fields: Record<string, unknown>,
+  uploadReceipt: (() => Promise<IReceipt>) | undefined,
+  duplicateMessage: string,
+): Promise<ISubscriptionPayment> {
+  const receipt = uploadReceipt ? await uploadReceipt() : null;
+
+  try {
+    return await SubscriptionPayment.create({ ...fields, receipt });
   } catch (error) {
     if (receipt) await deleteObject(receipt.key).catch(() => undefined);
-    if ((error as { code?: number }).code === 11000) {
-      throw conflict('Esa referencia de ese banco ya está registrada en otro pago.');
-    }
+    if ((error as { code?: number }).code === 11000) throw conflict(duplicateMessage);
     throw error;
   }
 }
@@ -269,6 +393,9 @@ async function updateIfStillPending(
 // ─────────────────────────────── DTOs ───────────────────────────────
 
 export function hasAmountMismatch(payment: ISubscriptionPayment): boolean {
+  if (payment.declaredAmountUsdt != null) {
+    return Math.abs(payment.declaredAmountUsdt - payment.totalUsd) / payment.totalUsd > AMOUNT_TOLERANCE;
+  }
   if (payment.amountBs == null || payment.declaredAmountBs == null) return false;
   return Math.abs(payment.declaredAmountBs - payment.amountBs) / payment.amountBs > AMOUNT_TOLERANCE;
 }
@@ -298,6 +425,7 @@ export async function toPaymentSummary(
     rateValueDate: payment.rateValueDate,
     amountBs: payment.amountBs,
     declaredAmountBs: payment.declaredAmountBs,
+    declaredAmountUsdt: payment.declaredAmountUsdt ?? null,
     amountMismatch: hasAmountMismatch(payment),
     bank: payment.bank,
     reference: payment.reference,

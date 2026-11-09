@@ -162,6 +162,21 @@ export const BS_PAYMENT_CONFIG = {
       : undefined,
 } as const;
 
+/** Dónde se recibe el pago en USDT. Con el mismo criterio: sin los dos datos, no se ofrece. */
+export const BINANCE_PAYMENT_CONFIG =
+  env.BINANCE_PAY_ID && env.BINANCE_PAY_NAME
+    ? { payId: env.BINANCE_PAY_ID, name: env.BINANCE_PAY_NAME }
+    : undefined;
+
+const PAGO_MOVIL_ENV = ['PAGO_MOVIL_BANK', 'PAGO_MOVIL_PHONE', 'PAGO_MOVIL_ID'];
+const TRANSFER_ENV = ['TRANSFER_BANK', 'TRANSFER_ACCOUNT', 'TRANSFER_HOLDER', 'TRANSFER_ID'];
+
+/** Qué variables le faltan a cada método de pago en Bs. Sólo nombres, para poder loguearlo. */
+export function missingBolivaresEnv(source: Record<string, string | undefined> = process.env) {
+  const missing = (names: string[]) => names.filter((name) => !source[name]);
+  return { pagoMovil: missing(PAGO_MOVIL_ENV), transferencia: missing(TRANSFER_ENV) };
+}
+
 /**
  * Pago de la suscripción con tarjeta, en dólares (ver `services/stripe.service.ts`).
  * Sin `STRIPE_SECRET_KEY` el pago con tarjeta no se ofrece y la app sigue
@@ -356,6 +371,26 @@ export function validateConfig(): void {
   }
   if (!ANTHROPIC_CONFIG.ENABLED) {
     console.warn('⚠️  [CONFIG] Sin ANTHROPIC_API_KEY: el Consultor IA queda deshabilitado.');
+  }
+  // No aborta: tumbaría la app a quienes ya la usan. Pero sin esto nadie se entera de que no se puede cobrar.
+  const bolivares = missingBolivaresEnv();
+  if (bolivares.pagoMovil.length > 0) {
+    console.warn(`⚠️  [CONFIG] Pago Móvil no se ofrece, falta: ${bolivares.pagoMovil.join(', ')}.`);
+  }
+  if (bolivares.transferencia.length > 0) {
+    console.warn(`⚠️  [CONFIG] Transferencia no se ofrece, falta: ${bolivares.transferencia.join(', ')}.`);
+  }
+  if (!BINANCE_PAYMENT_CONFIG) {
+    console.warn('⚠️  [CONFIG] Binance no se ofrece, falta: BINANCE_PAY_ID y/o BINANCE_PAY_NAME.');
+  }
+  if (
+    !STRIPE_CONFIG.ENABLED &&
+    !BINANCE_PAYMENT_CONFIG &&
+    bolivares.pagoMovil.length > 0 &&
+    bolivares.transferencia.length > 0
+  ) {
+    const report = isProduction ? console.error : console.warn;
+    report('❌ [CONFIG] Ningún medio de pago activo: la suscripción no se puede pagar.');
   }
   if (isProduction && !process.env.APP_URL) {
     console.warn('⚠️  [CONFIG] Sin APP_URL: los links de los mails pueden apuntar mal.');

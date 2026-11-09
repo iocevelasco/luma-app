@@ -39,6 +39,7 @@ export function PaymentReviewCard({ payment }: { payment: AdminSubscriptionPayme
   const date = (iso: string) => format(new Date(iso), 'PPp', { locale });
   const day = (key: string | null) => (key ? format(fromDayKey(key), 'PP', { locale }) : '—');
   const approveError = review.variables?.decision.decision === 'aprobar' ? review.error : null;
+  const isBinance = payment.method === 'binance';
 
   return (
     // Una fila-tarjeta de la lista de pagos (DESIGN.md, "Listas"): sin borde,
@@ -70,9 +71,11 @@ export function PaymentReviewCard({ payment }: { payment: AdminSubscriptionPayme
           <Field
             label={t('platform.payments.declared')}
             value={
-              payment.declaredAmountBs != null
-                ? formatBolivares(payment.declaredAmountBs, i18n.language)
-                : '—'
+              payment.declaredAmountUsdt != null
+                ? `${payment.declaredAmountUsdt} USDT`
+                : payment.declaredAmountBs != null
+                  ? formatBolivares(payment.declaredAmountBs, i18n.language)
+                  : '—'
             }
             mono
           />
@@ -83,9 +86,13 @@ export function PaymentReviewCard({ payment }: { payment: AdminSubscriptionPayme
             mono
           />
           <Field label={t('platform.payments.method')} value={t(`subscription.method.${payment.method}`)} />
-          <Field label={t('platform.payments.bank')} value={payment.bank} />
-          <Field label={t('platform.payments.reference')} value={payment.reference} mono />
-          <Field label={t('platform.payments.payerId')} value={payment.payerId} mono />
+          {!isBinance && <Field label={t('platform.payments.bank')} value={payment.bank} />}
+          {!isBinance && (
+            <>
+              <Field label={t('platform.payments.reference')} value={payment.reference} mono />
+              <Field label={t('platform.payments.payerId')} value={payment.payerId} mono />
+            </>
+          )}
           <Field label={t('platform.payments.paidOn')} value={day(payment.paidOn)} />
           <Field label={t('platform.payments.submitted')} value={date(payment.submittedAt)} />
           <Field
@@ -115,7 +122,11 @@ export function PaymentReviewCard({ payment }: { payment: AdminSubscriptionPayme
               </a>
             </Button>
           ) : (
-            <span className="text-sm text-muted-foreground">{t('platform.payments.noReceipt')}</span>
+            <span className="text-sm text-muted-foreground">
+              {payment.receipt
+                ? t('platform.payments.receiptUnavailable', { name: payment.receipt.fileName })
+                : t('platform.payments.noReceipt')}
+            </span>
           )}
 
           {payment.status === 'pendiente' && (

@@ -24,6 +24,7 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import {
   addMonths,
+  DEFAULT_PLAN_VERSION,
   INVITABLE_PROJECT_ROLES,
   LEGAL_VERSION,
   type AccountStatus,
@@ -34,6 +35,7 @@ import {
 import { DATABASE_CONFIG, SERVER_CONFIG } from '../config/app.config.js';
 import { Project } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
+import { Subscription } from '../models/Subscription.js';
 import { SubscriptionPayment } from '../models/SubscriptionPayment.js';
 import { User, type IUser } from '../models/User.js';
 import {
@@ -42,6 +44,7 @@ import {
 } from '../services/organization.service.js';
 import { startTrialFor } from '../services/subscription.service.js';
 
+const DAY_MS = 24 * 60 * 60 * 1000;
 const FIXTURE_FILE = fileURLToPath(new URL('../../../../e2e/fixtures/users.json', import.meta.url));
 const BCRYPT_ROUNDS = 10;
 
@@ -53,6 +56,10 @@ const BCRYPT_ROUNDS = 10;
 const TEST_EMAIL = /@[^@\s]+\.test$/i;
 
 interface E2EUserFixture {
+  /** Queda con un cobro por delante, para ver el flujo de pago. */
+  paymentDue?: boolean;
+  /** La crea `seed:subscription-demo`, con su estado: acá se ignora. */
+  subscriptionDemo?: boolean;
   email: string;
   password: string;
   name: string;
@@ -80,6 +87,9 @@ function loadFixture(): E2EFixture {
   const fixture = JSON.parse(fs.readFileSync(FIXTURE_FILE, 'utf8')) as E2EFixture;
   const resolved = process.env.E2E_USERS_JSON;
   if (resolved) fixture.users = JSON.parse(resolved) as E2EFixture['users'];
+  fixture.users = Object.fromEntries(
+    Object.entries(fixture.users).filter(([, person]) => !person.subscriptionDemo),
+  );
   return fixture;
 }
 
@@ -111,7 +121,7 @@ async function upsertUser(fixture: E2EUserFixture): Promise<IUser> {
   if (!(await findMyOrganizationId(userId))) {
     await createPersonalOrganization(userId, `Empresa de ${fixture.name}`);
   }
-  await ensureCourtesyPeriod(userId);
+  await (fixture.paymentDue ? leavePaymentDue(userId) : ensureCourtesyPeriod(userId));
 
   return user;
 }
@@ -149,6 +159,43 @@ async function ensureCourtesyPeriod(userId: string) {
     periodEnd: addMonths(now, 12),
     totalUsd: 0,
     lines: [],
+    bank: 'e2e',
+    reference: `e2e-${organization}-${now.getTime()}`,
+    submittedAt: now,
+    reviewedAt: now,
+  });
+}
+
+/** Más extras de las que va a tener: lo ya pago no deja prorrateos en el próximo cobro. */
+const ALL_EXTRAS_PREPAID = 1000;
+
+/**
+ * Para recorrer el flujo de pago a mano: el plan vence en 2 días. No queda
+ * vencida ni en prueba porque varios specs editan y crean obras con esta
+ * cuenta: alcanza con que esté al día y tenga un cobro por delante.
+ *
+ * Cada siembra la deja igual, aunque se haya pagado en una prueba anterior.
+ */
+async function leavePaymentDue(userId: string) {
+  const organization = await findMyOrganizationId(userId);
+  if (!organization) return;
+
+  const now = new Date();
+  const periodStart = new Date(now.getTime() - 28 * DAY_MS);
+  await startTrialFor(organization, userId, now);
+  // Sin esto, una prueba todavía en curso correría el próximo cobro hasta su final.
+  await Subscription.updateOne({ organization }, { $set: { trialEndedEarlyAt: periodStart } });
+  await SubscriptionPayment.deleteMany({ organization });
+  await SubscriptionPayment.create({
+    organization,
+    method: 'transferencia',
+    status: 'aprobado',
+    periodStart,
+    periodEnd: new Date(now.getTime() + 2 * DAY_MS),
+    totalUsd: 0,
+    lines: [{ kind: 'extra', quantity: ALL_EXTRAS_PREPAID, unitUsd: 0, amountUsd: 0 }],
+    plan: 'pro',
+    planVersion: DEFAULT_PLAN_VERSION,
     bank: 'e2e',
     reference: `e2e-${organization}-${now.getTime()}`,
     submittedAt: now,

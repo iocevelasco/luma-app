@@ -57,4 +57,7 @@ export enum QueryKeys {
   platformCampaignAudience = 'platform-campaign-audience',
   feedbackStatus = 'feedback-status',
   platformFeedback = 'platform-feedback',
+  binanceQuote = 'binance-quote',
+  platformPaymentSetup = 'platform-payment-setup',
+  platformPlanCatalog = 'platform-plan-catalog',
 }

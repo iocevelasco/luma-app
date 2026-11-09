@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import type {
   ManualExchangeRateInput,
+  PublishPlanConfigInput,
   ReviewSubscriptionPaymentInput,
   SubscriptionPaymentStatus,
 } from '@luma/shared';
@@ -20,6 +21,41 @@ import { useAuth } from '@/providers/auth-provider';
 function useIsPlatformAdmin() {
   const { isAuthenticated, user } = useAuth();
   return isAuthenticated && isAdmin(user?.role);
+}
+
+export function usePaymentSetup() {
+  const enabled = useIsPlatformAdmin();
+
+  return useQuery({
+    queryKey: [QueryKeys.platformPaymentSetup],
+    queryFn: () => platformBillingApi.paymentSetup(),
+    enabled,
+    select: (data) => data.setup,
+  });
+}
+
+export function usePlanCatalog() {
+  const enabled = useIsPlatformAdmin();
+
+  return useQuery({
+    queryKey: [QueryKeys.platformPlanCatalog],
+    queryFn: () => platformBillingApi.planCatalog(),
+    enabled,
+    select: (data) => data.catalog,
+  });
+}
+
+export function usePublishPlanConfig() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: PublishPlanConfigInput) => platformBillingApi.publishPlanConfig(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.platformPlanCatalog] });
+      toast.success(t('platform.plans.published'));
+    },
+  });
 }
 
 export function usePlatformPayments(status: SubscriptionPaymentStatus) {

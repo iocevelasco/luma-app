@@ -1,4 +1,4 @@
-import type { SubscriptionOverview } from '@luma/shared';
+import type { PlanConfig, SubscriptionOverview } from '@luma/shared';
 
 /**
  * Qué decirle a la persona sobre su suscripción, en una función pura: la
@@ -51,18 +51,30 @@ export function subscriptionNotice(
  *
  * - `expired`: no puede crear nada; hay que renovar.
  * - `trialLimit`: en la prueba con 3 activas; la cuarta pide activar el plan.
- * - `extra`: con plan, la próxima es extra y suma $8 por mes.
+ * - `extra`: con plan, la próxima es extra y suma lo de su escalón.
  * - `free`: entra en lo incluido.
  */
 export type NextProjectState = 'free' | 'extra' | 'trialLimit' | 'expired';
 
 export function nextProjectState(subscription: SubscriptionOverview | undefined): NextProjectState {
   if (!subscription) return 'free';
-  if (subscription.status === 'ilimitado') return 'free';
+  if (subscription.status === 'ilimitado' || subscription.plan === 'unlimited') return 'free';
   if (!subscription.canWrite) return 'expired';
   const atLimit = subscription.activeProjects >= subscription.includedProjects;
   if (!atLimit || subscription.status === 'sin_iniciar') return 'free';
   return subscription.status === 'prueba' ? 'trialLimit' : 'extra';
+}
+
+/** Los escalones como los lee una persona: desde qué obra hasta cuál y a cuánto. */
+export function extraTierRanges(
+  config: PlanConfig,
+): { from: number; to: number | null; unitUsd: number }[] {
+  let from = config.includedProjects + 1;
+  return config.extraTiers.map((tier) => {
+    const range = { from, to: tier.upToProjects, unitUsd: tier.unitUsd };
+    if (tier.upToProjects !== null) from = tier.upToProjects + 1;
+    return range;
+  });
 }
 
 /** ¿Tiene una suscripción de Stripe viva? Entonces se gestiona en el portal, no se abre otro pago. */

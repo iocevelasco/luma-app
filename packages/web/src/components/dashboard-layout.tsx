@@ -48,7 +48,7 @@ export function DashboardLayout() {
   const insideProject = Boolean(projectId);
   const { pathname } = useLocation();
   // Mi cuenta: un formulario, más angosto que un listado.
-  const narrow = pathname === ROUTES.ACCOUNT_SETTINGS || pathname === ROUTES.SUBSCRIPTION;
+  const narrow = pathname === ROUTES.ACCOUNT_SETTINGS;
   // El resto va a todo el ancho y cada pantalla angosta su contenido por
   // dentro (ver `PageLayout`): así la barra de acciones queda en el mismo
   // lugar en todas, y el pie del alta de obra va de borde a borde.

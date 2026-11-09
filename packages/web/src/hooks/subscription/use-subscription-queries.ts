@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import type { BolivaresPaymentInput } from '@luma/shared';
+import type { BinancePaymentInput, BolivaresPaymentInput, PlanCode } from '@luma/shared';
 import { subscriptionApi } from '@/api/subscription';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
@@ -46,12 +46,13 @@ export function useBolivaresQuote(
   activateNow: boolean,
   includeNextProject: boolean,
   enabled: boolean,
+  plan?: PlanCode,
 ) {
   const { isAuthenticated } = useAuth();
 
   return useQuery({
-    queryKey: [QueryKeys.bolivaresQuote, activateNow, includeNextProject],
-    queryFn: () => subscriptionApi.quote(activateNow, includeNextProject),
+    queryKey: [QueryKeys.bolivaresQuote, activateNow, includeNextProject, plan],
+    queryFn: () => subscriptionApi.quote(activateNow, includeNextProject, plan),
     enabled: isAuthenticated && enabled,
     // Una cotización vieja es una tasa vieja: siempre fresca al abrir.
     staleTime: 0,
@@ -76,6 +77,39 @@ export function usePayInBolivares() {
     onSuccess: () => {
       invalidateSubscription(queryClient);
       toast.success(t('subscription.bolivares.sent'));
+    },
+    // Sin `onError`: sale de un formulario y el banner de `FormShell` lo muestra.
+  });
+}
+
+/** La cotización en USDT. Sólo cuando se abre el pago, como la de bolívares. */
+export function useBinanceQuote(
+  activateNow: boolean,
+  includeNextProject: boolean,
+  enabled: boolean,
+  plan?: PlanCode,
+) {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: [QueryKeys.binanceQuote, activateNow, includeNextProject, plan],
+    queryFn: () => subscriptionApi.binanceQuote(activateNow, includeNextProject, plan),
+    enabled: isAuthenticated && enabled,
+    staleTime: 0,
+    retry: false,
+  });
+}
+
+export function usePayWithBinance() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: ({ payload, receipt }: { payload: BinancePaymentInput; receipt: File | null }) =>
+      subscriptionApi.payWithBinance(payload, receipt),
+    onSuccess: () => {
+      invalidateSubscription(queryClient);
+      toast.success(t('subscription.binance.sent'));
     },
     // Sin `onError`: sale de un formulario y el banner de `FormShell` lo muestra.
   });

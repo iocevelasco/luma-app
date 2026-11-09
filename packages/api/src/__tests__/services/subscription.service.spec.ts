@@ -12,6 +12,15 @@ vi.mock('../../models/SubscriptionPayment.js', () => ({
   SubscriptionPayment: { find: vi.fn() },
 }));
 vi.mock('../../models/Project.js', () => ({ Project: { find: vi.fn() } }));
+vi.mock('../../services/plan-config.service.js', async () => {
+  const { LEGACY_PLAN_CONFIG } = await vi.importActual<typeof import('@luma/shared')>('@luma/shared');
+  const resolved = { version: 2, config: LEGACY_PLAN_CONFIG };
+  return {
+    currentPlan: vi.fn(async () => resolved),
+    configForVersion: vi.fn(async () => LEGACY_PLAN_CONFIG),
+    resolvePricing: vi.fn(async (source: { plan: string }) => ({ ...resolved, plan: source.plan })),
+  };
+});
 vi.mock('../../models/OrganizationMember.js', () => ({
   OrganizationMember: {
     findOne: () => ({ select: () => Promise.resolve({ user: 'owner-1' }) }),

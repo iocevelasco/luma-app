@@ -158,8 +158,9 @@
     "perks": [
       "30 dias grátis, sem cartão, com até 3 obras",
       "Plano Pro: 3 obras incluídas",
-      "$8 por mês por obra extra",
-      "Pague em bolívares pela taxa do BCV"
+      "Obras extras: $8 até a 10ª, $6 até a 25ª e $4 a partir da 26ª, por mês",
+      "Plano Ilimitado: $149 por mês, sem limite de obras",
+      "Pague em bolívares pela taxa do BCV ou em USDT pela Binance"
     ]
   },
   "faq": {
@@ -168,7 +169,7 @@
     "items": [
       {
         "q": "Como eu pago?",
-        "a": "Em bolívares, por Pago Móvil ou transferência, pela taxa do BCV do dia. O pagamento é analisado manualmente e avisamos você por e-mail. Em breve você também poderá pagar com cartão, em dólares."
+        "a": "Em bolívares, por Pago Móvil ou transferência, pela taxa do BCV do dia, ou em USDT pela Binance. O pagamento é analisado manualmente e avisamos você por e-mail. Em breve você também poderá pagar com cartão, em dólares."
       },
       {
         "q": "O que acontece se eu não pagar quando terminarem os 30 dias?",

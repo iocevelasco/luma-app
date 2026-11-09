@@ -1,10 +1,11 @@
-import { CreditCard, Landmark } from 'lucide-react';
-import { PLAN } from '@luma/shared';
+import { Coins, CreditCard, Landmark } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 import { useNavigate } from 'react-router-dom';
 import { useCardCheckout } from '@/components/subscription/card-checkout-dialog';
+import { NoPaymentMethods } from '@/components/subscription/no-payment-methods';
+import { formatMoney } from '@/lib/format-money';
 import { ROUTES } from '@/lib/routes';
 import type { SubscriptionOverview } from '@luma/shared';
 
@@ -20,22 +21,23 @@ export function ActivatePlanDialog({
   onOpenChange,
   subscription,
   onPayInBolivares,
+  onPayWithBinance,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subscription: SubscriptionOverview;
   onPayInBolivares: () => void;
+  onPayWithBinance: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   // Al terminar el pago, a Suscripción: ahí se espera al webhook y se ve el
   // plan Pro, igual que al volver de la página de Stripe.
   const checkout = useCardCheckout({
     onComplete: () => navigate(`${ROUTES.SUBSCRIPTION}?stripe=ok`),
   });
-  // La cuarta obra entra como extra: base + una.
-  const extras = Math.max(0, subscription.activeProjects + 1 - subscription.includedProjects);
-  const total = PLAN.basePriceUsd + extras * PLAN.extraProjectPriceUsd;
+  const { offer } = subscription;
+  const usd = (amount: number) => formatMoney(amount, 'USD', i18n.language);
 
   return (
     <>
@@ -43,12 +45,19 @@ export function ActivatePlanDialog({
         open={open}
         onOpenChange={onOpenChange}
         title={t('subscription.activate.title')}
-        description={t('subscription.activate.body')}
+        description={t('subscription.activate.body', {
+          included: offer.config.includedProjects,
+          base: usd(offer.config.basePriceUsd),
+          price: usd(offer.config.extraTiers[0].unitUsd),
+        })}
       >
         <div className="flex flex-col gap-4">
           <p className="rounded-2xl border border-border bg-background px-4 py-3 text-sm">
-            {t('subscription.activate.total', { amount: total })}
+            {t('subscription.activate.total', { amount: offer.proWithNextProjectUsd })}
           </p>
+          {!subscription.paymentOptions.bolivares &&
+            !subscription.paymentOptions.binance &&
+            !subscription.paymentOptions.card && <NoPaymentMethods />}
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               {t('subscription.activate.cancel')}
@@ -63,6 +72,18 @@ export function ActivatePlanDialog({
               >
                 <Landmark className="size-4" />
                 {t('subscription.activate.bolivares')}
+              </Button>
+            )}
+            {subscription.paymentOptions.binance && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  onOpenChange(false);
+                  onPayWithBinance();
+                }}
+              >
+                <Coins className="size-4" />
+                {t('subscription.activate.binance')}
               </Button>
             )}
             {subscription.paymentOptions.card && (

@@ -2,11 +2,18 @@ import type {
   AdminSubscriptionPayment,
   ApiResponse,
   BcvRate,
+  BinancePaymentInput,
+  BinanceQuote,
   BolivaresPaymentInput,
   BolivaresQuote,
   ExchangeRateRecord,
   ExchangeRatesResponse,
   ManualExchangeRateInput,
+  PaymentSetupStatus,
+  PlanCatalog,
+  PlanCode,
+  PlanVersionSummary,
+  PublishPlanConfigInput,
   ReviewSubscriptionPaymentInput,
   StripeCheckoutStart,
   SubscriptionOverview,
@@ -30,10 +37,11 @@ export const subscriptionApi = {
 
   rate: () => unwrap<{ rate: BcvRate }>(apiClient.get('/api/subscription/rate')),
 
-  quote: (activateNow: boolean, includeNextProject = false) => {
+  quote: (activateNow: boolean, includeNextProject = false, plan?: PlanCode) => {
     const params = new URLSearchParams();
     if (activateNow) params.set('activateNow', 'true');
     if (activateNow && includeNextProject) params.set('includeNextProject', 'true');
+    if (plan) params.set('plan', plan);
     const query = params.toString();
     return unwrap<BolivaresQuote>(
       apiClient.get(`/api/subscription/quote${query ? `?${query}` : ''}`),
@@ -55,8 +63,31 @@ export const subscriptionApi = {
     formData.append('amountBs', String(payload.amountBs));
     formData.append('activateNow', String(payload.activateNow));
     formData.append('includeNextProject', String(payload.includeNextProject));
+    if (payload.plan) formData.append('plan', payload.plan);
     return unwrap<{ payment: SubscriptionPaymentSummary }>(
       apiClient.post('/api/subscription/payments', formData),
+    );
+  },
+
+  binanceQuote: (activateNow: boolean, includeNextProject = false, plan?: PlanCode) => {
+    const params = new URLSearchParams();
+    if (activateNow) params.set('activateNow', 'true');
+    if (activateNow && includeNextProject) params.set('includeNextProject', 'true');
+    if (plan) params.set('plan', plan);
+    const query = params.toString();
+    return unwrap<BinanceQuote>(
+      apiClient.get(`/api/subscription/quote/binance${query ? `?${query}` : ''}`),
+    );
+  },
+
+  payWithBinance: (payload: BinancePaymentInput, receipt: File | null) => {
+    const formData = new FormData();
+    if (receipt) formData.append('receipt', receipt);
+    formData.append('activateNow', String(payload.activateNow));
+    formData.append('includeNextProject', String(payload.includeNextProject));
+    if (payload.plan) formData.append('plan', payload.plan);
+    return unwrap<{ payment: SubscriptionPaymentSummary }>(
+      apiClient.post('/api/subscription/payments/binance', formData),
     );
   },
 
@@ -68,6 +99,13 @@ export const subscriptionApi = {
 
 /** Sólo admin de plataforma. */
 export const platformBillingApi = {
+  paymentSetup: () => unwrap<{ setup: PaymentSetupStatus }>(apiClient.get('/api/admin/payment-setup')),
+
+  planCatalog: () => unwrap<{ catalog: PlanCatalog }>(apiClient.get('/api/admin/plan-config')),
+
+  publishPlanConfig: (payload: PublishPlanConfigInput) =>
+    unwrap<{ version: PlanVersionSummary }>(apiClient.post('/api/admin/plan-config', payload)),
+
   payments: (status: SubscriptionPaymentStatus) =>
     unwrap<{ payments: AdminSubscriptionPayment[] }>(
       apiClient.get(`/api/admin/subscription-payments?status=${status}`),

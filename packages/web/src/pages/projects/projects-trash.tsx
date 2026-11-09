@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { PLAN, type DeletedProject } from '@luma/shared';
+import type { DeletedProject } from '@luma/shared';
 import { Trash2, Undo2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { useDeletedProjects, useRestoreProject } from '@/hooks/projects/use-project-queries';
+import { useMySubscription } from '@/hooks/subscription/use-subscription-queries';
 
 /**
  * Las obras eliminadas de quien las creó. Se restauran durante 90 días; pasado
@@ -28,6 +29,7 @@ export function ProjectsTrashPage() {
   const { t } = useTranslation();
   const dateLocale = useDateLocale();
   const { data, isLoading, isError } = useDeletedProjects();
+  const { data: subscription } = useMySubscription();
   const restore = useRestoreProject();
   // Restaurar una extra se cobra: se confirma antes, con el precio a la vista.
   const [confirming, setConfirming] = useState<DeletedProject | null>(null);
@@ -64,7 +66,7 @@ export function ProjectsTrashPage() {
               {project.restore.blockedBy && (
                 <p className="text-xs text-muted-foreground">
                   {t(`project.trash.blocked.${project.restore.blockedBy}`, {
-                    included: PLAN.includedProjects,
+                    included: subscription?.includedProjects,
                   })}
                 </p>
               )}
@@ -93,8 +95,8 @@ export function ProjectsTrashPage() {
             <AlertDialogDescription>
               {t('project.trash.restoreExtraBody', {
                 name: confirming?.name ?? '',
-                included: PLAN.includedProjects,
-                price: PLAN.extraProjectPriceUsd,
+                included: subscription?.includedProjects,
+                price: subscription?.offer.nextProjectUsd,
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>

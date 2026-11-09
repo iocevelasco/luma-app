@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { EMAIL_CONFIG } from '../config/app.config.js';
+import { BINANCE_PAYMENT_CONFIG, EMAIL_CONFIG } from '../config/app.config.js';
 import { activationUrl } from '../utils/activation.js';
 import { appUrl } from '../utils/app-url.js';
 import { escapeHtml, renderEmailLayout, type EmailLayoutOptions } from './email-layout.js';
@@ -82,6 +82,31 @@ function savePreview(email: ResendEmail, label: string): void {
 
 /** La pantalla de Suscripción del panel: a donde llevan los mails de cobro. */
 const subscriptionUrl = () => appUrl('/admin/settings/subscription');
+
+/** Lo que dice un recibo. Sale de lo congelado en el pago: no se recalcula nada. */
+export interface PaymentReceipt {
+  number: string;
+  organization: string;
+  plan: string;
+  method: string;
+  periodStart: Date;
+  periodEnd: Date;
+  paidAt: Date;
+  lines: { label: string; value: string }[];
+  total: string;
+  /** Lo pagado si no fue en dólares: bolívares o USDT. */
+  paidAmount: string | null;
+}
+
+/** "con tarjeta, en bolívares o con Binance", según lo que esté habilitado. */
+function howToPayText(cardEnabled: boolean): string {
+  const options = [
+    ...(cardEnabled ? ['con tarjeta'] : []),
+    'en bolívares',
+    ...(BINANCE_PAYMENT_CONFIG ? ['con Binance'] : []),
+  ];
+  return options.length > 1 ? `${options.slice(0, -1).join(', ')} o ${options.at(-1)}` : options[0];
+}
 
 /** "19 de noviembre de 2026", en la hora de Caracas. */
 function longDate(date: Date): string {
@@ -460,39 +485,61 @@ export class EmailService {
 
   // ── Suscripción ─────────────────────────────────────────────────────────
 
-  /** Pago en Bs aprobado: ya es Pro, hasta cuándo. */
-  static async sendSubscriptionPaymentApproved(
+  /** El recibo de un pago ya confirmado, con el agradecimiento. */
+  static async sendSubscriptionPaymentReceipt(
     to: string,
     name: string,
-    paidUntil: Date,
+    receipt: PaymentReceipt,
   ): Promise<boolean> {
     const url = subscriptionUrl();
-    const until = longDate(paidUntil);
+    const until = longDate(receipt.periodEnd);
+    const period = `${longDate(receipt.periodStart)} al ${until}`;
+    const details = [
+      { label: 'Recibo', value: receipt.number },
+      { label: 'Empresa', value: receipt.organization },
+      { label: 'Servicio', value: `${APP_NAME}, plan ${receipt.plan}` },
+      { label: 'Período', value: period },
+      { label: 'Fecha de pago', value: longDate(receipt.paidAt) },
+      { label: 'Medio de pago', value: receipt.method },
+      ...receipt.lines,
+      { label: 'Total', value: receipt.total },
+      ...(receipt.paidAmount ? [{ label: 'Pagado', value: receipt.paidAmount }] : []),
+    ];
+    const thanks = `Gracias por ser parte del equipo de ${APP_NAME}. Cada obra que gestionas con nosotros nos ayuda a seguir mejorando.`;
+    const note = 'Este recibo confirma el pago del servicio. No reemplaza una factura fiscal.';
+
     return send(
       {
         from: FROM_EMAIL,
         to,
-        subject: `Aprobamos tu pago: ya tienes ${APP_NAME} Pro`,
+        subject: `Tu recibo de ${APP_NAME}: gracias por ser parte del equipo`,
         html: layout({
-          heading: 'Aprobamos tu pago',
-          preheader: `Tu plan Pro está activo hasta el ${until}.`,
+          heading: 'Gracias por ser parte del equipo',
+          preheader: `Recibo ${receipt.number}. Tu plan ${receipt.plan} está activo hasta el ${until}.`,
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
-            <p>Revisamos tu pago en bolívares y está todo bien. Ya tienes el plan
-               <strong>Pro</strong>.</p>`,
-          details: [
-            { label: 'Plan', value: 'Pro' },
-            { label: 'Activo hasta', value: until },
-          ],
+            <p>Recibimos tu pago y tu plan <strong>${escapeHtml(receipt.plan)}</strong> está activo
+               hasta el <strong>${until}</strong>.</p>
+            <p>${escapeHtml(thanks)}</p>`,
+          details,
           cta: { label: 'Ver mi suscripción', url },
+          note,
         }),
-        text: `Aprobamos tu pago - ${APP_NAME}\n\nHola ${name},\n\nTu plan Pro está activo hasta el ${until}.\n\n${url}`,
+        text: [
+          `Gracias por ser parte del equipo - ${APP_NAME}`,
+          `Hola ${name},`,
+          `Recibimos tu pago y tu plan ${receipt.plan} está activo hasta el ${until}.`,
+          thanks,
+          details.map((row) => `${row.label}: ${row.value}`).join('\n'),
+          note,
+          url,
+        ].join('\n\n'),
       },
-      'mail de pago aprobado',
+      'recibo de pago',
     );
   }
 
-  /** Pago en Bs rechazado, con el motivo que escribió quien lo revisó. */
+  /** Pago manual rechazado, con el motivo que escribió quien lo revisó. */
   static async sendSubscriptionPaymentRejected(
     to: string,
     name: string,
@@ -509,7 +556,7 @@ export class EmailService {
           preheader: 'Revisa el motivo y envíalo de nuevo.',
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
-            <p>Revisamos tu pago en bolívares y no lo pudimos aprobar.</p>`,
+            <p>Revisamos tu pago y no lo pudimos aprobar.</p>`,
           details: [{ label: 'Motivo', value: reason }],
           cta: { label: 'Ir a mi suscripción', url },
           note: 'Puedes enviarlo de nuevo desde tu suscripción, con la misma referencia si fue un error de carga.',
@@ -520,22 +567,22 @@ export class EmailService {
     );
   }
 
-  /** Al admin de la plataforma: entró un pago en Bs para revisar. */
+  /** Al admin de la plataforma: entró un pago manual para revisar. */
   static async sendSubscriptionPaymentToReview(
     to: string,
-    details: { organization: string; owner: string; amountBs: string; totalUsd: string; mismatch: boolean },
+    details: { organization: string; owner: string; amount: string; totalUsd: string; mismatch: boolean },
   ): Promise<boolean> {
     const url = appUrl('/admin/plataforma/pagos');
     return send(
       {
         from: FROM_EMAIL,
         to,
-        subject: `Pago en bolívares para revisar: ${details.organization}`,
+        subject: `Pago para revisar: ${details.organization}`,
         html: layout({
           heading: 'Hay un pago para revisar',
-          preheader: `${details.organization}: ${details.amountBs}`,
+          preheader: `${details.organization}: ${details.amount}`,
           bodyHtml: `
-            <p>Entró un pago en bolívares de la suscripción.</p>
+            <p>Entró un pago manual de la suscripción.</p>
             ${
               details.mismatch
                 ? '<p><strong>Ojo:</strong> lo que declaró pagar no coincide con lo cotizado. Revísalo en el banco.</p>'
@@ -544,12 +591,12 @@ export class EmailService {
           details: [
             { label: 'Empresa', value: details.organization },
             { label: 'Dueño', value: details.owner },
-            { label: 'Monto', value: `${details.amountBs} (${details.totalUsd})` },
+            { label: 'Monto', value: `${details.amount} (${details.totalUsd})` },
           ],
           cta: { label: 'Revisar pagos', url },
           note: 'Mientras está en revisión, la cuenta sigue con acceso completo 72 horas.',
         }),
-        text: `Pago para revisar - ${APP_NAME}\n\n${details.organization} (${details.owner}): ${details.amountBs} (${details.totalUsd}).${details.mismatch ? ' No coincide con lo cotizado.' : ''}\n\n${url}`,
+        text: `Pago para revisar - ${APP_NAME}\n\n${details.organization} (${details.owner}): ${details.amount} (${details.totalUsd}).${details.mismatch ? ' No coincide con lo cotizado.' : ''}\n\n${url}`,
       },
       'aviso de pago a revisar',
     );
@@ -569,7 +616,7 @@ export class EmailService {
     const url = subscriptionUrl();
     const when = daysLeft === 1 ? 'mañana' : `en ${daysLeft} días`;
     const date = longDate(trialEndsAt);
-    const howToPay = cardEnabled ? 'con tarjeta o en bolívares' : 'en bolívares';
+    const howToPay = howToPayText(cardEnabled);
     return send(
       {
         from: FROM_EMAIL,
@@ -581,7 +628,7 @@ export class EmailService {
           bodyHtml: `
             <p>Hola ${escapeHtml(name)},</p>
             <p>El <strong>${date}</strong> termina tu plan Gratis. Para seguir editando tus
-               obras, pasa a <strong>Pro</strong>: $39 por mes con 3 obras incluidas.</p>
+               obras, pasa a <strong>Pro</strong>.</p>
             <p>Puedes pagar ${howToPay}. Si pagas ahora, Pro arranca cuando termine el
                plan Gratis: no pierdes ningún día.</p>`,
           cta: { label: 'Pasar a Pro', url },
@@ -608,7 +655,7 @@ export class EmailService {
     const date = longDate(periodEndsAt);
     const today = daysLeft === 0;
     const when = today ? 'hoy' : 'en 2 días';
-    const howToPay = cardEnabled ? 'con tarjeta o en bolívares' : 'en bolívares';
+    const howToPay = howToPayText(cardEnabled);
     return send(
       {
         from: FROM_EMAIL,
@@ -641,7 +688,7 @@ export class EmailService {
    */
   static async sendPaidSubscriptionLapsed(to: string, name: string, cardEnabled = false): Promise<boolean> {
     const url = subscriptionUrl();
-    const howToPay = cardEnabled ? 'con tarjeta o en bolívares' : 'en bolívares';
+    const howToPay = howToPayText(cardEnabled);
     return send(
       {
         from: FROM_EMAIL,

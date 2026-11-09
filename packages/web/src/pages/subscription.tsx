@@ -1,25 +1,27 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { CreditCard, ExternalLink, Landmark, Settings2 } from 'lucide-react';
+import { CreditCard, ReceiptText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from '@/lib/toast';
-import { PLAN } from '@luma/shared';
 import type {
   ChargeQuote,
+  PlanCode,
   SubscriptionOverview,
   SubscriptionPaymentSummary,
   SubscriptionStatus,
 } from '@luma/shared';
 import { PageLayout } from '@/components/layout/page-layout';
+import { BinancePaymentDrawer } from '@/components/subscription/binance-payment-drawer';
 import { BolivaresPaymentDrawer } from '@/components/subscription/bolivares-payment-drawer';
 import { useCardCheckout } from '@/components/subscription/card-checkout-dialog';
+import { CheckoutDrawer } from '@/components/subscription/checkout-drawer';
+import { PlanCards } from '@/components/subscription/plan-cards';
 import { PaymentStatusBadge } from '@/components/subscription/payment-status-badge';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ListSection, RowCard, RowCardList } from '@/components/common/row-card-list';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RowCard, RowCardList } from '@/components/common/row-card-list';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useInvalidateSubscription,
   useMySubscription,
@@ -48,30 +50,39 @@ function useFormatDate() {
   return (iso: string | null) => (iso ? format(new Date(iso), 'PP', { locale }) : '—');
 }
 
+/** En móvil las dos tarjetas del resumen se leen como una sola; desde `md`, lado a lado. */
+const SUMMARY_TOP = 'max-md:rounded-b-none max-md:shadow-none';
+const SUMMARY_BOTTOM = 'max-md:rounded-t-none max-md:border-t max-md:border-border max-md:shadow-none';
+
 function StatusCard({
   subscription,
   hasPendingPayment,
+  className,
 }: {
   subscription: SubscriptionOverview;
   hasPendingPayment: boolean;
+  className?: string;
 }) {
   const { t } = useTranslation();
   const formatDate = useFormatDate();
   const extras = Math.max(0, subscription.activeProjects - subscription.includedProjects);
+  // El plan pago Ilimitado es una `activa` más; la cortesía tiene su propio estado.
+  const paidUnlimited = subscription.status === 'activa' && subscription.plan === 'unlimited';
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between gap-3">
         <CardTitle className="text-base">{t('subscription.statusTitle')}</CardTitle>
         <Badge className={STATUS_CLASSES[subscription.status]}>
-          {t(`subscription.status.${subscription.status}`)}
+          {t(paidUnlimited ? 'subscription.status.unlimitedPlan' : `subscription.status.${subscription.status}`)}
         </Badge>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 text-sm">
         <p>
-          {t(`subscription.statusDetail.${subscription.status}`, {
+          {t(paidUnlimited ? 'subscription.statusDetail.activaUnlimited' : `subscription.statusDetail.${subscription.status}`, {
             count: subscription.trialDaysLeft ?? 0,
             date: formatDate(subscription.accessUntil),
+            included: subscription.includedProjects,
           })}
         </p>
         {/*
@@ -81,7 +92,7 @@ function StatusCard({
         {hasPendingPayment && subscription.status !== 'en_revision' && (
           <p>{t('subscription.pendingPayment')}</p>
         )}
-        {subscription.status === 'ilimitado' ? (
+        {subscription.status === 'ilimitado' || paidUnlimited ? (
           <p className="text-muted-foreground">
             {t('subscription.unlimitedProjects', { active: subscription.activeProjects })}
           </p>
@@ -101,13 +112,23 @@ function StatusCard({
   );
 }
 
-function NextChargeCard({ charge, auto }: { charge: ChargeQuote; auto: boolean }) {
+function NextChargeCard({
+  charge,
+  auto,
+  includedProjects,
+  className,
+}: {
+  charge: ChargeQuote;
+  auto: boolean;
+  includedProjects: number;
+  className?: string;
+}) {
   const { t, i18n } = useTranslation();
   const formatDate = useFormatDate();
   const usd = (amount: number) => formatMoney(amount, 'USD', i18n.language);
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle className="text-base">{t('subscription.nextCharge.title')}</CardTitle>
         <p className="text-sm text-muted-foreground">
@@ -120,6 +141,8 @@ function NextChargeCard({ charge, auto }: { charge: ChargeQuote; auto: boolean }
             <span>
               {t(`subscription.nextCharge.lines.${line.kind}`, {
                 count: line.kind === 'prorrateo' ? (line.days ?? 0) : line.quantity,
+                included: includedProjects,
+                price: usd(line.unitUsd),
               })}
             </span>
             <span className="font-mono">{usd(line.amountUsd)}</span>
@@ -137,252 +160,55 @@ function NextChargeCard({ charge, auto }: { charge: ChargeQuote; auto: boolean }
   );
 }
 
-function PayCard({
-  subscription,
-  hasPendingPayment,
-  onPayInBolivares,
-  cardPayment,
-}: {
-  subscription: SubscriptionOverview;
-  hasPendingPayment: boolean;
-  onPayInBolivares: () => void;
-  cardPayment: CardPayment;
-}) {
-  const { t } = useTranslation();
-  const portal = useStripePortal();
-  const liveCard = hasLiveCard(subscription);
-  // Con un pago en Bs esperando revisión no se manda otro (la API contesta 409).
-  const inReview = subscription.status === 'en_revision' || hasPendingPayment;
-  const { card, bolivares } = subscription.paymentOptions;
-
-  const option = (icon: typeof CreditCard, title: string, hint: string, action: React.ReactNode) => {
-    const Icon = icon;
-    return (
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-4 sm:flex-row sm:items-center">
-        <Icon className="size-5 shrink-0 text-muted-foreground" />
-        <div className="min-w-0 flex-1">
-          <p className="font-medium">{title}</p>
-          <p className="text-sm text-muted-foreground">{hint}</p>
-        </div>
-        {action}
-      </div>
-    );
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t('subscription.pay.title')}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {liveCard &&
-          option(
-            Settings2,
-            t('subscription.pay.manageCard'),
-            t('subscription.pay.manageCardHint'),
-            <Button variant="secondary" onClick={() => portal.open()} disabled={portal.isPending}>
-              <ExternalLink className="size-4" />
-              {t('subscription.pay.manageCard')}
-            </Button>,
-          )}
-        {!liveCard &&
-          card &&
-          option(
-            CreditCard,
-            t('subscription.pay.card'),
-            t('subscription.pay.cardHint'),
-            <Button
-              onClick={() => cardPayment.start({ activateNow: false })}
-              disabled={cardPayment.isPending || inReview}
-            >
-              {t('subscription.pay.card')}
-            </Button>,
-          )}
-        {!liveCard &&
-          bolivares &&
-          option(
-            Landmark,
-            t('subscription.pay.bolivares'),
-            inReview ? t('subscription.pay.inReview') : t('subscription.pay.bolivaresHint'),
-            <Button variant="secondary" onClick={onPayInBolivares} disabled={inReview}>
-              {t('subscription.pay.bolivares')}
-            </Button>,
-          )}
-        {!liveCard && !card && !bolivares && (
-          <p className="text-sm text-muted-foreground">{t('subscription.pay.none')}</p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-type UpgradeStart = 'now' | 'trialEnd';
-
-/** Abrir el pago con tarjeta (ver `useCardCheckout`). */
-interface CardPayment {
-  start: (options: { activateNow: boolean }) => void;
-  isPending: boolean;
-}
-
-/**
- * Pasar de Gratis a Pro cuando la persona quiera, sin esperar a la cuarta obra.
- *
- * Dos momentos posibles, y la diferencia se dice antes de pagar:
- * - **Desde hoy**: Pro ya, sin el límite de 3 obras. Los días gratis que
- *   quedan se pierden (la regla que se acordó para cortar la prueba).
- * - **Cuando termine el plan Gratis**: deja el pago hecho y no pierde ningún
- *   día; hasta entonces sigue con el límite de 3.
- *
- * Cuánto se cobra viene del servidor: hoy, el plan más las extras que ya
- * haya; al terminar la prueba, el próximo cobro que ya calculó.
- */
-function UpgradeCard({
-  subscription,
-  onPayInBolivares,
-  cardPayment,
-}: {
-  subscription: SubscriptionOverview;
-  onPayInBolivares: (activateNow: boolean) => void;
-  cardPayment: CardPayment;
-}) {
+function PaymentHistory({ payments }: { payments: SubscriptionPaymentSummary[] }) {
   const { t, i18n } = useTranslation();
   const formatDate = useFormatDate();
-  const [start, setStart] = useState<UpgradeStart>('now');
-  const { card, bolivares } = subscription.paymentOptions;
-  const activateNow = start === 'now';
 
-  const extrasToday = Math.max(0, subscription.activeProjects - subscription.includedProjects);
-  const totalToday = PLAN.basePriceUsd + extrasToday * PLAN.extraProjectPriceUsd;
-  const totalLater = subscription.nextCharge?.totalUsd ?? PLAN.basePriceUsd;
-  const usd = (amount: number) => formatMoney(amount, 'USD', i18n.language);
-
-  const options: { value: UpgradeStart; title: string; hint: string }[] = [
-    {
-      value: 'now',
-      title: t('subscription.upgrade.now'),
-      hint: t('subscription.upgrade.nowHint', { count: subscription.trialDaysLeft ?? 0 }),
-    },
-    {
-      value: 'trialEnd',
-      title: t('subscription.upgrade.trialEnd'),
-      hint: t('subscription.upgrade.trialEndHint', { date: formatDate(subscription.trialEndsAt) }),
-    },
-  ];
+  if (payments.length === 0) {
+    return <p className="text-sm text-muted-foreground">{t('subscription.history.empty')}</p>;
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t('subscription.upgrade.title')}</CardTitle>
-        <p className="text-sm text-muted-foreground">{t('subscription.upgrade.pitch')}</p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <RadioGroup
-          value={start}
-          onValueChange={(value) => setStart(value as UpgradeStart)}
-          className="flex flex-col gap-2"
-          aria-label={t('subscription.upgrade.when')}
-        >
-          {options.map((option) => (
-            <RadioGroupItem
-              key={option.value}
-              value={option.value}
-              className={cn(
-                'w-full cursor-pointer rounded-2xl border bg-background p-4 transition-colors',
-                start === option.value ? 'border-primary' : 'border-border',
-              )}
-            >
-              <span className="flex flex-col gap-0.5">
-                <span className="font-medium">{option.title}</span>
-                <span className="text-sm text-muted-foreground">{option.hint}</span>
-              </span>
-            </RadioGroupItem>
-          ))}
-        </RadioGroup>
-
-        <p className="text-sm">
-          {activateNow
-            ? t('subscription.upgrade.totalNow', { amount: usd(totalToday) })
-            : t('subscription.upgrade.totalLater', {
-                amount: usd(totalLater),
-                date: formatDate(subscription.trialEndsAt),
+    <RowCardList>
+      {payments.map((payment) => (
+        <RowCard key={payment.id} className="flex-col items-stretch gap-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-medium">
+              {t(`subscription.method.${payment.method}`)} · {formatDate(payment.submittedAt)}
+            </span>
+            <PaymentStatusBadge status={payment.status} />
+          </div>
+          <div className="flex flex-wrap justify-between gap-2 text-muted-foreground">
+            <span>
+              {t('subscription.history.period', {
+                from: formatDate(payment.periodStart),
+                to: formatDate(payment.periodEnd),
               })}
-        </p>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          {bolivares && (
-            <Button variant="secondary" onClick={() => onPayInBolivares(activateNow)}>
-              <Landmark className="size-4" />
-              {t('subscription.pay.bolivares')}
-            </Button>
+            </span>
+            <span className="font-mono">
+              {formatMoney(payment.totalUsd, 'USD', i18n.language)}
+              {payment.amountBs != null && ` · ${formatBolivares(payment.amountBs, i18n.language)}`}
+              {payment.declaredAmountUsdt != null && ` · ${payment.declaredAmountUsdt} USDT`}
+            </span>
+          </div>
+          {payment.rejectionReason && (
+            <p className="text-destructive">
+              {t('subscription.history.rejected', { reason: payment.rejectionReason })}
+            </p>
           )}
-          {card && (
-            <Button
-              onClick={() => cardPayment.start({ activateNow })}
-              disabled={cardPayment.isPending}
+          {payment.receipt?.url && (
+            <a
+              href={payment.receipt.url}
+              target="_blank"
+              rel="noreferrer"
+              className="w-fit text-sm underline decoration-foreground/40 underline-offset-2 hover:decoration-foreground"
             >
-              <CreditCard className="size-4" />
-              {t('subscription.upgrade.payCard')}
-            </Button>
+              {t('subscription.history.receipt')}
+            </a>
           )}
-          {!card && !bolivares && (
-            <p className="text-sm text-muted-foreground">{t('subscription.pay.none')}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function HistoryCard({ payments }: { payments: SubscriptionPaymentSummary[] }) {
-  const { t, i18n } = useTranslation();
-  const formatDate = useFormatDate();
-
-  return (
-    <ListSection label={t('subscription.history.title')}>
-        {payments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('subscription.history.empty')}</p>
-        ) : (
-          <RowCardList>
-            {payments.map((payment) => (
-              <RowCard key={payment.id} className="flex-col items-stretch gap-1">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium">
-                    {t(`subscription.method.${payment.method}`)} · {formatDate(payment.submittedAt)}
-                  </span>
-                  <PaymentStatusBadge status={payment.status} />
-                </div>
-                <div className="flex flex-wrap justify-between gap-2 text-muted-foreground">
-                  <span>
-                    {t('subscription.history.period', {
-                      from: formatDate(payment.periodStart),
-                      to: formatDate(payment.periodEnd),
-                    })}
-                  </span>
-                  <span className="font-mono">
-                    {formatMoney(payment.totalUsd, 'USD', i18n.language)}
-                    {payment.amountBs != null && ` · ${formatBolivares(payment.amountBs, i18n.language)}`}
-                  </span>
-                </div>
-                {payment.rejectionReason && (
-                  <p className="text-destructive">
-                    {t('subscription.history.rejected', { reason: payment.rejectionReason })}
-                  </p>
-                )}
-                {payment.receipt?.url && (
-                  <a
-                    href={payment.receipt.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-fit text-sm underline decoration-foreground/40 underline-offset-2 hover:decoration-foreground"
-                  >
-                    {t('subscription.history.receipt')}
-                  </a>
-                )}
-              </RowCard>
-            ))}
-          </RowCardList>
-        )}
-    </ListSection>
+        </RowCard>
+      ))}
+    </RowCardList>
   );
 }
 
@@ -398,9 +224,15 @@ function HistoryCard({ payments }: { payments: SubscriptionPaymentSummary[] }) {
 export function SubscriptionPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const view = searchParams.get('tab') === 'pagos' ? 'payments' : 'plan';
   const [waitingStripe, setWaitingStripe] = useState(false);
   // `null` = cerrado; si no, con qué modo se abre el pago en Bs.
-  const [bolivaresMode, setBolivaresMode] = useState<{ activateNow: boolean } | null>(null);
+  const [bolivaresMode, setBolivaresMode] = useState<{ activateNow: boolean; plan?: PlanCode } | null>(
+    null,
+  );
+  const [binanceMode, setBinanceMode] = useState<{ activateNow: boolean; plan?: PlanCode } | null>(null);
+  const [checkoutPlan, setCheckoutPlan] = useState<PlanCode | null>(null);
+  const portal = useStripePortal();
   const invalidate = useInvalidateSubscription();
   const { data: subscription, isLoading, isError } = useMySubscription({
     pollWhilePending: waitingStripe,
@@ -415,7 +247,7 @@ export function SubscriptionPage() {
     window.setTimeout(() => setWaitingStripe(false), STRIPE_RETURN_POLL_MS);
   };
   const cardCheckout = useCardCheckout({ onComplete: waitForStripe });
-  const cardPayment: CardPayment = { start: cardCheckout.start, isPending: cardCheckout.isPending };
+  const cardPayment = { start: cardCheckout.start, isPending: cardCheckout.isPending };
 
   useEffect(() => {
     const stripe = searchParams.get('stripe');
@@ -436,42 +268,116 @@ export function SubscriptionPage() {
     }
   }, [waitingStripe, subscription, invalidate]);
 
+  const upgrading =
+    subscription?.status === 'prueba' && !hasLiveCard(subscription) && !hasPendingPayment;
+  const inReview = subscription?.status === 'en_revision' || hasPendingPayment;
+  const showPlans =
+    subscription !== undefined &&
+    subscription.status !== 'ilimitado' &&
+    subscription.status !== 'sin_iniciar';
+
   return (
     <>
-      <PageLayout width="narrow" isLoading={isLoading} isError={isError}>
+      <PageLayout
+        width="full"
+        // Aprovecha la pantalla, con un tope para que en un monitor enorme no se estire de más.
+        className="mx-auto max-w-[100rem]"
+        isLoading={isLoading}
+        isError={isError}
+        toolbar={
+          <Tabs
+            value={view}
+            onValueChange={(value) =>
+              setSearchParams(value === 'payments' ? { tab: 'pagos' } : {}, { replace: true })
+            }
+          >
+            <TabsList>
+              <TabsTrigger value="plan" icon={CreditCard}>
+                {t('subscription.history.planTab')}
+              </TabsTrigger>
+              <TabsTrigger value="payments" icon={ReceiptText}>
+                {t('subscription.history.title')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        }
+      >
         {subscription && (
           <div className={cn('flex flex-col gap-4')}>
-            <StatusCard subscription={subscription} hasPendingPayment={hasPendingPayment} />
-            {subscription.nextCharge && (
-              <NextChargeCard charge={subscription.nextCharge} auto={hasLiveCard(subscription)} />
-            )}
-            {subscription.status !== 'ilimitado' &&
-              (subscription.status === 'prueba' &&
-              !hasLiveCard(subscription) &&
-              !hasPendingPayment ? (
-                <UpgradeCard
-                  subscription={subscription}
-                  onPayInBolivares={(activateNow) => setBolivaresMode({ activateNow })}
-                  cardPayment={cardPayment}
-                />
-              ) : (
-                subscription.status !== 'sin_iniciar' && (
-                  <PayCard
+            {view === 'payments' ? (
+              <PaymentHistory payments={payments} />
+            ) : (
+              <>
+                <div className={cn('grid', subscription.nextCharge && 'md:grid-cols-2 md:gap-4')}>
+                  <StatusCard
                     subscription={subscription}
                     hasPendingPayment={hasPendingPayment}
-                    onPayInBolivares={() => setBolivaresMode({ activateNow: false })}
-                    cardPayment={cardPayment}
+                    className={subscription.nextCharge ? SUMMARY_TOP : undefined}
                   />
-                )
-              ))}
-            <HistoryCard payments={payments} />
+                  {subscription.nextCharge && (
+                    <NextChargeCard
+                      charge={subscription.nextCharge}
+                      auto={hasLiveCard(subscription)}
+                      includedProjects={subscription.includedProjects}
+                      className={SUMMARY_BOTTOM}
+                    />
+                  )}
+                </div>
+                {showPlans && (
+                  <section className="flex flex-col gap-4">
+                    <h2 className="text-center font-mono text-base">{t('subscription.plans.title')}</h2>
+                    {inReview && (
+                      <p className="text-center text-sm text-muted-foreground">
+                        {t('subscription.pay.inReview')}
+                      </p>
+                    )}
+                    <PlanCards
+                      subscription={subscription}
+                      upgrading={upgrading}
+                      inReview={inReview}
+                      onChoose={setCheckoutPlan}
+                      onManageCard={() => portal.open()}
+                      managePending={portal.isPending}
+                    />
+                  </section>
+                )}
+              </>
+            )}
           </div>
         )}
       </PageLayout>
+      {subscription && (
+        <CheckoutDrawer
+          plan={checkoutPlan}
+          onClose={() => setCheckoutPlan(null)}
+          subscription={subscription}
+          upgrading={upgrading}
+          cardPending={cardPayment.isPending}
+          onPayCard={({ activateNow }) => {
+            setCheckoutPlan(null);
+            cardPayment.start({ activateNow });
+          }}
+          onPayBolivares={(choice) => {
+            setCheckoutPlan(null);
+            setBolivaresMode(choice);
+          }}
+          onPayBinance={(choice) => {
+            setCheckoutPlan(null);
+            setBinanceMode(choice);
+          }}
+        />
+      )}
       <BolivaresPaymentDrawer
         open={bolivaresMode !== null}
         onOpenChange={(open) => !open && setBolivaresMode(null)}
         activateNow={bolivaresMode?.activateNow ?? false}
+        plan={bolivaresMode?.plan}
+      />
+      <BinancePaymentDrawer
+        open={binanceMode !== null}
+        onOpenChange={(open) => !open && setBinanceMode(null)}
+        activateNow={binanceMode?.activateNow ?? false}
+        plan={binanceMode?.plan}
       />
       {cardCheckout.dialog}
     </>

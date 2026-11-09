@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import type { SubscriptionOverview } from '@luma/shared';
-import { hasLiveCard, nextProjectState, subscriptionNotice } from './subscription';
+import { DEFAULT_PLAN_CONFIG, type SubscriptionOverview } from '@luma/shared';
+import { extraTierRanges, hasLiveCard, nextProjectState, subscriptionNotice } from './subscription';
 
 function overview(patch: Partial<SubscriptionOverview> = {}): SubscriptionOverview {
   return {
     status: 'prueba',
+    plan: 'pro',
+    offer: {
+      config: DEFAULT_PLAN_CONFIG,
+      proTodayUsd: 39,
+      proWithNextProjectUsd: 47,
+      nextProjectUsd: 8,
+      unlimitedUsd: 149,
+    },
     canWrite: true,
     accessUntil: null,
     trialEndsAt: null,
@@ -12,7 +20,7 @@ function overview(patch: Partial<SubscriptionOverview> = {}): SubscriptionOvervi
     activeProjects: 1,
     includedProjects: 3,
     nextCharge: null,
-    paymentOptions: { card: true, bolivares: true },
+    paymentOptions: { card: true, bolivares: true, binance: true },
     card: { status: null, manageable: false },
     ...patch,
   };
@@ -43,7 +51,21 @@ describe('subscriptionNotice', () => {
   });
 });
 
+describe('extraTierRanges', () => {
+  it('arma los rangos desde la primera obra extra', () => {
+    expect(extraTierRanges(DEFAULT_PLAN_CONFIG)).toEqual([
+      { from: 4, to: 10, unitUsd: 8 },
+      { from: 11, to: 25, unitUsd: 6 },
+      { from: 26, to: null, unitUsd: 4 },
+    ]);
+  });
+});
+
 describe('nextProjectState', () => {
+  it('con el plan Ilimitado ninguna obra es extra', () => {
+    expect(nextProjectState(overview({ status: 'activa', plan: 'unlimited', activeProjects: 40 }))).toBe('free');
+  });
+
   it('dentro de lo incluido: libre', () => {
     expect(nextProjectState(overview({ activeProjects: 2 }))).toBe('free');
   });

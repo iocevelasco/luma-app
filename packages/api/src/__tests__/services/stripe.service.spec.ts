@@ -11,7 +11,10 @@ vi.mock('../../config/app.config.js', () => ({
   SERVER_CONFIG: { APP_URL: 'https://luma.test/app' },
 }));
 vi.mock('../../services/stripe.client.js', () => ({ stripeRequest: vi.fn() }));
-vi.mock('../../services/subscription-notify.service.js', () => ({ notifyCardPaymentFailed: vi.fn() }));
+vi.mock('../../services/subscription-notify.service.js', () => ({
+  notifyCardPaymentFailed: vi.fn(),
+  notifyPaymentReceipt: vi.fn(),
+}));
 vi.mock('../../services/subscription.service.js', () => ({
   loadFacts: vi.fn(),
   billableProjects: vi.fn(),
@@ -20,7 +23,7 @@ vi.mock('../../models/Subscription.js', () => ({
   Subscription: { findOne: vi.fn(), updateOne: vi.fn() },
 }));
 vi.mock('../../models/SubscriptionPayment.js', () => ({
-  SubscriptionPayment: { updateOne: vi.fn() },
+  SubscriptionPayment: { updateOne: vi.fn(), findOne: vi.fn() },
 }));
 vi.mock('../../models/StripeEvent.js', () => ({
   StripeEvent: { create: vi.fn(), deleteOne: vi.fn() },
@@ -37,7 +40,9 @@ const { loadFacts, billableProjects } = await import('../../services/subscriptio
 const { Subscription } = await import('../../models/Subscription.js');
 const { SubscriptionPayment } = await import('../../models/SubscriptionPayment.js');
 const { StripeEvent } = await import('../../models/StripeEvent.js');
-const { notifyCardPaymentFailed } = await import('../../services/subscription-notify.service.js');
+const { notifyCardPaymentFailed, notifyPaymentReceipt } = await import(
+  '../../services/subscription-notify.service.js'
+);
 const svc = await import('../../services/stripe.service.js');
 
 const d = (iso: string) => new Date(iso);
@@ -261,6 +266,28 @@ describe('recordPaidInvoice', () => {
       ],
     },
     ...extra,
+  });
+
+  beforeEach(() => {
+    vi.mocked(SubscriptionPayment.updateOne).mockResolvedValue({ upsertedCount: 0 } as never);
+  });
+
+  it('manda el recibo al registrar la factura', async () => {
+    const payment = { _id: 'pay-1' };
+    vi.mocked(SubscriptionPayment.updateOne).mockResolvedValue({ upsertedCount: 1 } as never);
+    vi.mocked(SubscriptionPayment.findOne).mockResolvedValue(payment as never);
+
+    await svc.recordPaidInvoice(invoice() as never);
+
+    expect(notifyPaymentReceipt).toHaveBeenCalledWith(payment);
+  });
+
+  it('si Stripe reenvía el evento no manda otro recibo', async () => {
+    vi.mocked(notifyPaymentReceipt).mockClear();
+
+    await svc.recordPaidInvoice(invoice() as never);
+
+    expect(notifyPaymentReceipt).not.toHaveBeenCalled();
   });
 
   it('registra la factura como pago aprobado, con base, extra y prorrateo, y el período del mes pagado', async () => {

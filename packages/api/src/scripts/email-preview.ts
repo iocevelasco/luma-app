@@ -63,12 +63,26 @@ await EmailService.sendProjectNotification({
   subjectName: 'Terminamos la demolición',
   link,
 });
-await EmailService.sendSubscriptionPaymentApproved('ana@ejemplo.com', 'Ana', inDays(30));
+await EmailService.sendSubscriptionPaymentReceipt('ana@ejemplo.com', 'Ana', {
+  number: 'LUMA-A7B8C9D0',
+  organization: 'Estudio Pérez',
+  plan: 'Pro',
+  method: 'Binance (USDT)',
+  periodStart: inDays(0),
+  periodEnd: inDays(30),
+  paidAt: inDays(0),
+  lines: [
+    { label: 'Plan Pro', value: '$39.00' },
+    { label: '7 × obra extra a $8.00', value: '$56.00' },
+  ],
+  total: '$95.00',
+  paidAmount: '95 USDT',
+});
 await EmailService.sendSubscriptionPaymentRejected('ana@ejemplo.com', 'Ana', 'La referencia no aparece en el banco.');
 await EmailService.sendSubscriptionPaymentToReview('admin@ejemplo.com', {
   organization: 'Estudio Pérez',
   owner: 'Ana Pérez',
-  amountBs: 'Bs 34.391,20',
+  amount: 'Bs 34.391,20',
   totalUsd: 'USD 39',
   mismatch: false,
 });
