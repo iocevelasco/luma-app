@@ -85,6 +85,7 @@ import {
 } from '@/lib/payments-view';
 import { cn } from '@/lib/utils';
 import { numberField } from '@/lib/form-fields';
+import { sortPaymentMethods } from '@/lib/payment-methods';
 
 /**
  * `destructive` es peligro, no marca — ver DESIGN.md. Una cuota vencida es lo
@@ -273,7 +274,11 @@ function NewPaymentDrawer({
   projectCurrency: string;
   items: PaymentScheduleItem[];
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const sortedMethodOptions = useMemo(
+    () => sortPaymentMethods(PAYMENT_METHOD_OPTIONS, (method) => t(`finance.method.${method}`), i18n.language),
+    [t, i18n.language],
+  );
   const [open, setOpen] = useState(false);
   const createPayment = useCreatePayment(projectId);
 
@@ -337,7 +342,7 @@ function NewPaymentDrawer({
                   <SelectValue placeholder={t('finance.fields.methodChoose')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_METHOD_OPTIONS.map((option) => (
+                  {sortedMethodOptions.map((option) => (
                     <SelectItem key={option} value={option}>
                       {t(`finance.method.${option}`)}
                     </SelectItem>
@@ -602,7 +607,9 @@ export function ProjectPaymentsPage() {
             kind={{
               value: filters.method,
               onChange: (method) => setFilters((prev) => ({ ...prev, method })),
-              options: PAYMENT_METHODS.map((value) => ({ value, label: t(`finance.method.${value}`) })),
+              options: sortPaymentMethods(PAYMENT_METHODS, (method) => t(`finance.method.${method}`), i18n.language).map(
+                (value) => ({ value, label: t(`finance.method.${value}`) }),
+              ),
               allLabel: t('finance.payments.filters.allMethods'),
               ariaLabel: t('finance.payments.filters.method'),
             }}

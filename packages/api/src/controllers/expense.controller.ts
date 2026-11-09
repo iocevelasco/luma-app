@@ -24,8 +24,9 @@ import {
 
 /**
  * Gastos de la obra. **Todo este archivo va detrás de `expense.read` /
- * `expense.write`**, que el cliente no tiene: con el total cobrado y el total
- * gastado, su utilidad sale de una resta (regla 13).
+ * `expense.write`**. El cliente sólo tiene la lectura, y sólo si el gerente se
+ * la abrió en la obra (`expensesVisibleToClient`): con el total cobrado y el
+ * total gastado, su utilidad sale de una resta (regla 13).
  */
 
 
@@ -299,8 +300,9 @@ export async function deleteExpense(req: Request, res: Response) {
 }
 
 /**
- * El resumen económico completo, con margen. Es lo que **no** ve el cliente, y
- * por eso va detrás de `expense.read` y no de `payment.read`.
+ * El resumen económico completo, con margen. Es lo que **no** ve el cliente, ni
+ * con los gastos abiertos, y por eso va detrás de `finance.summary.read` y no de
+ * `expense.read` ni `payment.read`.
  */
 export async function getFinanceSummary(req: Request, res: Response) {
   try {

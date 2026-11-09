@@ -44,6 +44,8 @@ export interface IProject extends Document {
   trashedPeriods: Array<{ from: Date; to: Date }>;
   providersVisibleToClient: boolean;
   purchasesVisibleToClient: boolean;
+  expensesVisibleToClient: boolean;
+  paymentsVisibleToClient: boolean;
   /** Especialidades que el gerente agregó a esta obra. Ver `ProjectCustomSpecialty`. */
   customSpecialties: Array<{ key: string; label: string; archived: boolean }>;
   createdAt: Date;
@@ -82,6 +84,11 @@ const projectSchema = new Schema<IProject>(
     providersVisibleToClient: { type: Boolean, default: false },
     // Mismo criterio: cerrado por defecto, el gerente lo abre.
     purchasesVisibleToClient: { type: Boolean, default: false },
+    // Cerrado por defecto: con cobros y gastos el cliente calcula el margen.
+    expensesVisibleToClient: { type: Boolean, default: false },
+    // El único abierto por defecto: el cliente siempre vio sus cobros. Una obra
+    // anterior al campo lo lee como `true` por el default del schema.
+    paymentsVisibleToClient: { type: Boolean, default: true },
     customSpecialties: {
       type: [
         new Schema(

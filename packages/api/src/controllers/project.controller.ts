@@ -57,6 +57,9 @@ export function toProjectDTO(project: IProject): ProjectDTO {
     status: project.status,
     providersVisibleToClient: Boolean(project.providersVisibleToClient),
     purchasesVisibleToClient: Boolean(project.purchasesVisibleToClient),
+    expensesVisibleToClient: Boolean(project.expensesVisibleToClient),
+    // `!== false`: una obra leída sin el campo (lean, o anterior a él) sigue abierta.
+    paymentsVisibleToClient: project.paymentsVisibleToClient !== false,
     customSpecialties: (project.customSpecialties ?? []).map((specialty) => ({
       key: specialty.key,
       label: specialty.label,

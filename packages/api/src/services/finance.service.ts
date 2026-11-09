@@ -145,7 +145,7 @@ export async function financeSummaryFor(
     committedTotal,
     budgetTotal: budget?.totalAmount ?? 0,
     // Cobrado menos gastado. Es la utilidad, y es la cifra que la regla 13
-    // dice que el cliente no ve — por eso este resumen va con `expense.read`.
+    // dice que el cliente no ve — por eso este resumen va con `finance.summary.read`.
     marginTotal: roundMoney(payments.paidTotal - expenseTotal),
   };
 }

@@ -51,6 +51,8 @@ export type PaymentMethod =
   | 'pago_movil'
   | 'zelle'
   | 'binance'
+  | 'tarjeta_debito'
+  | 'tarjeta_credito'
   | 'efectivo'
   | 'cheque'
   | 'otro';
@@ -63,6 +65,8 @@ export const PAYMENT_METHODS: readonly PaymentMethod[] = [
   'pago_movil',
   'zelle',
   'binance',
+  'tarjeta_debito',
+  'tarjeta_credito',
   'efectivo',
   'cheque',
   'otro',

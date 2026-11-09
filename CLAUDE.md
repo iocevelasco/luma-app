@@ -120,10 +120,13 @@ la misma plata dos veces. Tres reglas que no se negocian:
 2. **Cada movimiento lleva su moneda y su cotización, congeladas.** Un gasto de
    agosto vale lo que valía en agosto; reconvertir con la cotización de hoy haría
    cambiar solo el total de una obra cerrada.
-3. **Cobros y gastos van por rutas separadas.** `payment.*` lo ve el cliente,
-   `expense.*` no. Con los dos totales, el margen del ejecutante sale de una
-   resta: si una ruta de gastos queda con `payment.read`, el cliente lo calcula
-   con un `curl`.
+3. **Cobros y gastos van por rutas separadas.** `payment.*` lo ve el cliente
+   (el gerente puede cerrárselo: `paymentsVisibleToClient`); `expense.read` sólo si
+   el gerente se lo abre en la obra (`expensesVisibleToClient`, cerrado por
+   default), y aun así el resumen con margen y la nómina van con
+   `finance.summary.read`, que el cliente nunca tiene. Con los dos totales, el
+   margen del ejecutante sale de una resta: si una ruta de gastos queda con
+   `payment.read`, el cliente lo calcula con un `curl`.
 
 Los cobros **no se editan**, sólo se crean o se borran: un cobro es un hecho con
 fecha.

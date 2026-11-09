@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { liveResourcesForCapability, type Capability } from '@luma/shared';
+import { CLIENT_VISIBILITY_FLAGS, liveResourcesForCapability, type Capability } from '@luma/shared';
 import { liveHub } from '../services/live-hub.service.js';
 
 /**
@@ -43,13 +43,13 @@ export function publishLiveChanges(req: Request, res: Response, next: NextFuncti
 
 /**
  * ¿Este cambio de la obra toca algo que decide qué puede leer cada rol? Hoy son
- * los dos flags que le abren Compras y Proveedores al cliente. Editar el nombre,
+ * los flags que le abren (o cierran) Compras, Proveedores, Gastos y Cobros al cliente. Editar el nombre,
  * la descripción o las fechas no cambia ninguna capacidad y no corta a nadie.
  */
 export function changesProjectVisibility(req: Request): boolean {
   const body = req.body as Record<string, unknown> | undefined;
   if (!body || typeof body !== 'object') return false;
-  return 'purchasesVisibleToClient' in body || 'providersVisibleToClient' in body;
+  return CLIENT_VISIBILITY_FLAGS.some((flag) => flag in body);
 }
 
 /**
