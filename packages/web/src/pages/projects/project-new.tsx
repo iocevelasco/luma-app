@@ -30,6 +30,7 @@ import {
 import { useCreateProject, useProject } from '@/hooks/projects/use-project-queries';
 import { CURRENCY_OPTIONS } from '@/lib/currencies';
 import { toDayKey } from '@/lib/day-key';
+import { formatMoney } from '@/lib/format-money';
 import {
   projectActivitiesPath,
   projectBudgetPath,
@@ -91,7 +92,7 @@ function FieldRow({
 }
 
 export function ProjectNewPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const createProject = useCreateProject();
   const { data: subscription } = useMySubscription();
@@ -249,7 +250,10 @@ export function ProjectNewPage() {
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-2">
           {isExtra && (
             <p className="rounded-2xl border border-info/40 bg-info/10 px-4 py-3 text-sm">
-              {t('project.new.extraNotice')}
+              {t('project.new.extraNotice', {
+                included: subscription?.includedProjects,
+                price: formatMoney(subscription?.offer.nextProjectUsd ?? 0, 'USD', i18n.language),
+              })}
             </p>
           )}
 

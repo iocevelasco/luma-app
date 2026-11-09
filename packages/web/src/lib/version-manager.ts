@@ -6,6 +6,7 @@
  * (token y datos de usuario) para evitar que tenga que volver a iniciar sesión.
  */
 
+import { TOUR_STORAGE_PREFIX } from './onboarding-seen';
 import { RELEASE_SEEN_KEY } from './release-notes-storage';
 
 const VERSION_STORAGE_KEY = 'app_version';
@@ -32,6 +33,21 @@ const PRESERVED_KEYS = [
   LANGUAGE_STORAGE_KEY,
   RELEASE_SEEN_STORAGE_KEY,
 ] as const;
+
+/**
+ * Lo mismo para las claves que llevan el id de la persona. Sin el recorrido acá,
+ * cada deploy se lo volvería a mostrar a todo el mundo.
+ */
+const PRESERVED_PREFIXES = [TOUR_STORAGE_PREFIX] as const;
+
+function storedKeysWithPreservedPrefix(): string[] {
+  const keys: string[] = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key && PRESERVED_PREFIXES.some((prefix) => key.startsWith(prefix))) keys.push(key);
+  }
+  return keys;
+}
 
 /**
  * Obtiene la versión actual de la aplicación desde las variables de entorno
@@ -61,7 +77,7 @@ function saveVersion(version: string): void {
  * preferencias (tema, idioma)
  */
 function clearLocalStoragePreservingSession(): void {
-  const preserved = PRESERVED_KEYS.flatMap((key) => {
+  const preserved = [...PRESERVED_KEYS, ...storedKeysWithPreservedPrefix()].flatMap((key) => {
     const value = localStorage.getItem(key);
     return value === null ? [] : [[key, value] as const];
   });

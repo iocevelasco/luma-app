@@ -18,7 +18,7 @@ import { appUrl } from '../utils/app-url.js';
 import { badRequest, conflict, notFound, serviceUnavailable } from '../utils/errors.js';
 import { StripeApiError, stripeRequest } from './stripe.client.js';
 import { billableProjects, loadFacts } from './subscription.service.js';
-import { notifyCardPaymentFailed } from './subscription-notify.service.js';
+import { notifyCardPaymentFailed, notifyPaymentReceipt } from './subscription-notify.service.js';
 
 /**
  * Suscripción con tarjeta, en dólares, vía Stripe.
@@ -478,7 +478,7 @@ export async function recordPaidInvoice(invoice: StripeInvoice) {
   const end = new Date(Math.max(...periods.map((p) => p.end)) * 1000);
   const paidAt = new Date((invoice.status_transitions?.paid_at ?? Date.now() / 1000) * 1000);
 
-  await SubscriptionPayment.updateOne(
+  const recorded = await SubscriptionPayment.updateOne(
     { stripeInvoiceId: invoice.id },
     {
       $setOnInsert: {
@@ -496,6 +496,12 @@ export async function recordPaidInvoice(invoice: StripeInvoice) {
     },
     { upsert: true },
   );
+
+  // Sólo la primera vez: Stripe puede reenviar el mismo evento.
+  if (recorded.upsertedCount === 1) {
+    const payment = await SubscriptionPayment.findOne({ stripeInvoiceId: invoice.id });
+    if (payment) void notifyPaymentReceipt(payment);
+  }
 }
 
 export interface StripeEventPayload {

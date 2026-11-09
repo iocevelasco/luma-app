@@ -17,7 +17,10 @@ import {
   getPlatformCensus,
   getPlatformFunnel,
   getPlatformUsersOverview,
+  getPaymentSetup,
+  getPlanCatalog,
   listExchangeRates,
+  publishPlanConfig,
   listPlatformFollowUp,
   listPlatformUsersPage,
   setPlatformUserUnlimited,
@@ -70,6 +73,9 @@ adminRouter.put('/chat-prompt', updateChatPrompt);
 adminRouter.get('/activity', getPlatformActivity);
 adminRouter.get('/feedback', getPlatformFeedback);
 
+adminRouter.get('/plan-config', getPlanCatalog);
+adminRouter.post('/plan-config', publishPlanConfig);
+adminRouter.get('/payment-setup', getPaymentSetup);
 adminRouter.get('/subscription-payments', listSubscriptionPaymentsForAdmin);
 adminRouter.post('/subscription-payments/:paymentId/review', reviewSubscriptionPayment);
 

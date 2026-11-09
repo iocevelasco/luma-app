@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { SubscriptionOverview } from '@luma/shared';
-import { STRIPE_CONFIG } from '../config/app.config.js';
+import { BINANCE_PAYMENT_CONFIG, STRIPE_CONFIG } from '../config/app.config.js';
 import { Subscription } from '../models/Subscription.js';
 import { findMyOrganizationId } from '../services/organization.service.js';
 import { receivingAccounts } from '../services/subscription-payment.service.js';
@@ -32,6 +32,7 @@ export async function getMySubscription(req: Request, res: Response, next: NextF
       paymentOptions: {
         card: STRIPE_CONFIG.ENABLED,
         bolivares: Boolean(accounts.pagoMovil || accounts.transferencia),
+        binance: Boolean(BINANCE_PAYMENT_CONFIG),
       },
       card: {
         status: subscription?.stripeStatus ?? null,

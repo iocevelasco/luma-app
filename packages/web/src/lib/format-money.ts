@@ -1,3 +1,19 @@
+/** Un precio de lista, grande: `$39`, sin los centavos si no los tiene. */
+export function formatPrice(amount: number, locale: string): string {
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'USD',
+      currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    // `narrowSymbol` tira RangeError en Safari anterior a 14.1.
+    return `$${amount}`;
+  }
+}
+
 /**
  * Formatea un monto con la moneda de la obra.
  *

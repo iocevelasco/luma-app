@@ -31,6 +31,9 @@ export function OnboardingTour() {
   const navigate = useNavigate();
   const { data } = useCurrentUser();
   const userId = data?.user.id;
+  // Los Términos van primero: el recorrido es una capa modal y los taparía. Al aceptarlos,
+  // `useAcceptTerms` actualiza esta caché y arranca solo.
+  const termsPending = data?.user.terms_pending === true;
   const projectId = useCurrentProjectId();
   const { data: projectData } = useProject(projectId);
   const { data: projectsData } = useProjects();
@@ -48,14 +51,14 @@ export function OnboardingTour() {
     // Si se salió de la pantalla del recorrido (el listado vacío rebota al alta), se cierra:
     // sus pasos apuntan a elementos que ya no están.
     if (level && level !== here) setLevel(null);
-    if (!userId || !here || typeof navigator === 'undefined' || navigator.webdriver) return;
+    if (!userId || !here || termsPending || typeof navigator === 'undefined' || navigator.webdriver) return;
     // Cada nivel espera sus datos: el de la obra, los permisos (explica sólo lo que se ve);
     // el de inicio, el listado (la invitación a crear la primera obra es sólo para quien no
     // tiene ninguna, y los pasos no pueden cambiar de cantidad con el recorrido abierto).
     if (here === 'project' && !capabilities) return;
     if (here === 'home' && !projectsLoaded) return;
     if (!hasSeenTour(here, userId)) setLevel(here);
-  }, [userId, here, capabilities, projectsLoaded, level]);
+  }, [userId, here, termsPending, capabilities, projectsLoaded, level]);
 
   const steps = useMemo<TourStep[]>(() => {
     if (level === 'home') {
@@ -109,7 +112,7 @@ export function OnboardingTour() {
     return [];
   }, [level, capabilities, invitedToCreate, navigate, t, userId]);
 
-  if (!level || !userId || steps.length === 0) return null;
+  if (!level || !userId || termsPending || steps.length === 0) return null;
 
   return (
     <SpotlightTour

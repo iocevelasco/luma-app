@@ -6,6 +6,7 @@ import {
   Landmark,
   Mail,
   MessageSquareHeart,
+  Tags,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -21,7 +22,7 @@ import { cn } from '@/lib/utils';
 
 const SECTIONS: {
   to: string;
-  key: 'users' | 'activity' | 'campaigns' | 'feedback' | 'billing' | 'assistant';
+  key: 'users' | 'activity' | 'campaigns' | 'feedback' | 'billing' | 'plans' | 'assistant';
   icon: LucideIcon;
 }[] = [
   { to: ROUTES.PLATFORM_USERS, key: 'users', icon: Users },
@@ -29,6 +30,7 @@ const SECTIONS: {
   { to: ROUTES.PLATFORM_CAMPAIGNS, key: 'campaigns', icon: Mail },
   { to: ROUTES.PLATFORM_FEEDBACK, key: 'feedback', icon: MessageSquareHeart },
   { to: ROUTES.PLATFORM_BILLING, key: 'billing', icon: Landmark },
+  { to: ROUTES.PLATFORM_PLANS, key: 'plans', icon: Tags },
   { to: ROUTES.PLATFORM_ASSISTANT, key: 'assistant', icon: Bot },
 ];
 

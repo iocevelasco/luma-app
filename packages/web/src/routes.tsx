@@ -118,6 +118,9 @@ const SubscriptionPage = lazy(() =>
 const PlatformCampaignsPage = lazy(() =>
   import('./pages/platform/platform-campaigns').then((m) => ({ default: m.PlatformCampaignsPage })),
 );
+const PlatformPlansPage = lazy(() =>
+  import('./pages/platform/platform-plans').then((m) => ({ default: m.PlatformPlansPage })),
+);
 const PlatformBillingPage = lazy(() =>
   import('./pages/platform/platform-billing').then((m) => ({ default: m.PlatformBillingPage })),
 );
@@ -308,6 +311,10 @@ export function AppRoutes() {
             <Route
               path={ROUTES.PLATFORM_BILLING}
               element={<LazyRoute><PlatformBillingPage /></LazyRoute>}
+            />
+            <Route
+              path={ROUTES.PLATFORM_PLANS}
+              element={<LazyRoute><PlatformPlansPage /></LazyRoute>}
             />
             <Route
               path={ROUTES.PLATFORM_ASSISTANT}

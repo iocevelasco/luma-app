@@ -14,6 +14,7 @@ import { projectCaption, type ProjectPhase } from '@/lib/project-timing';
 import { ROUTES, projectActivitiesPath } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { ActivatePlanDialog } from '@/components/subscription/activate-plan-dialog';
+import { BinancePaymentDrawer } from '@/components/subscription/binance-payment-drawer';
 import { BolivaresPaymentDrawer } from '@/components/subscription/bolivares-payment-drawer';
 import { useMySubscription } from '@/hooks/subscription/use-subscription-queries';
 import { hasBeenSentToFirstProject, markSentToFirstProject } from '@/lib/first-project-redirect';
@@ -136,6 +137,7 @@ export function AdminHomePage() {
   const { data: subscription } = useMySubscription();
   const [activating, setActivating] = useState(false);
   const [payingInBolivares, setPayingInBolivares] = useState(false);
+  const [payingWithBinance, setPayingWithBinance] = useState(false);
 
   const projects = data?.projects ?? [];
   const removed = data?.removedProjects ?? [];
@@ -209,11 +211,18 @@ export function AdminHomePage() {
         onOpenChange={setActivating}
         subscription={subscription}
         onPayInBolivares={() => setPayingInBolivares(true)}
+        onPayWithBinance={() => setPayingWithBinance(true)}
       />
     )}
     <BolivaresPaymentDrawer
       open={payingInBolivares}
       onOpenChange={setPayingInBolivares}
+      activateNow
+      includeNextProject
+    />
+    <BinancePaymentDrawer
+      open={payingWithBinance}
+      onOpenChange={setPayingWithBinance}
       activateNow
       includeNextProject
     />

@@ -1,12 +1,17 @@
 import mongoose from 'mongoose';
-import { dueReminder } from '@luma/shared';
+import {
+  dueReminder,
+  type ChargeLine,
+  type PlanCode,
+  type SubscriptionPaymentMethod,
+} from '@luma/shared';
 import { STRIPE_CONFIG } from '../config/app.config.js';
 import { Organization } from '../models/Organization.js';
 import { OrganizationMember } from '../models/OrganizationMember.js';
 import { Subscription } from '../models/Subscription.js';
 import type { ISubscriptionPayment } from '../models/SubscriptionPayment.js';
 import { User } from '../models/User.js';
-import { EmailService } from './email.service.js';
+import { EmailService, type PaymentReceipt } from './email.service.js';
 import { hasAmountMismatch } from './subscription-payment.service.js';
 import { loadFacts } from './subscription.service.js';
 
@@ -45,14 +50,74 @@ const bs = (amount: number | null) =>
     : `Bs. ${amount.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const usd = (amount: number) => `$${amount.toFixed(2)}`;
 
-/** Al dueño: su pago en Bs fue aprobado o rechazado. */
+const PLAN_LABELS: Record<PlanCode, string> = { pro: 'Pro', unlimited: 'Ilimitado' };
+
+const METHOD_LABELS: Record<SubscriptionPaymentMethod, string> = {
+  stripe: 'Tarjeta',
+  pago_movil: 'Pago Móvil',
+  transferencia: 'Transferencia bancaria',
+  binance: 'Binance (USDT)',
+};
+
+function receiptLineLabel(line: ChargeLine): string {
+  switch (line.kind) {
+    case 'base':
+      return 'Plan Pro';
+    case 'unlimited':
+      return 'Plan Ilimitado';
+    case 'extra':
+      return `${line.quantity} × obra extra a ${usd(line.unitUsd)}`;
+    case 'prorrateo':
+      return line.days ? `Obra extra del período anterior (${line.days} días)` : 'Obras extra del período anterior';
+  }
+}
+
+function paidAmountOf(payment: ISubscriptionPayment): string | null {
+  if (payment.declaredAmountUsdt != null) return `${payment.declaredAmountUsdt} USDT`;
+  return payment.amountBs != null ? bs(payment.amountBs) : null;
+}
+
+function receiptFor(payment: ISubscriptionPayment, organization: string): PaymentReceipt {
+  return {
+    number: `LUMA-${String(payment._id).slice(-8).toUpperCase()}`,
+    organization,
+    plan: PLAN_LABELS[payment.plan ?? 'pro'],
+    method: METHOD_LABELS[payment.method],
+    periodStart: payment.periodStart,
+    periodEnd: payment.periodEnd,
+    paidAt: payment.paidOn ? new Date(`${payment.paidOn}T12:00:00Z`) : payment.submittedAt,
+    lines: payment.lines.map((line) => ({ label: receiptLineLabel(line), value: usd(line.amountUsd) })),
+    total: usd(payment.totalUsd),
+    paidAmount: paidAmountOf(payment),
+  };
+}
+
+/** Al dueño: el recibo de un pago confirmado, por un admin o por Stripe. */
+export function notifyPaymentReceipt(payment: ISubscriptionPayment): Promise<void> {
+  return safely('recibo de pago', async () => {
+    const [owner, organization] = await Promise.all([
+      ownerOf(payment.organization),
+      Organization.findById(payment.organization).select('name'),
+    ]);
+    if (!owner) return;
+    await EmailService.sendSubscriptionPaymentReceipt(
+      owner.email,
+      owner.name,
+      receiptFor(payment, organization?.name ?? owner.name),
+    );
+  });
+}
+
+/** Al dueño: su pago manual fue aprobado o rechazado. */
 export function notifyPaymentReviewed(payment: ISubscriptionPayment): Promise<void> {
   return safely('aviso de pago revisado', async () => {
+    if (payment.status === 'aprobado') {
+      await notifyPaymentReceipt(payment);
+      return;
+    }
     const owner = await ownerOf(payment.organization);
     if (!owner) return;
-    if (payment.status === 'aprobado') {
-      await EmailService.sendSubscriptionPaymentApproved(owner.email, owner.name, payment.periodEnd);
-    } else if (payment.status === 'rechazado') {
+    if (payment.status === 'rechazado') {
       await EmailService.sendSubscriptionPaymentRejected(
         owner.email,
         owner.name,
@@ -62,7 +127,7 @@ export function notifyPaymentReviewed(payment: ISubscriptionPayment): Promise<vo
   });
 }
 
-/** A los admins de la plataforma: entró un pago en Bs para revisar. */
+/** A los admins de la plataforma: entró un pago manual para revisar. */
 export function notifyPaymentToReview(payment: ISubscriptionPayment): Promise<void> {
   return safely('aviso de pago a revisar', async () => {
     const [admins, organization, owner] = await Promise.all([
@@ -73,7 +138,10 @@ export function notifyPaymentToReview(payment: ISubscriptionPayment): Promise<vo
     const details = {
       organization: organization?.name ?? 'Una Empresa',
       owner: owner?.email ?? '—',
-      amountBs: bs(payment.declaredAmountBs ?? payment.amountBs),
+      amount:
+        payment.method === 'binance'
+          ? `${payment.declaredAmountUsdt ?? payment.totalUsd} USDT`
+          : bs(payment.declaredAmountBs ?? payment.amountBs),
       totalUsd: usd(payment.totalUsd),
       mismatch: hasAmountMismatch(payment),
     };

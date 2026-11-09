@@ -11,6 +11,7 @@ const send = vi.fn();
 async function loadService(apiKey: string | undefined) {
   vi.resetModules();
   vi.doMock('../../config/app.config.js', () => ({
+    BINANCE_PAYMENT_CONFIG: undefined,
     EMAIL_CONFIG: { RESEND_API_KEY: apiKey, FROM: 'luma@test.dev', APP_NAME: 'Luma', ENABLED: true },
     SERVER_CONFIG: { APP_URL: 'https://luma.test/app' },
   }));

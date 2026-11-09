@@ -35,7 +35,7 @@ export type SubscriptionStatus =
   | 'vencida'
   | 'ilimitado';
 
-export type SubscriptionPaymentMethod = 'stripe' | 'pago_movil' | 'transferencia';
+export type SubscriptionPaymentMethod = 'stripe' | 'pago_movil' | 'transferencia' | 'binance';
 
 export const BOLIVARES_PAYMENT_METHODS = ['pago_movil', 'transferencia'] as const;
 export type BolivaresPaymentMethod = (typeof BOLIVARES_PAYMENT_METHODS)[number];
@@ -54,15 +54,53 @@ export type StripeSubscriptionStatus =
   | 'incomplete_expired'
   | 'paused';
 
+/** El plan pago. Ilimitado se compra; la cortesía de un admin es otra cosa (`SubscriptionFacts.unlimited`). */
+export type PlanCode = 'pro' | 'unlimited';
+
+/** Un escalón del precio por obra extra. Graduado: cada obra paga el de su posición. */
+export interface ExtraProjectTier {
+  /** Hasta qué obra activa rige, inclusive. `null`: de ahí en adelante; sólo el último. */
+  upToProjects: number | null;
+  unitUsd: number;
+}
+
+/** Una lista de precios. Se publica en el admin y no se edita: cada cambio es una versión. */
+export interface PlanConfig {
+  basePriceUsd: number;
+  includedProjects: number;
+  trialDays: number;
+  extraTiers: ExtraProjectTier[];
+  /** `null`: el plan Ilimitado no se ofrece en esta versión. */
+  unlimitedPriceUsd: number | null;
+}
+
+/** `GET /api/admin/plan-config`, una versión publicada. */
+export interface PlanVersionSummary {
+  version: number;
+  config: PlanConfig;
+  note: string | null;
+  /** ISO 8601. `null` en la versión de fábrica, que no se publicó. */
+  createdAt: string | null;
+}
+
+/** `GET /api/admin/plan-config`. */
+export interface PlanCatalog {
+  current: PlanVersionSummary;
+  history: PlanVersionSummary[];
+  /** Con la tarjeta activa no se publica: los precios de Stripe todavía no siguen al catálogo. */
+  publishBlocked: boolean;
+}
+
 /** Una línea del cobro. Todo en dólares; la conversión a Bs va aparte. */
 export interface ChargeLine {
   /**
-   * - `base`: el plan, con 3 obras incluidas.
-   * - `extra`: cada obra activa a partir de la cuarta, mes completo por adelantado.
+   * - `base`: el plan Pro, con sus obras incluidas.
+   * - `unlimited`: el plan Ilimitado, precio fijo y sin extras.
+   * - `extra`: las obras activas de un escalón, mes completo por adelantado.
    * - `prorrateo`: una obra extra que se creó a mitad del período anterior,
    *   por los días que le quedaban a ese período.
    */
-  kind: 'base' | 'extra' | 'prorrateo';
+  kind: 'base' | 'unlimited' | 'extra' | 'prorrateo';
   quantity: number;
   unitUsd: number;
   amountUsd: number;
@@ -79,9 +117,25 @@ export interface ChargeQuote {
   totalUsd: number;
 }
 
+/** Lo que costaría cada opción hoy. Lo calcula la API: la UI no repite la cuenta. */
+export interface SubscriptionOffer {
+  config: PlanConfig;
+  /** Pasar a Pro desde hoy, con las obras que hay. */
+  proTodayUsd: number;
+  /** Pasar a Pro desde hoy para crear una obra más, que entra en el primer cobro. */
+  proWithNextProjectUsd: number;
+  /** Cuánto suma por mes la próxima obra. `0` si entra en lo incluido o el plan es Ilimitado. */
+  nextProjectUsd: number;
+  /** `null`: el plan Ilimitado no está disponible. */
+  unlimitedUsd: number | null;
+}
+
 /** Lo que la UI necesita para mostrar el estado de la suscripción. */
 export interface SubscriptionSummary {
   status: SubscriptionStatus;
+  /** El plan pago vigente, o `pro` si todavía no pagó. */
+  plan: PlanCode;
+  offer: SubscriptionOffer;
   /** Si puede crear y modificar. `false` = sólo lectura. */
   canWrite: boolean;
   /** ISO 8601. Hasta cuándo tiene acceso de escritura, gracia incluida. */
@@ -130,7 +184,47 @@ export interface BolivaresQuote {
   /** Paga desde la prueba para crear la cuarta obra: la prueba termina al aprobarse. */
   activatesNow: boolean;
   accounts: BolivaresReceivingAccounts;
+  plan: PlanCode;
+  /** La lista con la que se cotizó; se congela en el pago. `null`: la de antes del catálogo. */
+  planVersion: number | null;
+  /** Este entorno guarda comprobantes: es obligatorio. Sin storage, la API rechaza el archivo. */
+  receiptRequired: boolean;
 }
+
+/** A qué cuenta de Binance se manda el pago. Sale de la configuración del servidor. */
+export interface BinanceReceivingAccount {
+  payId: string;
+  name: string;
+}
+
+/** `GET /api/subscription/quote/binance` — lo que hay que pagar hoy en USDT. */
+export interface BinanceQuote {
+  quote: ChargeQuote;
+  /** Igual a `quote.totalUsd`: se cobra 1 USDT por dólar, sin cotización. */
+  amountUsdt: number;
+  activatesNow: boolean;
+  account: BinanceReceivingAccount;
+  plan: PlanCode;
+  planVersion: number | null;
+  receiptRequired: boolean;
+}
+
+/** `GET /api/admin/payment-setup` — con qué se puede cobrar en este entorno. */
+export interface PaymentSetupStatus {
+  card: boolean;
+  pagoMovil: boolean;
+  transferencia: boolean;
+  binance: boolean;
+  receipts: boolean;
+}
+
+/** Lo que se acepta como comprobante del pago en Bs, con la extensión con la que se guarda. */
+export const SUBSCRIPTION_RECEIPT_EXTENSIONS: Readonly<Record<string, string>> = {
+  'application/pdf': '.pdf',
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
 
 export interface SubscriptionReceipt {
   fileName: string;
@@ -154,6 +248,8 @@ export interface SubscriptionPaymentSummary {
   rateValueDate: string | null;
   amountBs: number | null;
   declaredAmountBs: number | null;
+  /** Sólo en Binance: lo que dice haber enviado. Se contrasta con `totalUsd`. */
+  declaredAmountUsdt: number | null;
   /**
    * Lo que dice haber pagado se aleja más de un 1% de lo cotizado. No rechaza
    * nada solo: le avisa a quien revisa que mire con cuidado.
@@ -183,7 +279,7 @@ export interface AdminSubscriptionPayment extends SubscriptionPaymentSummary {
  * (cambiar tarjeta, facturas, baja) tiene algo que mostrar.
  */
 export interface SubscriptionOverview extends SubscriptionSummary {
-  paymentOptions: { card: boolean; bolivares: boolean };
+  paymentOptions: { card: boolean; bolivares: boolean; binance: boolean };
   card: { status: StripeSubscriptionStatus | null; manageable: boolean };
 }
 

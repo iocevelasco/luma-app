@@ -21,6 +21,7 @@ import path from 'node:path';
  * | `contador`   | Contador en esa obra                                    |
  * | `cliente`    | Cliente en esa obra                                     |
  * | `inactive`   | Cuenta dada de baja: el login la rechaza                |
+ * | `demo*`      | Una por estado de la suscripción (`seed:subscription-demo`) |
  *
  * La obra compartida es para **mirar**, no para mutar: todas las tandas
  * entran a la misma. Un spec que crea, mueve o borra cosas arma su propia
@@ -41,7 +42,12 @@ export type E2EUserKey =
   | 'disenador'
   | 'contador'
   | 'cliente'
-  | 'inactive';
+  | 'inactive'
+  | 'demoGratis'
+  | 'demoPorVencer'
+  | 'demoPro'
+  | 'demoEnRevision'
+  | 'demoVencida';
 
 /** Los roles de obra que tienen una cuenta fija en la obra compartida. */
 export type E2EProjectRoleKey =
@@ -62,6 +68,10 @@ interface E2EUserFixture {
   /** Quien creó la obra compartida (hay dos gerentes: sólo uno la creó). */
   projectOwner?: boolean;
   accountStatus?: 'active' | 'inactive';
+  /** Queda con un cobro por delante, para ver el flujo de pago. */
+  paymentDue?: boolean;
+  /** La crea `seed:subscription-demo`, con su estado, y no `seed:e2e`. */
+  subscriptionDemo?: boolean;
 }
 
 interface E2EFixture {

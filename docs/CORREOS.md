@@ -47,7 +47,7 @@ activas y con el correo confirmado, y nunca a quien hizo la acción.
 
    ```
    RESEND_API_KEY=re_...
-   EMAIL_FROM=Luma <no-responder@luma.app>
+   EMAIL_FROM=Luma <noreply@luma-app.site>
    APP_NAME=Luma
    ```
 

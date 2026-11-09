@@ -6,6 +6,8 @@ vi.mock('../../config/app.config.js', () => ({
     PAGO_MOVIL: { bank: 'Banesco', phone: '0414-0000000', id: 'J-12345678-9' },
     TRANSFERENCIA: undefined,
   },
+  BINANCE_PAYMENT_CONFIG: { payId: '123456789', name: 'Luma' },
+  STORAGE_CONFIG: { ENABLED: true },
 }));
 vi.mock('../../models/SubscriptionPayment.js', () => ({
   SubscriptionPayment: {
@@ -18,16 +20,39 @@ vi.mock('../../models/SubscriptionPayment.js', () => ({
 vi.mock('../../models/Subscription.js', () => ({ Subscription: { updateOne: vi.fn() } }));
 vi.mock('../../models/Organization.js', () => ({ Organization: { find: vi.fn() } }));
 vi.mock('../../models/User.js', () => ({ User: { find: vi.fn() } }));
-vi.mock('../../services/bcv.service.js', () => ({ ensureCurrentRate: vi.fn() }));
+vi.mock('../../services/bcv.service.js', () => ({
+  ensureCurrentRate: vi.fn(),
+  caracasDayKey: () => '2026-10-20',
+}));
 vi.mock('../../services/storage.service.js', () => ({
   deleteObject: vi.fn().mockResolvedValue(undefined),
   signObjectUrl: vi.fn().mockResolvedValue(null),
 }));
-vi.mock('../../services/subscription.service.js', () => ({
-  loadFacts: vi.fn(),
-  billableProjects: vi.fn(),
-  previousPaidPeriod: vi.fn().mockReturnValue(null),
-}));
+vi.mock('../../services/plan-config.service.js', async () => {
+  const { LEGACY_PLAN_CONFIG } = await vi.importActual<typeof import('@luma/shared')>('@luma/shared');
+  return {
+    resolvePricing: vi.fn(async (source: { plan: string }) => ({
+      plan: source.plan,
+      version: 2,
+      config: LEGACY_PLAN_CONFIG,
+    })),
+  };
+});
+vi.mock('../../services/subscription.service.js', async () => {
+  const { nextPeriodStart, quoteCharge } = await vi.importActual<typeof import('@luma/shared')>(
+    '@luma/shared',
+  );
+  return {
+    loadFacts: vi.fn(),
+    billableProjects: vi.fn(),
+    previousPaidPeriod: vi.fn().mockReturnValue(null),
+    quoteNextPeriod: vi.fn(async (facts: SubscriptionFacts, projects: never[], now: Date) => ({
+      plan: 'pro',
+      planVersion: 2,
+      quote: quoteCharge({ periodStart: nextPeriodStart(facts, now), projects, previousPeriod: null }),
+    })),
+  };
+});
 
 const { SubscriptionPayment } = await import('../../models/SubscriptionPayment.js');
 const { Subscription } = await import('../../models/Subscription.js');
@@ -121,6 +146,73 @@ describe('bolivaresQuote', () => {
   it('activar ya fuera de la prueba no tiene sentido', async () => {
     vi.mocked(loadFacts).mockResolvedValue({ ...trialFacts, trialEndsAt: d('2026-10-15T00:00:00Z') });
     await expect(svc.bolivaresQuote('org-1', true, NOW)).rejects.toMatchObject({ code: 'VALIDATION' });
+  });
+});
+
+describe('submitBinancePayment', () => {
+  const binance = {
+    activateNow: false,
+    includeNextProject: false,
+  };
+
+  it('toma monto y fecha del propio cobro, sin tasa ni bolívares', async () => {
+    const payment = await svc.submitBinancePayment({
+      organizationId: 'org-1',
+      userId: 'user-1',
+      input: binance,
+      now: NOW,
+    });
+    expect(payment).toMatchObject({
+      method: 'binance',
+      status: 'pendiente',
+      totalUsd: 39,
+      declaredAmountUsdt: 39,
+      bank: 'BINANCE',
+      reference: null,
+      payerId: null,
+      paidOn: '2026-10-20',
+    });
+    expect(payment).not.toHaveProperty('bcvRate');
+    expect(ensureCurrentRate).not.toHaveBeenCalled();
+  });
+
+  it('si llega una orden repetida da conflicto y borra el comprobante ya subido', async () => {
+    vi.mocked(SubscriptionPayment.create).mockRejectedValue(Object.assign(new Error('dup'), { code: 11000 }));
+    const uploadReceipt = vi.fn().mockResolvedValue({
+      key: 'file-1',
+      fileName: 'orden.png',
+      contentType: 'image/png',
+      sizeBytes: 10,
+    });
+
+    await expect(
+      svc.submitBinancePayment({
+        organizationId: 'org-1',
+        userId: 'user-1',
+        input: { ...binance, orderId: '298765432109876' },
+        uploadReceipt,
+        now: NOW,
+      }),
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message: 'Esa orden de Binance ya está registrada en otro pago.',
+    });
+    expect(deleteObject).toHaveBeenCalledWith('file-1');
+  });
+
+  it('con otro pago en revisión no deja mandar un segundo', async () => {
+    vi.mocked(SubscriptionPayment.exists).mockResolvedValue({ _id: 'x' } as never);
+    await expect(
+      svc.submitBinancePayment({ organizationId: 'org-1', userId: 'user-1', input: binance, now: NOW }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(SubscriptionPayment.create).not.toHaveBeenCalled();
+  });
+
+  it('avisa si lo declarado se aleja más de 1% de lo cotizado', () => {
+    const mismatch = (declaredAmountUsdt: number) =>
+      svc.hasAmountMismatch({ declaredAmountUsdt, totalUsd: 39 } as never);
+    expect(mismatch(39)).toBe(false);
+    expect(mismatch(30)).toBe(true);
   });
 });
 

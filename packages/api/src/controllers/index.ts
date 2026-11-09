@@ -24,6 +24,7 @@ export * from './exchange-rate.controller.js';
 export * from './platform-activity.controller.js';
 export * from './platform-users.controller.js';
 export * from './subscription-payment.controller.js';
+export * from './plan-config.controller.js';
 export * from './stripe.controller.js';
 export * from './campaign.controller.js';
 export * from './chat.controller.js';

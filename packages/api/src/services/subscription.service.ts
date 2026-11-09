@@ -1,17 +1,20 @@
 import mongoose from 'mongoose';
 import {
-  PLAN,
   activeProjectsAt,
   billableWindows,
   canCreateProject,
   effectiveTrialEnd,
   nextPeriodStart,
+  pricingFor,
   quoteCharge,
   startTrial,
+  subscriptionOffer,
   subscriptionState,
   type BillableProject,
+  type ChargeQuote,
   type CreateProjectDecision,
   type PaidPeriodFact,
+  type PlanCode,
   type SubscriptionFacts,
   type SubscriptionState,
   type SubscriptionSummary,
@@ -20,6 +23,7 @@ import { OrganizationMember } from '../models/OrganizationMember.js';
 import { Project } from '../models/Project.js';
 import { Subscription, type ISubscription } from '../models/Subscription.js';
 import { SubscriptionPayment, type ISubscriptionPayment } from '../models/SubscriptionPayment.js';
+import { configForVersion, currentPlan, resolvePricing } from './plan-config.service.js';
 
 /**
  * Puente entre la base y las reglas de `@luma/shared/billing`.
@@ -35,7 +39,7 @@ function toFacts(
   subscription: ISubscription | null,
   payments: Pick<
     ISubscriptionPayment,
-    'periodStart' | 'periodEnd' | 'status' | 'submittedAt' | 'lines'
+    'periodStart' | 'periodEnd' | 'status' | 'submittedAt' | 'lines' | 'plan' | 'planVersion'
   >[],
 ): SubscriptionFacts {
   const periods: PaidPeriodFact[] = payments.map((p) => ({
@@ -46,6 +50,8 @@ function toFacts(
     prepaidExtras: (p.lines ?? [])
       .filter((line) => line.kind === 'extra')
       .reduce((sum, line) => sum + line.quantity, 0),
+    plan: p.plan,
+    planVersion: p.planVersion,
   }));
 
   if (!subscription) {
@@ -78,7 +84,7 @@ export async function loadFacts(organizationId: OrgId): Promise<SubscriptionFact
   const [subscription, payments] = await Promise.all([
     Subscription.findOne({ organization: organizationId }),
     SubscriptionPayment.find({ organization: organizationId, ...LIVE_PAYMENTS }).select(
-      'periodStart periodEnd status submittedAt lines',
+      'periodStart periodEnd status submittedAt lines plan planVersion',
     ),
   ]);
   return toFacts(subscription, payments);
@@ -104,7 +110,7 @@ export async function statesFor(
   const [subscriptions, payments] = await Promise.all([
     Subscription.find({ organization: { $in: ids } }),
     SubscriptionPayment.find({ organization: { $in: ids }, ...LIVE_PAYMENTS }).select(
-      'organization periodStart periodEnd status submittedAt lines',
+      'organization periodStart periodEnd status submittedAt lines plan planVersion',
     ),
   ]);
 
@@ -127,7 +133,8 @@ export async function startTrialFor(
   ownerId: OrgId,
   now: Date = new Date(),
 ): Promise<void> {
-  const { trialStartedAt, trialEndsAt } = startTrial(now);
+  const { config } = await currentPlan();
+  const { trialStartedAt, trialEndsAt } = startTrial(now, config.trialDays);
   await Subscription.updateOne(
     { organization: organizationId },
     { $setOnInsert: { organization: organizationId, owner: ownerId, trialStartedAt, trialEndsAt } },
@@ -174,7 +181,8 @@ export async function previewProjectCreation(
     loadFacts(organizationId),
     billableProjects(organizationId),
   ]);
-  return canCreateProject(subscriptionState(facts, now), activeProjectsAt(projects, now));
+  const { config } = await resolvePricing(pricingFor(facts, now));
+  return canCreateProject(subscriptionState(facts, now), activeProjectsAt(projects, now), config);
 }
 
 /**
@@ -198,16 +206,64 @@ export async function decideProjectCreation(
 export function previousPaidPeriod(
   facts: SubscriptionFacts,
   periodStart: Date,
-): { start: Date; end: Date; prepaidExtras?: number } | null {
+): {
+  start: Date;
+  end: Date;
+  prepaidExtras?: number;
+  plan?: PlanCode;
+  planVersion?: number | null;
+} | null {
   const t = periodStart.getTime();
   const approved = facts.periods.find((p) => p.status === 'aprobado' && p.end.getTime() === t);
   if (approved) {
-    return { start: approved.start, end: approved.end, prepaidExtras: approved.prepaidExtras };
+    return {
+      start: approved.start,
+      end: approved.end,
+      prepaidExtras: approved.prepaidExtras,
+      plan: approved.plan,
+      planVersion: approved.planVersion,
+    };
   }
   if (facts.stripe && facts.stripe.currentPeriodEnd.getTime() === t) {
     return { start: facts.stripe.currentPeriodStart, end: facts.stripe.currentPeriodEnd };
   }
   return null;
+}
+
+export interface PricedCharge {
+  quote: ChargeQuote;
+  plan: PlanCode;
+  planVersion: number | null;
+}
+
+/**
+ * El próximo período con la lista que le toca a esta Empresa. Lo creado en el
+ * período anterior se prorratea a los precios de ese período.
+ */
+export async function quoteNextPeriod(
+  facts: SubscriptionFacts,
+  projects: BillableProject[],
+  now: Date,
+  requestedPlan?: PlanCode,
+): Promise<PricedCharge> {
+  const pricing = await resolvePricing(pricingFor(facts, now, requestedPlan));
+  const periodStart = nextPeriodStart(facts, now);
+  const previous = previousPaidPeriod(facts, periodStart);
+
+  return {
+    plan: pricing.plan,
+    planVersion: pricing.version,
+    quote: quoteCharge({
+      periodStart,
+      projects,
+      config: pricing.config,
+      plan: pricing.plan,
+      previousPeriod: previous && {
+        ...previous,
+        config: await configForVersion(previous.planVersion),
+      },
+    }),
+  };
 }
 
 /**
@@ -244,23 +300,31 @@ export async function summaryFor(
 
   let nextCharge = null;
   if (state.status !== 'sin_iniciar' && state.status !== 'ilimitado') {
-    const periodStart = nextPeriodStart(facts, now);
-    nextCharge = quoteCharge({
-      periodStart,
-      projects,
-      previousPeriod: previousPaidPeriod(facts, periodStart),
-    });
+    ({ quote: nextCharge } = await quoteNextPeriod(facts, projects, now));
   }
+
+  const [pricing, catalog] = await Promise.all([
+    resolvePricing(pricingFor(facts, now)),
+    currentPlan(),
+  ]);
 
   return {
     status: state.status,
+    plan: state.plan ?? 'pro',
+    offer: subscriptionOffer({
+      config: pricing.config,
+      catalog: catalog.config,
+      projects,
+      state,
+      now,
+    }),
     canWrite: state.canWrite,
     accessUntil: state.accessUntil?.toISOString() ?? null,
     // El fin efectivo: si se cortó para crear la cuarta obra, ése.
     trialEndsAt: effectiveTrialEnd(facts)?.toISOString() ?? null,
     trialDaysLeft: state.trialDaysLeft,
     activeProjects: activeProjectsAt(projects, now),
-    includedProjects: PLAN.includedProjects,
+    includedProjects: pricing.config.includedProjects,
     nextCharge,
   };
 }

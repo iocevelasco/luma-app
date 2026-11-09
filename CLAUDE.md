@@ -140,8 +140,13 @@ siempre con `escapeHtml()`. Un correo nuevo se suma a `src/scripts/email-preview
 Lo que paga el dueño de una Empresa por usar Luma. **No se cruza nunca con los
 cobros de una obra.** Planes y cómo probar en local: `docs/SUSCRIPCION.md`.
 
-- Los números de los planes viven en `PLAN` (`packages/shared/src/billing/index.ts`);
-  la landing los repite en `pricing.*` y se cambian juntos.
+- Los precios son un catálogo: `PlanVersion`, sólo se agregan versiones, se publica
+  en `/plataforma/planes`; sin nada publicado rige `DEFAULT_PLAN_CONFIG`. Quien ya
+  paga mantiene su lista mientras no corte la continuidad (`pricingFor`). La landing
+  **no** lee la API: repite los números en `pricing.*` y se actualiza a mano.
+- Stripe todavía no sigue al catálogo: con la tarjeta activa rige
+  `LEGACY_PLAN_CONFIG` y no se publica. Antes de prender `sk_live_` hay que adaptar
+  `stripe.service.ts`: identifica el ítem por id de precio y cobraría doble.
 - **Las reglas viven en `@luma/shared/billing`**, puras y con tests. La API lee
   hechos de la base y le pregunta a shared; la UI muestra lo que la API resolvió.
   Un `if` sobre días de prueba o cantidad de obras fuera de shared va en shared.
@@ -150,8 +155,8 @@ cobros de una obra.** Planes y cómo probar en local: `docs/SUSCRIPCION.md`.
 - **Vencida = sólo lectura**, resuelto en un solo lugar: `requireProjectAccess`
   recorta las capacidades a las `.read` según la Empresa **dueña de la obra**. No
   agregues chequeos de suscripción en los controllers.
-- **Pagos**: tarjeta por Stripe Checkout embebido o bolívares a la tasa BCV con
-  aprobación manual de un admin de plataforma. El webhook es la fuente de verdad;
+- **Pagos**: tarjeta por Stripe Checkout embebido, bolívares a la tasa BCV o USDT
+  por Binance Pay, estos dos con aprobación manual de un admin de plataforma. El webhook es la fuente de verdad;
   Stripe.js se carga a mano desde `lib/stripe-js.ts`, sin paquetes npm. La tasa la
   lee una tarea programada, nunca un request de usuario.
 - Los avisos por mail (`subscription-notify.service.ts`) nunca hacen fallar la
@@ -299,7 +304,8 @@ nunca con user-agent.
 ### Cuentas fijas de E2E
 
 Una por tipo de usuario, definidas **sólo** en `e2e/fixtures/users.json`
-(`admin`, `user`, `gerente`, `supervisor`, `contador`, `cliente`, `inactive`). Para
+(`admin`, `user`, `gerente`, `supervisor`, `contador`, `cliente`, `inactive`, y las
+`demo*`, una por estado de la suscripción, que crea `seed:subscription-demo`). Para
 ejecutar E2E —o entrar a mano con un rol— se usan esas.
 
 - El `globalSetup` las siembra solo (`pnpm seed:e2e`, idempotente) y guarda una

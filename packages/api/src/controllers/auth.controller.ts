@@ -91,7 +91,9 @@ export async function login(req: Request, res: Response) {
     // Mismo mensaje para usuario inexistente y contraseña incorrecta: distinguirlos
     // convierte al login en un oráculo de qué direcciones están registradas.
     if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ success: false, error: 'Email o contraseña incorrectos' });
+      return res
+        .status(401)
+        .json({ success: false, error: 'Email o contraseña incorrectos', code: 'INVALID_CREDENTIALS' });
     }
 
     if (!user.enabled || user.account_status === 'inactive') {

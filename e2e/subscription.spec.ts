@@ -47,11 +47,12 @@ test.describe('suscripción', () => {
     await page.getByRole('button').filter({ has: page.locator('[data-slot="avatar"]') }).click();
     await page.getByTestId('user-menu-subscription').click();
     await expect(page).toHaveURL(/\/admin\/settings\/subscription$/);
-    await expect(page.getByText('Gratis', { exact: true })).toBeVisible();
+    await expect(page.getByText('Gratis', { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/Plan Gratis: te quedan 30 días/)).toBeVisible();
     // Pasar a Pro no espera a la cuarta obra: está desde el primer día.
-    await expect(page.getByText('Pasar a Pro', { exact: true })).toBeVisible();
+    await page.getByTestId('plan-cta-pro').click();
     await expect(page.getByText('Hoy pagás US$ 39,00 por el primer mes.')).toBeVisible();
+    await page.keyboard.press('Escape');
 
     for (const n of [1, 2, 3]) await createProject(page, `Obra ${n} suscripción ${RUN_ID}`);
 

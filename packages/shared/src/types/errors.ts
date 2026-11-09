@@ -19,6 +19,8 @@ export type ApiErrorCode =
   | 'VALIDATION'
   /** Falta sesión o el token no vale. */
   | 'UNAUTHENTICATED'
+  /** El login no coincide. Aparte de `UNAUTHENTICATED`: acá nunca hubo una sesión que se cerrara. */
+  | 'INVALID_CREDENTIALS'
   /** Hay sesión, pero este rol no puede. */
   | 'FORBIDDEN'
   /** No existe, o existe y no es de quien pregunta — ver abajo. */
@@ -73,6 +75,8 @@ export interface ApiErrorBody {
 export const STATUS_BY_ERROR_CODE: Record<ApiErrorCode, number> = {
   VALIDATION: 400,
   UNAUTHENTICATED: 401,
+  // 401 como UNAUTHENTICATED: `errorCodeForStatus(401)` devuelve el primero.
+  INVALID_CREDENTIALS: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,

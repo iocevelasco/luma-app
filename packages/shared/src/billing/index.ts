@@ -37,7 +37,10 @@
 import type {
   ChargeLine,
   ChargeQuote,
+  PlanCode,
+  PlanConfig,
   StripeSubscriptionStatus,
+  SubscriptionOffer,
   SubscriptionPaymentStatus,
   SubscriptionStatus,
 } from '../types/subscription.js';
@@ -50,6 +53,35 @@ export const PLAN = {
   /** Cuánto sigue con acceso un pago en Bs pendiente o un cobro de Stripe fallido. */
   graceHours: 72,
 } as const;
+
+/**
+ * Lo que regía antes del catálogo. Lo siguen pagando quienes ya pagaban
+ * (`pricingFor`) y es lo que cobra Stripe, que todavía no sigue al catálogo.
+ */
+export const LEGACY_PLAN_CONFIG: PlanConfig = {
+  basePriceUsd: PLAN.basePriceUsd,
+  includedProjects: PLAN.includedProjects,
+  trialDays: PLAN.trialDays,
+  extraTiers: [{ upToProjects: null, unitUsd: PLAN.extraProjectPriceUsd }],
+  unlimitedPriceUsd: null,
+};
+
+/**
+ * La lista de fábrica, vigente hasta que un admin publique otra. Es la versión 1:
+ * las publicadas arrancan en la 2. No se cambia: ya hay pagos congelados con ella.
+ */
+export const DEFAULT_PLAN_VERSION = 1;
+export const DEFAULT_PLAN_CONFIG: PlanConfig = {
+  basePriceUsd: 39,
+  includedProjects: 3,
+  trialDays: 30,
+  extraTiers: [
+    { upToProjects: 10, unitUsd: 8 },
+    { upToProjects: 25, unitUsd: 6 },
+    { upToProjects: null, unitUsd: 4 },
+  ],
+  unlimitedPriceUsd: 149,
+};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -93,8 +125,11 @@ function maxDate(dates: (Date | null | undefined)[]): Date | null {
 }
 
 /** Las fechas de una prueba que arranca `now`. */
-export function startTrial(now: Date): { trialStartedAt: Date; trialEndsAt: Date } {
-  return { trialStartedAt: now, trialEndsAt: new Date(now.getTime() + PLAN.trialDays * DAY_MS) };
+export function startTrial(
+  now: Date,
+  trialDays: number = PLAN.trialDays,
+): { trialStartedAt: Date; trialEndsAt: Date } {
+  return { trialStartedAt: now, trialEndsAt: new Date(now.getTime() + trialDays * DAY_MS) };
 }
 
 // ─────────────────────────────── Hechos ───────────────────────────────
@@ -108,6 +143,10 @@ export interface PaidPeriodFact {
   submittedAt: Date;
   /** Cuántas obras extra se pagaron por adelantado en este período. */
   prepaidExtras?: number;
+  /** Sin dato: Pro. */
+  plan?: PlanCode;
+  /** La lista de precios con la que se pagó. Sin dato: de antes del catálogo. */
+  planVersion?: number | null;
 }
 
 export interface StripeFact {
@@ -159,6 +198,8 @@ export function nextPeriodStart(facts: SubscriptionFacts, now: Date): Date {
 
 export interface SubscriptionState {
   status: SubscriptionStatus;
+  /** Sólo con un período pago que cubre hoy. */
+  plan?: PlanCode;
   canWrite: boolean;
   /** Hasta cuándo puede escribir, gracia incluida. `null` en `sin_iniciar` o `vencida`. */
   accessUntil: Date | null;
@@ -191,7 +232,10 @@ export function subscriptionState(facts: SubscriptionFacts, now: Date): Subscrip
   const paid = paidUntil(facts);
 
   if (coveredByPaidPeriod(facts, now)) {
-    return { status: 'activa', canWrite: true, accessUntil: paid, trialDaysLeft: null };
+    const plan = facts.periods.find(
+      (p) => p.status === 'aprobado' && p.start <= now && now < p.end,
+    )?.plan;
+    return { status: 'activa', plan: plan ?? 'pro', canWrite: true, accessUntil: paid, trialDaysLeft: null };
   }
 
   if (trialEnd && facts.trialStartedAt && now < trialEnd) {
@@ -333,14 +377,20 @@ export type CreateProjectDecision =
  * - En prueba con 3 activas → no hasta activar el plan (`PAID_PLAN_REQUIRED`):
  *   la cuarta obra es lo que corta la prueba (regla 4).
  * - Con plan, la cuarta en adelante sí, y se marca como extra.
- * - Ilimitado: siempre, y ninguna obra es extra.
+ * - Cortesía o plan Ilimitado: siempre, y ninguna obra es extra.
  */
-export function canCreateProject(state: SubscriptionState, activeProjects: number): CreateProjectDecision {
+export function canCreateProject(
+  state: SubscriptionState,
+  activeProjects: number,
+  config: Pick<PlanConfig, 'includedProjects'> = LEGACY_PLAN_CONFIG,
+): CreateProjectDecision {
   if (!state.canWrite) return { allowed: false, code: 'SUBSCRIPTION_REQUIRED' };
 
-  const atLimit = activeProjects >= PLAN.includedProjects;
+  const atLimit = activeProjects >= config.includedProjects;
 
-  if (state.status === 'ilimitado') return { allowed: true, startsTrial: false, isExtra: false };
+  if (state.status === 'ilimitado' || state.plan === 'unlimited') {
+    return { allowed: true, startsTrial: false, isExtra: false };
+  }
   if (state.status === 'sin_iniciar') return { allowed: true, startsTrial: true, isExtra: false };
   if (state.status === 'prueba' && atLimit) return { allowed: false, code: 'PAID_PLAN_REQUIRED' };
 
@@ -353,6 +403,9 @@ export interface ChargeInput {
   periodStart: Date;
   /** Las obras de la Empresa, activas y archivadas. */
   projects: BillableProject[];
+  /** La lista de precios que rige este cobro (`pricingFor`). */
+  config?: PlanConfig;
+  plan?: PlanCode;
   /**
    * El período pago anterior, si lo hubo. Sin él no hay prorrateo: es el
    * caso de quien sale de la prueba, donde plan y extras arrancan juntos el
@@ -368,41 +421,101 @@ export interface ChargeInput {
      * pagó antes de que la obra existiera.
      */
     prepaidExtras?: number;
+    /** Con Ilimitado no hubo extras que prorratear. */
+    plan?: PlanCode;
+    /** Lo creado en ese período se cobra a los precios de ese período. */
+    config?: PlanConfig;
   } | null;
+}
+
+/** El precio de la obra número `position`, según el escalón en que cae. */
+export function extraUnitPrice(config: PlanConfig, position: number): number {
+  const tier = config.extraTiers.find((t) => t.upToProjects === null || position <= t.upToProjects);
+  if (!tier) throw new Error('La lista de precios no tiene un escalón sin tope');
+  return tier.unitUsd;
+}
+
+/** Una línea por escalón: la 4ª a la 10ª a un precio, de la 11ª en adelante a otro. */
+function extraLines(config: PlanConfig, activeProjects: number): ChargeLine[] {
+  const lines: ChargeLine[] = [];
+  let from = config.includedProjects + 1;
+  for (const tier of config.extraTiers) {
+    const to = Math.min(activeProjects, tier.upToProjects ?? activeProjects);
+    if (to < from) continue;
+    const quantity = to - from + 1;
+    lines.push({
+      kind: 'extra',
+      quantity,
+      unitUsd: tier.unitUsd,
+      amountUsd: round2(quantity * tier.unitUsd),
+    });
+    from = to + 1;
+  }
+  return lines;
+}
+
+function planLines(config: PlanConfig, plan: PlanCode, activeProjects: number): ChargeLine[] {
+  if (plan === 'unlimited') {
+    if (config.unlimitedPriceUsd === null) throw new Error('Esta lista no ofrece el plan Ilimitado');
+    const unitUsd = config.unlimitedPriceUsd;
+    return [{ kind: 'unlimited', quantity: 1, unitUsd, amountUsd: unitUsd }];
+  }
+  return [
+    { kind: 'base', quantity: 1, unitUsd: config.basePriceUsd, amountUsd: config.basePriceUsd },
+    ...extraLines(config, activeProjects),
+  ];
+}
+
+export type PricingSource = { plan: PlanCode; version: number | null | 'current' };
+
+/**
+ * Qué lista de precios rige el próximo cobro. Quien ya paga mantiene la suya
+ * mientras no corte la continuidad (se renueva antes de que termine la gracia);
+ * quien corta, paga por primera vez o cambia de plan entra a la vigente.
+ */
+export function pricingFor(
+  facts: SubscriptionFacts,
+  now: Date,
+  requested?: PlanCode,
+): PricingSource {
+  const last = facts.periods
+    .filter((p) => p.status === 'aprobado')
+    .reduce<PaidPeriodFact | null>((best, p) => (!best || p.end > best.end ? p : best), null);
+
+  if (!last || now >= addHours(last.end, PLAN.graceHours)) {
+    return { plan: requested ?? 'pro', version: 'current' };
+  }
+
+  const keptPlan = last.plan ?? 'pro';
+  const plan = requested ?? keptPlan;
+  return plan === keptPlan ? { plan, version: last.planVersion ?? null } : { plan, version: 'current' };
 }
 
 /**
  * Lo que se cobra por un período que arranca en `periodStart`:
  *
- * - el plan base;
- * - cada obra activa al arrancar más allá de la tercera, mes completo;
+ * - el plan: Pro más sus extras, o Ilimitado a precio fijo;
+ * - en Pro, cada obra activa al arrancar más allá de las incluidas, mes
+ *   completo y al precio de su escalón (graduado: sumar una obra nunca baja
+ *   la factura);
  * - el prorrateo de las extras que se crearon durante el período anterior,
  *   por los días que le quedaban. Si después se archivaron igual se cobran:
  *   archivar no devuelve días (regla 6).
  */
 export function quoteCharge(input: ChargeInput): ChargeQuote {
   const { periodStart, projects, previousPeriod } = input;
+  const config = input.config ?? LEGACY_PLAN_CONFIG;
   const periodEnd = addMonths(periodStart, 1);
-  const lines: ChargeLine[] = [
-    { kind: 'base', quantity: 1, unitUsd: PLAN.basePriceUsd, amountUsd: PLAN.basePriceUsd },
-  ];
+  const lines = planLines(config, input.plan ?? 'pro', activeProjectsAt(projects, periodStart));
 
-  const extras = Math.max(0, activeProjectsAt(projects, periodStart) - PLAN.includedProjects);
-  if (extras > 0) {
-    lines.push({
-      kind: 'extra',
-      quantity: extras,
-      unitUsd: PLAN.extraProjectPriceUsd,
-      amountUsd: round2(extras * PLAN.extraProjectPriceUsd),
-    });
-  }
-
-  if (previousPeriod) {
+  if (previousPeriod && previousPeriod.plan !== 'unlimited') {
+    const previousConfig = previousPeriod.config ?? config;
+    const included = previousConfig.includedProjects;
     const length = previousPeriod.end.getTime() - previousPeriod.start.getTime();
     const prepaid =
       previousPeriod.prepaidExtras ??
-      Math.max(0, activeProjectsAt(projects, previousPeriod.start) - PLAN.includedProjects);
-    const paidSlots = PLAN.includedProjects + prepaid;
+      Math.max(0, activeProjectsAt(projects, previousPeriod.start) - included);
+    const paidSlots = included + prepaid;
     const createdDuring = projects
       .filter((p) => p.createdAt > previousPeriod.start && p.createdAt < previousPeriod.end)
       .filter((p) => activeBefore(p, projects) >= paidSlots)
@@ -410,11 +523,12 @@ export function quoteCharge(input: ChargeInput): ChargeQuote {
 
     for (const project of createdDuring) {
       const remaining = previousPeriod.end.getTime() - project.createdAt.getTime();
+      const unitUsd = extraUnitPrice(previousConfig, activeBefore(project, projects) + 1);
       lines.push({
         kind: 'prorrateo',
         quantity: 1,
-        unitUsd: PLAN.extraProjectPriceUsd,
-        amountUsd: round2((PLAN.extraProjectPriceUsd * remaining) / length),
+        unitUsd,
+        amountUsd: round2((unitUsd * remaining) / length),
         projectId: project.id,
         days: Math.ceil(remaining / DAY_MS),
       });
@@ -426,6 +540,35 @@ export function quoteCharge(input: ChargeInput): ChargeQuote {
     periodEnd: periodEnd.toISOString(),
     lines,
     totalUsd: round2(lines.reduce((sum, line) => sum + line.amountUsd, 0)),
+  };
+}
+
+/**
+ * Lo que costaría cada opción hoy, para que la UI no repita la cuenta.
+ *
+ * `config` es la lista que rige el próximo cobro de esta Empresa; `catalog`, la
+ * vigente para quien entra o cambia de plan.
+ */
+export function subscriptionOffer(input: {
+  config: PlanConfig;
+  catalog: PlanConfig;
+  projects: BillableProject[];
+  state: SubscriptionState;
+  now: Date;
+}): SubscriptionOffer {
+  const { config, catalog, projects, state, now } = input;
+  const proTotal = (charged: BillableProject[]) =>
+    quoteCharge({ periodStart: now, projects: charged, config: catalog, plan: 'pro', previousPeriod: null })
+      .totalUsd;
+  const onUnlimited = state.status === 'ilimitado' || state.plan === 'unlimited';
+  const position = activeProjectsAt(projects, now) + 1;
+
+  return {
+    config,
+    proTodayUsd: proTotal(projects),
+    proWithNextProjectUsd: proTotal([...projects, { id: 'proxima-obra', createdAt: now, archivedAt: null }]),
+    nextProjectUsd: onUnlimited || position <= config.includedProjects ? 0 : extraUnitPrice(config, position),
+    unlimitedUsd: state.plan === 'unlimited' ? config.unlimitedPriceUsd : catalog.unlimitedPriceUsd,
   };
 }
 

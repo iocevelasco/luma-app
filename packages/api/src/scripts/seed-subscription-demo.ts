@@ -25,7 +25,7 @@
  */
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
-import { PLAN, addMonths, usdToBolivares, type ChargeLine } from '@luma/shared';
+import { LEGAL_VERSION, PLAN, addMonths, usdToBolivares, type ChargeLine } from '@luma/shared';
 import { DATABASE_CONFIG, SERVER_CONFIG } from '../config/app.config.js';
 import { ExchangeRate } from '../models/ExchangeRate.js';
 import { Organization } from '../models/Organization.js';
@@ -211,6 +211,8 @@ async function main() {
       password,
       role: 'user',
       email_verified: true,
+      termsVersion: LEGAL_VERSION,
+      termsAcceptedAt: now,
     });
     const organization = await createPersonalOrganization(String(user._id), account.name);
     const trialStartedAt = new Date(now.getTime() - account.trialStartedDaysAgo * DAY);

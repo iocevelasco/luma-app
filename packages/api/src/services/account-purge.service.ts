@@ -55,6 +55,8 @@ export const USER_REFERENCES: Record<string, Record<string, UserRefTreatment>> =
   ChatPrompt: { updatedBy: 'history' },
   CrewGoal: { createdBy: 'history' },
   ExchangeRate: { createdBy: 'history' },
+  // Quién publicó una lista de precios: es la auditoría del catálogo.
+  PlanVersion: { createdBy: 'history' },
   Expense: { registeredBy: 'history' },
   // El comentario es texto libre y puede traer datos personales: se borra.
   FeedbackResponse: { user: 'owner-deleted' },

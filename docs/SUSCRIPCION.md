@@ -17,11 +17,27 @@ aprobación manual de un admin).
 
 ## 1. Los planes
 
-| | Gratis | Pro |
-|---|---|---|
-| Precio | $0 durante 30 días | **$39 por mes** |
-| Obras activas | hasta 3 | 3 incluidas + **$8 por mes** cada obra extra |
-| Al terminar | la cuenta queda en sólo lectura | se renueva cada mes |
+| | Gratis | Pro | Ilimitado |
+|---|---|---|---|
+| Precio | $0 durante 30 días | **$39 por mes** | **$149 por mes** |
+| Obras activas | hasta 3 | 3 incluidas + extras por escalón | sin tope |
+| Al terminar | la cuenta queda en sólo lectura | se renueva cada mes | se renueva cada mes |
+
+Obras extra de Pro, graduadas (cada obra paga el de su posición): de la 4ª a la 10ª
+**$8**, de la 11ª a la 25ª **$6**, de la 26ª en adelante **$4**.
+
+Estos son los valores de fábrica (`DEFAULT_PLAN_CONFIG`). **Se cambian sin deploy en
+`/plataforma/planes`**: cada publicación es una versión nueva (`PlanVersion`) y no se
+edita. Publicar alcanza a quien se registra, paga por primera vez o cambia de plan.
+Quien ya paga mantiene su lista mientras renueve sin cortar (`pricingFor`, con la
+gracia de 72 h); un pago de antes del catálogo sigue con los $8 por extra. La landing
+no lee la API: sus números van a mano en `pricing.*`.
+
+Stripe todavía no sigue al catálogo: con la tarjeta activa rige la lista anterior, no
+se ofrece Ilimitado y publicar da 409. Hay que adaptarlo antes de prender `sk_live_`.
+
+El ilimitado que asigna un admin desde Cuentas es otra cosa: se muestra como
+**Cortesía**, no se cobra y no vence.
 
 - **El plan Gratis arranca solo**: al registrarse, o —si la persona entró
   invitada a la obra de otro— cuando crea su primera obra propia. Sin tarjeta.
@@ -72,6 +88,10 @@ TRANSFER_BANK=Banco de Venezuela
 TRANSFER_ACCOUNT=0102-0000-11-2222222222
 TRANSFER_HOLDER=Luma Pruebas C.A.
 TRANSFER_ID=J-50000000-1
+
+# Pago en USDT por Binance Pay. Sin las dos, la opción no aparece.
+BINANCE_PAY_ID=123456789
+BINANCE_PAY_NAME=Luma Pruebas
 
 # Pago con tarjeta: las claves del sandbox de Stripe (Developers → API keys).
 STRIPE_SECRET_KEY=sk_test_...
@@ -192,6 +212,13 @@ activá cambiar tarjeta, ver facturas y cancelar suscripción. Sin eso,
 Para ver el lado del admin sin hacer el pago: `demo-en-revision@luma.test` ya
 dejó uno pendiente (con monto que no coincide).
 
+## 3b. Flujo: pago en USDT por Binance
+
+Como el de bolívares, sin tasa: se cobra 1 USDT por dólar. Quien paga envía por
+Binance Pay, adjunta el comprobante y un admin lo aprueba en la misma cola. El monto y
+la fecha los toma la API del propio cobro. Mientras se revisa, la pantalla dice
+"Estamos confirmando tu pago" y, al aprobarse, llega el recibo por correo.
+
 ## 4. Flujo: pago con tarjeta (Stripe sandbox)
 
 Requiere 2.4 funcionando (`stripe listen` corriendo).
@@ -226,7 +253,7 @@ Requiere 2.4 funcionando (`stripe listen` corriendo).
 | Mail | A quién | Cuándo |
 |---|---|---|
 | Hay un pago para revisar | admins de plataforma | al mandar un pago en Bs (avisa si el monto no coincide) |
-| Aprobamos tu pago / No pudimos aprobarlo (con motivo) | dueño | al revisar el pago |
+| Recibo con agradecimiento / No pudimos aprobarlo (con motivo) | dueño | al revisar el pago; el recibo también al cobrarse una tarjeta |
 | No pudimos cobrar tu tarjeta | dueño | primer intento fallido de Stripe (no en cada reintento) |
 | Tu plan Gratis termina en 7 / 3 / 1 días | dueño | tarea diaria, si no dejó pago lo que sigue |
 | Tu plan Pro vence en 2 días / vence hoy | dueño que ya pagó, sin tarjeta que renueve sola | tarea diaria, en el calendario de Caracas |
@@ -295,11 +322,15 @@ ese día (prorrateo si ya hay 3 activas). Detalle en `docs/adr/001-eliminar-obra
 |---|---|
 | `GET /api/subscription/me` | estado, próximo cobro, medios de pago habilitados |
 | `GET /api/subscription/quote?activateNow=&includeNextProject=` | cuánto pagar en Bs y dónde |
+| `GET /api/subscription/quote/binance?activateNow=&includeNextProject=&plan=` | cuánto pagar en USDT y a qué cuenta |
+| `POST /api/subscription/payments/binance` | mandar un pago en USDT (multipart, campo `receipt`) |
 | `GET /api/subscription/rate` | tasa BCV vigente |
 | `GET` / `POST /api/subscription/payments` | historial / mandar un pago en Bs (multipart, campo `receipt`) |
 | `POST /api/subscription/stripe/checkout` | `{ activateNow?, includeNextProject? }` → `{ mode: 'embedded', clientSecret, publishableKey }` para el modal, o `{ mode: 'hosted', url }` |
 | `POST /api/subscription/stripe/portal` | URL del portal de Stripe |
 | `POST /api/billing/stripe/webhook` | lo llama Stripe; autentica la firma |
+| `GET` / `POST /api/admin/plan-config` | catálogo de precios: la vigente, el historial y publicar una versión |
+| `GET /api/admin/payment-setup` | qué medios de pago están activos en este entorno |
 | `GET /api/admin/subscription-payments?status=` | cola del admin (`pendiente`, `aprobado`, `rechazado`) |
 | `POST /api/admin/subscription-payments/:id/review` | `{ decision: 'aprobar' }` o `{ decision: 'rechazar', reason }` |
 | `GET` / `POST /api/admin/exchange-rates`, `POST …/refresh` | tasas: listar, cargar a mano, leer el BCV ya |

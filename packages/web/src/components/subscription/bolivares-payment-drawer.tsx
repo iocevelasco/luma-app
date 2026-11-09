@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { Check, Copy } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,9 +8,12 @@ import {
   type BolivaresPaymentInput,
   type BolivaresPaymentMethod,
   type BolivaresQuote,
+  type PlanCode,
 } from '@luma/shared';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { LoadingIndicator } from '@/components/common/loading-indicator';
+import { CopyRow } from '@/components/subscription/copy-row';
+import { ReceiptField, useReceiptField } from '@/components/subscription/receipt-field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,42 +27,7 @@ import { errorMessage } from '@/lib/error-message';
 import { formatBolivares } from '@/lib/format-money';
 import { fromDayKey } from '@/lib/day-key';
 
-const RECEIPT_ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp';
-
-type FormValues = Omit<BolivaresPaymentInput, 'activateNow' | 'includeNextProject'>;
-
-/** Un dato para copiar y pegar en la app del banco. */
-function CopyRow({ label, value }: { label: string; value: string }) {
-  const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
-  const canCopy = typeof navigator.clipboard?.writeText === 'function';
-
-  return (
-    <div className="flex items-center justify-between gap-3 py-1.5 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="flex min-w-0 items-center gap-1">
-        <span className="truncate font-mono">{value}</span>
-        {canCopy && (
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            aria-label={t('subscription.bolivares.copy')}
-            onClick={() => {
-              void navigator.clipboard.writeText(value).then(() => {
-                setCopied(true);
-                window.setTimeout(() => setCopied(false), 1500);
-              });
-            }}
-          >
-            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-          </Button>
-        )}
-      </span>
-    </div>
-  );
-}
+type FormValues = Omit<BolivaresPaymentInput, 'activateNow' | 'includeNextProject' | 'plan'>;
 
 function QuoteSummary({ quote }: { quote: BolivaresQuote }) {
   const { t, i18n } = useTranslation();
@@ -121,18 +88,27 @@ export function BolivaresPaymentDrawer({
   onOpenChange,
   activateNow = false,
   includeNextProject = false,
+  plan,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Pasar a Pro desde hoy, cortando el plan Gratis. */
+  /** Pasar a un plan pago desde hoy, cortando el plan Gratis. */
   activateNow?: boolean;
   /** Para crear la cuarta obra: esa obra entra ya en el cobro. */
   includeNextProject?: boolean;
+  /** Sin esto se renueva el plan que ya tiene. */
+  plan?: PlanCode;
 }) {
   const { t } = useTranslation();
-  const quote = useBolivaresQuote(activateNow, includeNextProject, open);
+  const quote = useBolivaresQuote(activateNow, includeNextProject, open, plan);
   const pay = usePayInBolivares();
-  const [receipt, setReceipt] = useState<File | null>(null);
+  const receipt = useReceiptField();
+
+  function close() {
+    pay.reset();
+    receipt.clear();
+    onOpenChange(false);
+  }
 
   const methods: BolivaresPaymentMethod[] = [
     ...(quote.data?.accounts.pagoMovil ? (['pago_movil'] as const) : []),
@@ -146,7 +122,9 @@ export function BolivaresPaymentDrawer({
     reset,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(bolivaresPaymentSchema.omit({ activateNow: true, includeNextProject: true })),
+    resolver: zodResolver(
+      bolivaresPaymentSchema.omit({ activateNow: true, includeNextProject: true, plan: true }),
+    ),
     defaultValues: { paidOn: format(new Date(), 'yyyy-MM-dd') },
   });
 
@@ -163,24 +141,22 @@ export function BolivaresPaymentDrawer({
   return (
     <FormDrawer
       open={open}
-      onOpenChange={(next) => {
-        if (!next) {
-          pay.reset();
-          setReceipt(null);
-        }
-        onOpenChange(next);
-      }}
+      onOpenChange={(next) => (next ? onOpenChange(true) : close())}
       title={t(activateNow ? 'subscription.bolivares.titleActivate' : 'subscription.bolivares.title')}
       description={t('subscription.bolivares.description')}
       size="md"
       onSubmit={
         quote.data
-          ? handleSubmit((values) =>
+          ? handleSubmit((values) => {
+              if (quote.data?.receiptRequired && !receipt.receipt) {
+                receipt.markMissing();
+                return;
+              }
               pay.mutate(
-                { payload: { ...values, activateNow, includeNextProject }, receipt },
-                { onSuccess: () => onOpenChange(false) },
-              ),
-            )
+                { payload: { ...values, activateNow, includeNextProject, plan }, receipt: receipt.receipt },
+                { onSuccess: close },
+              );
+            })
           : undefined
       }
       submitLabel={t('subscription.bolivares.submit')}
@@ -189,9 +165,12 @@ export function BolivaresPaymentDrawer({
     >
       {quote.isLoading && <LoadingIndicator />}
       {quote.isError && (
-        <p className="rounded-2xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">
-          {errorMessage(quote.error, t) ?? t('subscription.bolivares.quoteError')}
-        </p>
+        <div className="flex flex-col items-start gap-3 rounded-2xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">
+          <p>{errorMessage(quote.error, t) ?? t('subscription.bolivares.quoteError')}</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => void quote.refetch()}>
+            {t('common.retry')}
+          </Button>
+        </div>
       )}
 
       {quote.data && (
@@ -267,15 +246,10 @@ export function BolivaresPaymentDrawer({
                 <p className="text-sm text-destructive">{errors.amountBs.message}</p>
               )}
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="bs-receipt">{t('subscription.bolivares.fields.receipt')}</Label>
-              <Input
-                id="bs-receipt"
-                type="file"
-                accept={RECEIPT_ACCEPT}
-                onChange={(event) => setReceipt(event.target.files?.[0] ?? null)}
-              />
-            </div>
+            {/* Sin storage en este entorno la API rechaza el archivo: no se ofrece. */}
+            {quote.data.receiptRequired && (
+              <ReceiptField id="bs-receipt" label={t('subscription.bolivares.fields.receipt')} field={receipt} />
+            )}
           </div>
         </>
       )}

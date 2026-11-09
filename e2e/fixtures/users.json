@@ -9,6 +9,41 @@
     "providersVisibleToClient": false
   },
   "users": {
+    "demoGratis": {
+      "email": "demo-gratis@luma.test",
+      "password": "Demo12345!",
+      "name": "Demo Gratis",
+      "platformRole": "user",
+      "subscriptionDemo": true
+    },
+    "demoPorVencer": {
+      "email": "demo-por-vencer@luma.test",
+      "password": "Demo12345!",
+      "name": "Demo Por Vencer",
+      "platformRole": "user",
+      "subscriptionDemo": true
+    },
+    "demoPro": {
+      "email": "demo-pro@luma.test",
+      "password": "Demo12345!",
+      "name": "Demo Pro",
+      "platformRole": "user",
+      "subscriptionDemo": true
+    },
+    "demoEnRevision": {
+      "email": "demo-en-revision@luma.test",
+      "password": "Demo12345!",
+      "name": "Demo En Revisión",
+      "platformRole": "user",
+      "subscriptionDemo": true
+    },
+    "demoVencida": {
+      "email": "demo-vencida@luma.test",
+      "password": "Demo12345!",
+      "name": "Demo Vencida",
+      "platformRole": "user",
+      "subscriptionDemo": true
+    },
     "admin": {
       "email": "e2e-admin@luma.test",
       "password": "E2eAdmin1234!",
@@ -22,6 +57,7 @@
       "platformRole": "user"
     },
     "gerente": {
+      "paymentDue": true,
       "email": "e2e-gerente@luma.test",
       "password": "E2eRoles1234!",
       "name": "Gabriela Gerente E2E",

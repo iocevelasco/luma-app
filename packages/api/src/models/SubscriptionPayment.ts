@@ -1,6 +1,7 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
 import type {
   ChargeLine,
+  PlanCode,
   SubscriptionPaymentMethod,
   SubscriptionPaymentStatus,
 } from '@luma/shared';
@@ -37,6 +38,9 @@ export interface ISubscriptionPayment extends Document {
 
   lines: ChargeLine[];
   totalUsd: number;
+  plan: PlanCode;
+  /** La lista de precios con la que se pagó. `null`: de antes del catálogo, o Stripe. */
+  planVersion: number | null;
 
   // Sólo en bolívares.
   bcvRate: number | null;
@@ -45,6 +49,9 @@ export interface ISubscriptionPayment extends Document {
   amountBs: number | null;
   /** Lo que la persona dice que transfirió. Se contrasta con `amountBs` al revisar. */
   declaredAmountBs: number | null;
+  /** Sólo en Binance. Lo cobrado es `totalUsd`: 1 USDT por dólar. */
+  declaredAmountUsdt: number | null;
+  /** En Binance: `BINANCE`, el número de orden y el ID de quien pagó. */
   bank: string | null;
   reference: string | null;
   payerId: string | null;
@@ -69,7 +76,7 @@ function roundMoneyOrNull(value: number | null): number | null {
 
 const chargeLineSchema = new Schema<ChargeLine>(
   {
-    kind: { type: String, enum: ['base', 'extra', 'prorrateo'], required: true },
+    kind: { type: String, enum: ['base', 'unlimited', 'extra', 'prorrateo'], required: true },
     quantity: { type: Number, required: true, min: 0 },
     unitUsd: { type: Number, required: true, min: 0 },
     // Sin `min: 0`: un prorrateo de Stripe puede ser un crédito.
@@ -98,7 +105,7 @@ const subscriptionPaymentSchema = new Schema<ISubscriptionPayment>(
       required: true,
       index: true,
     },
-    method: { type: String, enum: ['stripe', 'pago_movil', 'transferencia'], required: true },
+    method: { type: String, enum: ['stripe', 'pago_movil', 'transferencia', 'binance'], required: true },
     status: {
       type: String,
       enum: ['pendiente', 'aprobado', 'rechazado'],
@@ -111,11 +118,14 @@ const subscriptionPaymentSchema = new Schema<ISubscriptionPayment>(
 
     lines: { type: [chargeLineSchema], default: [] },
     totalUsd: { type: Number, required: true, min: 0, set: roundMoney },
+    plan: { type: String, enum: ['pro', 'unlimited'], default: 'pro' },
+    planVersion: { type: Number, default: null },
 
     bcvRate: { type: Number, default: null },
     rateValueDate: { type: String, default: null },
     amountBs: { type: Number, default: null, set: roundMoneyOrNull },
     declaredAmountBs: { type: Number, default: null, set: roundMoneyOrNull },
+    declaredAmountUsdt: { type: Number, default: null, set: roundMoneyOrNull },
     bank: { type: String, default: null, trim: true },
     reference: { type: String, default: null, trim: true },
     payerId: { type: String, default: null, trim: true, uppercase: true },

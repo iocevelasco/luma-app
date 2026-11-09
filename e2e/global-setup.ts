@@ -65,6 +65,18 @@ function seedUsers(users: E2EUser[]): boolean {
   }
 }
 
+/** Las cuentas por estado de la suscripción. Cada corrida las deja como nuevas. */
+function seedSubscriptionDemo(): boolean {
+  try {
+    execFileSync('pnpm', ['--filter', '@luma/api', 'seed:subscription-demo'], { stdio: 'pipe' });
+    return true;
+  } catch (error) {
+    const { stdout = '', stderr = '' } = error as { stdout?: Buffer; stderr?: Buffer };
+    console.warn(`[global-setup] Falló el seed de suscripción — esos specs se saltean\n${stdout}${stderr}`);
+    return false;
+  }
+}
+
 async function saveAuthState(browser: Browser, user: E2EUser): Promise<void> {
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -85,7 +97,7 @@ export default async function globalSetup(_config: FullConfig) {
   const authDir = path.join(process.cwd(), '.auth');
   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
 
-  const users = e2eUsers().filter(canLogIn);
+  const allUsers = e2eUsers().filter(canLogIn);
 
   // Lo leen los specs con `requiresApi()` (helpers/api.ts). Playwright pasa
   // a los workers lo que el globalSetup deja en `process.env`.
@@ -94,13 +106,19 @@ export default async function globalSetup(_config: FullConfig) {
 
   if (!apiUp) {
     console.warn(`[global-setup] La API no responde en ${API_URL} — sólo corren los tests sin sesión`);
-    users.forEach((user) => writeEmptyAuthState(authFile(user.key)));
+    allUsers.forEach((user) => writeEmptyAuthState(authFile(user.key)));
     return;
   }
 
   if (!IS_REMOTE && process.env.E2E_SKIP_SEED !== '1') {
     if (seedUsers(e2eUsers())) console.log('[global-setup] Usuarios de E2E sembrados ✓');
+    if (seedSubscriptionDemo()) process.env.E2E_SUBSCRIPTION_DEMO = '1';
   }
+
+  // Sin su seed esas cuentas no existen: intentar el login sólo sumaría ruido.
+  const skipped = allUsers.filter((user) => user.subscriptionDemo && !process.env.E2E_SUBSCRIPTION_DEMO);
+  skipped.forEach((user) => writeEmptyAuthState(authFile(user.key)));
+  const users = allUsers.filter((user) => !skipped.includes(user));
 
   // Una sesión guardada por cuenta, en paralelo: cada una en su contexto.
   const browser = await chromium.launch();

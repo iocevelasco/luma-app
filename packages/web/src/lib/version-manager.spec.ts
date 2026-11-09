@@ -60,6 +60,20 @@ describe('checkAndInvalidateOnVersionChange', () => {
     expect(localStorage.getItem('cache-de-pantalla')).toBeNull();
   });
 
+  it('al cambiar la versión no olvida quién ya vio el recorrido', () => {
+    vi.stubEnv('VITE_APP_VERSION', '0.3.0');
+    localStorage.setItem('app_version', '0.2.0');
+    localStorage.setItem('luma.tour.v1:user-1', '2026-11-01T10:00:00.000Z');
+    localStorage.setItem('luma.tour.v1.project:user-1', '2026-11-02T10:00:00.000Z');
+    localStorage.setItem('cache-de-pantalla', 'viejo');
+
+    expect(checkAndInvalidateOnVersionChange()).toBe(true);
+
+    expect(localStorage.getItem('luma.tour.v1:user-1')).toBe('2026-11-01T10:00:00.000Z');
+    expect(localStorage.getItem('luma.tour.v1.project:user-1')).toBe('2026-11-02T10:00:00.000Z');
+    expect(localStorage.getItem('cache-de-pantalla')).toBeNull();
+  });
+
   it('con la misma versión no toca nada', () => {
     vi.stubEnv('VITE_APP_VERSION', '0.3.0');
     localStorage.setItem('app_version', '0.3.0');
