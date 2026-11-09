@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { binancePaymentSchema, planConfigSchema } from '../schemas/subscription';
+import { subscriptionReceiptExtension } from '../types/subscription';
 import {
   DEFAULT_PLAN_CONFIG,
   LEGACY_PLAN_CONFIG,
   canCreateProject,
+  extraTierRanges,
   extraUnitPrice,
+  planToSwitchTo,
   pricingFor,
   quoteCharge,
+  renewingPlan,
+  subscriptionOffer,
   subscriptionState,
   type BillableProject,
   type PaidPeriodFact,
@@ -197,6 +202,69 @@ describe('pricingFor', () => {
         inPeriod,
       ).version,
     ).toBe('current');
+  });
+});
+
+describe('renewingPlan', () => {
+  it('quien nunca pagó no renueva nada', () => {
+    expect(renewingPlan(facts([]), d('2026-05-20T00:00:00Z'))).toBeNull();
+  });
+
+  it('dentro de la gracia renueva lo último que pagó, aunque ya no lo cubra', () => {
+    expect(renewingPlan(facts([period({ plan: 'unlimited' })]), d('2026-06-02T00:00:00Z'))).toBe('unlimited');
+  });
+
+  it('pasada la gracia ya no renueva', () => {
+    expect(renewingPlan(facts([period({ plan: 'unlimited' })]), d('2026-06-10T00:00:00Z'))).toBeNull();
+  });
+
+  it('una tarjeta viva renueva Pro aunque Stripe no haya cobrado', () => {
+    const stripe = { currentPeriodStart: START, currentPeriodEnd: START };
+    expect(renewingPlan({ ...facts([]), stripe: { ...stripe, status: 'trialing' } }, START)).toBe('pro');
+    expect(renewingPlan({ ...facts([]), stripe: { ...stripe, status: 'canceled' } }, START)).toBeNull();
+  });
+});
+
+describe('planToSwitchTo', () => {
+  it('sólo hay cambio si ya hay un plan que renovar y el otro existe', () => {
+    expect(planToSwitchTo('pro', DEFAULT_PLAN_CONFIG)).toBe('unlimited');
+    expect(planToSwitchTo('unlimited', DEFAULT_PLAN_CONFIG)).toBe('pro');
+    expect(planToSwitchTo('pro', LEGACY_PLAN_CONFIG)).toBeNull();
+    expect(planToSwitchTo(null, DEFAULT_PLAN_CONFIG)).toBeNull();
+  });
+});
+
+describe('subscriptionOffer', () => {
+  it('quien renueva Ilimitado ve su precio aunque el catálogo haya cambiado', () => {
+    const offer = subscriptionOffer({
+      config: DEFAULT_PLAN_CONFIG,
+      catalog: { ...DEFAULT_PLAN_CONFIG, unlimitedPriceUsd: 199 },
+      projects: [],
+      state: { status: 'vencida', canWrite: false, accessUntil: null, trialDaysLeft: null },
+      renewing: 'unlimited',
+      switchTotalUsd: 39,
+      now: START,
+    });
+    expect(offer.unlimitedUsd).toBe(149);
+    expect(offer.switchTotalUsd).toBe(39);
+  });
+});
+
+describe('extraTierRanges', () => {
+  it('arma los rangos desde la primera obra extra', () => {
+    expect(extraTierRanges(DEFAULT_PLAN_CONFIG)).toEqual([
+      { from: 4, to: 10, unitUsd: 8 },
+      { from: 11, to: 25, unitUsd: 6 },
+      { from: 26, to: null, unitUsd: 4 },
+    ]);
+  });
+});
+
+describe('subscriptionReceiptExtension', () => {
+  it('acepta sólo los tipos propios, no lo heredado de Object', () => {
+    expect(subscriptionReceiptExtension('application/pdf')).toBe('.pdf');
+    expect(subscriptionReceiptExtension('constructor')).toBeUndefined();
+    expect(subscriptionReceiptExtension('__proto__')).toBeUndefined();
   });
 });
 

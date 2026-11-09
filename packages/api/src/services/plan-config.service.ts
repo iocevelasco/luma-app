@@ -64,18 +64,45 @@ export interface ResolvedPricing extends ResolvedPlan {
   plan: PlanCode;
 }
 
-/** De la regla (`pricingFor`, en shared) a la lista concreta. */
-export async function resolvePricing(source: PricingSource): Promise<ResolvedPricing> {
-  const resolved =
-    source.version === 'current'
-      ? await currentPlan()
-      : { version: source.version, config: await configForVersion(source.version) };
+/**
+ * Las listas de un mismo pedido: un resumen las pregunta varias veces y sólo
+ * la primera va a la base.
+ */
+export function planLookup() {
+  let latest: Promise<ResolvedPlan> | undefined;
+  const byVersion = new Map<number | null, Promise<PlanConfig>>();
 
-  if (source.plan === 'unlimited' && resolved.config.unlimitedPriceUsd === null) {
-    throw conflict('El plan Ilimitado no está disponible en este momento.');
-  }
-  return { ...resolved, plan: source.plan };
+  const lookup = {
+    current: () => (latest ??= currentPlan()),
+
+    forVersion: (version: number | null | undefined) => {
+      const key = version ?? null;
+      const known = byVersion.get(key);
+      if (known) return known;
+      const found = configForVersion(key);
+      byVersion.set(key, found);
+      return found;
+    },
+
+    /** De la regla (`pricingFor`, en shared) a la lista concreta. */
+    resolve: async (source: PricingSource): Promise<ResolvedPricing> => {
+      const resolved =
+        source.version === 'current'
+          ? await lookup.current()
+          : { version: source.version, config: await lookup.forVersion(source.version) };
+
+      if (source.plan === 'unlimited' && resolved.config.unlimitedPriceUsd === null) {
+        throw conflict('El plan Ilimitado no está disponible en este momento.');
+      }
+      return { ...resolved, plan: source.plan };
+    },
+  };
+  return lookup;
 }
+
+export type PlanLookup = ReturnType<typeof planLookup>;
+
+export const resolvePricing = (source: PricingSource) => planLookup().resolve(source);
 
 export async function planCatalog(): Promise<PlanCatalog> {
   const [published, current] = await Promise.all([

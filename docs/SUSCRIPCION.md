@@ -89,7 +89,7 @@ TRANSFER_ACCOUNT=0102-0000-11-2222222222
 TRANSFER_HOLDER=Luma Pruebas C.A.
 TRANSFER_ID=J-50000000-1
 
-# Pago en USDT por Binance Pay. Sin las dos, la opción no aparece.
+# Pago en USDT por Binance Pay. Sin las dos, o sin MEDIA_SERVICE_*, la opción no aparece.
 BINANCE_PAY_ID=123456789
 BINANCE_PAY_NAME=Luma Pruebas
 

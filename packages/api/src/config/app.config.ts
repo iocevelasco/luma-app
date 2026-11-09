@@ -162,9 +162,12 @@ export const BS_PAYMENT_CONFIG = {
       : undefined,
 } as const;
 
-/** Dónde se recibe el pago en USDT. Con el mismo criterio: sin los dos datos, no se ofrece. */
+/**
+ * Dónde se recibe el pago en USDT. Sin los dos datos no se ofrece, y tampoco sin
+ * storage: el comprobante es lo único con lo que el admin puede confirmarlo.
+ */
 export const BINANCE_PAYMENT_CONFIG =
-  env.BINANCE_PAY_ID && env.BINANCE_PAY_NAME
+  env.BINANCE_PAY_ID && env.BINANCE_PAY_NAME && STORAGE_CONFIG.ENABLED
     ? { payId: env.BINANCE_PAY_ID, name: env.BINANCE_PAY_NAME }
     : undefined;
 
@@ -381,7 +384,7 @@ export function validateConfig(): void {
     console.warn(`⚠️  [CONFIG] Transferencia no se ofrece, falta: ${bolivares.transferencia.join(', ')}.`);
   }
   if (!BINANCE_PAYMENT_CONFIG) {
-    console.warn('⚠️  [CONFIG] Binance no se ofrece, falta: BINANCE_PAY_ID y/o BINANCE_PAY_NAME.');
+    console.warn('⚠️  [CONFIG] Binance no se ofrece: hacen falta BINANCE_PAY_ID, BINANCE_PAY_NAME y el storage de comprobantes.');
   }
   if (
     !STRIPE_CONFIG.ENABLED &&

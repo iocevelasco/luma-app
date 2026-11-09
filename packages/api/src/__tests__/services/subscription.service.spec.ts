@@ -17,6 +17,11 @@ vi.mock('../../services/plan-config.service.js', async () => {
   const resolved = { version: 2, config: LEGACY_PLAN_CONFIG };
   return {
     currentPlan: vi.fn(async () => resolved),
+    planLookup: () => ({
+      current: async () => resolved,
+      forVersion: async () => LEGACY_PLAN_CONFIG,
+      resolve: async (source: { plan: string }) => ({ ...resolved, plan: source.plan }),
+    }),
     configForVersion: vi.fn(async () => LEGACY_PLAN_CONFIG),
     resolvePricing: vi.fn(async (source: { plan: string }) => ({ ...resolved, plan: source.plan })),
   };

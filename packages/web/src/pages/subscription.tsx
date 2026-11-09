@@ -188,7 +188,8 @@ function PaymentHistory({ payments }: { payments: SubscriptionPaymentSummary[] }
             <span className="font-mono">
               {formatMoney(payment.totalUsd, 'USD', i18n.language)}
               {payment.amountBs != null && ` · ${formatBolivares(payment.amountBs, i18n.language)}`}
-              {payment.declaredAmountUsdt != null && ` · ${payment.declaredAmountUsdt} USDT`}
+              {payment.declaredAmountUsdt != null &&
+              ` · ${t('subscription.binance.amountValue', { amount: payment.declaredAmountUsdt })}`}
             </span>
           </div>
           {payment.rejectionReason && (

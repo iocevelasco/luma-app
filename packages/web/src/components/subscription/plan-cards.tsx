@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { ArrowUpRight, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { PlanCode, SubscriptionOverview } from '@luma/shared';
+import { extraTierRanges, type PlanCode, type SubscriptionOverview } from '@luma/shared';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { formatPrice, formatMoney } from '@/lib/format-money';
-import { extraTierRanges, hasLiveCard } from '@/lib/subscription';
+import { hasLiveCard } from '@/lib/subscription';
 import { cn } from '@/lib/utils';
 
 interface PlanCardProps {
@@ -98,28 +98,32 @@ export function PlanCards({
 }) {
   const { t, i18n } = useTranslation();
   const { offer } = subscription;
-  const { config } = offer;
+  // Quien entra o cambia de plan paga la lista vigente; quien renueva, la suya.
+  const renewing = upgrading ? null : subscription.renewsPlan;
+  const proConfig = renewing === 'pro' ? offer.config : offer.catalog;
   const liveCard = hasLiveCard(subscription);
   const usd = (amount: number) => formatMoney(amount, 'USD', i18n.language);
   const price = (amount: number) => formatPrice(amount, i18n.language);
 
   const paidCard = (code: PlanCode) => {
-    const current = !upgrading && subscription.plan === code;
+    const current = renewing === code;
     const name = t(`subscription.plans.${code}.name`);
-    const cta = upgrading
+    const cta = renewing === null
       ? t('subscription.plans.choose', { plan: name })
       : current
         ? t(liveCard ? 'subscription.pay.manageCard' : 'subscription.plans.renew')
         : t(code === 'unlimited' ? 'subscription.pay.switchUnlimited' : 'subscription.pay.switchPro');
 
     return {
-      ribbon: current
-        ? t('subscription.plans.current')
-        : upgrading && code === 'pro'
-          ? t('subscription.plans.recommended')
-          : undefined,
+      // En la prueba, el plan actual sigue siendo Gratis aunque haya una tarjeta cargada.
+      ribbon:
+        current && subscription.status !== 'prueba'
+          ? t('subscription.plans.current')
+          : renewing === null && code === 'pro'
+            ? t('subscription.plans.recommended')
+            : undefined,
       cta,
-      primary: current || (upgrading && code === 'pro'),
+      primary: current || (renewing === null && code === 'pro'),
       disabled: liveCard ? !current || managePending : inReview,
       onPress: () => (liveCard && current ? onManageCard() : onChoose(code)),
     };
@@ -135,9 +139,9 @@ export function PlanCards({
         name={t('subscription.plans.free.name')}
         description={t('subscription.plans.free.description')}
         price={price(0)}
-        period={t('subscription.plans.free.period', { count: config.trialDays })}
+        period={t('subscription.plans.free.period', { count: offer.catalog.trialDays })}
         features={[
-          t('subscription.plans.free.projects', { count: config.includedProjects }),
+          t('subscription.plans.free.projects', { count: offer.catalog.includedProjects }),
           t('subscription.plans.free.noCard'),
         ]}
         cta={t('subscription.plans.current')}
@@ -152,11 +156,11 @@ export function PlanCards({
       id="pro"
       name={t('subscription.plans.pro.name')}
       description={t('subscription.plans.pro.description')}
-      price={price(config.basePriceUsd)}
+      price={price(proConfig.basePriceUsd)}
       period={t('subscription.plans.perMonth')}
       features={[
-        t('subscription.plans.pro.included', { count: config.includedProjects }),
-        ...extraTierRanges(config).map((tier) =>
+        t('subscription.plans.pro.included', { count: proConfig.includedProjects }),
+        ...extraTierRanges(proConfig).map((tier) =>
           tier.to === null
             ? t('subscription.upgrade.tierLast', { from: tier.from, price: usd(tier.unitUsd) })
             : t('subscription.upgrade.tier', { from: tier.from, to: tier.to, price: usd(tier.unitUsd) }),

@@ -72,7 +72,7 @@ export function PaymentReviewCard({ payment }: { payment: AdminSubscriptionPayme
             label={t('platform.payments.declared')}
             value={
               payment.declaredAmountUsdt != null
-                ? `${payment.declaredAmountUsdt} USDT`
+                ? t('subscription.binance.amountValue', { amount: payment.declaredAmountUsdt })
                 : payment.declaredAmountBs != null
                   ? formatBolivares(payment.declaredAmountBs, i18n.language)
                   : '—'

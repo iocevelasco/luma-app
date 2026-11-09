@@ -56,7 +56,9 @@ export function CheckoutDrawer({
   const { offer, paymentOptions } = subscription;
   const included = offer.config.includedProjects;
   const unlimited = plan === 'unlimited';
-  const samePlan = plan === subscription.plan;
+  // Sin plan que renovar, lo que elija es una entrada, no un cambio.
+  const firstPayment = upgrading || subscription.renewsPlan === null;
+  const samePlan = !firstPayment && plan === subscription.renewsPlan;
   const usd = (amount: number) => formatMoney(amount, 'USD', i18n.language);
   const trialEnd = subscription.trialEndsAt
     ? format(new Date(subscription.trialEndsAt), 'PP', { locale })
@@ -66,7 +68,7 @@ export function CheckoutDrawer({
   const choice: CheckoutChoice = {
     activateNow,
     // Renovar lo mismo no manda plan: así mantiene su lista de precios.
-    plan: upgrading || !samePlan ? (plan ?? undefined) : undefined,
+    plan: samePlan ? undefined : (plan ?? undefined),
   };
 
   const upgradeTotal = unlimited
@@ -76,11 +78,9 @@ export function CheckoutDrawer({
       : (subscription.nextCharge?.totalUsd ?? offer.config.basePriceUsd);
   const renewalTotal = samePlan
     ? (subscription.nextCharge?.totalUsd ?? 0)
-    : unlimited
-      ? (offer.unlimitedUsd ?? 0)
-      : offer.proTodayUsd;
+    : (offer.switchTotalUsd ?? (unlimited ? (offer.unlimitedUsd ?? 0) : offer.proTodayUsd));
 
-  const cardAllowed = upgrading ? !unlimited : samePlan;
+  const cardAllowed = firstPayment ? !unlimited : samePlan;
   const methods: { id: string; icon: LucideIcon; label: string; hint: string; onPress: () => void }[] = [
     ...(paymentOptions.card && cardAllowed
       ? [

@@ -77,7 +77,9 @@ export function BinancePaymentDrawer({
         <>
           <div className="rounded-2xl border border-border bg-background px-4 py-3">
             <p className="text-xs text-muted-foreground">{t('subscription.binance.amount')}</p>
-            <p className="font-mono text-2xl">{quote.data.amountUsdt} USDT</p>
+            <p className="font-mono text-2xl">
+              {t('subscription.binance.amountValue', { amount: quote.data.amountUsdt })}
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">

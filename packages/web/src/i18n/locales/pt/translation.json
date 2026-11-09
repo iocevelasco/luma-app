@@ -1938,6 +1938,7 @@
       "titleActivate": "Ativar o plano com Binance",
       "description": "Envie o valor exato em USDT pela Binance Pay e anexe o comprovante. Analisamos manualmente e avisamos você.",
       "amount": "Valor a pagar",
+      "amountValue": "{{amount}} USDT",
       "account": "Onde pagar",
       "payId": "Binance Pay ID",
       "name": "Nome",

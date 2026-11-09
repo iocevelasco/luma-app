@@ -5,8 +5,10 @@ import {
   canCreateProject,
   effectiveTrialEnd,
   nextPeriodStart,
+  planToSwitchTo,
   pricingFor,
   quoteCharge,
+  renewingPlan,
   startTrial,
   subscriptionOffer,
   subscriptionState,
@@ -23,7 +25,7 @@ import { OrganizationMember } from '../models/OrganizationMember.js';
 import { Project } from '../models/Project.js';
 import { Subscription, type ISubscription } from '../models/Subscription.js';
 import { SubscriptionPayment, type ISubscriptionPayment } from '../models/SubscriptionPayment.js';
-import { configForVersion, currentPlan, resolvePricing } from './plan-config.service.js';
+import { currentPlan, planLookup, resolvePricing, type PlanLookup } from './plan-config.service.js';
 
 /**
  * Puente entre la base y las reglas de `@luma/shared/billing`.
@@ -245,8 +247,9 @@ export async function quoteNextPeriod(
   projects: BillableProject[],
   now: Date,
   requestedPlan?: PlanCode,
+  plans: PlanLookup = planLookup(),
 ): Promise<PricedCharge> {
-  const pricing = await resolvePricing(pricingFor(facts, now, requestedPlan));
+  const pricing = await plans.resolve(pricingFor(facts, now, requestedPlan));
   const periodStart = nextPeriodStart(facts, now);
   const previous = previousPaidPeriod(facts, periodStart);
 
@@ -260,7 +263,7 @@ export async function quoteNextPeriod(
       plan: pricing.plan,
       previousPeriod: previous && {
         ...previous,
-        config: await configForVersion(previous.planVersion),
+        config: await plans.forVersion(previous.planVersion),
       },
     }),
   };
@@ -298,24 +301,31 @@ export async function summaryFor(
     }
   }
 
+  const plans = planLookup();
   let nextCharge = null;
   if (state.status !== 'sin_iniciar' && state.status !== 'ilimitado') {
-    ({ quote: nextCharge } = await quoteNextPeriod(facts, projects, now));
+    ({ quote: nextCharge } = await quoteNextPeriod(facts, projects, now, undefined, plans));
   }
 
   const [pricing, catalog] = await Promise.all([
-    resolvePricing(pricingFor(facts, now)),
-    currentPlan(),
+    plans.resolve(pricingFor(facts, now)),
+    plans.current(),
   ]);
+  const renewsPlan = renewingPlan(facts, now);
+  const switchPlan = planToSwitchTo(renewsPlan, catalog.config);
+  const switchCharge = switchPlan && (await quoteNextPeriod(facts, projects, now, switchPlan, plans));
 
   return {
     status: state.status,
     plan: state.plan ?? 'pro',
+    renewsPlan,
     offer: subscriptionOffer({
       config: pricing.config,
       catalog: catalog.config,
       projects,
       state,
+      renewing: renewsPlan,
+      switchTotalUsd: switchCharge ? switchCharge.quote.totalUsd : null,
       now,
     }),
     canWrite: state.canWrite,

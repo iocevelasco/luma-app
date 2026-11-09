@@ -435,23 +435,26 @@ export function extraUnitPrice(config: PlanConfig, position: number): number {
   return tier.unitUsd;
 }
 
+/** Los escalones como rangos de obras: desde cuál, hasta cuál y a cuánto. */
+export function extraTierRanges(
+  config: PlanConfig,
+): { from: number; to: number | null; unitUsd: number }[] {
+  let from = config.includedProjects + 1;
+  return config.extraTiers.map((tier) => {
+    const range = { from, to: tier.upToProjects, unitUsd: tier.unitUsd };
+    if (tier.upToProjects !== null) from = tier.upToProjects + 1;
+    return range;
+  });
+}
+
 /** Una línea por escalón: la 4ª a la 10ª a un precio, de la 11ª en adelante a otro. */
 function extraLines(config: PlanConfig, activeProjects: number): ChargeLine[] {
-  const lines: ChargeLine[] = [];
-  let from = config.includedProjects + 1;
-  for (const tier of config.extraTiers) {
-    const to = Math.min(activeProjects, tier.upToProjects ?? activeProjects);
-    if (to < from) continue;
-    const quantity = to - from + 1;
-    lines.push({
-      kind: 'extra',
-      quantity,
-      unitUsd: tier.unitUsd,
-      amountUsd: round2(quantity * tier.unitUsd),
-    });
-    from = to + 1;
-  }
-  return lines;
+  return extraTierRanges(config).flatMap(({ from, to, unitUsd }) => {
+    const last = Math.min(activeProjects, to ?? activeProjects);
+    if (last < from) return [];
+    const quantity = last - from + 1;
+    return [{ kind: 'extra' as const, quantity, unitUsd, amountUsd: round2(quantity * unitUsd) }];
+  });
 }
 
 function planLines(config: PlanConfig, plan: PlanCode, activeProjects: number): ChargeLine[] {
@@ -489,6 +492,24 @@ export function pricingFor(
   const keptPlan = last.plan ?? 'pro';
   const plan = requested ?? keptPlan;
   return plan === keptPlan ? { plan, version: last.planVersion ?? null } : { plan, version: 'current' };
+}
+
+/**
+ * Qué plan se renueva si paga sin elegir otro. `null`: nunca pagó o cortó la
+ * continuidad, así que lo que elija es una entrada y no una renovación. Una
+ * tarjeta viva cuenta aunque Stripe todavía no haya cobrado: renueva Pro.
+ */
+export function renewingPlan(facts: SubscriptionFacts, now: Date): PlanCode | null {
+  const source = pricingFor(facts, now);
+  if (source.version !== 'current') return source.plan;
+  const status = facts.stripe?.status;
+  return status && status !== 'canceled' && status !== 'incomplete_expired' ? 'pro' : null;
+}
+
+/** A qué plan se puede cambiar en la renovación. `null`: a ninguno. */
+export function planToSwitchTo(renewing: PlanCode | null, catalog: PlanConfig): PlanCode | null {
+  if (renewing === 'unlimited') return 'pro';
+  return renewing === 'pro' && catalog.unlimitedPriceUsd !== null ? 'unlimited' : null;
 }
 
 /**
@@ -554,9 +575,11 @@ export function subscriptionOffer(input: {
   catalog: PlanConfig;
   projects: BillableProject[];
   state: SubscriptionState;
+  renewing: PlanCode | null;
+  switchTotalUsd: number | null;
   now: Date;
 }): SubscriptionOffer {
-  const { config, catalog, projects, state, now } = input;
+  const { config, catalog, projects, state, renewing, switchTotalUsd, now } = input;
   const proTotal = (charged: BillableProject[]) =>
     quoteCharge({ periodStart: now, projects: charged, config: catalog, plan: 'pro', previousPeriod: null })
       .totalUsd;
@@ -565,10 +588,12 @@ export function subscriptionOffer(input: {
 
   return {
     config,
+    catalog,
+    switchTotalUsd,
     proTodayUsd: proTotal(projects),
     proWithNextProjectUsd: proTotal([...projects, { id: 'proxima-obra', createdAt: now, archivedAt: null }]),
     nextProjectUsd: onUnlimited || position <= config.includedProjects ? 0 : extraUnitPrice(config, position),
-    unlimitedUsd: state.plan === 'unlimited' ? config.unlimitedPriceUsd : catalog.unlimitedPriceUsd,
+    unlimitedUsd: renewing === 'unlimited' ? config.unlimitedPriceUsd : catalog.unlimitedPriceUsd,
   };
 }
 

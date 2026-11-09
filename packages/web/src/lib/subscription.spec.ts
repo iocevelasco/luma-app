@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PLAN_CONFIG, type SubscriptionOverview } from '@luma/shared';
-import { extraTierRanges, hasLiveCard, nextProjectState, subscriptionNotice } from './subscription';
+import { hasLiveCard, nextProjectState, subscriptionNotice } from './subscription';
 
 function overview(patch: Partial<SubscriptionOverview> = {}): SubscriptionOverview {
   return {
     status: 'prueba',
     plan: 'pro',
+    renewsPlan: null,
     offer: {
       config: DEFAULT_PLAN_CONFIG,
+      catalog: DEFAULT_PLAN_CONFIG,
+      switchTotalUsd: null,
       proTodayUsd: 39,
       proWithNextProjectUsd: 47,
       nextProjectUsd: 8,
@@ -48,16 +51,6 @@ describe('subscriptionNotice', () => {
       tone: 'danger',
       key: 'expired',
     });
-  });
-});
-
-describe('extraTierRanges', () => {
-  it('arma los rangos desde la primera obra extra', () => {
-    expect(extraTierRanges(DEFAULT_PLAN_CONFIG)).toEqual([
-      { from: 4, to: 10, unitUsd: 8 },
-      { from: 11, to: 25, unitUsd: 6 },
-      { from: 26, to: null, unitUsd: 4 },
-    ]);
   });
 });
 

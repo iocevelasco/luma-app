@@ -63,10 +63,10 @@ export function ProjectsTrashPage() {
                 }),
               ].join(' · ')}
             >
-              {project.restore.blockedBy && (
+              {project.restore.blockedBy && subscription && (
                 <p className="text-xs text-muted-foreground">
                   {t(`project.trash.blocked.${project.restore.blockedBy}`, {
-                    included: subscription?.includedProjects,
+                    included: subscription.includedProjects,
                   })}
                 </p>
               )}
@@ -76,7 +76,8 @@ export function ProjectsTrashPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={restore.isPending || !project.restore.allowed}
+                // Una extra se confirma con su precio a la vista: sin él, no se ofrece.
+                disabled={restore.isPending || !project.restore.allowed || (project.restore.isExtra && !subscription)}
                 onClick={() =>
                   project.restore.isExtra ? setConfirming(project) : restore.mutate(project.id)
                 }

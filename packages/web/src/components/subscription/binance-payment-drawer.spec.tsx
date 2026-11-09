@@ -44,7 +44,7 @@ describe('BinancePaymentDrawer', () => {
 
   it('muestra cuánto pagar y a qué cuenta, sin pedir datos de la orden', () => {
     const { container } = render(<BinancePaymentDrawer open onOpenChange={vi.fn()} />);
-    expect(screen.getByText('39 USDT')).toBeTruthy();
+    expect(screen.getByText('subscription.binance.amountValue')).toBeTruthy();
     expect(screen.getByText('123456789')).toBeTruthy();
     expect(container.querySelectorAll('input:not([type="file"])')).toHaveLength(0);
   });

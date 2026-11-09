@@ -119,7 +119,10 @@ export interface ChargeQuote {
 
 /** Lo que costaría cada opción hoy. Lo calcula la API: la UI no repite la cuenta. */
 export interface SubscriptionOffer {
+  /** La lista que rige el próximo cobro de esta Empresa. */
   config: PlanConfig;
+  /** La lista vigente, para quien entra o cambia de plan. */
+  catalog: PlanConfig;
   /** Pasar a Pro desde hoy, con las obras que hay. */
   proTodayUsd: number;
   /** Pasar a Pro desde hoy para crear una obra más, que entra en el primer cobro. */
@@ -128,13 +131,17 @@ export interface SubscriptionOffer {
   nextProjectUsd: number;
   /** `null`: el plan Ilimitado no está disponible. */
   unlimitedUsd: number | null;
+  /** Cuánto sale la renovación si cambia de plan, prorrateos incluidos. `null`: no hay a qué cambiar. */
+  switchTotalUsd: number | null;
 }
 
 /** Lo que la UI necesita para mostrar el estado de la suscripción. */
 export interface SubscriptionSummary {
   status: SubscriptionStatus;
-  /** El plan pago vigente, o `pro` si todavía no pagó. */
+  /** El plan pago que cubre hoy, o `pro` si ninguno lo cubre. */
   plan: PlanCode;
+  /** Lo que se renueva si paga sin elegir otro plan. `null`: nunca pagó o cortó la continuidad. */
+  renewsPlan: PlanCode | null;
   offer: SubscriptionOffer;
   /** Si puede crear y modificar. `false` = sólo lectura. */
   canWrite: boolean;
@@ -225,6 +232,13 @@ export const SUBSCRIPTION_RECEIPT_EXTENSIONS: Readonly<Record<string, string>> =
   'image/png': '.png',
   'image/webp': '.webp',
 };
+
+/** La extensión de un comprobante aceptado. `undefined`: ese tipo no se acepta. */
+export function subscriptionReceiptExtension(mimeType: string): string | undefined {
+  return Object.hasOwn(SUBSCRIPTION_RECEIPT_EXTENSIONS, mimeType)
+    ? SUBSCRIPTION_RECEIPT_EXTENSIONS[mimeType]
+    : undefined;
+}
 
 export interface SubscriptionReceipt {
   fileName: string;

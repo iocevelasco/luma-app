@@ -4,7 +4,7 @@ import {
   bolivaresPaymentSchema,
   planCodeSchema,
   reviewSubscriptionPaymentSchema,
-  SUBSCRIPTION_RECEIPT_EXTENSIONS,
+  subscriptionReceiptExtension,
   type PaymentSetupStatus,
   type SubscriptionPaymentStatus,
 } from '@luma/shared';
@@ -52,7 +52,7 @@ function receiptUploader(req: Request, organizationId: string) {
   }
   if (!file) return undefined;
 
-  const extension = SUBSCRIPTION_RECEIPT_EXTENSIONS[file.mimetype];
+  const extension = subscriptionReceiptExtension(file.mimetype);
   if (!extension) {
     throw badRequest('Comprobante no soportado. Sube un PDF o una imagen .jpg, .png o .webp');
   }
