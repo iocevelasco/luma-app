@@ -599,6 +599,7 @@ export function ProjectPaymentsPage() {
   return (
     <PageLayout
       {...actions}
+      toolbarSingleRow
       toolbar={
         hasPayments ? (
           <MovementFilterBar
