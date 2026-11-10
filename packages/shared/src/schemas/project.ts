@@ -102,12 +102,15 @@ export const createProjectSchema = z
   });
 
 /**
- * Ajustes de una obra ya creada. Parcial a propósito: hoy sólo se toca la
- * visibilidad de proveedores y de compras, y el resto de la ficha se edita al crearla.
+ * Ajustes de una obra ya creada. Parcial a propósito: hoy sólo se toca lo que el
+ * cliente ve (proveedores, compras, gastos y cobros), y el resto de la ficha se
+ * edita al crearla.
  */
 export const updateProjectSchema = z.object({
   providersVisibleToClient: z.boolean().optional(),
   purchasesVisibleToClient: z.boolean().optional(),
+  expensesVisibleToClient: z.boolean().optional(),
+  paymentsVisibleToClient: z.boolean().optional(),
 });
 
 const specialtyLabelSchema = z

@@ -26,11 +26,15 @@ import {
  *
  * **Dos gates distintos, y la diferencia es el punto del módulo entero:**
  *
- * - `payment.*` — el cronograma acordado y los cobros. Lo ve el cliente.
- * - `expense.*` — los gastos, el resumen con margen y la nómina. El cliente
- *   **no**. Con el total cobrado y el total gastado, la utilidad del
- *   ejecutante sale de una resta (regla 13), así que no alcanza con esconder
- *   la pantalla: la ruta tiene que negarlo.
+ * - `payment.*` — el cronograma acordado y los cobros. Lo ve el cliente, salvo
+ *   que el gerente se los cierre (`paymentsVisibleToClient`).
+ * - `expense.*` — los gastos y sus comprobantes. El cliente sólo si el gerente
+ *   se los abre (`expensesVisibleToClient`, cerrado por default): con el total
+ *   cobrado y el total gastado, la utilidad del ejecutante sale de una resta
+ *   (regla 13), así que es una decisión de la obra y la ruta tiene que
+ *   respetarla, no alcanza con esconder la pantalla.
+ * - `finance.summary.read` — el resumen con el margen y la nómina. Nunca el
+ *   cliente, ni con los gastos abiertos.
  *
  * Si alguna vez una ruta de gastos queda con `payment.read`, el cliente puede
  * calcular tu margen con un `curl`.
@@ -39,7 +43,7 @@ export const financeRouter = Router({ mergeParams: true });
 
 financeRouter.use(isAuthenticated, requireProjectAccess);
 
-// ── Cobros: el cliente los ve ───────────────────────────────────────────────
+// ── Cobros: el cliente los ve (si la obra no se los cierra) ───────────────────────────────────────────────
 financeRouter.get('/schedule', requireCapability('payment.read'), listPaymentSchedule);
 financeRouter.post('/schedule', requireCapability('payment.write'), createPaymentScheduleItem);
 financeRouter.patch(
@@ -58,7 +62,7 @@ financeRouter.post('/payments', requireCapability('payment.write'), createPaymen
 // Sin PATCH: un cobro es un hecho con fecha. Se borra y se carga de nuevo.
 financeRouter.delete('/payments/:paymentId', requireCapability('payment.write'), deletePayment);
 
-// ── Gastos: el cliente NO los ve ────────────────────────────────────────────
+// ── Gastos: el cliente sólo si la obra se los abre ────────────────────────────────────────────
 financeRouter.get('/expenses', requireCapability('expense.read'), listExpenses);
 financeRouter.post(
   '/expenses',
@@ -70,9 +74,10 @@ financeRouter.post(
 financeRouter.patch('/expenses/:expenseId', requireCapability('expense.write'), updateExpense);
 financeRouter.delete('/expenses/:expenseId', requireCapability('expense.write'), deleteExpense);
 
-// El resumen con margen y la nómina van con `expense.read`, nunca con
-// `payment.read`: los dos exponen cuánto se gastó.
-financeRouter.get('/summary', requireCapability('expense.read'), getFinanceSummary);
-financeRouter.get('/payroll', requireCapability('expense.read'), getPayroll);
+// El resumen con margen y la nómina van con su propia capacidad, nunca con
+// `payment.read` ni con `expense.read`: el cliente con los gastos abiertos ve la
+// lista, no la utilidad calculada ni los jornales.
+financeRouter.get('/summary', requireCapability('finance.summary.read'), getFinanceSummary);
+financeRouter.get('/payroll', requireCapability('finance.summary.read'), getPayroll);
 
 export default financeRouter;

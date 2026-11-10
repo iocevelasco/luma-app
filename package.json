@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Base de aplicaci\u00f3n: API (Express + Mongo), SPA (Vite + React) y landing est\u00e1tica",
+  "description": "Base de aplicación: API (Express + Mongo), SPA (Vite + React) y landing estática",
   "scripts": {
     "dev": "pnpm --filter @luma/shared build && pnpm --filter @luma/web dev & pnpm --filter @luma/api dev",
     "dev:web": "pnpm --filter @luma/shared build && pnpm --filter @luma/web dev",
@@ -21,8 +21,7 @@
     "test:e2e": "playwright test --ui",
     "test:e2e:ci": "playwright test --project=chromium",
     "test:e2e:report": "playwright show-report",
-    "seed:admin": "pnpm --filter @luma/api seed:admin",
-    "seed:e2e": "pnpm --filter @luma/shared build && pnpm --filter @luma/api seed:e2e",
+    "seed:demo-pro": "pnpm --filter @luma/shared build && pnpm --filter @luma/api seed:demo-pro",
     "clean": "pnpm -r clean && rm -rf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "docker:build": "docker build -t luma-app .",

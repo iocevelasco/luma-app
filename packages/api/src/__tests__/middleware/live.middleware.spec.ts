@@ -129,9 +129,11 @@ describe('closeLiveOnAccessChange', () => {
 describe('changesProjectVisibility', () => {
   const req = (body: unknown) => ({ body }) as unknown as Request;
 
-  it('detecta los dos flags que le abren secciones al cliente', () => {
+  it('detecta los flags que le abren o cierran secciones al cliente', () => {
     expect(changesProjectVisibility(req({ purchasesVisibleToClient: false }))).toBe(true);
     expect(changesProjectVisibility(req({ providersVisibleToClient: true }))).toBe(true);
+    expect(changesProjectVisibility(req({ expensesVisibleToClient: true }))).toBe(true);
+    expect(changesProjectVisibility(req({ paymentsVisibleToClient: false }))).toBe(true);
   });
 
   it('una edición común no toca permisos', () => {

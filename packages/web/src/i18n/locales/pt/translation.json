@@ -198,6 +198,10 @@
       "providersVisibleToClientHint": "Se ativar, o cliente vê o diretório desta obra e quem está atribuído a cada tarefa.",
       "purchasesVisibleToClient": "O cliente vê as compras",
       "purchasesVisibleToClientHint": "Se ativar, o cliente vê em Compras os materiais lançados, o status, o fornecedor de cada um e as notas fiscais. Pensado para obras cobradas por percentual de execução.",
+      "paymentsVisibleToClient": "O cliente vê os pagamentos",
+      "paymentsVisibleToClientHint": "Se ativar, o cliente vê em Pagamentos o combinado e o que já pagou. Se desativar, deixa de ver.",
+      "expensesVisibleToClient": "O cliente vê as despesas",
+      "expensesVisibleToClientHint": "Se ativar, o cliente vê em Despesas o que saiu da obra e os comprovantes. Com pagamentos e despesas à vista, ele consegue calcular a sua margem; o resumo com o lucro e a folha ele nunca vê.",
       "settingsSaved": "Ajuste salvo",
       "team": "Equipe da obra",
       "memberInvited": "Acesso concedido"
@@ -1596,6 +1600,8 @@
       "pago_movil": "Pago Móvil",
       "zelle": "Zelle",
       "binance": "Binance",
+      "tarjeta_debito": "Cartão de débito",
+      "tarjeta_credito": "Cartão de crédito",
       "efectivo": "Dinheiro",
       "cheque": "Cheque",
       "otro": "Outro"

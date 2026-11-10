@@ -85,6 +85,8 @@ import {
 import { formatMoney } from '@/lib/format-money';
 import { cn, formatFileSize } from '@/lib/utils';
 import { numberField } from '@/lib/form-fields';
+import { sortPaymentMethods } from '@/lib/payment-methods';
+import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 
 /** Primer y último día del mes en curso, para el rango por default de la nómina. */
 function currentMonthRange() {
@@ -102,7 +104,11 @@ function NewExpenseDrawer({
   projectId: string;
   projectCurrency: string;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const sortedMethodOptions = useMemo(
+    () => sortPaymentMethods(PAYMENT_METHOD_OPTIONS, (method) => t(`finance.method.${method}`), i18n.language),
+    [t, i18n.language],
+  );
   const [open, setOpen] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -294,7 +300,7 @@ function NewExpenseDrawer({
                   <SelectValue placeholder={t('finance.fields.methodPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_METHOD_OPTIONS.map((option) => (
+                  {sortedMethodOptions.map((option) => (
                     <SelectItem key={option} value={option}>
                       {t(`finance.method.${option}`)}
                     </SelectItem>
@@ -468,7 +474,10 @@ export function ProjectExpensesPage() {
   const dateLocale = useDateLocale();
   const { data: projectData } = useProject(projectId);
   const { data, isLoading, isError } = useExpenses(projectId);
-  const { data: summaryData } = useFinanceSummary(projectId);
+  const { can } = useProjectCapabilities(projectId);
+  // El resumen trae el margen: lo recibe el gerente y el contador, nunca el cliente
+  // aunque tenga los gastos abiertos. Sin la capacidad ni se pide (sería un 403).
+  const { data: summaryData } = useFinanceSummary(can('finance.summary.read') ? projectId : undefined);
   const deleteExpense = useDeleteExpense(projectId!);
   const [deleting, setDeleting] = useState<Expense | null>(null);
   // `detail` se conserva al cerrar: el panel sale con su animación y devuelve el foco.
@@ -695,8 +704,8 @@ export function ProjectExpensesPage() {
               </div>
               <div>
                 <dt className="text-muted-foreground">{t('finance.result.margin')}</dt>
-                {/* La utilidad. El cliente nunca llega a esta pantalla: la ruta
-                    va con `expense.read`, que su rol no tiene. */}
+                {/* La utilidad. Sólo se renderiza con el resumen, que la API no
+                    manda sin `finance.summary.read`: el cliente no lo tiene. */}
                 <dd
                   className={cn(
                     'break-words text-lg font-semibold tabular-nums',
@@ -711,7 +720,9 @@ export function ProjectExpensesPage() {
         </Card>
       )}
 
-      <PayrollCard projectId={projectId!} currency={currency} />
+      <Can I="finance.summary.read">
+        <PayrollCard projectId={projectId!} currency={currency} />
+      </Can>
 
       {truncated && (
         <p role="status" className="text-xs text-muted-foreground">

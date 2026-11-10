@@ -198,6 +198,10 @@
       "providersVisibleToClientHint": "Si lo activás, el cliente ve el directorio de esta obra y quién está asignado a cada tarea.",
       "purchasesVisibleToClient": "El cliente ve las compras",
       "purchasesVisibleToClientHint": "Si lo activás, el cliente ve en Compras los materiales cargados, su estado, el proveedor de cada uno y las facturas. Pensado para obras que se cobran por porcentaje de ejecución.",
+      "paymentsVisibleToClient": "El cliente ve los pagos",
+      "paymentsVisibleToClientHint": "Si lo activás, el cliente ve en Pagos lo acordado y lo que ya pagó. Si lo desactivás, deja de verlo.",
+      "expensesVisibleToClient": "El cliente ve los gastos",
+      "expensesVisibleToClientHint": "Si lo activás, el cliente ve en Gastos lo que salió de la obra y sus comprobantes. Con pagos y gastos a la vista puede calcular tu margen; el resumen con la utilidad y la nómina no los ve nunca.",
       "settingsSaved": "Ajuste guardado",
       "team": "Equipo de la obra",
       "memberInvited": "Acceso otorgado"
@@ -1596,6 +1600,8 @@
       "pago_movil": "Pago móvil",
       "zelle": "Zelle",
       "binance": "Binance",
+      "tarjeta_debito": "Tarjeta de débito",
+      "tarjeta_credito": "Tarjeta de crédito",
       "efectivo": "Efectivo",
       "cheque": "Cheque",
       "otro": "Otro"

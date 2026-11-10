@@ -177,9 +177,14 @@ export type Capability =
   // Cobros del cliente: el cronograma acordado y lo recibido
   | 'payment.read'
   | 'payment.write'
-  // Gastos de la obra. NUNCA para el cliente: cobros menos gastos es el margen
+  // Gastos de la obra. El cliente los ve sólo si el gerente se los abre en la
+  // obra (`expensesVisibleToClient`): cobros menos gastos es el margen.
   | 'expense.read'
   | 'expense.write'
+  // El resumen con el margen y la nómina. NUNCA para el cliente, ni con los
+  // gastos abiertos: ver la lista de gastos es una decisión del gerente, ver
+  // su utilidad ya calculada y los jornales del personal no.
+  | 'finance.summary.read'
   // Hitos y eventualidades
   | 'milestone.read'
   | 'milestone.report'
@@ -253,11 +258,14 @@ const PROFESSIONAL_CAPABILITIES: readonly Capability[] = [
  *    `activity.review`.
  * 2. **El supervisor no ve plata.** Ni presupuesto, ni Consultor, ni montos
  *    de contratación. La matriz le da compras y herramientas, no economía.
- * 3. **El cliente ve cobros, nunca gastos.** `payment.read` sí,
- *    `expense.read` no. No es pudor: con el total cobrado y el total gastado,
- *    la utilidad del ejecutante sale de una resta, y la regla 13 dice que esa
- *    cifra no es visible para el cliente. El supervisor no tiene ninguna de
- *    las dos — no ve plata.
+ * 3. **El cliente ve cobros; los gastos, sólo si el gerente se los abre.**
+ *    `payment.read` sí, `expense.read` sólo con `expensesVisibleToClient`.
+ *    No es pudor: con el total cobrado y el total gastado, la utilidad del
+ *    ejecutante sale de una resta, y la regla 13 dice que esa cifra no es
+ *    visible para el cliente. Por eso abrir los gastos es una decisión de la
+ *    obra, nunca del rol, y aun abiertos el cliente no recibe el resumen con
+ *    el margen ni la nómina (`finance.summary.read`). El supervisor no tiene
+ *    ninguna de las dos — no ve plata.
  * 4. **El supervisor reporta hacia adentro, no hacia el cliente.** Tiene
  *    `milestone.report` (crear una eventualidad interna) pero no
  *    `milestone.publish`, que es lo que hace falta para que un hito tenga
@@ -286,6 +294,7 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
     'payment.write',
     'expense.read',
     'expense.write',
+    'finance.summary.read',
     'activity.read',
     'activity.create',
     'activity.plan',
@@ -334,14 +343,26 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
    * Sí ve gastos, y por lo tanto el margen. Es inevitable: no se puede llevar
    * la contabilidad de una obra sin ver los dos lados.
    */
-  contador: ['project.read', 'payment.read', 'payment.write', 'expense.read', 'expense.write'],
+  contador: [
+    'project.read',
+    'payment.read',
+    'payment.write',
+    'expense.read',
+    'expense.write',
+    'finance.summary.read',
+  ],
   cliente: [
     'project.read',
     'activity.read',
-    // Ve el cronograma acordado y lo que pagó — su fila de la matriz. NO ve
-    // `expense.read`: con el total cobrado y el total gastado, el margen del
-    // ejecutante sale de una resta (regla 13).
+    // Ve el cronograma acordado y lo que pagó — su fila de la matriz. Los
+    // cobros arrancan abiertos (`paymentsVisibleToClient`) porque siempre los
+    // vio; el gerente puede cerrarlos.
     'payment.read',
+    // Gastos y sus comprobantes: sólo si el gerente los abre en la obra
+    // (`expensesVisibleToClient`). Con el total cobrado y el total gastado el
+    // margen del ejecutante sale de una resta (regla 13), así que es una
+    // decisión explícita y nunca viene por default. Sin `finance.summary.read`.
+    'expense.read',
     // Lee hitos, pero sólo los de audiencia `cliente` — ese filtro no es un
     // permiso sino parte de la consulta, y vive en el controller.
     'milestone.read',
@@ -356,15 +377,34 @@ export const PROJECT_CAPABILITIES: Record<ProjectRole, readonly Capability[]> = 
   ],
 } as const;
 
+/** Los flags de la obra que le abren (o cierran) una sección al cliente. */
+export const CLIENT_VISIBILITY_FLAGS = [
+  'providersVisibleToClient',
+  'purchasesVisibleToClient',
+  'expensesVisibleToClient',
+  'paymentsVisibleToClient',
+] as const;
+
+export type ClientVisibilityFlag = (typeof CLIENT_VISIBILITY_FLAGS)[number];
+
 /** Capacidades que además dependen de un flag de la obra, no sólo del rol. */
-const CLIENT_GATED_BY_PROJECT_FLAG: Partial<
-  Record<Capability, 'providersVisibleToClient' | 'purchasesVisibleToClient'>
-> = {
+const CLIENT_GATED_BY_PROJECT_FLAG: Partial<Record<Capability, ClientVisibilityFlag>> = {
   'provider.read': 'providersVisibleToClient',
   'material.read': 'purchasesVisibleToClient',
   'material.cost.read': 'purchasesVisibleToClient',
   'material.invoice.read': 'purchasesVisibleToClient',
+  'expense.read': 'expensesVisibleToClient',
+  'payment.read': 'paymentsVisibleToClient',
 };
+
+/**
+ * Flags que, **sin dato**, cuentan como abiertos. Los demás niegan por no saber.
+ * Sólo los cobros: el cliente ya los veía antes de que existiera el flag, y
+ * cerrárselos a todas las obras existentes por un campo que todavía no tienen
+ * sería quitarle un acceso sin que nadie lo decida. Una obra con
+ * `paymentsVisibleToClient: false` explícito sí los cierra.
+ */
+const OPEN_WITHOUT_DATA: ReadonlySet<ClientVisibilityFlag> = new Set(['paymentsVisibleToClient']);
 
 /**
  * Lo que de la fila `gerente` sólo tiene **quien creó la obra**. Los demás
@@ -398,6 +438,10 @@ export interface ProjectCapabilityContext {
   providersVisibleToClient: boolean;
   /** Ausente cuenta como `false`: negar por no saber. */
   purchasesVisibleToClient?: boolean;
+  /** Ausente cuenta como `false`: negar por no saber. */
+  expensesVisibleToClient?: boolean;
+  /** Ausente cuenta como `true`: ver `OPEN_WITHOUT_DATA`. */
+  paymentsVisibleToClient?: boolean;
 }
 
 /**
@@ -422,7 +466,10 @@ export function canInProject(
 
   if (role === 'cliente') {
     const flag = CLIENT_GATED_BY_PROJECT_FLAG[capability];
-    if (flag) return project?.[flag] === true;
+    if (flag) {
+      const value = project?.[flag];
+      return value === undefined ? OPEN_WITHOUT_DATA.has(flag) : value === true;
+    }
   }
 
   return true;

@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 
 /** Para los specs que usan las cuentas por estado de la suscripción. Sólo existen en local. */
 export function requiresSubscriptionDemo() {
-  test.skip(process.env.E2E_SUBSCRIPTION_DEMO !== '1', 'Sin las cuentas de `seed:subscription-demo`');
+  test.skip(process.env.E2E_SUBSCRIPTION_DEMO !== '1', 'Sin las cuentas por estado de la suscripción');
 }
 
 /**

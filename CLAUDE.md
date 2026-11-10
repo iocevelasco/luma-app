@@ -120,10 +120,13 @@ la misma plata dos veces. Tres reglas que no se negocian:
 2. **Cada movimiento lleva su moneda y su cotización, congeladas.** Un gasto de
    agosto vale lo que valía en agosto; reconvertir con la cotización de hoy haría
    cambiar solo el total de una obra cerrada.
-3. **Cobros y gastos van por rutas separadas.** `payment.*` lo ve el cliente,
-   `expense.*` no. Con los dos totales, el margen del ejecutante sale de una
-   resta: si una ruta de gastos queda con `payment.read`, el cliente lo calcula
-   con un `curl`.
+3. **Cobros y gastos van por rutas separadas.** `payment.*` lo ve el cliente
+   (el gerente puede cerrárselo: `paymentsVisibleToClient`); `expense.read` sólo si
+   el gerente se lo abre en la obra (`expensesVisibleToClient`, cerrado por
+   default), y aun así el resumen con margen y la nómina van con
+   `finance.summary.read`, que el cliente nunca tiene. Con los dos totales, el
+   margen del ejecutante sale de una resta: si una ruta de gastos queda con
+   `payment.read`, el cliente lo calcula con un `curl`.
 
 Los cobros **no se editan**, sólo se crean o se borran: un cobro es un hecho con
 fecha.
@@ -305,19 +308,19 @@ nunca con user-agent.
 
 Una por tipo de usuario, definidas **sólo** en `e2e/fixtures/users.json`
 (`admin`, `user`, `gerente`, `supervisor`, `contador`, `cliente`, `inactive`, y las
-`demo*`, una por estado de la suscripción, que crea `seed:subscription-demo`). Para
+`demo*`, una por estado de la suscripción). Para
 ejecutar E2E —o entrar a mano con un rol— se usan esas.
 
-- El `globalSetup` las siembra solo (`pnpm seed:e2e`, idempotente) y guarda una
-  sesión por cuenta en `.auth/<clave>.json`. `E2E_SKIP_SEED=1` lo saltea.
+- Las cuentas tienen que existir de antes en el entorno (ya no hay seed que las
+  cree). El `globalSetup` guarda una sesión por cuenta en `.auth/<clave>.json`;
+  las `demo*` se saltean.
 - En un spec: `test.use({ storageState: authFile('supervisor') })` o
   `loginAs(page, 'cliente')`. **Nunca** escribas email y contraseña de una cuenta
   fija: se piden por clave (`helpers/users.ts`).
 - La obra compartida (`Obra E2E — roles`) es para **mirar**. Un spec que crea,
   mueve o borra arma su propia obra.
 - Un tipo de usuario nuevo = una entrada en el JSON y la clave en `E2EUserKey`.
-- Otro entorno: `E2E_<CLAVE>_EMAIL` / `E2E_<CLAVE>_PASSWORD`. El seed sólo toca
-  cuentas `.test` y sólo en una base local.
+- Otro entorno: `E2E_<CLAVE>_EMAIL` / `E2E_<CLAVE>_PASSWORD`.
 
 ## Multimedia — skill `media-gen`
 

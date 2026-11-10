@@ -299,13 +299,14 @@ describe('contador', () => {
     expect(canInProject('contador', 'advisor.use')).toBe(false);
   });
 
-  it('su grilla entera son cinco capacidades', () => {
+  it('su grilla entera son seis capacidades', () => {
     expect(capabilitiesInProject('contador', VISIBLE)).toEqual([
       'project.read',
       'payment.read',
       'payment.write',
       'expense.read',
       'expense.write',
+      'finance.summary.read',
     ]);
   });
 });
@@ -434,6 +435,64 @@ describe('compras visibles para el cliente', () => {
   it('el flag no cambia lo de los demás roles', () => {
     expect(canInProject('supervisor', 'material.cost.read')).toBe(true);
     expect(canInProject('contador', 'material.read', OPEN)).toBe(false);
+  });
+});
+
+describe('gastos y cobros visibles para el cliente', () => {
+  const CLOSED = { providersVisibleToClient: false, expensesVisibleToClient: false };
+  const OPEN_EXPENSES = { providersVisibleToClient: false, expensesVisibleToClient: true };
+
+  it('los gastos arrancan cerrados: sin el flag, o sin dato, el cliente no los ve', () => {
+    expect(canInProject('cliente', 'expense.read')).toBe(false);
+    expect(canInProject('cliente', 'expense.read', HIDDEN)).toBe(false);
+    expect(canInProject('cliente', 'expense.read', CLOSED)).toBe(false);
+  });
+
+  it('con el flag ve los gastos, pero no los carga ni los edita', () => {
+    expect(canInProject('cliente', 'expense.read', OPEN_EXPENSES)).toBe(true);
+    expect(canInProject('cliente', 'expense.write', OPEN_EXPENSES)).toBe(false);
+  });
+
+  it('abrir los gastos no le da el margen: ni el resumen ni la nómina', () => {
+    expect(canInProject('cliente', 'finance.summary.read', OPEN_EXPENSES)).toBe(false);
+    expect(canInProject('cliente', 'budget.read', OPEN_EXPENSES)).toBe(false);
+  });
+
+  it('el resumen con margen es sólo del gerente y el contador', () => {
+    for (const role of ['gerente', 'contador'] as const) {
+      expect(canInProject(role, 'finance.summary.read')).toBe(true);
+    }
+    for (const role of ['supervisor', 'arquitecto', 'ingeniero', 'disenador', 'cliente'] as const) {
+      expect(canInProject(role, 'finance.summary.read', OPEN_EXPENSES), role).toBe(false);
+    }
+  });
+
+  it('los cobros arrancan abiertos: sin dato el cliente los sigue viendo', () => {
+    expect(canInProject('cliente', 'payment.read')).toBe(true);
+    expect(canInProject('cliente', 'payment.read', HIDDEN)).toBe(true);
+  });
+
+  it('el gerente puede cerrarle los cobros al cliente, y vuelve a abrirlos', () => {
+    expect(
+      canInProject('cliente', 'payment.read', { providersVisibleToClient: false, paymentsVisibleToClient: false }),
+    ).toBe(false);
+    expect(
+      canInProject('cliente', 'payment.read', { providersVisibleToClient: false, paymentsVisibleToClient: true }),
+    ).toBe(true);
+  });
+
+  it('cerrar los cobros no los cierra para quien los lleva', () => {
+    const closed = { providersVisibleToClient: false, paymentsVisibleToClient: false };
+    for (const role of ['gerente', 'contador'] as const) {
+      expect(canInProject(role, 'payment.read', closed)).toBe(true);
+    }
+  });
+
+  it('con la suscripción vencida el cliente conserva la lectura de lo que tiene abierto', () => {
+    const caps = capabilitiesInProject('cliente', OPEN_EXPENSES, { readOnly: true });
+    expect(caps).toContain('expense.read');
+    expect(caps).toContain('payment.read');
+    expect(caps).not.toContain('expense.write');
   });
 });
 

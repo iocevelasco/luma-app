@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import type { Activity, Capability, DocumentCategory } from '@luma/shared';
+import type { Activity, Capability, ClientVisibilityFlag, DocumentCategory } from '@luma/shared';
 import {
   ChevronRight,
   Gauge,
@@ -87,47 +87,38 @@ function CardIcon({ icon: Icon }: { icon: ComponentType<{ className?: string }> 
   );
 }
 
+/** Un switch por sección que el gerente le abre o le cierra al cliente, en el orden en que se muestran. */
+const CLIENT_VISIBILITY_SWITCHES: ReadonlyArray<{ flag: ClientVisibilityFlag; labelKey: ClientVisibilityFlag }> = [
+  { flag: 'providersVisibleToClient', labelKey: 'providersVisibleToClient' },
+  { flag: 'purchasesVisibleToClient', labelKey: 'purchasesVisibleToClient' },
+  { flag: 'paymentsVisibleToClient', labelKey: 'paymentsVisibleToClient' },
+  { flag: 'expensesVisibleToClient', labelKey: 'expensesVisibleToClient' },
+];
+
 /**
- * Owner-only. Es la única excepción a la regla 4 (el cliente no ve
- * información operativa interna), así que se decide obra por obra y queda
- * apagado por default.
+ * Lo que el cliente ve de la obra, un switch por sección. Cada uno es un flag de
+ * la obra que el gerente decide (`project.update`): proveedores, compras y
+ * gastos arrancan cerrados (regla 4), los cobros abiertos porque siempre los vio.
  */
-function ProvidersVisibilitySwitch({
+function ClientVisibilitySwitch({
   projectId,
+  flag,
   checked,
+  label,
 }: {
   projectId: string;
+  flag: ClientVisibilityFlag;
   checked: boolean;
+  label: string;
 }) {
-  const { t } = useTranslation();
   const updateProject = useUpdateProject(projectId);
 
   return (
     <Switch
       checked={checked}
       disabled={updateProject.isPending}
-      onCheckedChange={(next) => updateProject.mutate({ providersVisibleToClient: next })}
-      aria-label={t('project.detail.providersVisibleToClient')}
-    />
-  );
-}
-
-function PurchasesVisibilitySwitch({
-  projectId,
-  checked,
-}: {
-  projectId: string;
-  checked: boolean;
-}) {
-  const { t } = useTranslation();
-  const updateProject = useUpdateProject(projectId);
-
-  return (
-    <Switch
-      checked={checked}
-      disabled={updateProject.isPending}
-      onCheckedChange={(next) => updateProject.mutate({ purchasesVisibleToClient: next })}
-      aria-label={t('project.detail.purchasesVisibleToClient')}
+      onCheckedChange={(next) => updateProject.mutate({ [flag]: next })}
+      aria-label={label}
     />
   );
 }
@@ -687,39 +678,26 @@ export function ProjectDetailPage() {
               </div>
             </dl>
 
-            {can('project.update') && (
-              <div className="flex items-start justify-between gap-4 border-t border-border pt-4">
-                <div>
-                  <h3 className="text-sm font-medium">
-                    {t('project.detail.providersVisibleToClient')}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t('project.detail.providersVisibleToClientHint')}
-                  </p>
+            {can('project.update') &&
+              CLIENT_VISIBILITY_SWITCHES.map(({ flag, labelKey }) => (
+                <div
+                  key={flag}
+                  className="flex items-start justify-between gap-4 border-t border-border pt-4"
+                >
+                  <div>
+                    <h3 className="text-sm font-medium">{t(`project.detail.${labelKey}`)}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {t(`project.detail.${labelKey}Hint`)}
+                    </p>
+                  </div>
+                  <ClientVisibilitySwitch
+                    projectId={project.id}
+                    flag={flag}
+                    checked={project[flag]}
+                    label={t(`project.detail.${labelKey}`)}
+                  />
                 </div>
-                <ProvidersVisibilitySwitch
-                  projectId={project.id}
-                  checked={project.providersVisibleToClient}
-                />
-              </div>
-            )}
-
-            {can('project.update') && (
-              <div className="flex items-start justify-between gap-4 border-t border-border pt-4">
-                <div>
-                  <h3 className="text-sm font-medium">
-                    {t('project.detail.purchasesVisibleToClient')}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t('project.detail.purchasesVisibleToClientHint')}
-                  </p>
-                </div>
-                <PurchasesVisibilitySwitch
-                  projectId={project.id}
-                  checked={project.purchasesVisibleToClient}
-                />
-              </div>
-            )}
+              ))}
 
             {can('specialty.manage') && (
               <CustomSpecialtiesSection

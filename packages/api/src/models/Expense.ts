@@ -18,10 +18,11 @@ export interface IExpenseReceipt {
 /**
  * Un egreso de la obra: material, herramienta, nómina, insumo u otro.
  *
- * **Nunca sale hacia el cliente.** No es una regla de la pantalla sino del
- * modelo: está sólo en la fila del gerente de la matriz, y con el total
- * cobrado y el total gastado la utilidad del ejecutante sale de una resta
- * (regla 13). Las rutas van con `expense.read`, que el cliente no tiene.
+ * **Sale hacia el cliente sólo si el gerente lo abrió en la obra**
+ * (`expensesVisibleToClient`, cerrado por default). No es una regla de la
+ * pantalla sino de la grilla: con el total cobrado y el total gastado la
+ * utilidad del ejecutante sale de una resta (regla 13). Las rutas van con
+ * `expense.read`, que el cliente sólo tiene con ese flag.
  *
  * `provider` y `activity` son opcionales y sirven para responder "cuánto
  * llevamos gastado con el electricista" y "cuánto costó la cocina" sin

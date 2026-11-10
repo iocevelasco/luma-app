@@ -87,6 +87,18 @@ export interface Project {
    * tiene derecho a ver en qué se gasta. Lo cambia sólo el gerente.
    */
   purchasesVisibleToClient: boolean;
+  /**
+   * Si el cliente ve los gastos de la obra y sus comprobantes. Cerrado por
+   * default: con cobros y gastos el cliente calcula el margen del ejecutante,
+   * así que lo abre el gerente sabiéndolo. No incluye el resumen con margen
+   * ni la nómina, que el cliente nunca recibe.
+   */
+  expensesVisibleToClient: boolean;
+  /**
+   * Si el cliente ve los cobros: el cronograma acordado y lo que pagó. Abierto
+   * por default, que es lo que siempre vio; el gerente puede cerrarlo.
+   */
+  paymentsVisibleToClient: boolean;
   customSpecialties: ProjectCustomSpecialty[];
   createdAt: string;
   updatedAt: string;

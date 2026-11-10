@@ -38,6 +38,8 @@ export const paymentMethodSchema = z.enum([
   'pago_movil',
   'zelle',
   'binance',
+  'tarjeta_debito',
+  'tarjeta_credito',
   'efectivo',
   'cheque',
   'otro',
