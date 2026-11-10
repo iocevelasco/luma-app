@@ -102,8 +102,12 @@ export function MovementFilterBar<Kind extends string, Group extends string>({
         aria-label={labels.search}
         autoComplete="off"
       />
-      <Select value={kind.value} onValueChange={(value) => kind.onChange(value as Kind | 'all')}>
-        <SelectTrigger className={cn(height, compact ? 'w-full' : 'w-36 shrink-0')} aria-label={kind.ariaLabel}>
+      <Select
+        value={kind.value}
+        onValueChange={(value) => kind.onChange(value as Kind | 'all')}
+        className={compact ? undefined : 'w-44 shrink-0'}
+      >
+        <SelectTrigger className={cn(height, 'w-full')} aria-label={kind.ariaLabel}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -133,8 +137,12 @@ export function MovementFilterBar<Kind extends string, Group extends string>({
           aria-label={labels.to}
         />
       </div>
-      <Select value={groupBy.value} onValueChange={(value) => groupBy.onChange(value as Group)}>
-        <SelectTrigger className={cn(height, compact ? 'w-full' : 'w-40 shrink-0')} aria-label={groupBy.ariaLabel}>
+      <Select
+        value={groupBy.value}
+        onValueChange={(value) => groupBy.onChange(value as Group)}
+        className={compact ? undefined : 'w-48 shrink-0'}
+      >
+        <SelectTrigger className={cn(height, 'w-full')} aria-label={groupBy.ariaLabel}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
