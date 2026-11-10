@@ -23,6 +23,7 @@
     "rates:refresh": "tsx src/scripts/refresh-bcv-rate.ts",
     "stripe:setup": "tsx src/scripts/stripe-setup.ts",
     "seed:subscription-demo": "tsx src/scripts/seed-subscription-demo.ts",
+    "seed:demo-pro": "tsx src/scripts/seed-demo-pro.ts",
     "subscription:reminders": "tsx src/scripts/send-subscription-reminders.ts",
     "projects:purge": "tsx src/scripts/purge-deleted-projects.ts",
     "accounts:purge": "tsx src/scripts/purge-deactivated-accounts.ts",

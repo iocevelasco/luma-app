@@ -153,6 +153,22 @@ responde). Cada corrida deja esas cinco cuentas como nuevas, con fechas
 relativas a hoy, y no toca ninguna otra. Se niega a correr contra una base que
 no sea local.
 
+**Mirar `demo-pro` con datos.** Sus 4 obras salen vacías. Para recorrer toda la
+app con ella —actividades, materiales, inventario y Depósito, presupuesto,
+cobros, gastos, hitos, documentos, proveedores, personal y un usuario por rol
+(`demo-pro-supervisor@luma.test`, `-cliente`, `-contador`, `-arquitecto`,
+`-cogerente`, misma contraseña)— corré después:
+
+```bash
+pnpm seed:demo-pro
+```
+
+Llena **esas mismas 4 obras** (no crea ninguna, así que el cobro con 1 extra
+sigue cuadrando) y se puede repetir. Cada obra queda en una etapa distinta y con
+otro juego de lo que ve el cliente. Los archivos llevan una `key` de relleno:
+las listas y tarjetas se ven, abrir un adjunto no funciona. Volver a correr
+`seed:subscription-demo` borra la cuenta entera: hay que correr este de nuevo.
+
 ### 2.4 Stripe en local (sólo para tarjeta)
 
 Una vez por sandbox, crea el producto y los dos precios:
@@ -335,6 +351,6 @@ ese día (prorrateo si ya hay 3 activas). Detalle en `docs/adr/001-eliminar-obra
 | `POST /api/admin/subscription-payments/:id/review` | `{ decision: 'aprobar' }` o `{ decision: 'rechazar', reason }` |
 | `GET` / `POST /api/admin/exchange-rates`, `POST …/refresh` | tasas: listar, cargar a mano, leer el BCV ya |
 
-**Scripts** (`pnpm --filter @luma/api <script>`): `seed:subscription-demo`,
+**Scripts** (`pnpm --filter @luma/api <script>`): `seed:subscription-demo`, `seed:demo-pro`,
 `rates:refresh`, `stripe:setup`, `migrate:subscriptions`,
 `subscription:reminders`.
