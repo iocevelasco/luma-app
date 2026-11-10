@@ -381,7 +381,7 @@ separadores, para una navegación corta que se lee como control.
 salen de un solo lugar, `lib/field-styles.ts`; el editor Markdown, `InputGroup`
 e `InputOTP` los repiten.
 
-`field` es un token propio (`#f0f0f2` en el panel claro, `#252423` en el
+`field` es un token propio (`#ffffff` en el panel claro, `#252423` en el
 oscuro) y **no** `background`: Dialog, Sheet y Drawer pintan su fondo con
 `background`, y un campo del mismo color que su contenedor pierde el relleno
 justo ahí. Con `field` se ve igual sobre una card, sobre el lienzo y dentro de

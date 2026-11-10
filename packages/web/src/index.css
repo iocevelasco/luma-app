@@ -201,8 +201,8 @@
 
   --border: #e4e4e7;
   --border-strong: #a1a1aa;
-  --input: #8a8a93; /* ~3.3:1 sobre blanco (WCAG 1.4.11) */
-  --field: #f0f0f2; /* se lee sobre la card blanca y sobre el fondo gris de un Sheet */
+  --input: #d4d4d8; /* borde suave del campo en reposo */
+  --field: #ffffff; /* blanco: se lee sobre el lienzo gris y sobre un Sheet */
   --field-disabled: #e4e4e7;
   --ring: #059669;
 
