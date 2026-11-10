@@ -308,19 +308,19 @@ nunca con user-agent.
 
 Una por tipo de usuario, definidas **sólo** en `e2e/fixtures/users.json`
 (`admin`, `user`, `gerente`, `supervisor`, `contador`, `cliente`, `inactive`, y las
-`demo*`, una por estado de la suscripción, que crea `seed:subscription-demo`). Para
+`demo*`, una por estado de la suscripción). Para
 ejecutar E2E —o entrar a mano con un rol— se usan esas.
 
-- El `globalSetup` las siembra solo (`pnpm seed:e2e`, idempotente) y guarda una
-  sesión por cuenta en `.auth/<clave>.json`. `E2E_SKIP_SEED=1` lo saltea.
+- Las cuentas tienen que existir de antes en el entorno (ya no hay seed que las
+  cree). El `globalSetup` guarda una sesión por cuenta en `.auth/<clave>.json`;
+  las `demo*` se saltean.
 - En un spec: `test.use({ storageState: authFile('supervisor') })` o
   `loginAs(page, 'cliente')`. **Nunca** escribas email y contraseña de una cuenta
   fija: se piden por clave (`helpers/users.ts`).
 - La obra compartida (`Obra E2E — roles`) es para **mirar**. Un spec que crea,
   mueve o borra arma su propia obra.
 - Un tipo de usuario nuevo = una entrada en el JSON y la clave en `E2EUserKey`.
-- Otro entorno: `E2E_<CLAVE>_EMAIL` / `E2E_<CLAVE>_PASSWORD`. El seed sólo toca
-  cuentas `.test` y sólo en una base local.
+- Otro entorno: `E2E_<CLAVE>_EMAIL` / `E2E_<CLAVE>_PASSWORD`.
 
 ## Multimedia — skill `media-gen`
 

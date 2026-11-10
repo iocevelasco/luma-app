@@ -4,10 +4,10 @@
  * inventario, Depósito, presupuesto, cobros, gastos, hitos, documentos,
  * proveedores, personal, notificaciones y un equipo con un usuario por rol.
  *
- *   pnpm seed:subscription-demo   # antes: crea la cuenta Pro y sus 4 obras
- *   pnpm seed:demo-pro            # después: las llena
+ *   SEED_CONFIRM_DB=<nombre de la base> pnpm seed:demo-pro
  *
- * Las 4 obras son las que ya crea `seed-subscription-demo.ts`: la cuenta paga
+ * Si `demo-pro@luma.test` no existe la crea (Empresa, plan Pro pagado con 1 obra
+ * extra y 4 obras vacías); si existe, llena sus obras y no crea ninguna: paga
  * el plan con 1 obra extra, así que **no se crean obras nuevas** y la
  * facturación sigue cuadrando. Cada obra queda en una etapa distinta (casi
  * terminada, a mitad, recién empezada, por empezar).
@@ -15,8 +15,7 @@
  * Re-ejecutable: borra todo lo que cuelga de esas obras (la misma lista que
  * usa la purga, `PROJECT_OWNED`) y lo que esta cuenta tiene en la Empresa, y lo
  * vuelve a crear con fechas relativas a hoy. Volver a correr
- * `seed:subscription-demo` borra la cuenta entera: hay que correr este de nuevo.
- *
+ *  *
  * Usuarios de obra, todos con la contraseña `Demo12345!`:
  *   demo-pro-cogerente@luma.test    gerente (otro gerente, no el dueño)
  *   demo-pro-supervisor@luma.test   supervisor
@@ -34,7 +33,10 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import {
   LEGAL_VERSION,
+  PLAN,
+  addMonths,
   stockItemKey,
+  usdToBolivares,
   type CompanyStaffRole,
   type DocumentCategory,
   type ExpenseCategory,
@@ -54,6 +56,7 @@ import { ActivityProvider } from '../models/ActivityProvider.js';
 import { Budget } from '../models/Budget.js';
 import { BudgetLine } from '../models/BudgetLine.js';
 import { CrewMember } from '../models/CrewMember.js';
+import { ExchangeRate } from '../models/ExchangeRate.js';
 import { Expense } from '../models/Expense.js';
 import { LaborRecord } from '../models/LaborRecord.js';
 import { MaterialItem } from '../models/MaterialItem.js';
@@ -70,7 +73,11 @@ import { ProjectProvider } from '../models/ProjectProvider.js';
 import { Provider } from '../models/Provider.js';
 import { ProviderEngagement } from '../models/ProviderEngagement.js';
 import { StockMovement } from '../models/StockMovement.js';
+import { Subscription } from '../models/Subscription.js';
+import { SubscriptionPayment } from '../models/SubscriptionPayment.js';
 import { User, type IUser } from '../models/User.js';
+import { caracasDayKey, currentRate } from '../services/bcv.service.js';
+import { createPersonalOrganization } from '../services/organization.service.js';
 import { addCustomSpecialty } from '../services/custom-specialty.service.js';
 import { importFromDeposit, sendToDeposit } from '../services/deposit.service.js';
 import { recordPurchaseEntries } from '../services/inventory.service.js';
@@ -423,27 +430,102 @@ async function wipe(organization: Id, projectIds: Id[]) {
   ]);
 }
 
+/**
+ * La cuenta Pro de la demo: dueña de una Empresa que ya pagó el plan con 1 obra
+ * extra, con sus 4 obras vacías. Sólo se crea si no existe.
+ */
+async function createProAccount(): Promise<IUser> {
+  const now = new Date();
+  const user = await User.create({
+    email: OWNER_EMAIL,
+    name: 'Demo Pro',
+    password: await bcrypt.hash(PASSWORD, 10),
+    role: 'user',
+    email_verified: true,
+    termsVersion: LEGAL_VERSION,
+    termsAcceptedAt: now,
+  });
+  const organization = await createPersonalOrganization(String(user._id), 'Demo Pro');
+  const trialStartedAt = new Date(now.getTime() - 40 * DAY);
+  await Subscription.create({
+    organization: organization._id,
+    owner: user._id,
+    trialStartedAt,
+    trialEndsAt: new Date(trialStartedAt.getTime() + PLAN.trialDays * DAY),
+  });
+
+  // Sin tasa no hay pago en bolívares: se usa la vigente o una de demostración.
+  const rate =
+    (await currentRate(now)) ??
+    (await ExchangeRate.create({ source: 'manual', usd: VES_PER_USD, valueDate: caracasDayKey(now), fetchedAt: now, lastSeenAt: now }));
+  const paidAt = new Date(now.getTime() - 10 * DAY);
+  const totalUsd = PLAN.basePriceUsd + PLAN.extraProjectPriceUsd;
+  const amountBs = usdToBolivares(totalUsd, rate.usd);
+  await SubscriptionPayment.create({
+    organization: organization._id,
+    method: 'pago_movil',
+    status: 'aprobado',
+    periodStart: paidAt,
+    periodEnd: addMonths(paidAt, 1),
+    lines: [
+      { kind: 'base', quantity: 1, unitUsd: PLAN.basePriceUsd, amountUsd: PLAN.basePriceUsd },
+      { kind: 'extra', quantity: 1, unitUsd: PLAN.extraProjectPriceUsd, amountUsd: PLAN.extraProjectPriceUsd },
+    ],
+    totalUsd,
+    bcvRate: rate.usd,
+    rateValueDate: rate.valueDate,
+    amountBs,
+    declaredAmountBs: amountBs,
+    bank: 'BANESCO',
+    reference: '90000001',
+    payerId: 'V-11111111',
+    paidOn: caracasDayKey(paidAt),
+    submittedAt: paidAt,
+    reviewedAt: new Date(paidAt.getTime() + 2 * 60 * 60 * 1000),
+  });
+
+  for (const [i, name] of ['Baño Los Palos Grandes', 'Cocina Altamira', 'Local Chacao', 'Oficina El Rosal'].entries()) {
+    await Project.create({
+      organization: organization._id,
+      createdBy: user._id,
+      name,
+      description: 'Obra de demostración.',
+      location: 'Caracas',
+      estimatedStartDate: caracasDayKey(now),
+      estimatedEndDate: caracasDayKey(new Date(now.getTime() + 60 * DAY)),
+      currency: 'USD',
+      createdAt: new Date(trialStartedAt.getTime() + (i + 1) * 60 * 60 * 1000),
+    });
+  }
+  console.log(`✅ Creé la cuenta ${OWNER_EMAIL} con su suscripción Pro y 4 obras.`);
+  return user;
+}
+
 async function main() {
   const uri = DATABASE_CONFIG.MONGODB_URI;
   if (!/(localhost|127\.0\.0\.1|\[::1\])/.test(uri) || SERVER_CONFIG.NODE_ENV === 'production') {
     console.error('❌ Sólo contra una base local: este script crea cuentas con una contraseña conocida.');
     process.exit(1);
   }
+  // Un túnel SSH también es "localhost" y puede llevar a una base remota: hay que
+  // confirmar a mano contra qué base se escribe.
+  const dbName = new URL(uri).pathname.replace(/^\//, '');
+  if (!dbName || process.env.SEED_CONFIRM_DB !== dbName) {
+    console.error(
+      `❌ Va a escribir en la base "${dbName || '(sin nombre)'}". Si es la local, confirmalo: SEED_CONFIRM_DB=${dbName || '<nombre>'}`,
+    );
+    process.exit(1);
+  }
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
 
-  const owner = await User.findOne({ email: OWNER_EMAIL });
-  if (!owner) {
-    throw new Error(`No existe ${OWNER_EMAIL}. Corré antes: pnpm seed:subscription-demo`);
-  }
+  const owner = (await User.findOne({ email: OWNER_EMAIL })) ?? (await createProAccount());
   const membership = await OrganizationMember.findOne({ user: owner._id, role: 'owner' });
   if (!membership) throw new Error(`${OWNER_EMAIL} no es owner de ninguna Empresa.`);
   const organization = membership.organization as Id;
 
   const projects = await Project.find({ organization }).sort({ createdAt: 1 });
   if (projects.length < OBRAS.length) {
-    throw new Error(
-      `${OWNER_EMAIL} tiene ${projects.length} obras y hacen falta ${OBRAS.length}. Corré antes: pnpm seed:subscription-demo`,
-    );
+    throw new Error(`${OWNER_EMAIL} tiene ${projects.length} obras y hacen falta ${OBRAS.length}.`);
   }
   const ownerId = idOf(owner);
 

@@ -4,8 +4,7 @@ import { authFile } from './helpers/users';
 
 /**
  * Lo que ve el dueño de una Empresa en cada estado de la suscripción, con las
- * cuentas que deja `seed:subscription-demo` (una por estado, como nuevas en
- * cada tanda).
+ * cuentas por estado de la suscripción (una por estado).
  *
  * Los estados son de verdad, de la base. Lo único simulado son los medios de
  * cobro: en CI y en local no hay cuentas cargadas, y un pago real necesita un

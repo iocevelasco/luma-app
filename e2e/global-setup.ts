@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -11,7 +10,6 @@ import { authFile, canLogIn, e2eUsers, type E2EUser } from './helpers/users';
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:6173';
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:8081';
-const IS_REMOTE = !/localhost/.test(BASE_URL);
 
 /**
  * Si la API responde. CI corre la tanda sin backend: ahí el login real no puede
@@ -37,44 +35,6 @@ async function apiIsUp(): Promise<boolean> {
  */
 function writeEmptyAuthState(outFile: string): void {
   fs.writeFileSync(outFile, JSON.stringify({ cookies: [], origins: [] }));
-}
-
-/**
- * Deja las cuentas de `e2e/fixtures/users.json` creadas y como dice el fixture,
- * con la obra compartida y sus membresías. Corre el seed de la API con la
- * lista ya resuelta para que siembre exactamente las cuentas con las que
- * después se loguea la suite, overrides incluidos.
- *
- * Sólo en local: contra un entorno remoto las cuentas tienen que existir de
- * antes, y el seed se niega a escribir en una base que no sea localhost.
- */
-function seedUsers(users: E2EUser[]): boolean {
-  const byKey = Object.fromEntries(users.map(({ key, ...user }) => [key, user]));
-  try {
-    execFileSync('pnpm', ['--filter', '@luma/api', 'seed:e2e'], {
-      env: { ...process.env, E2E_USERS_JSON: JSON.stringify(byKey) },
-      stdio: 'pipe',
-    });
-    return true;
-  } catch (error) {
-    const { stdout = '', stderr = '' } = error as { stdout?: Buffer; stderr?: Buffer };
-    console.warn(
-      `[global-setup] Falló el seed de usuarios de E2E — los tests con sesión van a fallar\n${stdout}${stderr}`,
-    );
-    return false;
-  }
-}
-
-/** Las cuentas por estado de la suscripción. Cada corrida las deja como nuevas. */
-function seedSubscriptionDemo(): boolean {
-  try {
-    execFileSync('pnpm', ['--filter', '@luma/api', 'seed:subscription-demo'], { stdio: 'pipe' });
-    return true;
-  } catch (error) {
-    const { stdout = '', stderr = '' } = error as { stdout?: Buffer; stderr?: Buffer };
-    console.warn(`[global-setup] Falló el seed de suscripción — esos specs se saltean\n${stdout}${stderr}`);
-    return false;
-  }
 }
 
 async function saveAuthState(browser: Browser, user: E2EUser): Promise<void> {
@@ -110,12 +70,7 @@ export default async function globalSetup(_config: FullConfig) {
     return;
   }
 
-  if (!IS_REMOTE && process.env.E2E_SKIP_SEED !== '1') {
-    if (seedUsers(e2eUsers())) console.log('[global-setup] Usuarios de E2E sembrados ✓');
-    if (seedSubscriptionDemo()) process.env.E2E_SUBSCRIPTION_DEMO = '1';
-  }
-
-  // Sin su seed esas cuentas no existen: intentar el login sólo sumaría ruido.
+  // Las cuentas por estado de la suscripción ya no las siembra nadie: se saltean.
   const skipped = allUsers.filter((user) => user.subscriptionDemo && !process.env.E2E_SUBSCRIPTION_DEMO);
   skipped.forEach((user) => writeEmptyAuthState(authFile(user.key)));
   const users = allUsers.filter((user) => !skipped.includes(user));

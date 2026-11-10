@@ -4,8 +4,8 @@ import path from 'node:path';
 /**
  * Las cuentas fijas de E2E, una por tipo de usuario.
  *
- * La lista vive en `e2e/fixtures/users.json`, que es también lo que siembra
- * `pnpm seed:e2e` (el globalSetup lo corre solo antes de cada tanda local).
+ * La lista vive en `e2e/fixtures/users.json`; las cuentas tienen que existir
+ * de antes en el entorno contra el que corre la suite.
  * Un spec nunca escribe un email y una contraseña a mano: pide la cuenta por
  * su clave.
  *
@@ -21,7 +21,7 @@ import path from 'node:path';
  * | `contador`   | Contador en esa obra                                    |
  * | `cliente`    | Cliente en esa obra                                     |
  * | `inactive`   | Cuenta dada de baja: el login la rechaza                |
- * | `demo*`      | Una por estado de la suscripción (`seed:subscription-demo`) |
+ * | `demo*`      | Una por estado de la suscripción |
  *
  * La obra compartida es para **mirar**, no para mutar: todas las tandas
  * entran a la misma. Un spec que crea, mueve o borra cosas arma su propia
@@ -70,7 +70,7 @@ interface E2EUserFixture {
   accountStatus?: 'active' | 'inactive';
   /** Queda con un cobro por delante, para ver el flujo de pago. */
   paymentDue?: boolean;
-  /** La crea `seed:subscription-demo`, con su estado, y no `seed:e2e`. */
+  /** Es una cuenta por estado de la suscripción. */
   subscriptionDemo?: boolean;
 }
 

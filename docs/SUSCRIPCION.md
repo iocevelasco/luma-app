@@ -132,42 +132,21 @@ Leer el BCV ahora* (o cargarla a mano si el BCV no responde).
 **Admin de la plataforma** (el que aprueba los pagos en Bs): el de
 `ADMIN_EMAIL` / `ADMIN_PASSWORD`, creado con `pnpm seed:admin`.
 
-**Cuentas de demostración**, una por estado:
-
-```bash
-pnpm --filter @luma/api seed:subscription-demo
-```
-
-Todas con la contraseña **`Demo12345!`**:
-
-| Cuenta | Estado | Sirve para probar |
-|---|---|---|
-| `demo-gratis@luma.test` | Gratis, 20 días, 2 obras | pasar a Pro desde hoy o al terminar |
-| `demo-por-vencer@luma.test` | Gratis, 3 días, 3 obras | el aviso de la última semana y el pase a Pro con la 4ª obra |
-| `demo-pro@luma.test` | Pro pagado en Bs, 4 obras (1 extra) | próximo cobro con extra ($47), crear una 5ª |
-| `demo-en-revision@luma.test` | prueba vencida + pago en Bs pendiente | aviso "en revisión" y, del lado del admin, la cola con "no coincide" |
-| `demo-vencida@luma.test` | vencida, con un pago rechazado | sólo lectura, el motivo del rechazo y pagar para volver |
-
-El script también deja una tasa BCV (la real, o una de 880 Bs/USD si el BCV no
-responde). Cada corrida deja esas cinco cuentas como nuevas, con fechas
-relativas a hoy, y no toca ninguna otra. Se niega a correr contra una base que
-no sea local.
-
-**Mirar `demo-pro` con datos.** Sus 4 obras salen vacías. Para recorrer toda la
-app con ella —actividades, materiales, inventario y Depósito, presupuesto,
-cobros, gastos, hitos, documentos, proveedores, personal y un usuario por rol
+**Cuenta de demostración Pro.** `demo-pro@luma.test` (contraseña `Demo12345!`) es
+una cuenta Pro pagada en Bs con 4 obras (1 extra). La crea y la llena, con
+actividades, materiales, inventario y Depósito, presupuesto, cobros, gastos,
+hitos, documentos, proveedores, personal y un usuario por rol
 (`demo-pro-supervisor@luma.test`, `-cliente`, `-contador`, `-arquitecto`,
-`-cogerente`, misma contraseña)— corré después:
+`-cogerente`, misma contraseña):
 
 ```bash
-pnpm seed:demo-pro
+SEED_CONFIRM_DB=<nombre de la base> pnpm seed:demo-pro
 ```
 
-Llena **esas mismas 4 obras** (no crea ninguna, así que el cobro con 1 extra
-sigue cuadrando) y se puede repetir. Cada obra queda en una etapa distinta y con
-otro juego de lo que ve el cliente. Los archivos llevan una `key` de relleno:
-las listas y tarjetas se ven, abrir un adjunto no funciona. Volver a correr
-`seed:subscription-demo` borra la cuenta entera: hay que correr este de nuevo.
+Se niega a correr si la base no es local y exige confirmar su nombre en
+`SEED_CONFIRM_DB`, porque un túnel SSH también es `localhost`. Se puede repetir:
+no crea obras nuevas, así que el cobro con 1 extra sigue cuadrando. Los archivos
+llevan una `key` de relleno: las listas se ven, abrir un adjunto no funciona.
 
 ### 2.4 Stripe en local (sólo para tarjeta)
 
@@ -284,8 +263,8 @@ casilla dueña de la cuenta de Resend. Para disparar los recordatorios a mano:
 pnpm --filter @luma/api subscription:reminders
 ```
 
-Con `seed:subscription-demo`, `demo-por-vencer` recibe el de 3 días y
-`demo-vencida` el de vencida (si el mail sale, no se repite en la siguiente corrida).
+Una cuenta con 3 días de prueba recibe el de 3 días y una vencida el de vencida
+(si el mail sale, no se repite en la siguiente corrida).
 
 **Eliminar y restaurar obras**: eliminar cuenta como archivar (lo usado se cobra,
 el lugar sigue pago hasta la renovación); restaurar cuenta como crear una obra
@@ -351,6 +330,6 @@ ese día (prorrateo si ya hay 3 activas). Detalle en `docs/adr/001-eliminar-obra
 | `POST /api/admin/subscription-payments/:id/review` | `{ decision: 'aprobar' }` o `{ decision: 'rechazar', reason }` |
 | `GET` / `POST /api/admin/exchange-rates`, `POST …/refresh` | tasas: listar, cargar a mano, leer el BCV ya |
 
-**Scripts** (`pnpm --filter @luma/api <script>`): `seed:subscription-demo`, `seed:demo-pro`,
+**Scripts** (`pnpm --filter @luma/api <script>`): `seed:demo-pro`,
 `rates:refresh`, `stripe:setup`, `migrate:subscriptions`,
 `subscription:reminders`.
