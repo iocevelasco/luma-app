@@ -91,7 +91,7 @@ export function EmptyState({
           {/* El fondo de la ilustración es blanco: `multiply` lo funde con el lienzo gris. En
               superficie oscura no funde, y ahí queda el círculo con el ícono. */}
           <img
-            src={`/empty-states/${illustration}.webp`}
+            src={`${import.meta.env.BASE_URL}empty-states/${illustration}.webp`}
             alt=""
             width={160}
             height={160}

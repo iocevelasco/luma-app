@@ -63,4 +63,6 @@ call-site cambió. Un ícono sin ilustración sigue con el círculo.
 - **El fondo es blanco, no transparente** (el modelo no genera alfa). En superficie clara el
   `<img>` lleva `mix-blend-multiply`, que funde el blanco con el lienzo gris. En superficie
   oscura (`dark:`) no funde: ahí se muestra el círculo con el ícono de siempre.
+- **La ruta sale de `import.meta.env.BASE_URL`**: en producción la SPA se monta bajo `/app/`
+  (`base` de Vite), y un `/empty-states/…` suelto da 404. Todo asset de `public/` va con ese prefijo.
 - Son decorativas: `alt=""`. El título y la descripción dicen lo que pasa.
