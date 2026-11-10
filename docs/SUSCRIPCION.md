@@ -148,6 +148,16 @@ Se niega a correr si la base no es local y exige confirmar su nombre en
 no crea obras nuevas, así que el cobro con 1 extra sigue cuadrando. Los archivos
 llevan una `key` de relleno: las listas se ven, abrir un adjunto no funciona.
 
+**En un entorno demo alojado** (app y Mongo propios, base llamada `…demo…`, nunca
+la de producción), desde la terminal del contenedor de la app:
+
+```bash
+cd /app/packages/api
+SEED_CONFIRM_DB=luma_demo SEED_ALLOW_REMOTE_DB=luma_demo node dist/scripts/seed-demo-pro.js
+```
+
+Con otra base, o sin `demo` en el nombre, se niega.
+
 ### 2.4 Stripe en local (sólo para tarjeta)
 
 Una vez por sandbox, crea el producto y los dos precios:
