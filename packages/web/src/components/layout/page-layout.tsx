@@ -53,6 +53,12 @@ interface PageLayoutProps {
   /** Filtros y controles de la vista. Arriba a la izquierda, en la misma fila que las acciones de segundo orden. */
   toolbar?: ReactNode;
   /**
+   * La barra de arriba no se parte en dos filas: `toolbar` ocupa el ancho que dejan las
+   * acciones de la derecha y sus controles se angostan. Para barras de filtros que, con el
+   * ancho para ello, tienen que quedar en una sola línea.
+   */
+  toolbarSingleRow?: boolean;
+  /**
    * Las pestañas de vista de la pantalla (En patio / Kardex). Si la obra muestra la fila de
    * pestañas de sección (Compras / Proveedores / Inventario), van **en esa misma fila**, a la
    * misma altura; si no, abren la barra de arriba. Los filtros siguen en `toolbar`.
@@ -108,6 +114,7 @@ export function PageLayout({
   dockActions,
   secondaryActions,
   toolbar,
+  toolbarSingleRow = false,
   viewTabs,
   isLoading = false,
   isError = false,
@@ -171,8 +178,13 @@ export function PageLayout({
     >
       {tabsInSlot && viewTabsSlot && createPortal(viewTabs, viewTabsSlot)}
       {hasBar && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <div className={cn('flex items-center justify-between gap-3', !toolbarSingleRow && 'flex-wrap')}>
+          <div
+            className={cn(
+              'flex min-w-0 items-center gap-2',
+              toolbarSingleRow ? 'flex-1 flex-nowrap' : 'flex-wrap',
+            )}
+          >
             {!tabsInSlot && viewTabs}
             {toolbar}
           </div>

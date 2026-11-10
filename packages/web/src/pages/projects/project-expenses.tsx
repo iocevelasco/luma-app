@@ -633,6 +633,7 @@ export function ProjectExpensesPage() {
 
   return (
     <PageLayout
+      toolbarSingleRow
       toolbar={
         hasExpenses ? (
           <MovementFilterBar

@@ -94,7 +94,7 @@ export function MovementFilterBar<Kind extends string, Group extends string>({
   const fields = (
     <>
       <SearchField
-        wrapperClassName={compact ? 'w-full' : 'min-w-32 flex-1 basis-36'}
+        wrapperClassName={compact ? 'w-full' : 'min-w-24 flex-1 basis-0'}
         className={cn(height, compact && 'w-full')}
         value={search}
         onChange={(event) => onSearchChange(event.target.value)}
@@ -102,8 +102,12 @@ export function MovementFilterBar<Kind extends string, Group extends string>({
         aria-label={labels.search}
         autoComplete="off"
       />
-      <Select value={kind.value} onValueChange={(value) => kind.onChange(value as Kind | 'all')}>
-        <SelectTrigger className={cn(height, compact ? 'w-full' : 'w-36')} aria-label={kind.ariaLabel}>
+      <Select
+        value={kind.value}
+        onValueChange={(value) => kind.onChange(value as Kind | 'all')}
+        className={compact ? undefined : 'w-44 shrink-0'}
+      >
+        <SelectTrigger className={cn(height, 'w-full')} aria-label={kind.ariaLabel}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -118,7 +122,7 @@ export function MovementFilterBar<Kind extends string, Group extends string>({
       <div className={cn('flex gap-2', compact ? 'w-full' : 'contents')}>
         <Input
           type="date"
-          className={cn(height, compact ? 'min-w-0 flex-1' : 'w-[8.25rem]')}
+          className={cn(height, compact ? 'min-w-0 flex-1' : 'w-[8.25rem] shrink-0')}
           value={from}
           max={to || undefined}
           onChange={(event) => onFromChange(event.target.value)}
@@ -126,15 +130,19 @@ export function MovementFilterBar<Kind extends string, Group extends string>({
         />
         <Input
           type="date"
-          className={cn(height, compact ? 'min-w-0 flex-1' : 'w-[8.25rem]')}
+          className={cn(height, compact ? 'min-w-0 flex-1' : 'w-[8.25rem] shrink-0')}
           value={to}
           min={from || undefined}
           onChange={(event) => onToChange(event.target.value)}
           aria-label={labels.to}
         />
       </div>
-      <Select value={groupBy.value} onValueChange={(value) => groupBy.onChange(value as Group)}>
-        <SelectTrigger className={cn(height, compact ? 'w-full' : 'w-40')} aria-label={groupBy.ariaLabel}>
+      <Select
+        value={groupBy.value}
+        onValueChange={(value) => groupBy.onChange(value as Group)}
+        className={compact ? undefined : 'w-48 shrink-0'}
+      >
+        <SelectTrigger className={cn(height, 'w-full')} aria-label={groupBy.ariaLabel}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
