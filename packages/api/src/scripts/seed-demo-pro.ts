@@ -14,8 +14,8 @@
  *
  * Re-ejecutable: borra todo lo que cuelga de esas obras (la misma lista que
  * usa la purga, `PROJECT_OWNED`) y lo que esta cuenta tiene en la Empresa, y lo
- * vuelve a crear con fechas relativas a hoy. Volver a correr
- *  *
+ * vuelve a crear con fechas relativas a hoy.
+ *
  * Usuarios de obra, todos con la contraseña `Demo12345!`:
  *   demo-pro-cogerente@luma.test    gerente (otro gerente, no el dueño)
  *   demo-pro-supervisor@luma.test   supervisor
@@ -27,7 +27,10 @@
  * detrás. Alcanza para ver listados, tarjetas y filtros; abrir el archivo no
  * funciona. Por eso tampoco hay fotos de evidencia ni de materiales.
  *
- * Sólo contra una base local: crea cuentas con una contraseña conocida.
+ * Sólo contra una base local o un entorno demo alojado: crea cuentas con una
+ * contraseña conocida. En el contenedor de un entorno demo corre compilado:
+ *   SEED_CONFIRM_DB=luma_demo SEED_ALLOW_REMOTE_DB=luma_demo \
+ *     node dist/scripts/seed-demo-pro.js
  */
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
@@ -503,16 +506,24 @@ async function createProAccount(): Promise<IUser> {
 
 async function main() {
   const uri = DATABASE_CONFIG.MONGODB_URI;
-  if (!/(localhost|127\.0\.0\.1|\[::1\])/.test(uri) || SERVER_CONFIG.NODE_ENV === 'production') {
-    console.error('❌ Sólo contra una base local: este script crea cuentas con una contraseña conocida.');
+  const dbName = new URL(uri).pathname.replace(/^\//, '');
+  const isLocal = /(localhost|127\.0\.0\.1|\[::1\])/.test(uri) && SERVER_CONFIG.NODE_ENV !== 'production';
+  // Un entorno de demostración alojado (otra base, NODE_ENV=production) sólo se
+  // habilita nombrando la base y a condición de que se llame «demo»: así una
+  // variable olvidada no apunta el script a la base de producción.
+  const isDemoEnv = process.env.SEED_ALLOW_REMOTE_DB === dbName && /demo/i.test(dbName);
+  if (!isLocal && !isDemoEnv) {
+    console.error(
+      '❌ Sólo contra una base local o un entorno demo: este script crea cuentas con una contraseña conocida.\n' +
+        '   Para un entorno demo la base tiene que llamarse «demo» y hay que pasar SEED_ALLOW_REMOTE_DB=<nombre>.',
+    );
     process.exit(1);
   }
   // Un túnel SSH también es "localhost" y puede llevar a una base remota: hay que
   // confirmar a mano contra qué base se escribe.
-  const dbName = new URL(uri).pathname.replace(/^\//, '');
   if (!dbName || process.env.SEED_CONFIRM_DB !== dbName) {
     console.error(
-      `❌ Va a escribir en la base "${dbName || '(sin nombre)'}". Si es la local, confirmalo: SEED_CONFIRM_DB=${dbName || '<nombre>'}`,
+      `❌ Va a escribir en la base "${dbName || '(sin nombre)'}". Si es la correcta, confirmalo: SEED_CONFIRM_DB=${dbName || '<nombre>'}`,
     );
     process.exit(1);
   }
