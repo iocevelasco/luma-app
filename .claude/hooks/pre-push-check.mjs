@@ -1,5 +1,5 @@
 /**
- * Decide si un comando de Bash es un `git push` a main.
+ * Decide si un comando de Bash es un `git push` a main o a stage.
  *
  * Lee el payload del hook por stdin y la rama actual por la env var RAMA.
  * Sale con 0 si el comando puede correr, con 1 si hay que bloquearlo (el .sh
@@ -56,12 +56,15 @@ const invocaciones = [...codigo.matchAll(/(?:^|[;&|(){]|\n)\s*(git\s+push\b[^;&|
 if (invocaciones.length === 0) process.exit(0);
 
 const RAMA = process.env.RAMA ?? '';
-const PROTEGIDAS = ['main', 'master'];
+// `stage` despliega la demo y `main` producción: a las dos se llega por PR.
+const PROTEGIDAS = ['main', 'master', 'stage'];
+const esProtegida = (ref) => PROTEGIDAS.includes(ref.replace(/^refs\/heads\//, ''));
 
 function bloquear(motivo) {
   console.log(`Push bloqueado: el destino es ${motivo}.
 
-En este repo no se pushea a main. El flujo es rama de feature + PR:
+En este repo no se pushea a main ni a stage. El flujo es rama de feature + PR
+a stage (despliega la demo) y después PR de stage a main (despliega producción):
 
   git checkout -b <tipo>/<nombre-corto>
   git push -u origin <tipo>/<nombre-corto>
@@ -84,16 +87,16 @@ for (const inv of invocaciones) {
   // Refspec con destino protegido: origin HEAD:main, origin rama:master
   for (const a of args) {
     const destino = a.includes(':') ? a.split(':').pop() : null;
-    if (destino && PROTEGIDAS.includes(destino)) bloquear(`\`${destino}\` (por refspec)`);
+    if (destino && esProtegida(destino)) bloquear(`\`${destino}\` (por refspec)`);
   }
 
   // Destino explícito: git push origin main  →  args = [origin, main]
-  if (args.length >= 2 && PROTEGIDAS.includes(args[1])) {
+  if (args.length >= 2 && esProtegida(args[1])) {
     bloquear(`\`${args[1]}\` (explícito en el comando)`);
   }
 
   // Un solo argumento que es una rama protegida: git push main
-  if (args.length === 1 && PROTEGIDAS.includes(args[0])) {
+  if (args.length === 1 && esProtegida(args[0])) {
     bloquear(`\`${args[0]}\` (explícito en el comando)`);
   }
 
@@ -102,8 +105,8 @@ for (const inv of invocaciones) {
   // Son dos casos y los dos cuentan: `git push` pelado (0 argumentos) y
   // `git push -u origin` (1 argumento, que es el remote). En el segundo, git
   // resuelve la rama sola — y si estás parado en main, va a main.
-  const sinRamaExplicita = args.length === 0 || (args.length === 1 && !PROTEGIDAS.includes(args[0]));
-  if (sinRamaExplicita && PROTEGIDAS.includes(RAMA)) {
+  const sinRamaExplicita = args.length === 0 || (args.length === 1 && !esProtegida(args[0]));
+  if (sinRamaExplicita && esProtegida(RAMA)) {
     bloquear(`\`${RAMA}\` (la rama actual, sin destino explícito en el comando)`);
   }
 }

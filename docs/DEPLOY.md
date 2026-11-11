@@ -36,6 +36,38 @@ workspace: con `--frozen-lockfile`, si falta uno, el build aborta con un
 URI de Mongo: `mongodb://<user>:<pass>@mongo:27017/<db>?authSource=admin`. El
 nombre de la base no admite guiones en el formulario de Coolify.
 
+## Ramas y entornos
+
+Dos entornos, cada uno con sus propios recursos en Coolify (`app`, landing y
+Mongo) y su propia rama. Coolify despliega solo al recibir un push en la rama
+que tiene configurada cada recurso (Auto Deploy, por la GitHub App).
+
+| Rama | Entorno | Cómo se llega |
+|---|---|---|
+| `stage` | demo | PR desde la rama de feature |
+| `main` | producción | PR de `stage` a `main` |
+
+```
+feat/…  ──PR──▶  stage  ──PR──▶  main
+                   │               │
+                 demo          producción
+```
+
+- **Una feature sale de `main` y su PR apunta a `stage`.** Al mergear, la demo
+  se despliega. Cuando lo que hay en la demo está bien, un PR de `stage` a
+  `main` lo lleva a producción.
+- **El PR de `stage` a `main` se mergea con merge commit, no con squash**: un
+  squash deja a `stage` con commits que `main` no reconoce y el PR siguiente
+  vuelve a mostrar todo.
+- **Un arreglo urgente** va directo a `main` por PR y enseguida se trae a
+  `stage` (PR de `main` a `stage`), para que la demo no quede atrás.
+- En Coolify, los recursos de la demo (`app` y landing) tienen **Git Branch =
+  `stage`** y Auto Deploy activado; los de producción, `main`. Cambiar la rama
+  no despliega: hace falta un deploy o un push.
+- Variables, base y dominio son de cada entorno. La demo nunca apunta a la
+  base de producción (ver `docs/SUSCRIPCION.md` para sembrarla).
+- CI corre en los PR y en cada push a `main` y a `stage`.
+
 ## Dos trampas operativas
 
 1. **El network alias de `luma-landing` se fija ANTES del primer deploy.** Si no, Docker
