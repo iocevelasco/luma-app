@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bloquea cualquier `git push` cuyo destino sea main (o master).
+# Bloquea cualquier `git push` cuyo destino sea main (o master) o stage.
 #
 # Por qué un hook y no una regla de permisos: las reglas de settings.json son
 # prefijos —`Bash(git push:*)`— y no pueden expresar "salvo a main". Para saber

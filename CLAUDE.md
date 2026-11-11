@@ -347,7 +347,9 @@ Este archivo es el contexto; `.claude/` es lo que lo hace ejecutable.
 
 - **`settings.json`**: los scripts del repo y los comandos de lectura no piden
   aprobación; deploy y el seed están denegados; `git push` está permitido y
-  `pre-push-check.sh` lo frena hacia main o master. **Flujo: rama de feature + PR.**
+  `pre-push-check.sh` lo frena hacia main, master o stage. **Flujo: rama de
+  feature + PR a `stage` (despliega la demo) y PR de `stage` a `main` (despliega
+  producción)**; detalle en `docs/DEPLOY.md`.
 - **Hooks**: `post-edit-check.sh` corre tras cada Edit/Write (paridad i18n, colores
   crudos, radios fuera de escala, CTA a escuadra, strings inline, `components/ui/`
   editado, `shared` sin rebuildear, credenciales de E2E a mano).
