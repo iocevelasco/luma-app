@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { FeedbackGate } from '@/components/feedback/feedback-gate';
 import { TermsGate } from '@/components/legal/terms-gate';
 import { RouteLoading } from '@/components/routes/route-loading';
-import { isAdmin } from '@/lib/roles';
+import { homePathFor, isAdmin } from '@/lib/roles';
 import { buildLoginPathWithReturn, readReturnTo } from '@/lib/return-to';
 import { ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
@@ -14,7 +14,7 @@ import { useAuth } from '@/providers/auth-provider';
 
 /** Saca de encima a quien ya está logueado (pantallas de login, registro…). */
 export function PublicOnlyLayout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) return <RouteLoading />;
@@ -23,7 +23,7 @@ export function PublicOnlyLayout() {
     // Un returnTo validado gana sobre el destino por rol: si la persona venía
     // de un enlace profundo, ahí es donde quería estar.
     const returnTo = readReturnTo(location.search);
-    return <Navigate to={returnTo ?? ROUTES.ADMIN} replace />;
+    return <Navigate to={returnTo ?? homePathFor(user?.role)} replace />;
   }
 
   return <Outlet />;
@@ -62,4 +62,11 @@ export function AdminLayout() {
   if (!isAdmin(user?.role)) return <Navigate to={ROUTES.LOGIN} replace />;
 
   return <Outlet />;
+}
+
+/** Raíz `/`: cada rol cae en su inicio. */
+export function HomeRedirect() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <RouteLoading />;
+  return <Navigate to={homePathFor(user?.role)} replace />;
 }

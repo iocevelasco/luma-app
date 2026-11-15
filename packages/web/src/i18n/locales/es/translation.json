@@ -2265,16 +2265,16 @@
     },
     "feedback": {
       "summary": "{{responses}} respuestas de {{respondents}} personas.",
-      "suppressed": "Todavía hay menos de {{min}} personas que respondieron: por privacidad no mostramos promedios ni comentarios.",
-      "commentsTitle": "Comentarios",
-      "noComments": "Nadie dejó comentarios todavía.",
+      "suppressed": "Todavía hay menos de {{min}} personas que respondieron: por privacidad no mostramos promedios.",
       "questions": {
         "timeSaved": "¿Luma te ahorra tiempo en la gestión de tus obras?",
         "clarity": "¿Encontrás rápido lo que necesitás?",
         "control": "¿Sentís más control sobre el avance y la plata de la obra?"
       },
-      "changesTitle": "Cambios que piden",
-      "noChanges": "Nadie pidió cambios todavía."
+      "answersTitle": "Respuestas",
+      "noAnswers": "Nadie respondió todavía.",
+      "changeLabel": "Qué cambiaría",
+      "commentLabel": "Comentario"
     },
     "census": {
       "intro": "Hoy suman {{total}} cuentas. Solo {{membership}} tienen una membresía: {{client}} son clientes que miran el estado de su obra, {{staff}} son empleados de la obra de otra persona, {{noProject}} no tienen obra y {{inactive}} están dadas de baja.",

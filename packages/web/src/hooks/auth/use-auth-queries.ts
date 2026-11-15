@@ -13,6 +13,7 @@ import type {
 import { authApi } from '@/api/auth';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { homePathFor } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -65,7 +66,7 @@ export function useLogin() {
     mutationFn: (credentials: LoginCredentials) => authApi.login(credentials),
     onSuccess: (data) => {
       login(data.accessToken, data.user);
-      navigate(ROUTES.ADMIN);
+      navigate(homePathFor(data.user.role));
     },
   });
 }
@@ -134,7 +135,7 @@ export function useSetPassword() {
     mutationFn: (payload: SetPasswordRequest) => authApi.setPassword(payload),
     onSuccess: (data) => {
       login(data.accessToken, data.user);
-      navigate(ROUTES.ADMIN);
+      navigate(homePathFor(data.user.role));
     },
     // Sin `onError`: se envía desde el diálogo de Términos, que muestra la
     // falla como banner pegado al botón.

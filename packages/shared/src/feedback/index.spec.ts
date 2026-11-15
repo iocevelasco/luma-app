@@ -55,18 +55,21 @@ describe('summarizeFeedback', () => {
     createdAt: day(1),
   });
 
-  it('sin cifras ni comentarios debajo del umbral de personas', () => {
+  it('sin medias debajo del umbral, pero las respuestas salen igual', () => {
     const report = summarizeFeedback([row('a', 5, 'hola'), row('b', 4)]);
-    expect(report).toMatchObject({ suppressed: true, averages: null, comments: [], respondents: 2 });
+    expect(report).toMatchObject({ suppressed: true, averages: null, respondents: 2 });
+    expect(report.answers).toHaveLength(2);
+    expect(report.answers.map((a) => a.timeSaved).sort()).toEqual([4, 5]);
   });
 
-  it('promedia y lista comentarios desde el umbral', () => {
+  it('promedia desde el umbral y lista las respuestas sin autor', () => {
     const rows = ['a', 'b', 'c', 'd', 'e'].map((u, i) => row(u, i + 1, i === 0 ? ' ' : `c${i}`));
     const report = summarizeFeedback(rows);
     expect(report.suppressed).toBe(false);
     expect(report.averages).toEqual({ timeSaved: 3, clarity: 3, control: 3 });
-    expect(report.comments).toHaveLength(4);
-    expect(report.changes).toHaveLength(4);
+    expect(report.answers).toHaveLength(5);
+    expect(report.answers.map((a) => a.comment)).toContain('c4');
+    expect(report.answers.find((a) => a.timeSaved === 1)?.comment).toBeUndefined();
     expect(JSON.stringify(report)).not.toContain('"user"');
   });
 });
