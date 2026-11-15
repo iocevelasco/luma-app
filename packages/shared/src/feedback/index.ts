@@ -25,8 +25,8 @@ export const FEEDBACK_SESSION_DELAY_MINUTES = 5;
 export const FEEDBACK_CHANGE_MAX_LENGTH = 200;
 /** Entre dos respuestas desde el menú: evita inflar el promedio con reenvíos. */
 export const FEEDBACK_MIN_GAP_DAYS = 7;
-/** Tope de comentarios que lista el panel de plataforma. */
-export const FEEDBACK_REPORT_COMMENTS_LIMIT = 50;
+/** Tope de respuestas que lista el panel de plataforma. */
+export const FEEDBACK_REPORT_ANSWERS_LIMIT = 100;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -74,20 +74,29 @@ export interface FeedbackRow {
   createdAt: Date;
 }
 
+/** Una respuesta tal como la dio la persona, sin autor. */
+export interface FeedbackAnswer {
+  timeSaved: number;
+  clarity: number;
+  control: number;
+  change?: string;
+  comment?: string;
+  createdAt: string;
+}
+
 export interface FeedbackReport {
   /** Respuestas totales. */
   responses: number;
   /** Personas distintas que respondieron. */
   respondents: number;
   /**
-   * Con menos de `MIN_PEOPLE_PER_CELL` personas un promedio o un comentario
-   * deja de ser estadística y pasa a ser "lo que dijo fulano": sale sin cifras.
+   * Con menos de `MIN_PEOPLE_PER_CELL` personas las medias dejan de ser
+   * estadística: salen sin cifras. Las respuestas en sí salen siempre.
    */
   suppressed: boolean;
   averages: Record<FeedbackQuestion, number> | null;
-  /** Qué quieren cambiar, sin autor. */
-  changes: { change: string; createdAt: string }[];
-  comments: { comment: string; createdAt: string }[];
+  /** Lo que respondió cada vez, más reciente primero. Sin ids ni nombres. */
+  answers: FeedbackAnswer[];
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -95,30 +104,26 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 /** Agrega las respuestas. Nunca devuelve ids ni nombres. */
 export function summarizeFeedback(rows: FeedbackRow[]): FeedbackReport {
   const respondents = new Set(rows.map((r) => r.user)).size;
-  const base = { responses: rows.length, respondents };
+  const answers: FeedbackAnswer[] = [...rows]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, FEEDBACK_REPORT_ANSWERS_LIMIT)
+    .map((r) => ({
+      timeSaved: r.timeSaved,
+      clarity: r.clarity,
+      control: r.control,
+      change: r.change?.trim() || undefined,
+      comment: r.comment?.trim() || undefined,
+      createdAt: r.createdAt.toISOString(),
+    }));
+  const base = { responses: rows.length, respondents, answers };
   if (respondents < MIN_PEOPLE_PER_CELL) {
-    return { ...base, suppressed: true, averages: null, changes: [], comments: [] };
+    return { ...base, suppressed: true, averages: null };
   }
   const avg = (q: FeedbackQuestion) => round1(rows.reduce((sum, r) => sum + r[q], 0) / rows.length);
-  const latest = (field: 'comment' | 'change') =>
-    rows
-      .filter((r) => r[field] && r[field]!.trim())
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, FEEDBACK_REPORT_COMMENTS_LIMIT);
-  const comments = latest('comment').map((r) => ({
-    comment: r.comment as string,
-    createdAt: r.createdAt.toISOString(),
-  }));
-  const changes = latest('change').map((r) => ({
-    change: r.change as string,
-    createdAt: r.createdAt.toISOString(),
-  }));
   return {
     ...base,
     suppressed: false,
     averages: { timeSaved: avg('timeSaved'), clarity: avg('clarity'), control: avg('control') },
-    changes,
-    comments,
   };
 }
 
