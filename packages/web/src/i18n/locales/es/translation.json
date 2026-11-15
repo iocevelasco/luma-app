@@ -1696,6 +1696,7 @@
     "validation": "Revisá los datos: hay campos con errores.",
     "unauthenticated": "Se cerró tu sesión. Volvé a entrar.",
     "invalidCredentials": "El correo o la contraseña no son correctos.",
+    "wrongPassword": "La contraseña actual no es correcta.",
     "forbidden": "Tu rol no permite esta acción.",
     "notFound": "No encontramos lo que buscabas. Puede que alguien lo haya borrado.",
     "conflict": "Eso choca con algo que ya existe.",
