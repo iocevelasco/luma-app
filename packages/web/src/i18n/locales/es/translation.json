@@ -1054,6 +1054,7 @@
       "addItem": "Agregar ítem",
       "removeItem": "Quitar",
       "computedTotal": "Total calculado",
+      "lineErrors": "Revisá las partidas {{lines}}: hay datos que no se pueden guardar.",
       "submit": "Guardar presupuesto"
     },
     "import": {
@@ -1075,6 +1076,7 @@
       "duplicateBody": "{{count}} ítem(s) con el mismo capítulo, nombre y unidad — se importan igual.",
       "noValidRows": "No hay filas válidas para importar con este mapeo de columnas.",
       "moreRows": "Y {{count}} fila(s) más — se importan todas, sólo se acorta la vista previa.",
+      "nameTooLong": "El nombre de estas partidas supera los {{max}} caracteres: {{lines}}. Acortálas en la planilla y volvé a importar.",
       "confirm": "Confirmar e importar",
       "noColumn": "— Sin asignar —",
       "columns": {
