@@ -4,6 +4,7 @@ import {
   Filemanager,
   Willow,
   getMenuOptions,
+  type FilePreview,
   type IApi,
   type IFileMenuOption,
   type TContextMenuType,
@@ -28,6 +29,7 @@ import '@/lib/svar-icons';
 import {
   buildDocumentTree,
   checkSpaceName,
+  documentPreviewUrl,
   documentsInSpace,
   pathSegment,
   planMove,
@@ -176,6 +178,24 @@ export function DocumentFileManager({
     uploadsEnabled,
     t,
   };
+
+  // La librería congela `icons` y `previews` en el primer render. Leen el árbol
+  // por el ref para que una URL firmada nueva (vence a la hora) se vea igual.
+  const fileThumbnail = useCallback((file: FilePreview, size: 'sm' | 'md') => {
+    if (!file.id || file.type !== 'file') return false;
+    return documentPreviewUrl(latest.current.tree.files.get(file.id), size);
+  }, []);
+  const icons = useCallback(
+    (file: FilePreview, size: 'big' | 'small') => fileThumbnail(file, size === 'small' ? 'sm' : 'md'),
+    [fileThumbnail],
+  );
+  const previews = useCallback(
+    (file: FilePreview, width: number) => {
+      const url = fileThumbnail(file, width <= 200 ? 'sm' : 'md');
+      return url || null;
+    },
+    [fileThumbnail],
+  );
 
   const handleInit = useCallback((api: IApi) => {
     const fail = (key: string) => toast.error(latest.current.t(key));
@@ -410,7 +430,8 @@ export function DocumentFileManager({
             data={tree.entities}
             readonly={!canWrite}
             mode="table"
-            icons="simple"
+            icons={icons}
+            previews={previews}
             menuOptions={menuOptions}
             panels={panels}
             init={handleInit}
