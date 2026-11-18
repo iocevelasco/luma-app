@@ -1,5 +1,5 @@
 import { useMemo, useState, type ChangeEvent } from 'react';
-import { roundMoney, type CreateBudgetInput } from '@luma/shared';
+import { createBudgetSchema, roundMoney, type CreateBudgetInput } from '@luma/shared';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,9 @@ import {
 } from '@/components/ui/select';
 import { ResponsiveTable, type ResponsiveColumn } from '@/components/common/responsive-table';
 import { useCreateBudget } from '@/hooks/budget/use-budget-queries';
+import { isApiError } from '@/lib/api-client';
+import { budgetValidationMessage, type FieldIssue } from '@/lib/budget-validation';
+import { errorMessage } from '@/lib/error-message';
 import { formatMoney } from '@/lib/format-money';
 import {
   BUDGET_COLUMN_KEYS,
@@ -87,6 +90,7 @@ export function BudgetImportForm({ projectId, currency }: { projectId: string; c
   const [step, setStep] = useState<ImportStep>({ kind: 'idle' });
   const [contingencyAmount, setContingencyAmount] = useState(0);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const mappedRows = useMemo(() => {
     if (step.kind !== 'ready') return [];
@@ -108,6 +112,7 @@ export function BudgetImportForm({ projectId, currency }: { projectId: string; c
     if (!file) return;
 
     setFileName(file.name);
+    setSaveError(null);
     setStep({ kind: 'parsing' });
     try {
       const parsed = await parseSpreadsheetFile(file);
@@ -120,6 +125,7 @@ export function BudgetImportForm({ projectId, currency }: { projectId: string; c
 
   function updateMapping(key: BudgetColumnKey, index: number | undefined) {
     if (step.kind !== 'ready') return;
+    setSaveError(null);
     setStep({ ...step, mapping: { ...step.mapping, [key]: index } });
   }
 
@@ -139,7 +145,18 @@ export function BudgetImportForm({ projectId, currency }: { projectId: string; c
       sourceFileName: fileName ?? undefined,
       sourceRowCount: preview.validRows.length,
     };
-    createBudget.mutate(payload);
+    const parsed = createBudgetSchema.safeParse(payload);
+    if (!parsed.success) {
+      setSaveError(budgetValidationMessage(parsed.error.issues, t));
+      return;
+    }
+    setSaveError(null);
+    createBudget.mutate(parsed.data, {
+      onError: (error) => {
+        const details = isApiError(error) && Array.isArray(error.details) ? (error.details as FieldIssue[]) : null;
+        setSaveError(details ? budgetValidationMessage(details, t) : (errorMessage(error, t) ?? t('budget.errors.create')));
+      },
+    });
   }
 
   const previewRows: PreviewRow[] = preview.validRows
@@ -258,6 +275,13 @@ export function BudgetImportForm({ projectId, currency }: { projectId: string; c
                       </p>
                     </div>
                   </div>
+
+                  {saveError && (
+                    <Alert variant="destructive">
+                      <AlertTitle>{t('budget.errors.create')}</AlertTitle>
+                      <AlertDescription>{saveError}</AlertDescription>
+                    </Alert>
+                  )}
 
                   <div className="flex justify-end">
                     <Button onClick={handleConfirm} disabled={createBudget.isPending}>

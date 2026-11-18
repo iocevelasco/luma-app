@@ -593,6 +593,18 @@ select:-webkit-autofill {
   --wx-color-secondary-font: var(--muted-foreground);
 }
 
+/* La miniatura de una imagen: en la fila cabe en la celda; en la tarjeta llena el cuadro. */
+.luma-filemanager .wx-name-cell img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.luma-filemanager .wx-card-preview,
+.luma-filemanager .wx-img-wrapper img {
+  object-fit: cover;
+}
+
 /*
   Cronograma (SVAR Gantt): el color de las líneas de la grilla y los renglones
   de la tabla.

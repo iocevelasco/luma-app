@@ -22,6 +22,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBudget, useCreateBudget } from '@/hooks/budget/use-budget-queries';
 import { useProject } from '@/hooks/projects/use-project-queries';
+import { isApiError } from '@/lib/api-client';
+import { budgetValidationMessage, type FieldIssue } from '@/lib/budget-validation';
 import { formatMoney } from '@/lib/format-money';
 import { BudgetImportForm } from './budget-import-form';
 
@@ -127,7 +129,7 @@ function NewBudgetForm({ projectId, currency }: { projectId: string; currency: s
     handleSubmit,
     control,
     getValues,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: { contingencyAmount: 0, lines: [EMPTY_LINE] },
@@ -147,6 +149,20 @@ function NewBudgetForm({ projectId, currency }: { projectId: string; currency: s
     append({ ...EMPTY_LINE, chapter: lastChapter ?? '' });
   }
 
+  const lineErrorNumbers = (Array.isArray(errors.lines) ? errors.lines : []).flatMap((line, index) =>
+    line ? [index + 1] : [],
+  );
+  const serverDetails =
+    isApiError(createBudget.error) && Array.isArray(createBudget.error.details)
+      ? (createBudget.error.details as FieldIssue[])
+      : null;
+  const notice =
+    isSubmitted && lineErrorNumbers.length > 0
+      ? t('budget.form.lineErrors', { lines: lineErrorNumbers.join(', ') })
+      : serverDetails
+        ? budgetValidationMessage(serverDetails, t)
+        : null;
+
   return (
     /*
       Alto acotado: el presupuesto crece línea por línea y sin esto el botón
@@ -164,6 +180,7 @@ function NewBudgetForm({ projectId, currency }: { projectId: string; currency: s
           submitLabel={t('budget.form.submit')}
           isSubmitting={createBudget.isPending}
           error={createBudget.error}
+          notice={notice}
         >
           <div className="flex flex-col gap-3">
             {fields.map((field, index) => (

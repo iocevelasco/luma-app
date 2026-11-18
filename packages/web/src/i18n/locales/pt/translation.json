@@ -1054,6 +1054,7 @@
       "addItem": "Adicionar item",
       "removeItem": "Remover",
       "computedTotal": "Total calculado",
+      "lineErrors": "Revise as partidas {{lines}}: há dados que não podem ser salvos.",
       "submit": "Salvar orçamento"
     },
     "import": {
@@ -1075,6 +1076,7 @@
       "duplicateBody": "{{count}} item(ns) com o mesmo capítulo, nome e unidade — são importados mesmo assim.",
       "noValidRows": "Não há linhas válidas para importar com este mapeamento de colunas.",
       "moreRows": "E mais {{count}} linha(s) — todas são importadas, só a prévia é encurtada.",
+      "nameTooLong": "O nome destas partidas passa de {{max}} caracteres: {{lines}}. Encurte-as na planilha e importe de novo.",
       "confirm": "Confirmar e importar",
       "noColumn": "— Não atribuído —",
       "columns": {
@@ -1166,7 +1168,9 @@
       "fileType": "Formato não suportado. Envie um PDF ou imagem .jpg, .png ou .webp.",
       "fileSize": "O arquivo é muito grande (máximo 20MB)."
     },
+    "uploadsDisabled": "O envio de arquivos não está disponível neste ambiente. Você pode ver o que já existe, mas não enviar nada novo.",
     "fm": {
+      "crashed": "O explorador de documentos parou. Você pode tentar de novo.",
       "words": {
         "root": "Documentação",
         "addNew": "Adicionar",

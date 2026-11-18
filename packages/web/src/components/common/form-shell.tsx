@@ -50,6 +50,12 @@ interface FormShellProps {
    */
   error?: unknown;
   /**
+   * Texto ya resuelto para el banner del pie. Sirve cuando el fallo lo detecta
+   * el propio formulario (un nombre de partida demasiado largo) y todavía no
+   * hubo un error de la mutación. Si viene, reemplaza al mensaje del servidor.
+   */
+  notice?: string | null;
+  /**
    * Salidas para el error, adentro del banner: "sumarlo a esta obra" cuando
    * el alta chocó con alguien que ya existe. Un error que se puede resolver
    * con un click tiene que ofrecer ese click donde se lo lee.
@@ -76,6 +82,7 @@ export function FormShell({
   isSubmitting = false,
   isDirty,
   error,
+  notice,
   errorActions,
   variant = 'page',
   className,
@@ -83,7 +90,7 @@ export function FormShell({
   const { t } = useTranslation();
   // Resuelto por el único traductor de errores de la app: un mismo fallo dice
   // lo mismo en toda la app, y el texto sale del `code` de la API.
-  const message = errorMessage(error, t);
+  const message = notice || errorMessage(error, t);
 
   // `isDirty === undefined` significa "no me interesa": sólo bloquea cuando
   // quien usa el shell lo pidió explícitamente.
