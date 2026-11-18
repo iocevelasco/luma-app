@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 /** Un issue de Zod, del cliente o del `details` que devuelve la API. */
 export interface FieldIssue {
   code?: string;
-  maximum?: number;
+  maximum?: number | bigint;
   path?: Array<string | number>;
   message?: string;
 }
