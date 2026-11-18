@@ -5,6 +5,7 @@ import {
   updateProjectDocumentSchema,
   type ProjectDocument as ProjectDocumentDTO,
 } from '@luma/shared';
+import { STORAGE_CONFIG } from '../config/app.config.js';
 import { ProjectDocument, type IProjectDocument } from '../models/ProjectDocument.js';
 import { User } from '../models/User.js';
 import { notFound, serviceUnavailable } from '../utils/errors.js';
@@ -86,7 +87,10 @@ export async function listProjectDocuments(req: Request, res: Response) {
       docs.map((doc) => toDocumentDTO(doc, names.get(String(doc.uploadedBy)) ?? '')),
     );
 
-    return res.json({ success: true, data: { documents } });
+    return res.json({
+      success: true,
+      data: { documents, uploadsEnabled: STORAGE_CONFIG.ENABLED },
+    });
   } catch (error) {
     console.error('❌ [DOCUMENT] listProjectDocuments:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });

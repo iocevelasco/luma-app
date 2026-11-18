@@ -1166,7 +1166,9 @@
       "fileType": "Formato não suportado. Envie um PDF ou imagem .jpg, .png ou .webp.",
       "fileSize": "O arquivo é muito grande (máximo 20MB)."
     },
+    "uploadsDisabled": "O envio de arquivos não está disponível neste ambiente. Você pode ver o que já existe, mas não enviar nada novo.",
     "fm": {
+      "crashed": "O explorador de documentos parou. Você pode tentar de novo.",
       "words": {
         "root": "Documentação",
         "addNew": "Adicionar",

@@ -1166,7 +1166,9 @@
       "fileType": "Formato no admitido. Sube un PDF o una imagen .jpg, .png o .webp.",
       "fileSize": "El archivo es demasiado grande (máximo 20MB)."
     },
+    "uploadsDisabled": "La carga de archivos no está disponible en este entorno. Puedes ver lo que ya hay, pero no subir nada nuevo.",
     "fm": {
+      "crashed": "El explorador de documentos se detuvo. Puedes reintentar.",
       "words": {
         "root": "Documentación",
         "addNew": "Agregar",
