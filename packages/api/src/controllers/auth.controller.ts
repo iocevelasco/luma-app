@@ -17,6 +17,7 @@ import {
 import { isProduction, REQUIRE_EMAIL_VERIFICATION } from '../config/app.config.js';
 import { User, type IUser } from '../models/User.js';
 import { generateTokens } from '../services/auth.service.js';
+import { forgetTokenVersion, tokenVersionOf } from '../services/session.service.js';
 import { EmailService } from '../services/email.service.js';
 import { JWTService } from '../services/jwt.service.js';
 import { termsAcceptanceFields } from '../services/terms.service.js';
@@ -100,7 +101,7 @@ export async function login(req: Request, res: Response) {
       return res.status(403).json({ success: false, error: 'La cuenta está deshabilitada' });
     }
 
-    const tokens = generateTokens(String(user._id), user.email, user.role);
+    const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
     setRefreshTokenCookie(res, tokens.refreshToken);
 
     return res.json({
@@ -186,7 +187,16 @@ export async function refreshToken(req: Request, res: Response) {
       return res.status(401).json({ success: false, error: 'Sesión inválida' });
     }
 
-    const tokens = generateTokens(String(user._id), user.email, user.role);
+    // La cuenta cerró sus sesiones después de emitir este token (recuperó la
+    // contraseña): este refresh ya no renueva nada.
+    if (tokenVersionOf(payload) !== (user.tokenVersion ?? 0)) {
+      clearRefreshTokenCookie(res);
+      return res
+        .status(401)
+        .json({ success: false, error: 'Tu sesión se cerró. Vuelve a entrar.', code: 'UNAUTHENTICATED' });
+    }
+
+    const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
     setRefreshTokenCookie(res, tokens.refreshToken);
 
     return res.json({
@@ -292,7 +302,12 @@ export async function resetPassword(req: Request, res: Response) {
     user.email_verified = true;
     user.activationLinkHeldBy = undefined;
     user.claimedViaLinkBy = undefined;
+    // Recuperar la contraseña cierra todas las sesiones abiertas: si alguien
+    // entró con la contraseña vieja, o con la que eligió quien tuvo un enlace
+    // en mano, sale ahora y no cuando venza su refresh de 90 días.
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
     await user.save();
+    forgetTokenVersion(String(user._id));
 
     return res.json({ success: true, message: 'Contraseña actualizada' });
   } catch (error) {
@@ -338,7 +353,7 @@ export async function setPassword(req: Request, res: Response) {
     }
     await user.save();
 
-    const tokens = generateTokens(String(user._id), user.email, user.role);
+    const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
     setRefreshTokenCookie(res, tokens.refreshToken);
 
     return res.json({
