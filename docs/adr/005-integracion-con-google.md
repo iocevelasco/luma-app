@@ -58,7 +58,9 @@ Lo que hay hoy (leído del código):
 ## Decisión
 
 **Un proyecto de GCP como base y cuatro entregas independientes, en este orden:
-login → mapas → calendario → Drive. En ninguna se guardan tokens de Google.**
+login (§1) → Drive (§4) → Maps (§2) → calendario (§3). En ninguna se guardan
+tokens de Google.** Los números de sección identifican cada entrega, no su orden
+(el orden cambió el 2026-11-18: Drive pasa antes que Maps y calendario).
 
 Cada entrega es un PR propio y queda deshabilitada si falta su configuración,
 igual que `STORAGE_CONFIG`.
@@ -128,8 +130,9 @@ invitada que nunca tuvo contraseña.
    en `/register` (debajo del aviso legal) y en `/activate`. No se pide ningún
    scope más allá de `openid email profile`.
 2. **`POST /api/auth/google`**, público y **sólo JSON**:
-   `{ credential, intent, acceptedTerms? }`, con `intent` igual a `'login'` o
-   `'register'`. Responde el mismo cuerpo que `login`. La emisión de sesión, hoy
+   `{ credential, acceptedTerms? }`. **El mismo botón entra y registra, desde
+   `/login` y desde `/register`** (decisión del 2026-11-18): la API no necesita
+   saber de qué pantalla viene. Responde el mismo cuerpo que `login`. La emisión de sesión, hoy
    repetida en tres lugares, se extrae a un `issueSession(res, user)` que usen los
    cuatro emisores.
 3. **Verificación del ID token** con `google-auth-library` (`verifyIdToken`,
@@ -151,8 +154,8 @@ invitada que nunca tuvo contraseña.
    | Lo que encuentra | Qué hace |
    |---|---|
    | Una cuenta con ese `googleSub` | Abre sesión |
-   | Ninguna cuenta con ese correo, `intent: 'register'` y `acceptedTerms: true` | Crea la cuenta (punto 8) y abre sesión |
-   | Ninguna cuenta con ese correo, `intent: 'login'` | `GOOGLE_ACCOUNT_NOT_FOUND`: la pantalla ofrece crear la cuenta o entrar con contraseña. Desde `/login` no se crea nada |
+   | Ninguna cuenta con ese correo y `acceptedTerms: true` | Crea la cuenta (punto 8) y abre sesión, venga de `/login` o de `/register` |
+   | Ninguna cuenta con ese correo, sin `acceptedTerms` | `GOOGLE_SIGNUP_REQUIRED`, sin crear nada: la pantalla abre `TermsDialog` y reenvía la misma credencial con `acceptedTerms: true` |
    | Una cuenta invitada y sin activar (sin contraseña ni `googleSub`), y Google es autoridad sobre el correo (punto 7) | La activa (punto 9) y abre sesión |
    | Una cuenta con ese correo que ya tiene contraseña | `GOOGLE_LINK_REQUIRED`, sin tocar la cuenta: Google se conecta con la contraseña (punto 12) |
    | Una cuenta con ese correo y otro `googleSub`, o invitada sin activar cuando Google no es autoridad | `GOOGLE_LINK_REQUIRED`. Un `googleSub` nunca se pisa |
@@ -167,8 +170,14 @@ invitada que nunca tuvo contraseña.
    contraseña. Si un alta quedó a medias, el reintento repara lo que falte
    (`startTrialFor` ya es idempotente). La cuenta nace verificada sólo si Google es
    autoridad sobre el correo; si no, se trata como un registro común y recibe el
-   correo de verificación. En `/register` la credencial queda en `useState` (nunca
-   en storage ni en la URL), se abre `TermsDialog` y recién ahí sale el POST.
+   correo de verificación. En las dos pantallas la credencial queda en `useState`
+   (nunca en storage ni en la URL) mientras se muestra `TermsDialog`.
+   - **Cuenta duplicada.** Crear desde `/login` le abre la puerta a quien ya
+     tiene cuenta con otro correo y no se acuerda: entraría con Google y se
+     encontraría una cuenta nueva y vacía. Por eso el diálogo de alta muestra el
+     correo de Google ("Vas a crear una cuenta nueva con ana@gmail.com") y un
+     enlace "¿Ya tienes cuenta con otro correo? Entra con tu contraseña y conecta
+     Google". Riesgo aceptado: si igual la crea, queda una cuenta vacía más.
 9. **Activar una cuenta invitada** es una sola operación condicionada a que no
    tenga contraseña ni `googleSub`: guarda `googleSub`, marca el correo como
    verificado y limpia el token de activación, `activationLinkHeldBy` y
@@ -211,7 +220,7 @@ invitada que nunca tuvo contraseña.
     no encontrado" a una cuenta sin contraseña (`auth.controller.ts:438-441`,
     `:466-469`).
 16. **Errores lanzados**, con `ApiErrorCode` nuevos: `GOOGLE_TOKEN_INVALID`,
-    `GOOGLE_EMAIL_NOT_VERIFIED`, `GOOGLE_ACCOUNT_NOT_FOUND`,
+    `GOOGLE_EMAIL_NOT_VERIFIED`, `GOOGLE_SIGNUP_REQUIRED`,
     `GOOGLE_LINK_REQUIRED`, `GOOGLE_ALREADY_LINKED`,
     `GOOGLE_UNLINK_NEEDS_PASSWORD`, `GOOGLE_NOT_ALLOWED` y el código genérico de
     "la contraseña no coincide", que nace con el arreglo de `changePassword` y
@@ -332,7 +341,13 @@ invitada que nunca tuvo contraseña.
 8. Limitación aceptada: Google refresca los feeds cada varias horas y es de una
    sola vía.
 
-### 4. Drive
+### 4. Drive: importar y exportar
+
+Las dos direcciones usan el mismo scope, **`drive.file`**, que permite leer los
+archivos que la persona elige y crear archivos nuevos en su Drive. Sigue siendo
+un scope no sensible: no hay verificación de Google ni auditoría.
+
+**Importar**
 
 1. "Importar desde Google Drive" entra como una opción más del menú "Add New" del
    gestor de archivos de Documentación, que es el que conoce la carpeta destino.
@@ -357,6 +372,27 @@ invitada que nunca tuvo contraseña.
    APIs.
 9. El permiso `drive.file` queda en la cuenta de Google de la persona; la ayuda
    dice cómo revocarlo.
+
+**Exportar** (sumado el 2026-11-18)
+
+10. "Guardar en Google Drive" en el menú "…" de cada documento, y sobre una
+    selección de varios. Primero el Picker en modo carpeta elige dónde guardar
+    (por defecto, "Mi unidad").
+11. **Exporta quien puede leer el documento** (`document.read`, la cliente
+    incluida si la obra se lo muestra): es lo mismo que descargarlo, sólo que va
+    a su Drive en vez de a su disco.
+12. El navegador trae el archivo de Luma y lo sube a Drive con la API de
+    subida (`www.googleapis.com/upload/drive/v3`, en partes si pasa de 5 MB),
+    con el nombre original. A Drive no va nada más que el archivo y su nombre.
+    La API de Luma no habla con Google. Si la URL firmada del `media-service` no
+    permite leerla desde el navegador (CORS), hace falta un endpoint de la API
+    que entregue el archivo con `document.read`: se mira al implementar.
+13. Estado "Guardando N de M" y, al terminar, un toast con enlace al archivo en
+    Drive. Los errores van a `document.drive.errors.*`, como al importar.
+14. Lo exportado es una **copia de la persona**: vive en su Drive, Luma no lo
+    sigue, y ni borrar el documento, ni eliminar la obra, ni la purga a los 90
+    días lo alcanzan. La Política de Privacidad lo dice en el PR de esta entrega.
+15. CSP: el `connect-src` de `www.googleapis.com` ya está en la lista de Drive.
 
 ## Opciones consideradas
 
@@ -452,9 +488,11 @@ además otro cambio de modelo.
 Sin API ni tokens, pero un evento a la vez y sin actualizaciones. Sirve como
 complemento de A en una reunión, no como reemplazo.
 
-### Drive — Opción A (elegida): importar con el Picker
+### Drive — Opción A (elegida): importar y exportar con el Picker
 
-Scope no sensible, sin tokens guardados, casi sin backend.
+Scope no sensible, sin tokens guardados, casi sin backend. La exportación se sumó
+el 2026-11-18: cada archivo es una copia que se manda una vez, no una carpeta
+sincronizada.
 
 ### Drive — Opción B: sincronizar una carpeta de la obra con Drive
 
@@ -513,7 +551,7 @@ un estado de sincronización que mantener.
     calendario externo. Cambian en el mismo PR que cada entrega. La frase de la
     landing sobre para qué se usan los datos se revisa junto con la Política.
   - **Condiciones de Maps Platform.** Leerlas completas antes de implementar la
-    entrega 2: este ADR se apoya en la página de políticas de Places, no en el
+    entrega de Maps: este ADR se apoya en la página de políticas de Places, no en el
     contrato.
   - **`DESIGN.md`.** Dos excepciones nuevas: el botón de Google y la atribución de
     Google junto a las sugerencias de dirección.
@@ -528,18 +566,18 @@ un estado de sincronización que mantener.
 
     | Pantalla | Cuenta o estado | Móvil |
     |---|---|---|
-    | `/login` con el botón, y con `GOOGLE_ACCOUNT_NOT_FOUND` y `GOOGLE_LINK_REQUIRED` | sin sesión | sí |
+    | `/login` con el botón, el alta con `TermsDialog` y `GOOGLE_LINK_REQUIRED` | sin sesión | sí |
     | `/register` con el botón y `TermsDialog` | sin sesión | sí |
     | Cuenta: cards de Google y Calendario | `user`, `gerente`, `cliente`, y una cuenta sin contraseña simulada | no |
     | Alta de obra, paso 1, con sugerencias y con el fallback a texto | `gerente` | sí |
     | Ficha de obra con mapa y sin mapa | `gerente` y `cliente` | sí |
-    | Documentación con la opción de importar, y sin ella | `gerente` y `cliente` | no |
+    | Documentación: importar (sólo quien sube) y "Guardar en Google Drive" | `gerente` y `cliente` | no |
 
   - **Landing.** Nada obliga a tocarla. Si se menciona el login con Google o el
     calendario, se actualiza a mano en `es` y `pt`.
   - **Números.** Precios y plazos se confirmaron contra la documentación de
     Google el 2026-11-10 (ver "Fuentes"). Cambian: se vuelven a mirar al
-    implementar la entrega 2. La verificación de marca, que el login necesita
+    implementar la entrega de Maps. La verificación de marca, que el login necesita
     para mostrar el nombre y el logo, tarda 2 o 3 días hábiles; `drive.file`
     figura como scope no sensible.
 
@@ -599,7 +637,8 @@ corregido arriba; lo que cambiaba el alcance se decidió el 2026-11-14 (ver
     clave. (`frontend`, `backend`)
 
 **Bien resuelto, según los tres:** ID token sin guardar tokens de Google, con la
-identidad en `googleSub`; desde `/login` no se crea ninguna cuenta; token del feed
+identidad en `googleSub`; desde `/login` no se crea ninguna cuenta (cambiado el
+2026-11-18, ver "Decisiones tomadas"); token del feed
 de 32 bytes guardado como hash; la papelera se respeta por el hook de `Project`;
 `drive.file` con el token sólo en memoria; Maps sin clave de servidor; la
 ubicación de la obra no revela nada nuevo, porque `location` ya la ve todo rol con
@@ -616,7 +655,7 @@ real del popup y del Picker en Safari.
 
 1. **Calendar:** feed ICS. La sincronización con OAuth queda como paso siguiente
    si alguien la pide.
-2. **Drive:** sólo importar.
+2. **Drive:** sólo importar. *Reemplazado el 2026-11-18: importar y exportar.*
 3. **Login:** los admins de plataforma quedan fuera del login con Google. Lo que
    se dijo entonces de cerrar antes todo el alcance del ADR-004 lo reemplaza el
    punto 3 de la segunda ronda.
@@ -645,7 +684,17 @@ Se aprobaron las ocho recomendaciones de quien coordina.
    client secret.
 8. **Drive — tipos de archivo:** sigue lo que Documentación acepta hoy (PDF e
    imágenes, más los documentos de Google exportados a PDF). Aceptar DWG, DOCX o
-   XLSX es ampliar Documentación; se vuelve a mirar al llegar a la entrega 4.
+   XLSX es ampliar Documentación; se vuelve a mirar al llegar a la entrega de Drive.
+
+**Tercera ronda (2026-11-18)**
+
+1. **Drive:** se puede importar **y exportar**, con el mismo scope
+   `drive.file`. Sincronizar sigue descartado.
+2. **Login con Google:** el mismo botón entra y registra, también desde
+   `/login`. Antes, desde `/login` no se creaba ninguna cuenta.
+3. **Orden:** Drive va después del login y antes que Maps y calendario. Drive
+   usa el mismo cliente OAuth que el login, así que no suma configuración nueva
+   de Google Cloud salvo la Picker API.
 
 Queda sin saber, y ya no hace falta para este diseño, si producción corrió alguna
 vez con `REQUIRE_EMAIL_VERIFICATION=false`. Le importa al ADR-004.
@@ -665,7 +714,7 @@ vez con `REQUIRE_EMAIL_VERIFICATION=false`. Le importa al ADR-004.
 6. [ ] Base — API: `GOOGLE_CONFIG` con `validateConfig()`,
    `GET /api/public/config`, COOP y `Referrer-Policy` en helmet; variables en
    Coolify.
-7. [ ] Login — `shared`: schema de `auth/google` con `intent`, campos nuevos de
+7. [ ] Login — `shared`: schema de `auth/google`, campos nuevos de
    `AuthUser`, `ApiErrorCode` nuevos con su fila en `STATUS_BY_ERROR_CODE`.
 8. [ ] Login — API: `googleSub` y `googleEmail`, verificación del ID token con
    tests unit, servicio de alta compartido con `register`, `issueSession`,
@@ -674,7 +723,7 @@ vez con `REQUIRE_EMAIL_VERIFICATION=false`. Le importa al ADR-004.
    con su entrada en `email-preview.ts`, purga, CSP de login.
 9. [ ] Login — web: `QueryKeys.publicConfig`, capa 1 y capa 2 con
    `skipAuth: true`, botón de Google en `/login`, `/register` y `/activate`,
-   salidas de `GOOGLE_ACCOUNT_NOT_FOUND` y `GOOGLE_LINK_REQUIRED` con el camino
+   alta con `TermsDialog` en las dos pantallas, `GOOGLE_LINK_REQUIRED` con el camino
    corto, cards de la cuenta, `KEY_BY_CODE` y `PREFER_OWN_MESSAGE`, i18n en `es`,
    `es-ES` y `pt`, excepción en `DESIGN.md`, `pnpm bump:web minor`.
 10. [ ] Maps — `shared` y API: `placeId` opcional en `Project` y sus schemas;
@@ -687,9 +736,11 @@ vez con `REQUIRE_EMAIL_VERIFICATION=false`. Le importa al ADR-004.
     público con su límite, rutas de estado, generar y apagar, purga y baja.
 13. [ ] Calendar — web: card en la pantalla de cuenta, `QueryKeys.calendarFeed`,
     i18n.
-14. [ ] Drive — base y web: Picker API, clave y número de proyecto; opción en el
-    menú del gestor de archivos, filtro de tipos y tamaño, exportación a PDF,
-    estado de importación, errores propios, i18n; CSP de Drive.
+14. [ ] Drive — base y web: Picker API, clave y número de proyecto; importar
+    desde el menú del gestor de archivos, con filtro de tipos y tamaño y
+    exportación a PDF; exportar desde el "…" de cada documento y de una
+    selección, con el Picker en modo carpeta; estados, errores propios, i18n;
+    CSP de Drive; el endpoint de descarga si la URL firmada no permite CORS.
 15. [ ] Política de Privacidad en cada entrega; `LEGAL_VERSION` en la de Maps.
 16. [ ] Probar cada entrega en stage con build de producción, incluido un iPhone.
 17. [ ] Documentar en `docs/` y actualizar CLAUDE.md (Auth y Config).
