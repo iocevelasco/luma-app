@@ -1230,6 +1230,33 @@
         "unavailable": "A pré-visualização não está disponível: o envio de documentação ainda não está configurado neste ambiente.",
         "loadFailed": "Não foi possível carregar a imagem. Feche a pré-visualização e abra de novo."
       }
+    },
+    "drive": {
+      "import": "Importar do Google Drive",
+      "export": "Salvar no Google Drive",
+      "importTitle": "Escolha os arquivos que deseja importar",
+      "exportTitle": "Escolha a pasta do Drive onde salvá-los",
+      "imported_one": "{{count}} arquivo importado do Google Drive.",
+      "imported_other": "{{count}} arquivos importados do Google Drive.",
+      "exported_one": "{{count}} documento salvo no seu Google Drive.",
+      "exported_other": "{{count}} documentos salvos no seu Google Drive.",
+      "openInDrive": "Abrir no Drive",
+      "progress": {
+        "import": "Importando {{done}} de {{total}}…",
+        "export": "Salvando no Drive {{done}} de {{total}}…"
+      },
+      "rejected": {
+        "fileType": "«{{name}}» não foi importado: só aceitamos PDF e imagens.",
+        "fileSize": "«{{name}}» não foi importado: tem mais de 20 MB."
+      },
+      "errors": {
+        "unavailable": "Não conseguimos carregar o Google Drive. Verifique a sua conexão e tente de novo.",
+        "popupBlocked": "O navegador bloqueou a janela do Google. Permita janelas pop-up e tente de novo.",
+        "denied": "Não foi dada permissão para usar o Google Drive.",
+        "download": "Não conseguimos trazer o arquivo do Google Drive.",
+        "upload": "Não conseguimos salvar o arquivo no seu Google Drive.",
+        "exportTooLarge": "O documento do Google é grande demais para convertê-lo em PDF."
+      }
     }
   },
   "milestone": {
@@ -2481,7 +2508,7 @@
           "title": "5. Com quem os compartilhamos",
           "paragraphs": [
             "Com as pessoas da sua obra, conforme o papel de cada uma (gerente, supervisor, cliente): cada pessoa vê apenas o que o seu papel permite, e uma obra nunca fica visível para quem não foi convidado.",
-            "Com fornecedores que nos ajudam a operar o serviço, e apenas o necessário para a função deles: a hospedagem dos servidores, o envio de e-mails (Resend), a cobrança com cartão (Stripe), a verificação contra abusos no cadastro (Google reCAPTCHA), o armazenamento de arquivos e, se você usar o Consultor IA, o fornecedor do modelo de inteligência artificial (Anthropic), para quem enviamos o necessário para responder à sua consulta.",
+            "Com fornecedores que nos ajudam a operar o serviço, e apenas o necessário para a função deles: a hospedagem dos servidores, o envio de e-mails (Resend), a cobrança com cartão (Stripe), a verificação contra abusos no cadastro (Google reCAPTCHA), o armazenamento de arquivos, o Google Drive quando você escolhe importar ou salvar arquivos com ele e, se você usar o Consultor IA, o fornecedor do modelo de inteligência artificial (Anthropic), para quem enviamos o necessário para responder à sua consulta.",
             "Com autoridades competentes, somente quando uma ordem ou norma válida nos exigir."
           ]
         },
@@ -2498,7 +2525,7 @@
           "title": "7. Por quanto tempo os guardamos e o que acontece se você sair",
           "paragraphs": [
             "Guardamos os seus dados enquanto a sua conta estiver ativa. Ao sair, mantemos a conta por 90 dias, caso você se arrependa, e depois apagamos os seus dados pessoais: e-mail, nome, foto, senha, telefone, os dados de pagamento da assinatura (banco, referência, documento e comprovante) e o registro técnico da sua aceitação. Também encerramos o seu cadastro no processador de pagamentos com cartão e eliminamos as suas notificações e os seus acessos às obras.",
-            "As obras que você exclui ficam 90 dias na lixeira e depois são apagadas com tudo o que tinham. Se a sua Empresa não tinha mais ninguém, ela fica sem nome nem contato. Os valores e datas dos pagamentos, e o histórico de uma obra compartilhada com outras pessoas, são mantidos ligados a uma «Conta eliminada» e sem dados que identifiquem você. O que outras pessoas tenham escrito em texto livre numa obra compartilhada (por exemplo, uma nota) pode continuar mencionando você."
+            "As obras que você exclui ficam 90 dias na lixeira e depois são apagadas com tudo o que tinham. Se a sua Empresa não tinha mais ninguém, ela fica sem nome nem contato. O que você salva no seu Google Drive a partir da Luma é uma cópia na sua conta do Google: nem a exclusão da sua conta nem a da obra na Luma a alcançam. Os valores e datas dos pagamentos, e o histórico de uma obra compartilhada com outras pessoas, são mantidos ligados a uma «Conta eliminada» e sem dados que identifiquem você. O que outras pessoas tenham escrito em texto livre numa obra compartilhada (por exemplo, uma nota) pode continuar mencionando você."
           ]
         },
         {

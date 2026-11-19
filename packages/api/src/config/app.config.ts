@@ -115,6 +115,34 @@ export const EMAIL_CONFIG = {
  * API key el feature queda deshabilitado (`ENABLED: false`): no vale la pena
  * que la app entera no arranque por un storage que todavía nadie configuró.
  */
+/**
+ * Proyecto de Google Cloud (ADR-005). Todo lo de acá es **público**: llega a la
+ * SPA por `GET /api/public/config`. La protección de las claves es la que se les
+ * pone en la consola de Google (dominios y cuota), no el secreto.
+ *
+ * Drive necesita las tres; sin alguna, no se ofrece y la app sigue andando.
+ */
+const googleClientId = process.env.GOOGLE_GCP_CLIENT_ID?.trim() || undefined;
+const googlePickerKey = process.env.GOOGLE_GCP_PICKER_API_KEY?.trim() || undefined;
+const googleProjectNumber = process.env.GOOGLE_GCP_PROJECT_NUMBER?.trim() || undefined;
+export const GOOGLE_CONFIG = {
+  CLIENT_ID: googleClientId,
+  PICKER_API_KEY: googlePickerKey,
+  PROJECT_NUMBER: googleProjectNumber,
+  DRIVE_ENABLED: Boolean(googleClientId && googlePickerKey && googleProjectNumber),
+} as const;
+
+/** Qué le falta a Drive para ofrecerse, para el aviso de arranque. */
+export function missingDriveEnv(): string[] {
+  return [
+    ['GOOGLE_GCP_CLIENT_ID', googleClientId],
+    ['GOOGLE_GCP_PICKER_API_KEY', googlePickerKey],
+    ['GOOGLE_GCP_PROJECT_NUMBER', googleProjectNumber],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name as string);
+}
+
 export const STORAGE_CONFIG = {
   /** Raíz del media-service, sin `/` final. Ej. `https://media.matflow.site`. */
   BASE_URL: process.env.MEDIA_SERVICE_URL?.replace(/\/+$/, ''),
@@ -371,6 +399,9 @@ export function validateConfig(): void {
   }
   if (!ANTHROPIC_CONFIG.ENABLED) {
     console.warn('⚠️  [CONFIG] Sin ANTHROPIC_API_KEY: el Consultor IA queda deshabilitado.');
+  }
+  if (!GOOGLE_CONFIG.DRIVE_ENABLED) {
+    console.warn(`⚠️  [CONFIG] Google Drive no se ofrece, falta: ${missingDriveEnv().join(', ')}.`);
   }
   // No aborta: tumbaría la app a quienes ya la usan. Pero sin esto nadie se entera de que no se puede cobrar.
   const bolivares = missingBolivaresEnv();
