@@ -6,6 +6,7 @@ import { isTokenExpired, getTokenExpirationTime } from '@/lib/jwt-utils';
 import { initializeVersionManager } from '@/lib/version-manager';
 import { apiClient } from '@/lib/api-client';
 import { ROUTES } from '@/lib/routes';
+import { clearDriveToken } from '@/lib/google-drive';
 
 interface AuthContextValue {
   user: AuthResponse['user'] | null;
@@ -101,7 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(SESSION_START_KEY);
     useUserStore.getState().clearUser();
-    
+    // El permiso de Drive vive en memoria y cerrar sesión no recarga la página:
+    // sin esto, quien entre después en la misma pestaña usaría el Drive de la
+    // persona anterior durante lo que le quede al token (hasta una hora).
+    clearDriveToken();
+
     if (sessionCheckIntervalRef.current) {
       clearInterval(sessionCheckIntervalRef.current);
       sessionCheckIntervalRef.current = null;

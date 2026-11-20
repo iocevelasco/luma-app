@@ -95,6 +95,16 @@ describe('requestDriveToken', () => {
     });
   });
 
+  it('después de cerrar sesión (clearDriveToken) vuelve a pedir el permiso: el token no pasa a la próxima persona', async () => {
+    const init = fakeGoogle(({ callback }) => callback({ access_token: 'de-ana', expires_in: 3600 }));
+    await requestDriveToken('client');
+
+    clearDriveToken();
+    await requestDriveToken('client');
+
+    expect(init).toHaveBeenCalledTimes(2);
+  });
+
   it('un popup bloqueado y un permiso negado tienen su propio código', async () => {
     fakeGoogle(({ error_callback }) => error_callback?.({ type: 'popup_failed_to_open' }));
     await expect(requestDriveToken('client')).rejects.toMatchObject({ code: 'popupBlocked' });
