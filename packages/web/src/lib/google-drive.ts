@@ -11,6 +11,7 @@
  */
 
 import type { GoogleIdApi } from './google-identity';
+import type { GoogleMapsNamespace } from './google-places';
 import { GSI_URL, loadGoogleScript } from './google-scripts';
 
 const GAPI_URL = 'https://apis.google.com/js/api.js';
@@ -103,6 +104,8 @@ interface PickerBuilder {
 }
 
 interface GoogleNamespace {
+  /** Maps JavaScript, para el autocompletado de direcciones (`google-places.ts`). */
+  maps?: GoogleMapsNamespace;
   accounts?: {
     /** Entrar con Google (`google-identity.ts`). */
     id?: GoogleIdApi;

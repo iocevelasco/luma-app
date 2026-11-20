@@ -366,6 +366,18 @@
       "endsIn": "Termina {{distance}}",
       "endedAgo": "Terminou {{distance}}",
       "open": "Abrir"
+    },
+    "location": {
+      "placeChosen": "Endereço escolhido no Google Maps: a obra terá mapa.",
+      "suggestions": "Endereços sugeridos",
+      "showMap": "Ver no mapa",
+      "hideMap": "Ocultar o mapa",
+      "directions": "Como chegar",
+      "edit": "Editar localização",
+      "mapTitle": "Mapa de {{location}}",
+      "editTitle": "Editar localização",
+      "editHint": "Escolha o endereço entre as sugestões para que a obra tenha mapa. Você também pode digitá-lo.",
+      "saved": "Localização salva."
     }
   },
   "auth": {
@@ -2540,7 +2552,7 @@
           "title": "5. Com quem os compartilhamos",
           "paragraphs": [
             "Com as pessoas da sua obra, conforme o papel de cada uma (gerente, supervisor, cliente): cada pessoa vê apenas o que o seu papel permite, e uma obra nunca fica visível para quem não foi convidado.",
-            "Com fornecedores que nos ajudam a operar o serviço, e apenas o necessário para a função deles: a hospedagem dos servidores, o envio de e-mails (Resend), a cobrança com cartão (Stripe), a verificação contra abusos no cadastro (Google reCAPTCHA), o Google quando você escolhe entrar com sua conta Google, o armazenamento de arquivos, o Google Drive quando você escolhe importar ou salvar arquivos com ele e, se você usar o Consultor IA, o fornecedor do modelo de inteligência artificial (Anthropic), para quem enviamos o necessário para responder à sua consulta.",
+            "Com fornecedores que nos ajudam a operar o serviço, e apenas o necessário para a função deles: a hospedagem dos servidores, o envio de e-mails (Resend), a cobrança com cartão (Stripe), a verificação contra abusos no cadastro (Google reCAPTCHA), o Google quando você escolhe entrar com sua conta Google, o Google Maps quando você busca o endereço de uma obra ou abre o mapa dela (recebe o que você digita e seu endereço IP), o armazenamento de arquivos, o Google Drive quando você escolhe importar ou salvar arquivos com ele e, se você usar o Consultor IA, o fornecedor do modelo de inteligência artificial (Anthropic), para quem enviamos o necessário para responder à sua consulta.",
             "Com autoridades competentes, somente quando uma ordem ou norma válida nos exigir."
           ]
         },

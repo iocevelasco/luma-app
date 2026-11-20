@@ -72,6 +72,23 @@ export const setAssignedProjectsSchema = z.object({
   projectIds: z.array(z.string().trim().min(1)).max(500),
 });
 
+const projectLocationSchema = z
+  .string()
+  .trim()
+  .min(1, 'La ubicación es obligatoria')
+  .max(200, 'La ubicación es demasiado larga');
+
+/**
+ * El lugar de Google que la persona eligió para la dirección (ADR-005 §2). Es
+ * lo único de Google que se guarda: las coordenadas no (sus políticas limitan
+ * conservarlas a 30 días). Un id de Places es alfanumérico con `-` y `_`.
+ */
+export const placeIdSchema = z
+  .string()
+  .trim()
+  .max(300, 'Lugar inválido')
+  .regex(/^[A-Za-z0-9_-]+$/, 'Lugar inválido');
+
 export const createProjectSchema = z
   .object({
     name: z
@@ -82,11 +99,8 @@ export const createProjectSchema = z
     // Ya no se pide al crear la obra (se ocultó del formulario): sigue aceptándose por si
     // llega de una API o de una obra vieja, pero no es obligatoria.
     description: z.string().trim().max(2000, 'La descripción es demasiado larga').optional(),
-    location: z
-      .string()
-      .trim()
-      .min(1, 'La ubicación es obligatoria')
-      .max(200, 'La ubicación es demasiado larga'),
+    location: projectLocationSchema,
+    placeId: placeIdSchema.optional(),
     size: z.string().trim().max(80, 'Es demasiado largo').optional(),
     estimatedStartDate: dayKeySchema,
     estimatedEndDate: dayKeySchema,
@@ -111,6 +125,16 @@ export const updateProjectSchema = z.object({
   purchasesVisibleToClient: z.boolean().optional(),
   expensesVisibleToClient: z.boolean().optional(),
   paymentsVisibleToClient: z.boolean().optional(),
+  /**
+   * La ubicación, lo único de la ficha que se edita después del alta. Va con
+   * su `placeId`: un texto nuevo sin `placeId` lo borra (si no, el mapa
+   * apuntaría al lugar anterior). `placeId` solo, sin `location`, no se acepta.
+   */
+  location: projectLocationSchema.optional(),
+  placeId: placeIdSchema.optional(),
+}).refine((data) => data.placeId === undefined || data.location !== undefined, {
+  message: 'El lugar va con su dirección',
+  path: ['placeId'],
 });
 
 const specialtyLabelSchema = z

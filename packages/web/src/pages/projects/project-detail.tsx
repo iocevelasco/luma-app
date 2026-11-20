@@ -24,6 +24,7 @@ import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { Can } from '@/components/permissions/can';
 import { PageLayout } from '@/components/layout/page-layout';
 import { DeleteProjectSection } from '@/components/projects/delete-project-dialog';
+import { ProjectLocation } from '@/components/projects/project-location';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -655,6 +656,7 @@ export function ProjectDetailPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            <ProjectLocation project={project} canEdit={can('project.update')} />
             {project.description && <p className="text-sm">{project.description}</p>}
 
             <dl className="grid grid-cols-2 gap-4 text-sm">

@@ -6,6 +6,7 @@ import { GOOGLE_CONFIG } from '../config/app.config.js';
 export function publicConfigFromEnv(google = GOOGLE_CONFIG): PublicConfig {
   return {
     googleLogin: google.LOGIN_ENABLED ? { clientId: google.CLIENT_ID! } : null,
+    maps: google.MAPS_BROWSER_KEY ? { apiKey: google.MAPS_BROWSER_KEY } : null,
     drive: google.DRIVE_ENABLED
       ? {
           clientId: google.CLIENT_ID!,

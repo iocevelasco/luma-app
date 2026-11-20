@@ -36,6 +36,13 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
   activa sola una invitada sin contraseña, y sólo si Google es autoridad sobre el
   correo (`@gmail.com` o Workspace del mismo dominio). Los admins no usan Google.
   "Cuenta activada" = contraseña **o** Google (`isAccountActivated`).
+- **Google Maps** (ADR-005 §2): de Google la obra guarda sólo `placeId`, **nunca
+  `lat`/`lng`** (las políticas de Places limitan conservarlas a 30 días).
+  `location` y `placeId` van juntos: un texto nuevo sin `placeId` lo borra. El
+  autocompletado usa `AutocompleteSuggestion` del SDK de Maps JS
+  (`lib/google-places.ts`), no la API REST de Places: esa pide claves
+  restringidas por IP. El mapa se carga sólo a pedido. Crear una obra nunca
+  depende de Google.
 - **Roles de plataforma**: `admin` y `user`. Middlewares: `isAuthenticated` →
   `requireAdmin` | `requireRole`. No gatean ninguna pantalla del panel de obras:
   el admin tiene su propia área, `/plataforma` (cuentas y pagos), con

@@ -10,6 +10,8 @@
 export interface PublicConfig {
   /** Entrar y registrarse con Google (ADR-005 §1). */
   googleLogin: GoogleLoginPublicConfig | null;
+  /** Autocompletar la dirección de la obra y verla en el mapa (ADR-005 §2). */
+  maps: MapsPublicConfig | null;
   /** Importar y exportar con Google Drive (ADR-005 §4). */
   drive: DrivePublicConfig | null;
 }
@@ -27,4 +29,12 @@ export interface DrivePublicConfig {
 /** Lo que el botón de Google necesita. El client id no es secreto. */
 export interface GoogleLoginPublicConfig {
   clientId: string;
+}
+
+/**
+ * Clave de navegador con Places API (New) y Maps Embed API, restringida por
+ * dominio y con cuota diaria. No es secreta: la protección está en la consola.
+ */
+export interface MapsPublicConfig {
+  apiKey: string;
 }
