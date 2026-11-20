@@ -486,6 +486,31 @@
       "noPasswordBody": "Entrás con Google y tu cuenta no tiene contraseña. Te vamos a mandar un enlace al correo para crearla. Al crearla, Google se desconecta y vas a tener que volver a conectarlo.",
       "createPassword": "Crear contraseña",
       "emailNeedsPassword": "Para cambiar el correo necesitás una contraseña. Creala en la tarjeta de contraseña."
+    },
+    "calendarFeed": {
+      "title": "Calendario",
+      "description": "Tus actividades, reuniones y vencimientos de cuotas en Google Calendar, Apple o Outlook.",
+      "generate": "Crear enlace del calendario",
+      "showOnce": "Este es tu enlace. Copialo ahora: por seguridad no lo vamos a volver a mostrar.",
+      "urlLabel": "Enlace del calendario",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "addToGoogle": "Agregar a Google Calendar",
+      "openCalendarApp": "Abrir en mi app de calendario",
+      "activeSince": "Tenés un calendario activo desde el {{date}}. Si perdiste el enlace, creá uno nuevo.",
+      "caveats": [
+        "Quien tenga el enlace puede ver tu calendario: no lo compartas.",
+        "Los calendarios externos se actualizan cada varias horas.",
+        "Apagarlo no borra lo que tu calendario ya copió.",
+        "Muestra nombres y fechas, nunca montos."
+      ],
+      "regenerate": "Crear un enlace nuevo",
+      "disable": "Apagar el calendario",
+      "regenerateTitle": "¿Crear un enlace nuevo?",
+      "regenerateBody": "El enlace anterior va a dejar de funcionar. Vas a tener que volver a agregar el calendario donde lo usabas.",
+      "disableTitle": "¿Apagar el calendario?",
+      "disableBody": "El enlace va a dejar de funcionar. Lo que tu calendario ya copió no se borra: sacalo desde ahí.",
+      "disabled": "Calendario apagado."
     }
   },
   "routeError": {
@@ -2553,6 +2578,7 @@
           "paragraphs": [
             "Con las personas de tu obra, según el rol de cada una (gerente, supervisor, cliente): cada quien ve sólo lo que su rol permite, y una obra nunca es visible para quien no fue invitado.",
             "Con proveedores que nos ayudan a operar el servicio, y sólo lo necesario para su función: el alojamiento de los servidores, el envío de correos (Resend), el cobro con tarjeta (Stripe), la verificación contra abusos en el registro (Google reCAPTCHA), Google cuando elegís entrar con tu cuenta de Google, Google Maps cuando buscás la dirección de una obra o abrís su mapa (recibe lo que escribís y tu dirección IP), el almacenamiento de archivos, Google Drive cuando elegís importar o guardar archivos con él y, si usás el Consultor IA, el proveedor del modelo de inteligencia artificial (Anthropic), a quien enviamos lo necesario para responder tu consulta.",
+            "Si activás el calendario, quien tenga su enlace, y el servicio de calendario donde lo agregues, ve los nombres de tus obras, actividades y reuniones, y las fechas de vencimiento de las cuotas, sin montos.",
             "Con autoridades competentes, únicamente cuando nos lo exija una orden o una norma válida."
           ]
         },

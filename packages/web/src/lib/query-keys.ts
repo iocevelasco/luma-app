@@ -6,6 +6,7 @@
  */
 export enum QueryKeys {
   currentUser = 'current-user',
+  calendarFeed = 'calendar-feed',
   emailVerification = 'email-verification',
   projects = 'projects',
   project = 'project',

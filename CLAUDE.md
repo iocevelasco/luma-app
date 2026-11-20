@@ -43,6 +43,12 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
   (`lib/google-places.ts`), no la API REST de Places: esa pide claves
   restringidas por IP. El mapa se carga sólo a pedido. Crear una obra nunca
   depende de Google.
+- **Feed de calendario** (ADR-005 §3, `calendar-feed.service.ts`): un ICS por
+  persona en `/api/public/calendar/:token.ics`, sin sesión. En `User` va sólo el
+  SHA-256 del token (la URL se muestra una vez). El contenido sale de
+  `myProjectsWithAccess`, la misma resolución de permisos que el listado de
+  obras: nada que el rol no deje ver, sin montos ni texto libre de las cuotas.
+  Dar de baja la cuenta apaga el feed.
 - **Roles de plataforma**: `admin` y `user`. Middlewares: `isAuthenticated` →
   `requireAdmin` | `requireRole`. No gatean ninguna pantalla del panel de obras:
   el admin tiene su propia área, `/plataforma` (cuentas y pagos), con
