@@ -1696,6 +1696,7 @@
     "validation": "Revise os dados: há campos com erros.",
     "unauthenticated": "Sua sessão expirou. Entre novamente.",
     "invalidCredentials": "O e-mail ou a senha não estão corretos.",
+    "wrongPassword": "A senha atual não está correta.",
     "forbidden": "Seu papel não permite esta ação.",
     "notFound": "Não encontramos o que você procurava. Pode ter sido excluído.",
     "conflict": "Isso conflita com algo que já existe.",

@@ -21,6 +21,13 @@ export type ApiErrorCode =
   | 'UNAUTHENTICATED'
   /** El login no coincide. Aparte de `UNAUTHENTICATED`: acá nunca hubo una sesión que se cerrara. */
   | 'INVALID_CREDENTIALS'
+  /**
+   * Hay sesión, y la contraseña que se pidió para confirmar una acción sobre la
+   * cuenta (cambiar la contraseña, cambiar el correo) no es la de la cuenta.
+   * Aparte de `UNAUTHENTICATED` y de `INVALID_CREDENTIALS`: la sesión sigue
+   * valiendo. Nunca un 401 — ver `STATUS_BY_ERROR_CODE`.
+   */
+  | 'WRONG_PASSWORD'
   /** Hay sesión, pero este rol no puede. */
   | 'FORBIDDEN'
   /** No existe, o existe y no es de quien pregunta — ver abajo. */
@@ -89,6 +96,11 @@ export const STATUS_BY_ERROR_CODE: Record<ApiErrorCode, number> = {
   PAID_PLAN_REQUIRED: 402,
   // 403 como FORBIDDEN: `errorCodeForStatus(403)` devuelve el primero.
   TERMS_REQUIRED: 403,
+  // 403 y no 401: el cliente lee todo 401 con token como sesión vencida —
+  // renueva, reintenta y, si vuelve a fallar, cierra la sesión. Una contraseña
+  // mal escrita en "Mi cuenta" no puede desloguear a nadie.
+  // Va después de FORBIDDEN: `errorCodeForStatus(403)` devuelve el primero.
+  WRONG_PASSWORD: 403,
   INTERNAL: 500,
 };
 
