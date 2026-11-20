@@ -729,7 +729,7 @@ vez con `REQUIRE_EMAIL_VERIFICATION=false`. Le importa al ADR-004.
    `es-ES` y `pt`, excepción en `DESIGN.md`, `pnpm bump:web minor`. *#85.*
 10. [x] Maps — `shared` y API: `placeId` opcional en `Project` y sus schemas;
     `location` y `placeId` en `updateProjectSchema`; CSP de Maps. *#86.*
-11. [x] Maps — web: `lib/google-places.ts` (no `google-maps-js.ts`: ver "Implementación"), autocompletado con lista propia y
+11. [x] Maps — web: `lib/google-places.ts` (en vez de `google-maps-js.ts`), autocompletado con lista propia y
     fallback a texto, formulario para editar la ubicación en la ficha, mapa
     embebido a pedido, "Cómo llegar", i18n. *#86.*
 12. [x] Calendar — API: `calendarFeedTokenHash`, servicio "mis obras con rol y
@@ -774,13 +774,13 @@ URL sale de `PUBLIC_API_URL`, que en producción es el origen de `APP_URL`.
 
 **Desvíos respecto del texto de arriba**
 
-1. **Maps sin el SDK.** El autocompletado llama a la API REST de Places (New)
-   (`POST places.googleapis.com/v1/places:autocomplete`) desde el navegador, con
-   la clave restringida por dominio, en vez de `AutocompleteSuggestion` del SDK.
-   Es el mismo producto y el mismo precio, sin bajar el script de Maps y con un
-   solo origen nuevo en la CSP (`connect-src https://places.googleapis.com`). Por
-   eso el archivo es `lib/google-places.ts`. El mapa y "Cómo llegar" quedan como
-   se decidió.
+1. **Maps: REST descartado en la revisión.** La primera versión de #86 llamaba
+   a la API REST de Places (New) desde el navegador. La revisión lo frenó: es un
+   servicio web, Google pide restringir esas claves por IP, y con la clave
+   restringida por dominio podía rechazar cada sugerencia. Quedó lo que decía el
+   texto: `AutocompleteSuggestion` del SDK de Maps JS, en `lib/google-places.ts`,
+   con el script cargado recién al escribir. La clave necesita Maps JavaScript
+   API, Places API (New) y Maps Embed API.
 2. **Un código más: `PASSWORD_NOT_SET` (409).** Es lo que responden
    `changePassword` y `changeEmail` a una cuenta que entra sólo con Google, en vez
    del 404 de antes (§1.15). El "la contraseña no coincide" genérico de §1.16 es
@@ -813,10 +813,17 @@ URL sale de `PUBLIC_API_URL`, que en producción es el origen de `APP_URL`.
     `ubuntu-24.04`: `ubuntu-latest` pasó a 26.04 y Playwright no instala
     Chromium ahí (#84).
 
+**Arreglos de la revisión (2026-11-20)**
+
+- #84: cerrar sesión no olvidaba el permiso de Drive, que vive en memoria hasta
+  una hora; quien entraba después en la misma pestaña usaba el Drive de la
+  persona anterior. `clearSession` ahora llama a `clearDriveToken`.
+- #86: el autocompletado pasó al SDK de Maps JS (desvío 1).
+
 **Lo que falta**
 
 - Acción 5: los proyectos de GCP, la pantalla de consentimiento, la Picker API,
-  Places API (New) y Maps Embed habilitadas, las claves restringidas por dominio
+  Maps JavaScript API, Places API (New) y Maps Embed habilitadas, las claves restringidas por dominio
   y por API, y las cuotas.
 - Cargar las variables en Coolify y redesplegar.
 - Acción 16: probar cada entrega en stage con build de producción, incluido un
