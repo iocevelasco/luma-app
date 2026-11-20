@@ -39,8 +39,10 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
 - **Google Maps** (ADR-005 §2): de Google la obra guarda sólo `placeId`, **nunca
   `lat`/`lng`** (las políticas de Places limitan conservarlas a 30 días).
   `location` y `placeId` van juntos: un texto nuevo sin `placeId` lo borra. El
-  autocompletado va por REST desde el navegador (`lib/google-places.ts`) y el
-  mapa se carga sólo a pedido. Crear una obra nunca depende de Google.
+  autocompletado usa `AutocompleteSuggestion` del SDK de Maps JS
+  (`lib/google-places.ts`), no la API REST de Places: esa pide claves
+  restringidas por IP. El mapa se carga sólo a pedido. Crear una obra nunca
+  depende de Google.
 - **Feed de calendario** (ADR-005 §3, `calendar-feed.service.ts`): un ICS por
   persona en `/api/public/calendar/:token.ics`, sin sesión. En `User` va sólo el
   SHA-256 del token (la URL se muestra una vez). El contenido sale de

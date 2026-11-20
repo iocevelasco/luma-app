@@ -153,6 +153,8 @@ app.use(
               'https://accounts.google.com/gsi/client',
               'https://apis.google.com/js/api.js',
               'https://apis.google.com/_/scs/',
+              // Maps JavaScript (ADR-005 §2): el cargador y sus módulos.
+              'https://maps.googleapis.com/',
             ],
             // El botón de Google (ADR-005 §1) trae su hoja de estilos.
             styleSrc: [
@@ -162,7 +164,17 @@ app.use(
               'https://accounts.google.com/gsi/style',
             ],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-            imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://*.stripe.com'],
+            imgSrc: [
+              "'self'",
+              'data:',
+              'blob:',
+              'https://www.google.com',
+              'https://www.gstatic.com',
+              'https://*.stripe.com',
+              // Logos y atribución que dibuja Maps JavaScript.
+              'https://maps.gstatic.com',
+              'https://maps.googleapis.com',
+            ],
             frameSrc: [
               "'self'",
               'https://www.google.com',
@@ -184,8 +196,10 @@ app.use(
               'https://accounts.google.com/gsi/',
               'https://www.googleapis.com',
               'https://content.googleapis.com',
-              // Autocompletar la dirección de la obra (Places API New, por REST).
+              // Autocompletar la dirección de la obra: el SDK de Maps habla con
+              // Places (New) y con su propio host.
               'https://places.googleapis.com',
+              'https://maps.googleapis.com',
               ...(chatOrigin ? [chatOrigin] : []),
             ],
             objectSrc: ["'none'"],

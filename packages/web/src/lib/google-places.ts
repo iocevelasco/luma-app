@@ -1,19 +1,24 @@
+import { loadGoogleScript } from './google-scripts';
+
 /**
  * Google Maps para la dirección de la obra (ADR-005 §2).
  *
- * El autocompletado va por la API REST de Places (New) directo desde el
- * navegador, con la clave de navegador restringida por dominio: es el mismo
- * producto y el mismo precio que `AutocompleteSuggestion` del SDK de Maps, sin
- * cargar el script de Maps (unos cientos de KB y más orígenes en la CSP).
+ * El autocompletado usa `AutocompleteSuggestion` del SDK de Maps JavaScript,
+ * que está hecho para el navegador y acepta una clave restringida por dominio.
+ * La API REST de Places pide claves restringidas por IP (es un servicio web) y
+ * desde el navegador quedaría expuesta o rechazada: por eso no se usa.
+ *
+ * El script se carga recién cuando la persona escribe en el campo, no al abrir
+ * la pantalla: nada sale hacia Google sin una acción suya.
  *
  * Lo único que se guarda es el `placeId`. Ni coordenadas ni las sugerencias:
  * las políticas de Places no lo permiten más allá de 30 días.
  *
  * El mapa es un iframe de Maps Embed (sin costo por uso) y "Cómo llegar" es un
- * enlace a Google Maps: ninguno de los dos usa la API de Places.
+ * enlace a Google Maps: ninguno de los dos usa este SDK.
  */
 
-const AUTOCOMPLETE_URL = 'https://places.googleapis.com/v1/places:autocomplete';
+const MAPS_URL = 'https://maps.googleapis.com/maps/api/js';
 
 /** Antes de esto no se le pregunta nada a Google: cada request se cobra. */
 export const MIN_QUERY_LENGTH = 3;
@@ -29,40 +34,76 @@ export interface PlaceSuggestion {
   secondary?: string;
 }
 
-interface AutocompleteResponse {
-  suggestions?: {
-    placePrediction?: {
-      placeId?: string;
-      text?: { text?: string };
-      structuredFormat?: { mainText?: { text?: string }; secondaryText?: { text?: string } };
-    };
-  }[];
+// ── Tipos mínimos del SDK ───────────────────────────────────────────────────
+
+interface FormattableText {
+  text?: string;
 }
 
-export class PlacesError extends Error {
-  constructor(public readonly status: number) {
-    super(`Places respondió ${status}`);
-    this.name = 'PlacesError';
-  }
+interface SdkSuggestion {
+  placePrediction?: {
+    placeId?: string;
+    text?: FormattableText | null;
+    mainText?: FormattableText | null;
+    secondaryText?: FormattableText | null;
+  } | null;
 }
+
+interface PlacesLibrary {
+  AutocompleteSessionToken: new () => object;
+  AutocompleteSuggestion: {
+    fetchAutocompleteSuggestions(request: {
+      input: string;
+      sessionToken?: object;
+      language?: string;
+    }): Promise<{ suggestions: SdkSuggestion[] }>;
+  };
+}
+
+/** Lo que se usa de `google.maps`. */
+export interface GoogleMapsNamespace {
+  importLibrary(name: 'places'): Promise<unknown>;
+}
+
+// ── Carga ───────────────────────────────────────────────────────────────────
+
+const mapsReady = () => typeof window.google?.maps?.importLibrary === 'function';
+let placesLibrary: Promise<PlacesLibrary> | null = null;
+
+function loadPlaces(apiKey: string): Promise<PlacesLibrary> {
+  placesLibrary ??= loadGoogleScript(
+    `${MAPS_URL}?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async`,
+    mapsReady,
+  )
+    .then(() => window.google!.maps!.importLibrary('places') as Promise<PlacesLibrary>)
+    .catch((error: unknown) => {
+      // Que el próximo intento pruebe de nuevo (p. ej. volvió la conexión).
+      placesLibrary = null;
+      throw error;
+    });
+  return placesLibrary;
+}
+
+/** Sólo para tests. */
+export function resetPlacesLibrary(): void {
+  placesLibrary = null;
+}
+
+// ── Sugerencias ─────────────────────────────────────────────────────────────
 
 /**
- * Agrupa los requests de una búsqueda en una sesión de facturación. Se cambia
- * al elegir una sugerencia. `crypto.randomUUID` llega a Safari en 15.4: antes,
- * un UUID v4 armado con `getRandomValues`.
+ * Agrupa las preguntas de una búsqueda en una sesión de facturación. Se crea
+ * con la primera pregunta y se descarta al elegir una sugerencia.
  */
-export function newSessionToken(): string {
-  const crypto = window.crypto;
-  if (typeof crypto?.randomUUID === 'function') return crypto.randomUUID();
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
-  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+export interface PlacesSession {
+  token?: object;
 }
 
-/** El idioma de la app en el formato de Google (`languageCode`, `language`). */
+export function newPlacesSession(): PlacesSession {
+  return {};
+}
+
+/** El idioma de la app en el formato de Google (`language`). */
 export function mapsLanguage(language: string | undefined): string {
   if (!language) return 'es';
   if (language === 'es-AR') return 'es-419';
@@ -71,12 +112,12 @@ export function mapsLanguage(language: string | undefined): string {
   return language;
 }
 
-export function parseSuggestions(body: AutocompleteResponse): PlaceSuggestion[] {
-  return (body.suggestions ?? []).flatMap(({ placePrediction: p }) => {
+export function parseSuggestions(suggestions: SdkSuggestion[] | undefined): PlaceSuggestion[] {
+  return (suggestions ?? []).flatMap(({ placePrediction: p }) => {
     const text = p?.text?.text?.trim();
     if (!p?.placeId || !text) return [];
-    const main = p.structuredFormat?.mainText?.text?.trim() || text;
-    const secondary = p.structuredFormat?.secondaryText?.text?.trim() || undefined;
+    const main = p.mainText?.text?.trim() || text;
+    const secondary = p.secondaryText?.text?.trim() || undefined;
     return [{ placeId: p.placeId, text, main, secondary }];
   });
 }
@@ -84,24 +125,17 @@ export function parseSuggestions(body: AutocompleteResponse): PlaceSuggestion[] 
 export async function fetchPlaceSuggestions(
   apiKey: string,
   input: string,
-  sessionToken: string,
+  session: PlacesSession,
   language: string,
-  signal?: AbortSignal,
 ): Promise<PlaceSuggestion[]> {
-  const response = await fetch(AUTOCOMPLETE_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': apiKey,
-      // Sólo lo que se muestra: el FieldMask también acota lo que se cobra.
-      'X-Goog-FieldMask':
-        'suggestions.placePrediction.placeId,suggestions.placePrediction.text.text,suggestions.placePrediction.structuredFormat',
-    },
-    body: JSON.stringify({ input, sessionToken, languageCode: language }),
-    signal,
+  const places = await loadPlaces(apiKey);
+  session.token ??= new places.AutocompleteSessionToken();
+  const { suggestions } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+    input,
+    sessionToken: session.token,
+    language,
   });
-  if (!response.ok) throw new PlacesError(response.status);
-  return parseSuggestions((await response.json()) as AutocompleteResponse);
+  return parseSuggestions(suggestions);
 }
 
 /** El iframe de Maps Embed para un lugar. Host fijo; todo lo variable, escapado. */
