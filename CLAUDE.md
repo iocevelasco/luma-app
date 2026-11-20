@@ -27,6 +27,15 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
 
 - **Auth**: access token en `Authorization: Bearer`, refresh en cookie httpOnly
   `refresh_token` (90 días). HS256 si hay `JWT_SECRET`, si no RS256 con el par PEM.
+  Toda sesión se abre con `issueSession` (`session-issue.service.ts`) y lleva
+  `tokenVersion`: recuperar la contraseña la sube y cierra todas las sesiones.
+- **Entrar con Google** (ADR-005 §1, `google-auth.controller.ts`): ID token del
+  botón de Google verificado en la API; se guarda `googleSub` (la identidad) y
+  `googleEmail`, nunca tokens. **Google nunca se une solo a una cuenta con
+  contraseña**: se conecta poniéndola una vez (`GOOGLE_LINK_REQUIRED`). Sólo
+  activa sola una invitada sin contraseña, y sólo si Google es autoridad sobre el
+  correo (`@gmail.com` o Workspace del mismo dominio). Los admins no usan Google.
+  "Cuenta activada" = contraseña **o** Google (`isAccountActivated`).
 - **Roles de plataforma**: `admin` y `user`. Middlewares: `isAuthenticated` →
   `requireAdmin` | `requireRole`. No gatean ninguna pantalla del panel de obras:
   el admin tiene su propia área, `/plataforma` (cuentas y pagos), con

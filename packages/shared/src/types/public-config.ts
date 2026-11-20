@@ -8,6 +8,8 @@
  * deshabilitada en este entorno y la UI no la ofrece.
  */
 export interface PublicConfig {
+  /** Entrar y registrarse con Google (ADR-005 §1). */
+  googleLogin: GoogleLoginPublicConfig | null;
   /** Importar y exportar con Google Drive (ADR-005 §4). */
   drive: DrivePublicConfig | null;
 }
@@ -20,4 +22,9 @@ export interface DrivePublicConfig {
   apiKey: string;
   /** Número del proyecto de Google Cloud: el `appId` del Picker. */
   appId: string;
+}
+
+/** Lo que el botón de Google necesita. El client id no es secreto. */
+export interface GoogleLoginPublicConfig {
+  clientId: string;
 }

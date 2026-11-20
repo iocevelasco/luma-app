@@ -36,6 +36,10 @@ async function main() {
     // Promover o resetear un admin cierra las sesiones que la cuenta tuviera
     // abiertas: el rol nuevo se estrena con un login nuevo, con esta contraseña.
     existing.tokenVersion = (existing.tokenVersion ?? 0) + 1;
+    // Un admin no entra con Google (ADR-005 §1.11): se le desconecta, y el
+    // tokenVersion de arriba cierra la sesión que hubiera abierto con Google.
+    existing.googleSub = undefined;
+    existing.googleEmail = undefined;
     await existing.save();
     console.log(`✅ Admin actualizado: ${email}`);
   } else {

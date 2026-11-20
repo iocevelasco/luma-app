@@ -10,7 +10,9 @@
  * sus dominios. Se tipa sólo lo que se usa.
  */
 
-const GSI_URL = 'https://accounts.google.com/gsi/client';
+import type { GoogleIdApi } from './google-identity';
+import { GSI_URL, loadGoogleScript } from './google-scripts';
+
 const GAPI_URL = 'https://apis.google.com/js/api.js';
 
 export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
@@ -102,6 +104,8 @@ interface PickerBuilder {
 
 interface GoogleNamespace {
   accounts?: {
+    /** Entrar con Google (`google-identity.ts`). */
+    id?: GoogleIdApi;
     oauth2?: {
       initTokenClient(config: {
         client_id: string;
@@ -133,28 +137,11 @@ declare global {
 
 // ── Carga de scripts ────────────────────────────────────────────────────────
 
-const loading = new Map<string, Promise<void>>();
-
+/** El cargador compartido, con el error que la UI de Drive sabe traducir. */
 function loadScript(url: string, isReady: () => boolean): Promise<void> {
-  if (isReady()) return Promise.resolve();
-  const pending = loading.get(url);
-  if (pending) return pending;
-
-  const promise = new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = url;
-    script.async = true;
-    script.onload = () => (isReady() ? resolve() : reject(new DriveError('unavailable')));
-    script.onerror = () => reject(new DriveError('unavailable'));
-    document.head.appendChild(script);
-  }).catch((error: unknown) => {
-    // Que el próximo intento pruebe de nuevo (p. ej. volvió la conexión).
-    loading.delete(url);
-    document.querySelector(`script[src="${url}"]`)?.remove();
-    throw error;
+  return loadGoogleScript(url, isReady).catch(() => {
+    throw new DriveError('unavailable');
   });
-  loading.set(url, promise);
-  return promise;
 }
 
 const gsiReady = () => typeof window.google?.accounts?.oauth2?.initTokenClient === 'function';

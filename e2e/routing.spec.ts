@@ -22,6 +22,14 @@ test.describe('rutas sin sesión', () => {
     page.on('console', (msg) => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
+    // Login y registro preguntan qué integraciones hay (el botón de Google).
+    // CI corre sin API: esa respuesta se da acá, para que el spec siga mirando
+    // los errores de la app y no la falta de backend.
+    if (process.env.E2E_API_UP !== '1') {
+      await page.route('**/api/public/config', (route) =>
+        route.fulfill({ json: { success: true, data: { googleLogin: null, drive: null } } }),
+      );
+    }
 
     for (const path of ['/login', '/register', '/forgot-password', '/check-email']) {
       await page.goto(appUrl(path));

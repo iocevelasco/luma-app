@@ -93,6 +93,7 @@ feat/…  ──PR──▶  stage  ──PR──▶  main
 | `LANDING_URL` | `http://luma-landing:8080` | cae a `http://landing:8080` — **que en la red compartida de Coolify puede ser la landing de otra app** |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails (cómo configurar Resend y el dominio: `docs/CORREOS.md`) | aviso; los mails quedan deshabilitados |
 | `MEDIA_SERVICE_URL`, `MEDIA_SERVICE_API_KEY` | storage de archivos (evidencia RF-04 y documentación de obra) vía el microservicio `media-service` (ej. `https://media.matflow.site`); la key se emite con `bucket key create luma` | aviso; subir archivos da 503, el resto de la app sigue |
+| `GOOGLE_GCP_CLIENT_ID` | entrar y registrarse con Google (ADR-005 §1): client id del cliente OAuth web, con los orígenes de la app autorizados (en desarrollo, también los de stage). Público, sin secreto | aviso; login, registro y activación no muestran el botón de Google |
 | `GOOGLE_GCP_CLIENT_ID`, `GOOGLE_GCP_PICKER_API_KEY`, `GOOGLE_GCP_PROJECT_NUMBER` | importar y exportar con Google Drive en Documentación (ADR-005 §4): client id del cliente OAuth web, clave de navegador con la Picker API (restringida por dominio y con cuota) y número del proyecto de Google Cloud. Públicas, sin secreto | aviso; Documentación no ofrece Drive |
 | `STORAGE_SIGNED_URL_TTL` | opcional: vida de las URLs firmadas de lectura | `3600` segundos (máximo que admite el servicio) |
 | `STRIPE_SECRET_KEY` | pago de la suscripción con tarjeta. **Sólo se ofrece con `sk_live_…`**: con una `sk_test_…` queda apagado | no se ofrece pago con tarjeta |

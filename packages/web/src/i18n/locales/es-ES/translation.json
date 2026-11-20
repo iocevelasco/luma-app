@@ -452,6 +452,28 @@
       "manageAction": "Crea una cuenta gratis",
       "invitedQuestion": "¿Te invitaron a una obra?",
       "invitedAction": "Revisa tu correo de invitación"
+    },
+    "google": {
+      "linked": "Google conectado a tu cuenta.",
+      "unlinked": "Google desconectado de tu cuenta.",
+      "goToLogin": "Entrar con mi contraseña",
+      "signupIntro": "Vas a crear una cuenta nueva con {{email}}.",
+      "otherAccountHint": "¿Ya tienes cuenta con otro correo?",
+      "otherAccountAction": "Entra con tu contraseña y conecta Google desde tu cuenta.",
+      "cardTitle": "Google",
+      "linkedBody": "Puedes entrar con tu cuenta de Google además de con tu contraseña.",
+      "unlinkedBody": "Conecta tu cuenta de Google para entrar sin escribir la contraseña.",
+      "connected": "Conectado",
+      "unlink": "Desconectar",
+      "unlinkNeedsPassword": "Tu cuenta no tiene contraseña: si desconectas Google no podrías entrar. Crea una contraseña primero.",
+      "linkPassword": "Tu contraseña actual",
+      "linkHint": "Escríbela y después elige tu cuenta de Google. Puede ser un Google con otro correo.",
+      "passwordFirst": "Escribe tu contraseña actual antes de elegir la cuenta de Google.",
+      "unlinkTitle": "¿Desconectar Google?",
+      "unlinkBody": "Ya no podrás entrar con {{email}}. Para confirmarlo, escribe tu contraseña.",
+      "noPasswordBody": "Entras con Google y tu cuenta no tiene contraseña. Te enviaremos un enlace al correo para crearla. Al crearla, Google se desconecta y tendrás que volver a conectarlo.",
+      "createPassword": "Crear contraseña",
+      "emailNeedsPassword": "Para cambiar el correo necesitas una contraseña. Créala en la tarjeta de contraseña."
     }
   },
   "routeError": {
@@ -1736,7 +1758,16 @@
     "internal": "Algo ha fallado por nuestra parte. Prueba de nuevo en un momento.",
     "network": "No hemos podido conectarnos. Revisa tu conexión.",
     "title": "No se pudo guardar",
-    "termsRequired": "Para seguir tienes que aceptar los Términos y la Política de Privacidad."
+    "termsRequired": "Para seguir tienes que aceptar los Términos y la Política de Privacidad.",
+    "passwordNotSet": "Tu cuenta no tiene contraseña: entras con Google. Créala con «Olvidé mi contraseña».",
+    "googleTokenInvalid": "No hemos podido confirmar tu cuenta de Google. Prueba de nuevo.",
+    "googleEmailNotVerified": "Google no tiene verificado el correo de esa cuenta. Entra con tu correo y contraseña.",
+    "googleSignupRequired": "No hay ninguna cuenta con ese correo. Para crearla, acepta los Términos.",
+    "googleLinkRequired": "Ya tienes una cuenta con ese correo. Entra con tu contraseña una vez y conectaremos tu Google.",
+    "googleLinkInvited": "Ya te invitaron con ese correo. Activa tu cuenta desde el enlace que te llegó por correo.",
+    "googleAlreadyLinked": "Esa cuenta de Google ya está conectada a otra cuenta de Luma.",
+    "googleUnlinkNeedsPassword": "Tu cuenta no tiene contraseña: si desconectas Google no podrías entrar. Crea una contraseña primero.",
+    "googleNotAllowed": "Esta cuenta no puede entrar con Google."
   },
   "directory": {
     "providersEmpty": "Todavía no hay proveedores en tu Empresa.",
@@ -2483,7 +2514,7 @@
         {
           "title": "2. Qué datos tratamos",
           "paragraphs": [
-            "Datos de tu cuenta: nombre, correo electrónico y contraseña (que guardamos cifrada, nunca en texto legible).",
+            "Datos de tu cuenta: nombre, correo electrónico y contraseña (que guardamos cifrada, nunca en texto legible). Si entras con Google, guardamos el identificador de tu cuenta de Google y su correo; nunca tu contraseña de Google ni acceso a tus datos en Google.",
             "Datos de tu obra: actividades, materiales, presupuestos, cobros, gastos, justificantes, fotos, documentos y las personas que participan. Son tuyos: nosotros los guardamos para que puedas usarlos.",
             "Datos de pagos de la suscripción: banco, referencia y documento de identidad de quien paga, cuando eliges pagar en bolívares. Si pagas con tarjeta, los datos de la tarjeta los procesa Stripe y no pasan por nuestros servidores.",
             "Datos técnicos de la aceptación: cuando aceptas estos Términos guardamos la versión, la fecha y hora, tu dirección IP y el navegador que usaste. Sirven como constancia de que la aceptación ocurrió.",
@@ -2509,7 +2540,7 @@
           "title": "5. Con quién los compartimos",
           "paragraphs": [
             "Con las personas de tu obra, según el rol de cada una (gerente, supervisor, cliente): cada quien ve solo lo que su rol permite, y una obra nunca es visible para quien no ha sido invitado.",
-            "Con proveedores que nos ayudan a operar el servicio, y solo lo necesario para su función: el alojamiento de los servidores, el envío de correos (Resend), el cobro con tarjeta (Stripe), la verificación contra abusos en el registro (Google reCAPTCHA), el almacenamiento de archivos, Google Drive cuando eliges importar o guardar archivos con él y, si usas el Consultor IA, el proveedor del modelo de inteligencia artificial (Anthropic), al que enviamos lo necesario para responder tu consulta.",
+            "Con proveedores que nos ayudan a operar el servicio, y solo lo necesario para su función: el alojamiento de los servidores, el envío de correos (Resend), el cobro con tarjeta (Stripe), la verificación contra abusos en el registro (Google reCAPTCHA), Google cuando eliges entrar con tu cuenta de Google, el almacenamiento de archivos, Google Drive cuando eliges importar o guardar archivos con él y, si usas el Consultor IA, el proveedor del modelo de inteligencia artificial (Anthropic), al que enviamos lo necesario para responder tu consulta.",
             "Con autoridades competentes, únicamente cuando nos lo exija una orden o una norma válida."
           ]
         },

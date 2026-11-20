@@ -81,6 +81,16 @@ export interface IUser extends Document {
    */
   tokenVersion: number;
 
+  /**
+   * La cuenta de Google conectada (ADR-005 §1). La identidad es el `sub`, no
+   * el correo: el correo de una cuenta de Google puede cambiar. `select: false`
+   * como todo lo que abre la puerta de la cuenta. Se quita con `$unset`, nunca
+   * con `null`: el índice es disperso, y dos `null` chocarían.
+   */
+  googleSub?: string;
+  /** El correo de esa cuenta de Google, sólo para mostrar con cuál está conectada. */
+  googleEmail?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -135,6 +145,8 @@ const userSchema = new Schema<IUser>(
     deactivated_by: { type: Schema.Types.ObjectId, ref: 'User' },
     purgedAt: { type: Date },
     tokenVersion: { type: Number, default: 0 },
+    googleSub: { type: String, select: false, unique: true, sparse: true },
+    googleEmail: { type: String, lowercase: true, trim: true },
   },
   { timestamps: true },
 );

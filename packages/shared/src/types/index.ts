@@ -47,6 +47,20 @@ export interface AuthUser {
   account_status: AccountStatus;
   /** Falta aceptar los Términos vigentes. Lo resuelve la API, la UI no lo deriva. */
   terms_pending: boolean;
+  /** Tiene contraseña. Sin ella entra sólo con Google. */
+  has_password: boolean;
+  /** Tiene una cuenta de Google conectada. */
+  google_linked: boolean;
+  /** El correo de la cuenta de Google conectada, para mostrarlo. */
+  google_email?: string;
+  /** Puede conectar Google: la entrega está prendida y no es admin. */
+  google_available: boolean;
+}
+
+/** Detalle de `GOOGLE_SIGNUP_REQUIRED`: con qué datos de Google se crearía la cuenta. */
+export interface GoogleSignupDetails {
+  email: string;
+  name: string;
 }
 
 export interface LoginCredentials {

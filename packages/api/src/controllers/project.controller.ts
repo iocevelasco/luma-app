@@ -28,6 +28,8 @@ import { syncStripeExtras } from '../services/stripe.service.js';
 import { AppError, forbidden, isAppError } from '../utils/errors.js';
 import { EmailService } from '../services/email.service.js';
 import {
+  ACTIVATED_ACCOUNT_FILTER,
+  accountIsActivated,
   isLinkedToAnotherInviter,
   LINK_HELD_BY_ANOTHER_MESSAGE,
   recordActivationDelivery,
@@ -277,7 +279,7 @@ async function listProjectMembers(
     (
       await User.find({
         _id: { $in: [project.createdBy, ...rows.map((row) => row.user._id)] },
-        password: { $exists: true },
+        ...ACTIVATED_ACCOUNT_FILTER,
       }).select('_id')
     ).map((found) => String(found._id)),
   );
@@ -447,7 +449,7 @@ export async function inviteProjectMember(req: Request, res: Response, next: Nex
 
     // Una cuenta que esta invitación acaba de crear no tiene contraseña todavía.
     const hasPassword =
-      !activation && Boolean(await User.exists({ _id: user._id, password: { $exists: true } }));
+      !activation && (await accountIsActivated(user._id));
 
     const member: ProjectMemberSummary = {
       id: String(membership._id),
@@ -522,9 +524,7 @@ export async function updateProjectMemberRole(req: Request, res: Response, next:
     const user = await User.findById(membership.user).select(
       'email name email_verified account_status',
     );
-    const hasPassword = Boolean(
-      await User.exists({ _id: membership.user, password: { $exists: true } }),
-    );
+    const hasPassword = await accountIsActivated(membership.user);
 
     const member: ProjectMemberSummary = {
       id: String(membership._id),

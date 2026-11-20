@@ -1,6 +1,28 @@
 import { User } from '../models/User.js';
 
 /**
+ * "La cuenta ya está activada": tiene contraseña **o** Google conectado. Antes
+ * era sólo la contraseña, y una cuenta que entra con Google figuraba como
+ * invitada sin activar: quien la invitó podía reenviarle la invitación y, si
+ * el mail no salía, recibir el enlace y elegirle la contraseña (ADR-005 §1.10).
+ *
+ * Un solo lugar para las dos formas: en memoria (con `+password +googleSub`
+ * seleccionados) y como filtro de Mongo.
+ */
+export function isAccountActivated(user: { password?: string; googleSub?: string }): boolean {
+  return Boolean(user.password) || Boolean(user.googleSub);
+}
+
+export const ACTIVATED_ACCOUNT_FILTER = {
+  $or: [{ password: { $exists: true } }, { googleSub: { $exists: true } }],
+};
+
+/** ¿Esta cuenta ya está activada? Sin traer el hash a memoria. */
+export async function accountIsActivated(userId: unknown): Promise<boolean> {
+  return Boolean(await User.exists({ _id: userId, ...ACTIVATED_ACCOUNT_FILTER }));
+}
+
+/**
  * Mensaje cuando otra persona tiene (o usó) el enlace de activación de la
  * cuenta. No dice quién ni por qué más de lo necesario: esto lo ve cualquiera
  * que invite, no sólo quien tuvo el enlace.

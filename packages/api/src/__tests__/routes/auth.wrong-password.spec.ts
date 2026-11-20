@@ -139,13 +139,13 @@ describe('POST /api/auth/change-password', () => {
     expect(await bcrypt.compare('Una-clave-nueva-2', user.password!)).toBe(true);
   });
 
-  it('una cuenta sin contraseña sigue recibiendo el 404 de siempre', async () => {
+  it('una cuenta sin contraseña (entra con Google) recibe PASSWORD_NOT_SET, no un 404', async () => {
     accountIs(aUser({ password: undefined }));
 
     const { status, body } = await changePassword(WRONG_PASSWORD);
 
-    expect(status).toBe(404);
-    expect(body.code).toBe('NOT_FOUND');
+    expect(status).toBe(409);
+    expect(body.code).toBe('PASSWORD_NOT_SET');
   });
 
   it('sin sesión sigue siendo un 401: ése sí le dice al cliente que no hay sesión', async () => {
@@ -231,12 +231,12 @@ describe('POST /api/auth/change-email', () => {
     );
   });
 
-  it('una cuenta sin contraseña sigue recibiendo el 404 de siempre', async () => {
+  it('una cuenta sin contraseña (entra con Google) recibe PASSWORD_NOT_SET, no un 404', async () => {
     accountIs(aUser({ password: undefined }));
 
     const { status, body } = await changeEmail(WRONG_PASSWORD);
 
-    expect(status).toBe(404);
-    expect(body.code).toBe('NOT_FOUND');
+    expect(status).toBe(409);
+    expect(body.code).toBe('PASSWORD_NOT_SET');
   });
 });

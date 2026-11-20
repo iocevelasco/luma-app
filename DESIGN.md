@@ -426,6 +426,14 @@ para una etiqueta que no es un estado.
 `primary-pressed → primary → primary-soft`, ancho completo, arriba del footer.
 En el panel **no va**: una app de trabajo no se firma en cada pantalla.
 
+**Botón de Google (excepción)** — en `/login`, `/register`, `/activate` y la
+tarjeta de Google de la cuenta, el botón de "Entrar con Google" lo dibuja Google
+(`renderButton`, un iframe): no acepta nuestras clases, ni `Button`, ni el verde.
+Es el único botón de la app que no es nuestro, y por eso tiene reglas fijas: tema
+`outline`, forma rectangular, alto `large`, ancho de la columna (200 a 400 px) y
+el texto fijo de Google en el idioma de la app. Va en `GoogleSignInButton`; no se
+imita con un `Button` propio, porque el ID token sólo sale del de Google.
+
 ## Qué no hacer
 
 - No hacer un botón píldora ni con borde de contorno **en el panel**: el botón es

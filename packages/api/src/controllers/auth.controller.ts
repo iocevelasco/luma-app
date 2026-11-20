@@ -11,60 +11,28 @@ import {
   resetPasswordRequestSchema,
   setPasswordRequestSchema,
   acceptTermsRequestSchema,
-  hasAcceptedCurrentTerms,
-  type AuthUser,
 } from '@luma/shared';
-import { isProduction, REQUIRE_EMAIL_VERIFICATION } from '../config/app.config.js';
-import { User, type IUser } from '../models/User.js';
-import { generateTokens } from '../services/auth.service.js';
+import { REQUIRE_EMAIL_VERIFICATION } from '../config/app.config.js';
+import { User } from '../models/User.js';
 import { forgetTokenVersion, tokenVersionOf } from '../services/session.service.js';
 import { EmailService } from '../services/email.service.js';
 import { JWTService } from '../services/jwt.service.js';
 import { termsAcceptanceFields } from '../services/terms.service.js';
-import { notFound, termsRequired, wrongPassword } from '../utils/errors.js';
-import { createPersonalOrganization } from '../services/organization.service.js';
-import { startTrialFor } from '../services/subscription.service.js';
+import { notFound, passwordNotSet, termsRequired, wrongPassword } from '../utils/errors.js';
 import { verifyRecaptchaFromRequest } from '../services/recaptcha.service.js';
+import { isAccountActivated } from '../services/activation.service.js';
+import { createAccount } from '../services/signup.service.js';
+import {
+  AUTH_USER_FIELDS,
+  clearRefreshTokenCookie,
+  issueSession,
+  toAuthUser,
+} from '../services/session-issue.service.js';
 
 const BCRYPT_ROUNDS = 10;
-const REFRESH_TOKEN_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000; // 90 días
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hora
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 horas
 const ACTIVATION_TOKEN_TTL_MS = 72 * 60 * 60 * 1000; // 72 horas
-
-/**
- * El refresh token vive en una cookie httpOnly y nunca pasa por JavaScript.
- * `sameSite: 'lax'` alcanza porque la SPA y la API comparten origen en producción.
- */
-function setRefreshTokenCookie(res: Response, token: string): void {
-  res.cookie('refresh_token', token, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
-  });
-}
-
-function clearRefreshTokenCookie(res: Response): void {
-  res.clearCookie('refresh_token', {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-  });
-}
-
-function toAuthUser(user: IUser): AuthUser {
-  return {
-    id: String(user._id),
-    email: user.email,
-    name: user.name || user.email.split('@')[0],
-    picture: user.picture,
-    role: user.role,
-    email_verified: user.email_verified,
-    account_status: user.account_status,
-    terms_pending: !hasAcceptedCurrentTerms(user.termsVersion),
-  };
-}
 
 function randomToken(): string {
   return crypto.randomBytes(32).toString('hex');
@@ -87,7 +55,7 @@ export async function login(req: Request, res: Response) {
     }
 
     const { email, password } = parsed.data;
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select(AUTH_USER_FIELDS);
 
     // Mismo mensaje para usuario inexistente y contraseña incorrecta: distinguirlos
     // convierte al login en un oráculo de qué direcciones están registradas.
@@ -101,13 +69,7 @@ export async function login(req: Request, res: Response) {
       return res.status(403).json({ success: false, error: 'La cuenta está deshabilitada' });
     }
 
-    const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
-    setRefreshTokenCookie(res, tokens.refreshToken);
-
-    return res.json({
-      success: true,
-      data: { accessToken: tokens.accessToken, user: toAuthUser(user) },
-    });
+    return res.json({ success: true, data: issueSession(res, user) });
   } catch (error) {
     console.error('❌ [AUTH] login:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
@@ -135,25 +97,21 @@ export async function register(req: Request, res: Response) {
     }
 
     const verificationToken = randomToken();
-    const user = await User.create({
-      email,
-      name,
-      password: await bcrypt.hash(password, BCRYPT_ROUNDS),
-      role: 'user',
-      email_verified: !REQUIRE_EMAIL_VERIFICATION,
-      ...termsAcceptanceFields(req),
-      ...(REQUIRE_EMAIL_VERIFICATION && {
-        emailVerificationToken: verificationToken,
-        emailVerificationTokenExpires: new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS),
-      }),
-    });
-
-    // Toda cuenta nueva tiene su empresa personal desde el arranque: así nunca
-    // hace falta un paso aparte de "creá tu empresa" antes de la primera obra.
-    const organization = await createPersonalOrganization(String(user._id), name);
-    // Quien se registra solo arranca su mes gratis ya. Los invitados no pasan
-    // por acá: su prueba arranca con su primera obra (ver createProject).
-    await startTrialFor(String(organization._id), String(user._id));
+    const user = await createAccount(
+      {
+        email,
+        name,
+        passwordHash: await bcrypt.hash(password, BCRYPT_ROUNDS),
+        emailVerified: !REQUIRE_EMAIL_VERIFICATION,
+        ...(REQUIRE_EMAIL_VERIFICATION && {
+          verification: {
+            token: verificationToken,
+            expires: new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS),
+          },
+        }),
+      },
+      req,
+    );
 
     if (REQUIRE_EMAIL_VERIFICATION) {
       await EmailService.sendEmailVerificationEmail(email, verificationToken, name);
@@ -180,7 +138,7 @@ export async function refreshToken(req: Request, res: Response) {
     }
 
     const payload = JWTService.verifyRefreshToken(token);
-    const user = await User.findById(payload.sub);
+    const user = await User.findById(payload.sub).select(AUTH_USER_FIELDS);
 
     if (!user || !user.enabled || user.account_status === 'inactive') {
       clearRefreshTokenCookie(res);
@@ -196,13 +154,7 @@ export async function refreshToken(req: Request, res: Response) {
         .json({ success: false, error: 'Tu sesión se cerró. Vuelve a entrar.', code: 'UNAUTHENTICATED' });
     }
 
-    const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
-    setRefreshTokenCookie(res, tokens.refreshToken);
-
-    return res.json({
-      success: true,
-      data: { accessToken: tokens.accessToken, user: toAuthUser(user) },
-    });
+    return res.json({ success: true, data: issueSession(res, user) });
   } catch (error) {
     clearRefreshTokenCookie(res);
     return res.status(401).json({ success: false, error: errMsg(error) });
@@ -216,7 +168,7 @@ export async function logout(_req: Request, res: Response) {
 
 export async function getCurrentUser(req: Request, res: Response) {
   try {
-    const user = await User.findById(req.user?.sub);
+    const user = await User.findById(req.user?.sub).select(AUTH_USER_FIELDS);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
     }
@@ -238,7 +190,7 @@ export async function acceptTerms(req: Request, res: Response, next: NextFunctio
 
     const user = await User.findByIdAndUpdate(req.user?.sub, termsAcceptanceFields(req), {
       new: true,
-    });
+    }).select(AUTH_USER_FIELDS);
     if (!user) {
       throw notFound('No encontramos tu cuenta.');
     }
@@ -306,6 +258,10 @@ export async function resetPassword(req: Request, res: Response) {
     // entró con la contraseña vieja, o con la que eligió quien tuvo un enlace
     // en mano, sale ahora y no cuando venza su refresh de 90 días.
     user.tokenVersion = (user.tokenVersion ?? 0) + 1;
+    // Y desconecta Google (ADR-005 §1.14): si alguien conectó su Google con una
+    // contraseña robada, recuperarla tiene que sacarlo también por esa puerta.
+    user.googleSub = undefined;
+    user.googleEmail = undefined;
     await user.save();
     forgetTokenVersion(String(user._id));
 
@@ -329,9 +285,10 @@ export async function setPassword(req: Request, res: Response) {
     const user = await User.findOne({
       emailVerificationToken: parsed.data.token,
       emailVerificationTokenExpires: { $gt: new Date() },
-    }).select('+emailVerificationToken +emailVerificationTokenExpires');
+    }).select('+emailVerificationToken +emailVerificationTokenExpires +googleSub');
 
-    if (!user) {
+    // Una cuenta con Google ya está activada: su enlace no elige contraseña.
+    if (!user || user.googleSub) {
       return res.status(400).json({ success: false, error: 'El enlace es inválido o venció' });
     }
 
@@ -351,16 +308,35 @@ export async function setPassword(req: Request, res: Response) {
       user.email_verified = true;
       user.claimedViaLinkBy = undefined;
     }
-    await user.save();
 
-    const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
-    setRefreshTokenCookie(res, tokens.refreshToken);
+    // Se escribe condicionado a que siga sin Google, en la misma operación: si
+    // entre la lectura y esta escritura la cuenta se activó con Google, este
+    // enlace ya no le elige la contraseña (ADR-005 §1.10).
+    const { matchedCount } = await User.updateOne(
+      { _id: user._id, emailVerificationToken: parsed.data.token, googleSub: { $exists: false } },
+      {
+        $set: {
+          password: user.password,
+          email_verified: user.email_verified,
+          termsVersion: user.termsVersion,
+          termsAcceptedAt: user.termsAcceptedAt,
+          termsAcceptedIp: user.termsAcceptedIp,
+          termsAcceptedUserAgent: user.termsAcceptedUserAgent,
+          ...(user.claimedViaLinkBy && { claimedViaLinkBy: user.claimedViaLinkBy }),
+        },
+        $unset: {
+          emailVerificationToken: '',
+          emailVerificationTokenExpires: '',
+          activationLinkHeldBy: '',
+          ...(!user.claimedViaLinkBy && { claimedViaLinkBy: '' }),
+        },
+      },
+    );
+    if (matchedCount === 0) {
+      return res.status(400).json({ success: false, error: 'El enlace es inválido o venció' });
+    }
 
-    return res.json({
-      success: true,
-      message: 'Cuenta activada',
-      data: { accessToken: tokens.accessToken, user: toAuthUser(user) },
-    });
+    return res.json({ success: true, message: 'Cuenta activada', data: issueSession(res, user) });
   } catch (error) {
     console.error('❌ [AUTH] setPassword:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });
@@ -405,7 +381,7 @@ export async function resendVerification(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: 'Email inválido' });
     }
 
-    const user = await User.findOne({ email: parsed.data.email }).select('+password');
+    const user = await User.findOne({ email: parsed.data.email }).select('+password +googleSub');
 
     // Una cuenta sin contraseña la creó una invitación: lo que le falta es
     // elegirla, no confirmar el mail. Mandarle el de verificación la dejaba
@@ -415,7 +391,8 @@ export async function resendVerification(req: Request, res: Response) {
     // Una cuenta atada a un enlace en mano (`claimedViaLinkBy`) tiene
     // contraseña pero no dueño probado: para ella, "confirmar el correo" no
     // alcanza, tiene que elegir una contraseña desde la casilla. Va por activación.
-    const needsActivation = !user?.password || Boolean(user?.claimedViaLinkBy);
+    // Una cuenta que entra con Google ya está activada aunque no tenga contraseña.
+    const needsActivation = (user && !isAccountActivated(user)) || Boolean(user?.claimedViaLinkBy);
 
     if (user && (!user.email_verified || needsActivation)) {
       const token = randomToken();
@@ -458,9 +435,10 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
     }
 
     const user = await User.findById(req.user?.sub).select('+password');
-    if (!user?.password) {
-      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
-    }
+    if (!user) throw notFound('No encontramos tu cuenta.');
+    // Entra sólo con Google: no hay contraseña actual que pedir. La crea por
+    // «Olvidé mi contraseña», que prueba la casilla.
+    if (!user.password) throw passwordNotSet();
 
     if (!(await bcrypt.compare(parsed.data.currentPassword, user.password))) {
       throw wrongPassword();
@@ -485,8 +463,12 @@ export async function changeEmail(req: Request, res: Response, next: NextFunctio
     }
 
     const user = await User.findById(req.user?.sub).select('+password');
-    if (!user?.password) {
-      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+    if (!user) throw notFound('No encontramos tu cuenta.');
+    // Sin contraseña no hay con qué confirmar el cambio de correo.
+    if (!user.password) {
+      throw passwordNotSet(
+        'Para cambiar el correo necesitas una contraseña. Créala con «Olvidé mi contraseña».',
+      );
     }
 
     if (!(await bcrypt.compare(parsed.data.password, user.password))) {

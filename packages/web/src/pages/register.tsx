@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { AuthHeader, AuthSplitLayout } from '@/components/auth/auth-split-layout';
+import { GoogleAuthSection } from '@/components/auth/google-auth-section';
 import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/components/auth/password-input';
 import { TermsDialog } from '@/components/legal/terms-dialog';
@@ -126,6 +127,8 @@ export function RegisterPage() {
           <Button type="submit" size="lg" className="w-full" disabled={registerUser.isPending}>
             {t('auth.register.submit')}
           </Button>
+
+          <GoogleAuthSection text="signup_with" divider />
 
           <p className="text-center text-sm text-muted-foreground">
             {t('auth.register.hasAccount')}{' '}

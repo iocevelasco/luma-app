@@ -153,7 +153,13 @@ app.use(
               'https://apis.google.com/js/api.js',
               'https://apis.google.com/_/scs/',
             ],
-            styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+            // El botón de Google (ADR-005 §1) trae su hoja de estilos.
+            styleSrc: [
+              "'self'",
+              "'unsafe-inline'",
+              'https://fonts.googleapis.com',
+              'https://accounts.google.com/gsi/style',
+            ],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
             imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://*.stripe.com'],
             frameSrc: [
