@@ -17,6 +17,12 @@ export interface JWTPayload {
   roles: UserRole[];
   /** Sólo presente en el refresh token. */
   type?: 'refresh';
+  /**
+   * `User.tokenVersion` al emitir el token. Si la cuenta la subió después
+   * (recuperó la contraseña), el token ya no vale. Ausente en los tokens
+   * emitidos antes de que existiera: cuenta como 0.
+   */
+  tv?: number;
   iat?: number;
   exp?: number;
 }

@@ -72,6 +72,15 @@ export interface IUser extends Document {
    */
   purgedAt?: Date;
 
+  /**
+   * Versión de las sesiones. Cada token lleva la que había al emitirlo
+   * (`tv`); subirla cierra todas las sesiones abiertas de la cuenta, en todos
+   * los dispositivos. La suben `resetPassword` y `seed-admin`; quien la sube
+   * desde la API llama después a `forgetTokenVersion` (`session.service.ts`).
+   * No es un dato personal: un contador.
+   */
+  tokenVersion: number;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -125,6 +134,7 @@ const userSchema = new Schema<IUser>(
     deactivated_at: { type: Date },
     deactivated_by: { type: Schema.Types.ObjectId, ref: 'User' },
     purgedAt: { type: Date },
+    tokenVersion: { type: Number, default: 0 },
   },
   { timestamps: true },
 );
