@@ -95,6 +95,11 @@ export type GoogleAuthRequestInput = z.infer<typeof googleAuthRequestSchema>;
 export type GoogleLinkRequestInput = z.infer<typeof googleLinkRequestSchema>;
 export type GoogleUnlinkRequestInput = z.infer<typeof googleUnlinkRequestSchema>;
 
+/** Generar el feed de calendario: en qué idioma van los textos fijos. */
+export const createCalendarFeedSchema = z.object({
+  language: z.enum(['es-ES', 'es-AR', 'pt']).default('es-ES'),
+});
+
 export const resendVerificationSchema = z.object({
   email: emailSchema,
 });

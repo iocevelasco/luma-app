@@ -91,6 +91,14 @@ export interface IUser extends Document {
   /** El correo de esa cuenta de Google, sólo para mostrar con cuál está conectada. */
   googleEmail?: string;
 
+  /**
+   * SHA-256 del token del feed de calendario (ADR-005 §3). El token se muestra
+   * una sola vez; con el hash se busca el feed. Se borra al dar de baja la
+   * cuenta, no sólo al purgarla.
+   */
+  calendarFeedTokenHash?: string;
+  calendarFeedCreatedAt?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -147,6 +155,8 @@ const userSchema = new Schema<IUser>(
     tokenVersion: { type: Number, default: 0 },
     googleSub: { type: String, select: false, unique: true, sparse: true },
     googleEmail: { type: String, lowercase: true, trim: true },
+    calendarFeedTokenHash: { type: String, select: false, unique: true, sparse: true },
+    calendarFeedCreatedAt: { type: Date },
   },
   { timestamps: true },
 );
@@ -161,6 +171,9 @@ const userSchema = new Schema<IUser>(
 userSchema.pre('save', function stampDeactivation(next) {
   if (this.isModified('account_status') && this.account_status === 'inactive') {
     this.deactivated_at ??= new Date();
+    // Dar de baja apaga el calendario: la URL no puede seguir leyendo obras.
+    this.calendarFeedTokenHash = undefined;
+    this.calendarFeedCreatedAt = undefined;
   }
   next();
 });
@@ -173,6 +186,18 @@ userSchema.pre(['updateOne', 'updateMany', 'findOneAndUpdate'], function stampDe
   const status = update?.$set?.account_status ?? update?.account_status;
   if (status === 'inactive' && update?.$set?.deactivated_at === undefined) {
     this.set({ deactivated_at: new Date() });
+  }
+  if (status === 'inactive') {
+    // Dar de baja apaga el calendario: la URL no puede seguir leyendo obras.
+    const current = this.getUpdate() as Record<string, unknown>;
+    this.setUpdate({
+      ...current,
+      $unset: {
+        ...((current.$unset as Record<string, unknown>) ?? {}),
+        calendarFeedTokenHash: '',
+        calendarFeedCreatedAt: '',
+      },
+    });
   }
   next();
 });

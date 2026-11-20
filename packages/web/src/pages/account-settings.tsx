@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CalendarFeedCard } from '@/components/account/calendar-feed-card';
 import { GoogleAccountCard } from '@/components/account/google-account-card';
 import { FormShell } from '@/components/common/form-shell';
 import { LanguageSelector } from '@/components/language-selector';
@@ -184,6 +185,8 @@ export function AccountSettingsPage() {
       </Card>
 
       {user && <GoogleAccountCard user={user} />}
+
+      <CalendarFeedCard />
     </div>
   );
 }

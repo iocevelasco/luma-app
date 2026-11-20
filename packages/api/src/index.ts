@@ -24,6 +24,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { normalizeErrors } from './middleware/normalizeErrors.js';
 import { CACHE_REVALIDATE, setSpaCacheHeaders } from './middleware/spaCache.js';
 import { authRouter } from './routes/auth.js';
+import { calendarRouter } from './routes/calendar.js';
 import { organizationRouter } from './routes/organization.js';
 import { feedbackRouter } from './routes/feedback.js';
 import { notificationRouter } from './routes/notification.js';
@@ -251,6 +252,7 @@ app.use('/api/feedback', feedbackRouter);
 app.use('/api/subscription', subscriptionRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/public', publicRouter);
+app.use('/api/calendar', calendarRouter);
 app.use('/api/chat', chatRouter);
 
 if (isProduction) {

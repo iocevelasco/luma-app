@@ -486,6 +486,31 @@
       "noPasswordBody": "Você entra com o Google e sua conta não tem senha. Vamos enviar um link por e-mail para criá-la. Ao criá-la, o Google é desconectado e você terá que conectá-lo de novo.",
       "createPassword": "Criar senha",
       "emailNeedsPassword": "Para mudar o e-mail você precisa de uma senha. Crie-a no cartão de senha."
+    },
+    "calendarFeed": {
+      "title": "Calendário",
+      "description": "Suas atividades, reuniões e vencimentos de parcelas no Google Agenda, Apple ou Outlook.",
+      "generate": "Criar link do calendário",
+      "showOnce": "Este é o seu link. Copie agora: por segurança não vamos mostrá-lo de novo.",
+      "urlLabel": "Link do calendário",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "addToGoogle": "Adicionar ao Google Agenda",
+      "openCalendarApp": "Abrir no meu app de calendário",
+      "activeSince": "Você tem um calendário ativo desde {{date}}. Se perdeu o link, crie um novo.",
+      "caveats": [
+        "Quem tiver o link pode ver seu calendário: não o compartilhe.",
+        "Os calendários externos se atualizam a cada várias horas.",
+        "Desligá-lo não apaga o que seu calendário já copiou.",
+        "Mostra nomes e datas, nunca valores."
+      ],
+      "regenerate": "Criar um link novo",
+      "disable": "Desligar o calendário",
+      "regenerateTitle": "Criar um link novo?",
+      "regenerateBody": "O link anterior vai parar de funcionar. Você terá que adicionar o calendário de novo onde o usava.",
+      "disableTitle": "Desligar o calendário?",
+      "disableBody": "O link vai parar de funcionar. O que seu calendário já copiou não é apagado: remova-o por lá.",
+      "disabled": "Calendário desligado."
     }
   },
   "routeError": {
@@ -2553,6 +2578,7 @@
           "paragraphs": [
             "Com as pessoas da sua obra, conforme o papel de cada uma (gerente, supervisor, cliente): cada pessoa vê apenas o que o seu papel permite, e uma obra nunca fica visível para quem não foi convidado.",
             "Com fornecedores que nos ajudam a operar o serviço, e apenas o necessário para a função deles: a hospedagem dos servidores, o envio de e-mails (Resend), a cobrança com cartão (Stripe), a verificação contra abusos no cadastro (Google reCAPTCHA), o Google quando você escolhe entrar com sua conta Google, o Google Maps quando você busca o endereço de uma obra ou abre o mapa dela (recebe o que você digita e seu endereço IP), o armazenamento de arquivos, o Google Drive quando você escolhe importar ou salvar arquivos com ele e, se você usar o Consultor IA, o fornecedor do modelo de inteligência artificial (Anthropic), para quem enviamos o necessário para responder à sua consulta.",
+            "Se você ativa o calendário, quem tiver o link, e o serviço de calendário onde você o adicionar, vê os nomes das suas obras, atividades e reuniões, e as datas de vencimento das parcelas, sem valores.",
             "Com autoridades competentes, somente quando uma ordem ou norma válida nos exigir."
           ]
         },

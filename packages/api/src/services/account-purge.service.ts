@@ -288,6 +288,8 @@ export async function purgeAccount(
         // `sub` seguiría atado a esta cuenta purgada.
         googleSub: '',
         googleEmail: '',
+        calendarFeedTokenHash: '',
+        calendarFeedCreatedAt: '',
       },
     },
   );
