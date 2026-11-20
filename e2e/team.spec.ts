@@ -5,6 +5,7 @@ import { loginWith, registerWith } from './helpers/auth';
 import { pickActivityResponsible, pickActivitySpecialty } from './helpers/activity';
 import { addCrewMember, addTask, boardColumn, moveTask, openBoard, taskCard } from './helpers/crew';
 import { requiresApi } from './helpers/api';
+import { E2E_LOCALE } from './helpers/locale';
 
 /**
  * Flujo del Supervisor de obra: se invita **a una obra puntual**, no a la
@@ -37,7 +38,7 @@ test.describe('Supervisor de obra', () => {
     page,
     browser,
   }) => {
-    const supervisorContext = await browser.newContext();
+    const supervisorContext = await browser.newContext({ locale: E2E_LOCALE });
     const supervisorPage = await supervisorContext.newPage();
     await registerWith(supervisorPage, SUPERVISOR_NAME, SUPERVISOR_EMAIL, PASSWORD);
 
@@ -105,6 +106,8 @@ test.describe('Supervisor de obra', () => {
 
     // Suma personal a SU obra —es quien está cuando llega alguien nuevo—, pero
     // no administra el roster: ni sacar, ni dar de baja, ni traer de la Empresa.
+    // expectSectionHidden acaba de abrir el grupo Personal: se vuelve a la obra para ver su resumen.
+    await supervisorPage.goto(projectUrl);
     await expect(supervisorPage.getByText(/tareas de la semana/i)).toBeVisible();
     await supervisorPage.goto(`${projectUrl}/personal`);
     const worker = `Obrero del supervisor ${RUN_ID}`;
