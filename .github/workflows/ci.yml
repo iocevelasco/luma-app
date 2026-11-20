@@ -33,7 +33,10 @@ jobs:
       - run: pnpm build
 
   e2e:
-    runs-on: ubuntu-latest
+    # Fijo y no `ubuntu-latest`: cuando GitHub movió `latest` a Ubuntu 26.04,
+    # `playwright install --with-deps chromium` dejó de andar (Playwright 1.59 no lo
+    # soporta). Se sube cuando Playwright soporte la versión nueva.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 

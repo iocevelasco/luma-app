@@ -25,6 +25,12 @@ vi.mock('../../services/jwt.service.js', () => ({
     verifyAccessToken: vi.fn(() => ({ sub: 'user-1', email: 'ana@estudio.com', roles: ['user'] })),
   },
 }));
+// La versión de sesión (tokenVersion) no es lo que se prueba acá: siempre vigente.
+vi.mock('../../services/session.service.js', () => ({
+  currentTokenVersion: vi.fn().mockResolvedValue(0),
+  tokenVersionOf: vi.fn(() => 0),
+  forgetTokenVersion: vi.fn(),
+}));
 // El router de auth importa todos los controllers, y algunos cargan el storage.
 vi.mock('../../services/storage.service.js', () => ({
   signObjectUrl: vi.fn(),

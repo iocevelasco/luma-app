@@ -20,6 +20,8 @@ import {
   FileUp,
   Folder,
   FolderPlus,
+  HardDriveDownload,
+  HardDriveUpload,
   LayoutGrid,
   List,
   Pencil,
@@ -65,6 +67,9 @@ const ICONS: Record<string, ComponentType<{ size?: number; strokeWidth?: number 
   'mdi-folder-plus-outline': FolderPlus,
   'mdi-file-plus-outline': FilePlus,
   'mdi-file-upload-outline': FileUp,
+  // Propios: importar y exportar con Google Drive (`document-file-manager.tsx`).
+  'luma-drive-import': HardDriveDownload,
+  'luma-drive-export': HardDriveUpload,
 };
 
 const STYLE_ID = 'luma-svar-icons';
