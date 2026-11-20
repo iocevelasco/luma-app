@@ -21,7 +21,7 @@ import { forgetTokenVersion, tokenVersionOf } from '../services/session.service.
 import { EmailService } from '../services/email.service.js';
 import { JWTService } from '../services/jwt.service.js';
 import { termsAcceptanceFields } from '../services/terms.service.js';
-import { notFound, termsRequired } from '../utils/errors.js';
+import { notFound, termsRequired, wrongPassword } from '../utils/errors.js';
 import { createPersonalOrganization } from '../services/organization.service.js';
 import { startTrialFor } from '../services/subscription.service.js';
 import { verifyRecaptchaFromRequest } from '../services/recaptcha.service.js';
@@ -441,7 +441,14 @@ export async function resendVerification(req: Request, res: Response) {
   }
 }
 
-export async function changePassword(req: Request, res: Response) {
+/**
+ * Cambiar la contraseña y cambiar el correo piden la contraseña de la cuenta
+ * para confirmar. Si no coincide se **lanza** `wrongPassword()` (403), nunca un
+ * 401: el cliente lee todo 401 con token como sesión vencida —renueva,
+ * reintenta y cierra la sesión—, y eso deslogueaba a quien sólo la había
+ * escrito mal.
+ */
+export async function changePassword(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = changePasswordRequestSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -456,7 +463,7 @@ export async function changePassword(req: Request, res: Response) {
     }
 
     if (!(await bcrypt.compare(parsed.data.currentPassword, user.password))) {
-      return res.status(401).json({ success: false, error: 'La contraseña actual no coincide' });
+      throw wrongPassword();
     }
 
     user.password = await bcrypt.hash(parsed.data.newPassword, BCRYPT_ROUNDS);
@@ -464,12 +471,11 @@ export async function changePassword(req: Request, res: Response) {
 
     return res.json({ success: true, message: 'Contraseña actualizada' });
   } catch (error) {
-    console.error('❌ [AUTH] changePassword:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
+    return next(error);
   }
 }
 
-export async function changeEmail(req: Request, res: Response) {
+export async function changeEmail(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = changeEmailRequestSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -484,7 +490,7 @@ export async function changeEmail(req: Request, res: Response) {
     }
 
     if (!(await bcrypt.compare(parsed.data.password, user.password))) {
-      return res.status(401).json({ success: false, error: 'La contraseña no coincide' });
+      throw wrongPassword();
     }
 
     if (await User.exists({ email: parsed.data.newEmail })) {
@@ -503,8 +509,7 @@ export async function changeEmail(req: Request, res: Response) {
 
     return res.json({ success: true, message: 'Te enviamos un correo a la nueva dirección.' });
   } catch (error) {
-    console.error('❌ [AUTH] changeEmail:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
+    return next(error);
   }
 }
 

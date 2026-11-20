@@ -47,6 +47,17 @@ export const unauthenticated = (message = 'Necesitás iniciar sesión.') =>
 export const forbidden = (message = 'Tu rol no permite esta acción.') =>
   new AppError('FORBIDDEN', message);
 
+/**
+ * Hay sesión, y la contraseña que se pidió para confirmar una acción sobre la
+ * cuenta no es la de la cuenta.
+ *
+ * No es `unauthenticated()`: el cliente lee todo 401 con token como sesión
+ * vencida y la cierra. Acá la sesión sigue valiendo — lo que falló es la
+ * confirmación, y eso se corrige escribiéndola de nuevo en el formulario.
+ */
+export const wrongPassword = (message = 'La contraseña actual no es correcta.') =>
+  new AppError('WRONG_PASSWORD', message);
+
 export const notFound = (message = 'No encontramos lo que buscabas.') =>
   new AppError('NOT_FOUND', message);
 

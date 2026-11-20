@@ -1723,6 +1723,7 @@
     "validation": "Revisa los datos: hay campos con errores.",
     "unauthenticated": "Tu sesión se ha cerrado. Vuelve a entrar.",
     "invalidCredentials": "El correo o la contraseña no son correctos.",
+    "wrongPassword": "La contraseña actual no es correcta.",
     "forbidden": "Tu rol no permite esta acción.",
     "notFound": "No hemos encontrado lo que buscabas. Puede que alguien lo haya borrado.",
     "conflict": "Eso choca con algo que ya existe.",

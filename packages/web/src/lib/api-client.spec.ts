@@ -240,4 +240,31 @@ describe('apiClient — renovación de sesión ante 401', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(onUnauthorized).not.toHaveBeenCalled();
   });
+
+  // La contraseña actual mal escrita en "Mi cuenta" llegaba como 401 y cerraba
+  // la sesión. La API ahora contesta 403 `WRONG_PASSWORD`, y esto fija la otra
+  // mitad: sólo un 401 toca la sesión.
+  it('un 403 WRONG_PASSWORD no renueva ni cierra la sesión: llega al formulario', async () => {
+    window.localStorage.setItem('auth_token', 'vigente');
+    const onUnauthorized = vi.fn();
+    apiClient.setUnauthorizedHandler(onUnauthorized);
+
+    const fetchMock = vi.fn(async () =>
+      json(403, {
+        success: false,
+        error: 'La contraseña actual no es correcta.',
+        code: 'WRONG_PASSWORD',
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      apiClient.post('/api/auth/change-password', { currentPassword: 'x', newPassword: 'y' }),
+    ).rejects.toMatchObject({ status: 403, code: 'WRONG_PASSWORD' });
+
+    // Una sola llamada: ni /auth/refresh ni reintento.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(onUnauthorized).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem('auth_token')).toBe('vigente');
+  });
 });
