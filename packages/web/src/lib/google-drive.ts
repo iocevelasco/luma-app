@@ -236,7 +236,10 @@ export function requestDriveToken(clientId: string, now = Date.now()): Promise<s
   });
 }
 
-/** Sólo para tests. */
+/**
+ * Olvida el permiso de Drive. Lo llama `clearSession` al cerrar sesión: el
+ * token es de la cuenta de Google de quien lo pidió, no de la pestaña.
+ */
 export function clearDriveToken(): void {
   cachedToken = null;
 }
