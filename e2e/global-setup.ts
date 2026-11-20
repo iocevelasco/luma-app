@@ -7,6 +7,7 @@ import {
   type FullConfig,
 } from '@playwright/test';
 import { authFile, canLogIn, e2eUsers, type E2EUser } from './helpers/users';
+import { E2E_LOCALE } from './helpers/locale';
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:6173';
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:8081';
@@ -38,7 +39,9 @@ function writeEmptyAuthState(outFile: string): void {
 }
 
 async function saveAuthState(browser: Browser, user: E2EUser): Promise<void> {
-  const context = await browser.newContext();
+  // El idioma que la app cachea (`i18nextLng`) viaja en el storageState: tiene
+  // que ser el de la suite, o cada spec que use esta sesión cambia de idioma.
+  const context = await browser.newContext({ locale: E2E_LOCALE });
   const page = await context.newPage();
   try {
     await page.goto(`${BASE_URL}/login`);

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
+import { E2E_LOCALE } from './helpers/locale';
 
 /**
  * Hitos y reuniones, de punta a punta.
@@ -59,7 +60,7 @@ test.describe('Hitos y reuniones', () => {
     page,
     browser,
   }) => {
-    const clientContext = await browser.newContext();
+    const clientContext = await browser.newContext({ locale: E2E_LOCALE });
     const clientPage = await clientContext.newPage();
     await registerWith(clientPage, CLIENT_NAME, CLIENT_EMAIL, PASSWORD);
 

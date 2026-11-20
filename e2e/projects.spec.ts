@@ -1,8 +1,9 @@
 import { createProjectViaForm } from './helpers/projects';
-import { openSection, expectSectionHidden, expectSectionVisible } from './helpers/nav';
+import { openSection, expectSectionHidden } from './helpers/nav';
 import { expect, test } from '@playwright/test';
 import { appUrl, loginWith, registerWith } from './helpers/auth';
 import { requiresApi } from './helpers/api';
+import { E2E_LOCALE } from './helpers/locale';
 
 /**
  * Estos tests registran sus propias cuentas: `storageState` se limpia por
@@ -31,7 +32,7 @@ test.describe('empresa, obra e invitación del cliente', () => {
     // El cliente ya tiene que existir en Luma para probar el camino de
     // "invitar a un email que ya tiene cuenta" — el camino de activación por
     // correo real no se cubre acá (ver plan: no hay bandeja de entrada en CI).
-    const clientContext = await browser.newContext();
+    const clientContext = await browser.newContext({ locale: E2E_LOCALE });
     const clientPage = await clientContext.newPage();
     await registerWith(clientPage, CLIENT_NAME, CLIENT_EMAIL, PASSWORD);
 
@@ -59,7 +60,7 @@ test.describe('empresa, obra e invitación del cliente', () => {
     // Primera obra, desde el estado vacío de la home: el vacío lo dice y la
     // acción es la misma de siempre, el botón de "Nueva obra".
     await page.getByTestId('nav-home').click();
-    await expect(page.getByText(/todavía no tienes obras/i)).toBeVisible();
+    await expect(page.getByText(/todavía no tenés obras/i)).toBeVisible();
     await page.getByRole('link', { name: /nueva obra/i }).click();
     await expect(page).toHaveURL(/\/admin\/proyectos\/nuevo/);
 
@@ -71,7 +72,8 @@ test.describe('empresa, obra e invitación del cliente', () => {
       currency: 'ARS',
     });
     await expect(page).toHaveURL(/\/admin\/proyectos\/[a-f0-9]+$/);
-    await expect(page.getByText(PROJECT_NAME)).toBeVisible();
+    // El paso «¡Tu obra está lista!» repite el nombre: se mira el título de la obra.
+    await expect(page.getByRole('heading', { name: PROJECT_NAME, exact: true })).toBeVisible();
 
     // Dar acceso vive en su propia pantalla: es una tarea con su momento, no
     // algo con lo que uno se tropieza mirando cómo viene la obra.
@@ -97,7 +99,11 @@ test.describe('empresa, obra e invitación del cliente', () => {
     await expectSectionHidden(clientPage, 'team');
     await expectSectionHidden(clientPage, 'expenses');
     // Pero sí ve su cronograma de pagos: es su fila de la matriz de roles.
-    await expectSectionVisible(clientPage, 'payments');
+    // Con una sola sección visible en el grupo no hay pestañas (ver project-section-tabs):
+    // se mira el grupo del riel y que lleva a Cobros.
+    await expect(clientPage.getByTestId('project-group-money')).toBeVisible();
+    await clientPage.getByTestId('project-group-money').click();
+    await expect(clientPage).toHaveURL(/\/pagos$/);
 
     // Ve las tareas de la semana —las mismas del cronograma que ya ve—, pero
     // no el Tablero ni la Jornada: quién trabaja y quién vino es interno
