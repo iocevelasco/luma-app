@@ -1,6 +1,6 @@
 # ADR-005: Integración con Google (login, Maps, Calendar, Drive)
 
-**Estado:** Aceptado (2026-11-14), las cuatro entregas. Se aceptó por primera vez el 2026-11-10; la evaluación de los agentes reabrió login y Maps, y las ocho decisiones que quedaron pendientes se cerraron el 2026-11-14 (ver "Decisiones tomadas").
+**Estado:** Aceptado (2026-11-14), las cuatro entregas. **Implementado el 2026-11-20** en los PR #83 a #87, apilados y pendientes de merge y de la prueba en stage (ver "Implementación"). Se aceptó por primera vez el 2026-11-10; la evaluación de los agentes reabrió login y Maps, y las ocho decisiones que quedaron pendientes se cerraron el 2026-11-14 (ver "Decisiones tomadas").
 **Fecha:** 2026-11-10
 **Decide:** Producto + quien mantiene `packages/api`
 
@@ -706,55 +706,134 @@ vez con `REQUIRE_EMAIL_VERIFICATION=false`. Le importa al ADR-004.
    aplicadas a este texto.
 3. [x] Cerrar las ocho decisiones que dejó la evaluación (2026-11-14);
    `GOOGLE_GCP_CLIENT_SECRET` fuera de `.env.example`.
-4. [ ] `tokenVersion` en `User`, con cierre de sesiones al recuperar la
+4. [x] `tokenVersion` en `User`, con cierre de sesiones al recuperar la
    contraseña (pieza suelta del ADR-004). Va después del arreglo de
-   `changePassword`, que toca las mismas funciones.
+   `changePassword`, que toca las mismas funciones. *#83, apilado con el
+   arreglo (#80).*
 5. [ ] Base — GCP: proyectos, pantalla de consentimiento, dominio verificado,
    cuotas por API y presupuesto con alerta.
-6. [ ] Base — API: `GOOGLE_CONFIG` con `validateConfig()`,
+6. [x] Base — API: `GOOGLE_CONFIG` con `validateConfig()`,
    `GET /api/public/config`, COOP y `Referrer-Policy` en helmet; variables en
-   Coolify.
-7. [ ] Login — `shared`: schema de `auth/google`, campos nuevos de
-   `AuthUser`, `ApiErrorCode` nuevos con su fila en `STATUS_BY_ERROR_CODE`.
-8. [ ] Login — API: `googleSub` y `googleEmail`, verificación del ID token con
+   Coolify. *Código en #84; las variables en Coolify, pendientes.*
+7. [x] Login — `shared`: schema de `auth/google`, campos nuevos de
+   `AuthUser`, `ApiErrorCode` nuevos con su fila en `STATUS_BY_ERROR_CODE`. *#85.*
+8. [x] Login — API: `googleSub` y `googleEmail`, verificación del ID token con
    tests unit, servicio de alta compartido con `register`, `issueSession`,
    activación de invitadas, helper de "cuenta activada", conectar y desvincular
    con su límite, `resetPassword` desconecta Google, `seed-admin`, correo de aviso
-   con su entrada en `email-preview.ts`, purga, CSP de login.
-9. [ ] Login — web: `QueryKeys.publicConfig`, capa 1 y capa 2 con
+   con su entrada en `email-preview.ts`, purga, CSP de login. *#85.*
+9. [x] Login — web: `QueryKeys.publicConfig`, capa 1 y capa 2 con
    `skipAuth: true`, botón de Google en `/login`, `/register` y `/activate`,
    alta con `TermsDialog` en las dos pantallas, `GOOGLE_LINK_REQUIRED` con el camino
    corto, cards de la cuenta, `KEY_BY_CODE` y `PREFER_OWN_MESSAGE`, i18n en `es`,
-   `es-ES` y `pt`, excepción en `DESIGN.md`, `pnpm bump:web minor`.
-10. [ ] Maps — `shared` y API: `placeId` opcional en `Project` y sus schemas;
-    `location` y `placeId` en `updateProjectSchema`; CSP de Maps.
-11. [ ] Maps — web: `lib/google-maps-js.ts`, autocompletado con lista propia y
+   `es-ES` y `pt`, excepción en `DESIGN.md`, `pnpm bump:web minor`. *#85.*
+10. [x] Maps — `shared` y API: `placeId` opcional en `Project` y sus schemas;
+    `location` y `placeId` en `updateProjectSchema`; CSP de Maps. *#86.*
+11. [x] Maps — web: `lib/google-places.ts` (no `google-maps-js.ts`: ver "Implementación"), autocompletado con lista propia y
     fallback a texto, formulario para editar la ubicación en la ficha, mapa
-    embebido a pedido, "Cómo llegar", i18n.
-12. [ ] Calendar — API: `calendarFeedTokenHash`, servicio "mis obras con rol y
+    embebido a pedido, "Cómo llegar", i18n. *#86.*
+12. [x] Calendar — API: `calendarFeedTokenHash`, servicio "mis obras con rol y
     capacidades", helper de audiencia, generador de ICS con tests unit, endpoint
-    público con su límite, rutas de estado, generar y apagar, purga y baja.
-13. [ ] Calendar — web: card en la pantalla de cuenta, `QueryKeys.calendarFeed`,
-    i18n.
-14. [ ] Drive — base y web: Picker API, clave y número de proyecto; importar
+    público con su límite, rutas de estado, generar y apagar, purga y baja. *#87.*
+13. [x] Calendar — web: card en la pantalla de cuenta, `QueryKeys.calendarFeed`,
+    i18n. *#87.*
+14. [x] Drive — base y web: Picker API, clave y número de proyecto; importar
     desde el menú del gestor de archivos, con filtro de tipos y tamaño y
     exportación a PDF; exportar desde el "…" de cada documento y de una
     selección, con el Picker en modo carpeta; estados, errores propios, i18n;
     CSP de Drive; el endpoint de descarga si la URL firmada no permite CORS.
-15. [ ] Política de Privacidad en cada entrega; `LEGAL_VERSION` en la de Maps.
+    *#84. No hizo falta un endpoint nuevo: exportar lee los bytes por el de
+    archivos de Documentación que ya existía.*
+15. [x] Política de Privacidad en cada entrega; `LEGAL_VERSION` en la de Maps.
+    *El texto se actualizó en #84, #85, #86 y #87. `LEGAL_VERSION` no subió en
+    ninguna: Maps carga el mapa sólo a pedido (decisión 6 de la segunda ronda).
+    Si hay asesor, conviene confirmarlo antes de mergear #86.*
 16. [ ] Probar cada entrega en stage con build de producción, incluido un iPhone.
-17. [ ] Documentar en `docs/` y actualizar CLAUDE.md (Auth y Config).
+17. [x] Documentar en `docs/` y actualizar CLAUDE.md (Auth y Config). *En
+    cada PR: `docs/DEPLOY.md`, `.env.example`, `DESIGN.md` y CLAUDE.md.*
+
+## Implementación (2026-11-20)
+
+Cada entrega es un PR contra `stage`. Están apilados porque comparten la
+configuración pública, `User` y la pantalla de cuenta: **se mergean en orden**, y
+mientras el de abajo no entre, el diff de cada uno incluye a los anteriores.
+
+| Orden | PR | Qué entra | Web |
+|---|---|---|---|
+| 1 | #80 | Contraseña actual incorrecta: 403 `WRONG_PASSWORD`, sin cerrar la sesión | — |
+| 2 | #83 | `tokenVersion`: recuperar la contraseña cierra todas las sesiones | — |
+| 3 | #84 | Base común (`GOOGLE_CONFIG`, `/api/public/config`, cabeceras, CSP) y Drive (§4) | 0.38.0 |
+| 4 | #85 | Login con Google (§1) | 0.39.0 |
+| 5 | #86 | Maps (§2) | 0.40.0 |
+| 6 | #87 | Feed de calendario (§3) | 0.41.0 |
+
+Variables: `GOOGLE_GCP_CLIENT_ID` (login y Drive), `GOOGLE_GCP_PICKER_API_KEY` y
+`GOOGLE_GCP_PROJECT_NUMBER` (Drive), `GOOGLE_GCP_MAPS_BROWSER_KEY` (Maps). Todas
+públicas; sin la suya, cada entrega queda apagada. El feed no suma variables: su
+URL sale de `PUBLIC_API_URL`, que en producción es el origen de `APP_URL`.
+
+**Desvíos respecto del texto de arriba**
+
+1. **Maps sin el SDK.** El autocompletado llama a la API REST de Places (New)
+   (`POST places.googleapis.com/v1/places:autocomplete`) desde el navegador, con
+   la clave restringida por dominio, en vez de `AutocompleteSuggestion` del SDK.
+   Es el mismo producto y el mismo precio, sin bajar el script de Maps y con un
+   solo origen nuevo en la CSP (`connect-src https://places.googleapis.com`). Por
+   eso el archivo es `lib/google-places.ts`. El mapa y "Cómo llegar" quedan como
+   se decidió.
+2. **Un código más: `PASSWORD_NOT_SET` (409).** Es lo que responden
+   `changePassword` y `changeEmail` a una cuenta que entra sólo con Google, en vez
+   del 404 de antes (§1.15). El "la contraseña no coincide" genérico de §1.16 es
+   `WRONG_PASSWORD`, que nació en #80.
+3. **`GOOGLE_LINK_REQUIRED` trae `details.reason`.** `password`: entrar con la
+   contraseña y conectar. `invited`: una invitada sin activar cuando Google no es
+   autoridad sobre el correo, que se activa desde el correo de invitación. La UI
+   elige el texto por `reason`, sin comparar el mensaje.
+4. **Status de los códigos de Google**: `GOOGLE_TOKEN_INVALID` y
+   `GOOGLE_EMAIL_NOT_VERIFIED` 400; `GOOGLE_NOT_ALLOWED` 403; los demás 409.
+   Ninguno 401, y todos van después del genérico de su status, así
+   `errorCodeForStatus` no cambia.
+5. **Alta a medias.** En vez de que el reintento repare lo que falte (§1.8),
+   `createAccount` (`signup.service.ts`, compartido con `register`) borra el
+   usuario si fallan la Empresa o la prueba. El reintento arranca limpio.
+6. **`setPassword` condicionado.** Escribe con un `updateOne` que exige
+   `googleSub` ausente (§1.10), y además rechaza de entrada un token de una
+   cuenta con Google.
+7. **El feed se apaga al dar de baja desde el modelo**: los hooks `pre('save')` y
+   `pre(update)` de `User` quitan el hash cuando la cuenta pasa a `inactive`, sea
+   cual sea el camino que la da de baja. La purga también lo quita.
+8. **Detalles del feed que el texto no fijaba**: idiomas `es-ES`, `es-AR` y `pt`
+   en `?lang=`; caché privada de 15 minutos con `ETag` y 304; límite de 30 pedidos
+   cada 15 minutos por token (por su hash), sólo en producción;
+   `X-Robots-Tag: noindex`.
+9. **Un solo cargador de scripts de Google** (`lib/google-scripts.ts`), que usan
+   el login y Drive: `gsi/client` se pide una vez aunque lo carguen los dos.
+10. **E2E**: `routing.spec.ts` responde `/api/public/config` cuando no hay API,
+    porque login y registro ahora la piden. El job de E2E en CI quedó en
+    `ubuntu-24.04`: `ubuntu-latest` pasó a 26.04 y Playwright no instala
+    Chromium ahí (#84).
+
+**Lo que falta**
+
+- Acción 5: los proyectos de GCP, la pantalla de consentimiento, la Picker API,
+  Places API (New) y Maps Embed habilitadas, las claves restringidas por dominio
+  y por API, y las cuotas.
+- Cargar las variables en Coolify y redesplegar.
+- Acción 16: probar cada entrega en stage con build de producción, incluido un
+  iPhone. Ningún flujo real de Google se probó todavía (popup del login, Picker,
+  Places, Embed, suscribirse al feed). Se probaron contra una API local con
+  credenciales falsas y las respuestas de Google simuladas.
+- Con un client id falso, el botón de `/register` mostró "Acceder con Google"
+  aunque se le pide `signup_with`: confirmarlo con el client id real.
 
 ## Visto de paso, fuera de este ADR
 
 Los agentes encontraron esto en el código actual. No depende de Google.
 
-- **Una contraseña actual mal escrita cierra la sesión.** `changePassword` y
-  `changeEmail` responden 401 (`auth.controller.ts:443-444`, `:471-472`) y el
-  cliente trata ese 401 como sesión vencida (`api-client.ts:126-147`). Leído en el
-  código, no reproducido en el navegador.
-- **Se puede entrar sin verificar el correo**, y un reset de contraseña no cierra
-  las sesiones abiertas. Le importa al ADR-004.
+- ~~**Una contraseña actual mal escrita cierra la sesión.**~~ Arreglado en #80:
+  responden 403 `WRONG_PASSWORD`.
+- **Se puede entrar sin verificar el correo.** Le importa al ADR-004. ~~Un reset
+  de contraseña no cierra las sesiones abiertas~~: lo cierra desde #83.
 - `change-password` y `change-email` no tienen límite de intentos
   (`routes/auth.ts:56-57`): con una sesión robada sirven para probar contraseñas.
 - `recaptcha.service.ts:75` loguea los primeros 10 caracteres de la clave secreta
