@@ -1,26 +1,51 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginCredentialsSchema } from '@luma/shared';
 import { ArrowRight, Building2, MailCheck } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import type { z } from 'zod';
 import { AuthHeader, AuthSplitLayout } from '@/components/auth/auth-split-layout';
+import { GoogleAuthSection } from '@/components/auth/google-auth-section';
 import { PasswordInput } from '@/components/auth/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useLogin } from '@/hooks/auth/use-auth-queries';
+import { useLinkGoogle, useLogin } from '@/hooks/auth/use-auth-queries';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { ROUTES } from '@/lib/routes';
+import { toast } from '@/lib/toast';
 
 type LoginForm = z.infer<typeof loginCredentialsSchema>;
 
 export function LoginPage() {
   const { t } = useTranslation();
   const login = useLogin();
+  const linkGoogle = useLinkGoogle();
+  // Tras un `GOOGLE_LINK_REQUIRED`: si entra ahora con su contraseña, se
+  // conecta ese Google sin pasar por la cuenta. Sólo en memoria.
+  const [pendingGoogle, setPendingGoogle] = useState<string | null>(null);
+
+  const submit = async (values: LoginForm) => {
+    if (!pendingGoogle) {
+      login.mutate(values);
+      return;
+    }
+    try {
+      await login.mutateAsync(values);
+    } catch {
+      return; // Lo muestra el banner del formulario.
+    }
+    const credential = pendingGoogle;
+    setPendingGoogle(null);
+    // La pantalla ya navegó: el aviso de una falla va por toast.
+    linkGoogle
+      .mutateAsync({ credential, password: values.password })
+      .catch((error: unknown) => toast.error(errorMessage(error, t) ?? t('errors.internal')));
+  };
 
   const {
     register,
@@ -35,7 +60,7 @@ export function LoginPage() {
       <form
         className="flex flex-col gap-4"
         noValidate
-        onSubmit={handleSubmit((values) => login.mutate(values))}
+        onSubmit={handleSubmit(submit)}
       >
         <div className="flex flex-col gap-2">
           <Label htmlFor="email">{t('common.email')}</Label>
@@ -106,6 +131,8 @@ export function LoginPage() {
         <span>{t('auth.or')}</span>
         <Separator className="flex-1" />
       </div>
+
+      <GoogleAuthSection text="signin_with" onLinkRequired={setPendingGoogle} />
 
       <div className="flex flex-col gap-3">
         <Button

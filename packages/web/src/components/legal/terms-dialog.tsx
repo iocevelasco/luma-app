@@ -1,5 +1,5 @@
 import { ShieldCheck } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
@@ -29,6 +29,11 @@ interface TermsDialogProps {
    * quien ya tiene cuenta y tiene que aceptar para seguir usando el panel.
    */
   onCancel?: () => void;
+  /**
+   * Lo que va antes del aviso: en el alta con Google, con qué correo se crea
+   * la cuenta y la salida para quien ya tiene otra.
+   */
+  intro?: ReactNode;
 }
 
 /**
@@ -43,6 +48,7 @@ export function TermsDialog({
   error,
   confirmLabel,
   onCancel,
+  intro,
 }: TermsDialogProps) {
   const { t } = useTranslation();
   const checkboxId = useId();
@@ -52,6 +58,7 @@ export function TermsDialog({
 
   const body = (
     <div className="flex flex-col gap-4">
+      {intro}
       <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
         {points.map((point) => (
           <li key={point} className="flex gap-2">

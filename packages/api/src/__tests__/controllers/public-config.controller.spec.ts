@@ -8,9 +8,11 @@ describe('publicConfigFromEnv', () => {
         CLIENT_ID: 'client.apps.googleusercontent.com',
         PICKER_API_KEY: 'browser-key',
         PROJECT_NUMBER: '1234',
+        LOGIN_ENABLED: true,
         DRIVE_ENABLED: true,
       }),
     ).toEqual({
+      googleLogin: { clientId: 'client.apps.googleusercontent.com' },
       drive: { clientId: 'client.apps.googleusercontent.com', apiKey: 'browser-key', appId: '1234' },
     });
   });
@@ -21,8 +23,20 @@ describe('publicConfigFromEnv', () => {
         CLIENT_ID: 'client',
         PICKER_API_KEY: undefined,
         PROJECT_NUMBER: '1234',
+        LOGIN_ENABLED: true,
         DRIVE_ENABLED: false,
       }).drive,
     ).toBeNull();
+  });
+
+  it('el login con Google sólo necesita el client id; sin él va en null', () => {
+    const off = publicConfigFromEnv({
+      CLIENT_ID: undefined,
+      PICKER_API_KEY: undefined,
+      PROJECT_NUMBER: undefined,
+      LOGIN_ENABLED: false,
+      DRIVE_ENABLED: false,
+    });
+    expect(off.googleLogin).toBeNull();
   });
 });

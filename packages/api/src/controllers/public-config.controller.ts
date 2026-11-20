@@ -5,6 +5,7 @@ import { GOOGLE_CONFIG } from '../config/app.config.js';
 /** Lo que la SPA necesita saber del entorno. Sin sesión: lo usan también las pantallas públicas. */
 export function publicConfigFromEnv(google = GOOGLE_CONFIG): PublicConfig {
   return {
+    googleLogin: google.LOGIN_ENABLED ? { clientId: google.CLIENT_ID! } : null,
     drive: google.DRIVE_ENABLED
       ? {
           clientId: google.CLIENT_ID!,

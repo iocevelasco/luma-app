@@ -18,7 +18,7 @@ const { refreshToken } = await import('../../controllers/auth.controller.js');
 const base = { sub: 'user-1', email: 'ana@estudio.com', roles: ['user' as const] };
 
 function account(tokenVersion?: number) {
-  vi.mocked(User.findById).mockResolvedValue({
+  const user = {
     _id: 'user-1',
     email: 'ana@estudio.com',
     name: 'Ana',
@@ -27,7 +27,8 @@ function account(tokenVersion?: number) {
     account_status: 'active',
     email_verified: true,
     tokenVersion,
-  } as never);
+  };
+  vi.mocked(User.findById).mockReturnValue({ select: vi.fn().mockResolvedValue(user) } as never);
 }
 
 async function refreshWith(token: string) {

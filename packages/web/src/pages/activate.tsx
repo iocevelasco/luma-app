@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { AuthHeader, AuthSplitLayout } from '@/components/auth/auth-split-layout';
+import { GoogleAuthSection } from '@/components/auth/google-auth-section';
 import { PasswordForm } from '@/components/auth/password-form';
 import { TermsDialog } from '@/components/legal/terms-dialog';
 import { useSetPassword } from '@/hooks/auth/use-auth-queries';
@@ -36,6 +37,8 @@ export function ActivatePage() {
             <p className="text-center text-xs text-muted-foreground">
               {t('legal.notice.body')}
             </p>
+            {/* Con un Gmail o un Workspace del mismo dominio, Google activa la cuenta sin elegir contraseña. */}
+            <GoogleAuthSection text="continue_with" divider />
             <TermsDialog
               open={chosenPassword !== null}
               onCancel={() => {

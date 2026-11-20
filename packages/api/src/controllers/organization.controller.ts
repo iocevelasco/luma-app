@@ -19,6 +19,8 @@ import {
 } from '../services/organization.service.js';
 import { EmailService } from '../services/email.service.js';
 import {
+  accountIsActivated,
+  isAccountActivated,
   isLinkedToAnotherInviter,
   LINK_HELD_BY_ANOTHER_MESSAGE,
   recordActivationDelivery,
@@ -133,12 +135,13 @@ export async function listMembers(req: Request, res: Response) {
         name: string;
         email_verified: boolean;
         password?: string;
+        googleSub?: string;
       };
-    }>('user', 'email name email_verified +password');
+    }>('user', 'email name email_verified +password +googleSub');
 
     // El hash se pide sólo para saber SI hay contraseña: no sale de acá.
     const members = memberRows.map((row) =>
-      toMemberSummary(row, row.user, Boolean(row.user.password)),
+      toMemberSummary(row, row.user, isAccountActivated(row.user)),
     );
 
     return res.json({ success: true, data: { members } });
@@ -381,9 +384,9 @@ export async function resendMemberInvitation(req: Request, res: Response) {
     if (!user) {
       return res.status(404).json({ success: false, error: 'No encontramos a esa persona' });
     }
-    // "Ya activó" es tener contraseña, no sólo haber verificado el correo: hay
-    // cuentas verificadas que nunca eligieron una y quedaban sin salida.
-    const hasPassword = Boolean(await User.exists({ _id: user._id, password: { $exists: true } }));
+    // "Ya activó" es tener contraseña o Google, no sólo haber verificado el
+    // correo: hay cuentas verificadas que nunca eligieron una y quedaban sin salida.
+    const hasPassword = await accountIsActivated(user._id);
     if (user.email_verified && hasPassword) {
       return res
         .status(409)

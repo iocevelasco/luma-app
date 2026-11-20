@@ -120,7 +120,8 @@ export const EMAIL_CONFIG = {
  * SPA por `GET /api/public/config`. La protección de las claves es la que se les
  * pone en la consola de Google (dominios y cuota), no el secreto.
  *
- * Drive necesita las tres; sin alguna, no se ofrece y la app sigue andando.
+ * El login necesita sólo el client id; Drive, las tres. Sin lo suyo, cada uno
+ * no se ofrece y la app sigue andando.
  */
 const googleClientId = process.env.GOOGLE_GCP_CLIENT_ID?.trim() || undefined;
 const googlePickerKey = process.env.GOOGLE_GCP_PICKER_API_KEY?.trim() || undefined;
@@ -129,6 +130,8 @@ export const GOOGLE_CONFIG = {
   CLIENT_ID: googleClientId,
   PICKER_API_KEY: googlePickerKey,
   PROJECT_NUMBER: googleProjectNumber,
+  /** Entrar con Google sólo necesita el client id: el ID token no usa secreto. */
+  LOGIN_ENABLED: Boolean(googleClientId),
   DRIVE_ENABLED: Boolean(googleClientId && googlePickerKey && googleProjectNumber),
 } as const;
 
@@ -399,6 +402,9 @@ export function validateConfig(): void {
   }
   if (!ANTHROPIC_CONFIG.ENABLED) {
     console.warn('⚠️  [CONFIG] Sin ANTHROPIC_API_KEY: el Consultor IA queda deshabilitado.');
+  }
+  if (!GOOGLE_CONFIG.LOGIN_ENABLED) {
+    console.warn('⚠️  [CONFIG] Entrar con Google no se ofrece, falta: GOOGLE_GCP_CLIENT_ID.');
   }
   if (!GOOGLE_CONFIG.DRIVE_ENABLED) {
     console.warn(`⚠️  [CONFIG] Google Drive no se ofrece, falta: ${missingDriveEnv().join(', ')}.`);

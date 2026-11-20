@@ -25,6 +25,12 @@ vi.mock('../../services/jwt.service.js', () => ({
     verifyAccessToken: vi.fn(() => ({ sub: 'user-1', email: 'ana@estudio.com', roles: ['user'] })),
   },
 }));
+// La versión de sesión (tokenVersion) no es lo que se prueba acá: siempre vigente.
+vi.mock('../../services/session.service.js', () => ({
+  currentTokenVersion: vi.fn().mockResolvedValue(0),
+  tokenVersionOf: vi.fn(() => 0),
+  forgetTokenVersion: vi.fn(),
+}));
 // El router de auth importa todos los controllers, y algunos cargan el storage.
 vi.mock('../../services/storage.service.js', () => ({
   signObjectUrl: vi.fn(),
@@ -133,13 +139,13 @@ describe('POST /api/auth/change-password', () => {
     expect(await bcrypt.compare('Una-clave-nueva-2', user.password!)).toBe(true);
   });
 
-  it('una cuenta sin contraseña sigue recibiendo el 404 de siempre', async () => {
+  it('una cuenta sin contraseña (entra con Google) recibe PASSWORD_NOT_SET, no un 404', async () => {
     accountIs(aUser({ password: undefined }));
 
     const { status, body } = await changePassword(WRONG_PASSWORD);
 
-    expect(status).toBe(404);
-    expect(body.code).toBe('NOT_FOUND');
+    expect(status).toBe(409);
+    expect(body.code).toBe('PASSWORD_NOT_SET');
   });
 
   it('sin sesión sigue siendo un 401: ése sí le dice al cliente que no hay sesión', async () => {
@@ -225,12 +231,12 @@ describe('POST /api/auth/change-email', () => {
     );
   });
 
-  it('una cuenta sin contraseña sigue recibiendo el 404 de siempre', async () => {
+  it('una cuenta sin contraseña (entra con Google) recibe PASSWORD_NOT_SET, no un 404', async () => {
     accountIs(aUser({ password: undefined }));
 
     const { status, body } = await changeEmail(WRONG_PASSWORD);
 
-    expect(status).toBe(404);
-    expect(body.code).toBe('NOT_FOUND');
+    expect(status).toBe(409);
+    expect(body.code).toBe('PASSWORD_NOT_SET');
   });
 });
