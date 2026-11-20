@@ -3,6 +3,7 @@ import { createProjectViaForm } from './helpers/projects';
 import { loginWith, registerWith } from './helpers/auth';
 import { addCrewMember, addTask, openBoard, taskCard } from './helpers/crew';
 import { requiresApi } from './helpers/api';
+import { E2E_LOCALE } from './helpers/locale';
 
 /**
  * Tiempo real entre dos personas de la misma obra: lo que carga el gerente le
@@ -18,9 +19,8 @@ import { requiresApi } from './helpers/api';
  * El estado del canal se lee de `<html data-live-status>`, que deja
  * `useProjectLive`: se espera a `live` antes de provocar el cambio.
  */
-// El idioma lo detecta la app del navegador: sin esto Playwright (en-US) cae al
-// español de España y los textos ("Añadir") no coinciden con los de los helpers.
-test.use({ storageState: { cookies: [], origins: [] }, locale: 'es-AR' });
+// Empieza sin sesión: cada persona se registra en el test.
+test.use({ storageState: { cookies: [], origins: [] } });
 
 const RUN_ID = Date.now();
 const OWNER_EMAIL = `e2e-live-owner-${RUN_ID}@luma.test`;
@@ -49,7 +49,7 @@ async function addMaterial(page: Page, name: string) {
 
 test.describe('tiempo real entre gerente y supervisor', () => {
   test('lo que carga el gerente le aparece al supervisor sin recargar', async ({ page, browser }) => {
-    const supervisorContext = await browser.newContext();
+    const supervisorContext = await browser.newContext({ locale: E2E_LOCALE });
     const supervisorPage = await supervisorContext.newPage();
     await registerWith(supervisorPage, `Supervisor en vivo ${RUN_ID}`, SUPERVISOR_EMAIL, PASSWORD);
 
