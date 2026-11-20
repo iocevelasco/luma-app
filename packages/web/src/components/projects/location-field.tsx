@@ -7,8 +7,9 @@ import {
   fetchPlaceSuggestions,
   mapsLanguage,
   MIN_QUERY_LENGTH,
-  newSessionToken,
+  newPlacesSession,
   QUERY_DEBOUNCE_MS,
+  type PlacesSession,
   type PlaceSuggestion,
 } from '@/lib/google-places';
 import { cn } from '@/lib/utils';
@@ -54,7 +55,7 @@ export function LocationField({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [typing, setTyping] = useState(false);
-  const sessionRef = useRef<string | null>(null);
+  const sessionRef = useRef<PlacesSession | null>(null);
 
   const language = mapsLanguage(i18n.resolvedLanguage ?? i18n.language);
 
@@ -65,20 +66,23 @@ export function LocationField({
       setSuggestions([]);
       return;
     }
-    const controller = new AbortController();
+    // El SDK no se puede cancelar: una respuesta que llega después de otra
+    // tecla se descarta.
+    let stale = false;
     const timer = window.setTimeout(() => {
-      sessionRef.current ??= newSessionToken();
-      fetchPlaceSuggestions(apiKey, query, sessionRef.current, language, controller.signal)
+      sessionRef.current ??= newPlacesSession();
+      fetchPlaceSuggestions(apiKey, query, sessionRef.current, language)
         .then((found) => {
+          if (stale) return;
           setSuggestions(found);
           setActive(-1);
           setOpen(found.length > 0);
         })
         // Sin sugerencias se sigue escribiendo a mano: no hay nada que avisar.
-        .catch(() => setSuggestions([]));
+        .catch(() => !stale && setSuggestions([]));
     }, QUERY_DEBOUNCE_MS);
     return () => {
-      controller.abort();
+      stale = true;
       window.clearTimeout(timer);
     };
   }, [apiKey, value, typing, language]);

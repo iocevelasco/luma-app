@@ -4,30 +4,29 @@ import {
   fetchPlaceSuggestions,
   mapEmbedUrl,
   mapsLanguage,
-  newSessionToken,
+  newPlacesSession,
   parseSuggestions,
-  PlacesError,
+  resetPlacesLibrary,
 } from './google-places';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  delete window.google;
+  resetPlacesLibrary();
+});
 
 describe('parseSuggestions', () => {
   it('toma el id, el texto completo y las dos líneas', () => {
     expect(
-      parseSuggestions({
-        suggestions: [
-          {
-            placePrediction: {
-              placeId: 'ChIJ1',
-              text: { text: 'Av. Corrientes 1234, CABA, Argentina' },
-              structuredFormat: {
-                mainText: { text: 'Av. Corrientes 1234' },
-                secondaryText: { text: 'CABA, Argentina' },
-              },
-            },
+      parseSuggestions([
+        {
+          placePrediction: {
+            placeId: 'ChIJ1',
+            text: { text: 'Av. Corrientes 1234, CABA, Argentina' },
+            mainText: { text: 'Av. Corrientes 1234' },
+            secondaryText: { text: 'CABA, Argentina' },
           },
-        ],
-      }),
+        },
+      ]),
     ).toEqual([
       {
         placeId: 'ChIJ1',
@@ -40,34 +39,52 @@ describe('parseSuggestions', () => {
 
   it('descarta las sugerencias sin id o sin texto, y las que no son lugares', () => {
     expect(
-      parseSuggestions({
-        suggestions: [{ placePrediction: { text: { text: 'x' } } }, { placePrediction: { placeId: 'a' } }, {}],
-      }),
+      parseSuggestions([{ placePrediction: { text: { text: 'x' } } }, { placePrediction: { placeId: 'a' } }, {}]),
     ).toEqual([]);
-    expect(parseSuggestions({})).toEqual([]);
+    expect(parseSuggestions(undefined)).toEqual([]);
   });
 });
 
 describe('fetchPlaceSuggestions', () => {
-  it('pregunta a Places (New) con la clave en la cabecera, la sesión y el idioma', async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ suggestions: [] })));
-    vi.stubGlobal('fetch', fetchMock);
+  /** Un `google.maps` de mentira, ya cargado: el script no se pide. */
+  function fakeMaps() {
+    const fetchAutocompleteSuggestions = vi.fn(async () => ({
+      suggestions: [{ placePrediction: { placeId: 'p1', text: { text: 'Calle 1, Rosario' } } }],
+    }));
+    class AutocompleteSessionToken {}
+    const importLibrary = vi.fn(async () => ({
+      AutocompleteSessionToken,
+      AutocompleteSuggestion: { fetchAutocompleteSuggestions },
+    }));
+    window.google = { maps: { importLibrary } } as never;
+    return { fetchAutocompleteSuggestions, importLibrary, AutocompleteSessionToken };
+  }
 
-    await fetchPlaceSuggestions('key-1', 'Corrientes', 'session-1', 'es');
+  it('pregunta con el SDK de Maps, con una sesión que se reusa entre teclas y el idioma', async () => {
+    const { fetchAutocompleteSuggestions, importLibrary, AutocompleteSessionToken } = fakeMaps();
+    const session = newPlacesSession();
 
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe('https://places.googleapis.com/v1/places:autocomplete');
-    expect((init.headers as Record<string, string>)['X-Goog-Api-Key']).toBe('key-1');
-    expect(JSON.parse(init.body as string)).toEqual({
-      input: 'Corrientes',
-      sessionToken: 'session-1',
-      languageCode: 'es',
-    });
+    const found = await fetchPlaceSuggestions('key-1', 'Calle', session, 'es');
+    await fetchPlaceSuggestions('key-1', 'Calle 1', session, 'es');
+
+    expect(found).toEqual([{ placeId: 'p1', text: 'Calle 1, Rosario', main: 'Calle 1, Rosario' }]);
+    expect(importLibrary).toHaveBeenCalledTimes(1);
+    expect(importLibrary).toHaveBeenCalledWith('places');
+    const [first, second] = fetchAutocompleteSuggestions.mock.calls as unknown as [
+      [{ sessionToken: object; language: string; input: string }],
+      [{ sessionToken: object }],
+    ];
+    expect(first[0]).toMatchObject({ input: 'Calle', language: 'es' });
+    expect(first[0].sessionToken).toBeInstanceOf(AutocompleteSessionToken);
+    expect(second[0].sessionToken).toBe(first[0].sessionToken);
   });
 
-  it('una respuesta con error es un PlacesError', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 403 })));
-    await expect(fetchPlaceSuggestions('k', 'abc', 's', 'es')).rejects.toBeInstanceOf(PlacesError);
+  it('una sesión nueva (tras elegir) lleva otro token', async () => {
+    const { fetchAutocompleteSuggestions } = fakeMaps();
+    await fetchPlaceSuggestions('k', 'abc', newPlacesSession(), 'es');
+    await fetchPlaceSuggestions('k', 'abc', newPlacesSession(), 'es');
+    const calls = fetchAutocompleteSuggestions.mock.calls as unknown as [[{ sessionToken: object }], [{ sessionToken: object }]];
+    expect(calls[0][0].sessionToken).not.toBe(calls[1][0].sessionToken);
   });
 });
 
@@ -85,24 +102,6 @@ describe('enlaces', () => {
     expect(withPlace.searchParams.get('destination')).toBe('Calle 1 & 2, #3');
     expect(withPlace.searchParams.get('destination_place_id')).toBe('ChIJ1');
     expect(new URL(directionsUrl('Calle 1')).searchParams.has('destination_place_id')).toBe(false);
-  });
-});
-
-describe('newSessionToken', () => {
-  it('es un UUID v4, también sin crypto.randomUUID (Safari < 15.4)', () => {
-    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-    expect(newSessionToken()).toMatch(uuid);
-    const original = window.crypto;
-    const getRandomValues = original.getRandomValues.bind(original);
-    Object.defineProperty(window, 'crypto', {
-      configurable: true,
-      value: { getRandomValues },
-    });
-    try {
-      expect(newSessionToken()).toMatch(uuid);
-    } finally {
-      Object.defineProperty(window, 'crypto', { configurable: true, value: original });
-    }
   });
 });
 
