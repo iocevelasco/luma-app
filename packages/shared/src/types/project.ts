@@ -68,6 +68,8 @@ export interface Project {
   name: string;
   description: string;
   location: string;
+  /** El lugar de Google elegido para la dirección. Sin él no hay mapa, sólo "Cómo llegar". */
+  placeId?: string;
   size?: string;
   /** `YYYY-MM-DD`, nunca ISO datetime — ver CLAUDE.md sobre fechas y Safari. */
   estimatedStartDate: string;

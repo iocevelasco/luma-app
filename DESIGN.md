@@ -434,6 +434,13 @@ Es el único botón de la app que no es nuestro, y por eso tiene reglas fijas: t
 el texto fijo de Google en el idioma de la app. Va en `GoogleSignInButton`; no se
 imita con un `Button` propio, porque el ID token sólo sale del de Google.
 
+**Google Maps (excepción)** — dos elementos ajenos en la dirección de la obra.
+La lista de sugerencias es nuestra (`LocationField`) pero cierra con el texto
+"Google Maps", que piden las políticas de Places; no se traduce ni se quita. El
+mapa de la ficha es un iframe de Google: no se tiñe con la paleta, va con el
+radio un escalón debajo de la card (`rounded-2xl`), al menos 200 px de alto, y se
+carga sólo cuando la persona toca "Ver en el mapa".
+
 ## Qué no hacer
 
 - No hacer un botón píldora ni con borde de contorno **en el panel**: el botón es

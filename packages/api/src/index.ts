@@ -183,6 +183,8 @@ app.use(
               'https://accounts.google.com/gsi/',
               'https://www.googleapis.com',
               'https://content.googleapis.com',
+              // Autocompletar la dirección de la obra (Places API New, por REST).
+              'https://places.googleapis.com',
               ...(chatOrigin ? [chatOrigin] : []),
             ],
             objectSrc: ["'none'"],

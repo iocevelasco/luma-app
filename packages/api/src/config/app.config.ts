@@ -126,10 +126,13 @@ export const EMAIL_CONFIG = {
 const googleClientId = process.env.GOOGLE_GCP_CLIENT_ID?.trim() || undefined;
 const googlePickerKey = process.env.GOOGLE_GCP_PICKER_API_KEY?.trim() || undefined;
 const googleProjectNumber = process.env.GOOGLE_GCP_PROJECT_NUMBER?.trim() || undefined;
+const googleMapsKey = process.env.GOOGLE_GCP_MAPS_BROWSER_KEY?.trim() || undefined;
 export const GOOGLE_CONFIG = {
   CLIENT_ID: googleClientId,
   PICKER_API_KEY: googlePickerKey,
   PROJECT_NUMBER: googleProjectNumber,
+  /** Clave de navegador de Maps (Places API New + Maps Embed). Sin ella, la dirección es texto libre. */
+  MAPS_BROWSER_KEY: googleMapsKey,
   /** Entrar con Google sólo necesita el client id: el ID token no usa secreto. */
   LOGIN_ENABLED: Boolean(googleClientId),
   DRIVE_ENABLED: Boolean(googleClientId && googlePickerKey && googleProjectNumber),
@@ -405,6 +408,9 @@ export function validateConfig(): void {
   }
   if (!GOOGLE_CONFIG.LOGIN_ENABLED) {
     console.warn('⚠️  [CONFIG] Entrar con Google no se ofrece, falta: GOOGLE_GCP_CLIENT_ID.');
+  }
+  if (!GOOGLE_CONFIG.MAPS_BROWSER_KEY) {
+    console.warn('⚠️  [CONFIG] Google Maps no se ofrece, falta: GOOGLE_GCP_MAPS_BROWSER_KEY.');
   }
   if (!GOOGLE_CONFIG.DRIVE_ENABLED) {
     console.warn(`⚠️  [CONFIG] Google Drive no se ofrece, falta: ${missingDriveEnv().join(', ')}.`);

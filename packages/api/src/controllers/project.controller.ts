@@ -52,6 +52,7 @@ export function toProjectDTO(project: IProject): ProjectDTO {
     name: project.name,
     description: project.description ?? '',
     location: project.location,
+    placeId: project.placeId || undefined,
     size: project.size,
     estimatedStartDate: project.estimatedStartDate,
     estimatedEndDate: project.estimatedEndDate,
@@ -86,7 +87,15 @@ export async function updateProject(req: Request, res: Response) {
     }
 
     const current = req.project as IProject;
-    const project = await Project.findByIdAndUpdate(current._id, parsed.data, { new: true });
+    const { placeId, ...fields } = parsed.data;
+    // Ubicación y lugar van juntos: un texto nuevo sin lugar borra el anterior.
+    const update =
+      fields.location === undefined
+        ? fields
+        : placeId
+          ? { $set: { ...fields, placeId } }
+          : { $set: fields, $unset: { placeId: '' } };
+    const project = await Project.findByIdAndUpdate(current._id, update, { new: true });
     if (!project) {
       return res.status(404).json({ success: false, error: 'Obra no encontrada' });
     }

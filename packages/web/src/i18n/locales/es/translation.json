@@ -366,6 +366,18 @@
       "endsIn": "Termina {{distance}}",
       "endedAgo": "Terminó {{distance}}",
       "open": "Abrir"
+    },
+    "location": {
+      "placeChosen": "Dirección elegida en Google Maps: la obra va a tener mapa.",
+      "suggestions": "Direcciones sugeridas",
+      "showMap": "Ver en el mapa",
+      "hideMap": "Ocultar el mapa",
+      "directions": "Cómo llegar",
+      "edit": "Editar ubicación",
+      "mapTitle": "Mapa de {{location}}",
+      "editTitle": "Editar ubicación",
+      "editHint": "Elegí la dirección entre las sugerencias para que la obra tenga mapa. También podés escribirla a mano.",
+      "saved": "Ubicación guardada."
     }
   },
   "auth": {
@@ -2540,7 +2552,7 @@
           "title": "5. Con quién los compartimos",
           "paragraphs": [
             "Con las personas de tu obra, según el rol de cada una (gerente, supervisor, cliente): cada quien ve sólo lo que su rol permite, y una obra nunca es visible para quien no fue invitado.",
-            "Con proveedores que nos ayudan a operar el servicio, y sólo lo necesario para su función: el alojamiento de los servidores, el envío de correos (Resend), el cobro con tarjeta (Stripe), la verificación contra abusos en el registro (Google reCAPTCHA), Google cuando elegís entrar con tu cuenta de Google, el almacenamiento de archivos, Google Drive cuando elegís importar o guardar archivos con él y, si usás el Consultor IA, el proveedor del modelo de inteligencia artificial (Anthropic), a quien enviamos lo necesario para responder tu consulta.",
+            "Con proveedores que nos ayudan a operar el servicio, y sólo lo necesario para su función: el alojamiento de los servidores, el envío de correos (Resend), el cobro con tarjeta (Stripe), la verificación contra abusos en el registro (Google reCAPTCHA), Google cuando elegís entrar con tu cuenta de Google, Google Maps cuando buscás la dirección de una obra o abrís su mapa (recibe lo que escribís y tu dirección IP), el almacenamiento de archivos, Google Drive cuando elegís importar o guardar archivos con él y, si usás el Consultor IA, el proveedor del modelo de inteligencia artificial (Anthropic), a quien enviamos lo necesario para responder tu consulta.",
             "Con autoridades competentes, únicamente cuando nos lo exija una orden o una norma válida."
           ]
         },

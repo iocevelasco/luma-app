@@ -15,6 +15,8 @@ export interface IProject extends Document {
   name: string;
   description: string;
   location: string;
+  /** El lugar de Google de la dirección (ADR-005 §2). Nunca coordenadas. */
+  placeId?: string;
   size?: string;
   estimatedStartDate: string;
   estimatedEndDate: string;
@@ -65,6 +67,7 @@ const projectSchema = new Schema<IProject>(
     // Opcional desde que se ocultó del alta; las obras viejas conservan la que tenían.
     description: { type: String, trim: true, default: '' },
     location: { type: String, required: true, trim: true },
+    placeId: { type: String, trim: true },
     size: { type: String, trim: true },
     estimatedStartDate: { type: String, required: true },
     estimatedEndDate: { type: String, required: true },
