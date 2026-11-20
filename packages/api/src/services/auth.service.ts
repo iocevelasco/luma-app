@@ -12,11 +12,13 @@ export function generateTokens(
   userId: string,
   email: string,
   role: UserRole,
+  tokenVersion = 0,
 ): { accessToken: string; refreshToken: string; payload: Omit<JWTPayload, 'iat' | 'exp'> } {
   const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
     sub: userId,
     email,
     roles: [role],
+    tv: tokenVersion,
   };
 
   return {

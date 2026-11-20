@@ -33,6 +33,9 @@ async function main() {
     existing.email_verified = true;
     existing.enabled = true;
     existing.account_status = 'active';
+    // Promover o resetear un admin cierra las sesiones que la cuenta tuviera
+    // abiertas: el rol nuevo se estrena con un login nuevo, con esta contraseña.
+    existing.tokenVersion = (existing.tokenVersion ?? 0) + 1;
     await existing.save();
     console.log(`✅ Admin actualizado: ${email}`);
   } else {

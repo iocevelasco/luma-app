@@ -69,10 +69,10 @@ export async function verifyRecaptchaToken(
   }
 
   try {
-    // Log verification attempt (without exposing secret key)
+    // De la clave secreta sólo se loguea si está configurada, nunca un pedazo:
+    // un log lo lee más gente y más sistemas que el entorno.
     console.log(`🔍 [RECAPTCHA] Verifying token for action: ${expectedAction || 'any'}`);
     console.log(`🔑 [RECAPTCHA] Secret key configured: ${!!RECAPTCHA_SECRET_KEY}`);
-    console.log(`🔑 [RECAPTCHA] Secret key preview: ${RECAPTCHA_SECRET_KEY ? RECAPTCHA_SECRET_KEY.substring(0, 10) + '...' : 'NOT SET'}`);
     
     // Verify token with Google
     const response = await fetch(RECAPTCHA_VERIFY_URL, {

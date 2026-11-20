@@ -17,10 +17,11 @@ import {
 import { isProduction, REQUIRE_EMAIL_VERIFICATION } from '../config/app.config.js';
 import { User, type IUser } from '../models/User.js';
 import { generateTokens } from '../services/auth.service.js';
+import { forgetTokenVersion, tokenVersionOf } from '../services/session.service.js';
 import { EmailService } from '../services/email.service.js';
 import { JWTService } from '../services/jwt.service.js';
 import { termsAcceptanceFields } from '../services/terms.service.js';
-import { notFound, termsRequired } from '../utils/errors.js';
+import { notFound, termsRequired, wrongPassword } from '../utils/errors.js';
 import { createPersonalOrganization } from '../services/organization.service.js';
 import { startTrialFor } from '../services/subscription.service.js';
 import { verifyRecaptchaFromRequest } from '../services/recaptcha.service.js';
@@ -100,7 +101,7 @@ export async function login(req: Request, res: Response) {
       return res.status(403).json({ success: false, error: 'La cuenta está deshabilitada' });
     }
 
-    const tokens = generateTokens(String(user._id), user.email, user.role);
+    const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
     setRefreshTokenCookie(res, tokens.refreshToken);
 
     return res.json({
@@ -186,7 +187,16 @@ export async function refreshToken(req: Request, res: Response) {
       return res.status(401).json({ success: false, error: 'Sesión inválida' });
     }
 
-    const tokens = generateTokens(String(user._id), user.email, user.role);
+    // La cuenta cerró sus sesiones después de emitir este token (recuperó la
+    // contraseña): este refresh ya no renueva nada.
+    if (tokenVersionOf(payload) !== (user.tokenVersion ?? 0)) {
+      clearRefreshTokenCookie(res);
+      return res
+        .status(401)
+        .json({ success: false, error: 'Tu sesión se cerró. Vuelve a entrar.', code: 'UNAUTHENTICATED' });
+    }
+
+    const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
     setRefreshTokenCookie(res, tokens.refreshToken);
 
     return res.json({
@@ -292,7 +302,12 @@ export async function resetPassword(req: Request, res: Response) {
     user.email_verified = true;
     user.activationLinkHeldBy = undefined;
     user.claimedViaLinkBy = undefined;
+    // Recuperar la contraseña cierra todas las sesiones abiertas: si alguien
+    // entró con la contraseña vieja, o con la que eligió quien tuvo un enlace
+    // en mano, sale ahora y no cuando venza su refresh de 90 días.
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
     await user.save();
+    forgetTokenVersion(String(user._id));
 
     return res.json({ success: true, message: 'Contraseña actualizada' });
   } catch (error) {
@@ -338,7 +353,7 @@ export async function setPassword(req: Request, res: Response) {
     }
     await user.save();
 
-    const tokens = generateTokens(String(user._id), user.email, user.role);
+    const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
     setRefreshTokenCookie(res, tokens.refreshToken);
 
     return res.json({
@@ -426,7 +441,14 @@ export async function resendVerification(req: Request, res: Response) {
   }
 }
 
-export async function changePassword(req: Request, res: Response) {
+/**
+ * Cambiar la contraseña y cambiar el correo piden la contraseña de la cuenta
+ * para confirmar. Si no coincide se **lanza** `wrongPassword()` (403), nunca un
+ * 401: el cliente lee todo 401 con token como sesión vencida —renueva,
+ * reintenta y cierra la sesión—, y eso deslogueaba a quien sólo la había
+ * escrito mal.
+ */
+export async function changePassword(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = changePasswordRequestSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -441,7 +463,7 @@ export async function changePassword(req: Request, res: Response) {
     }
 
     if (!(await bcrypt.compare(parsed.data.currentPassword, user.password))) {
-      return res.status(401).json({ success: false, error: 'La contraseña actual no coincide' });
+      throw wrongPassword();
     }
 
     user.password = await bcrypt.hash(parsed.data.newPassword, BCRYPT_ROUNDS);
@@ -449,12 +471,11 @@ export async function changePassword(req: Request, res: Response) {
 
     return res.json({ success: true, message: 'Contraseña actualizada' });
   } catch (error) {
-    console.error('❌ [AUTH] changePassword:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
+    return next(error);
   }
 }
 
-export async function changeEmail(req: Request, res: Response) {
+export async function changeEmail(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = changeEmailRequestSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -469,7 +490,7 @@ export async function changeEmail(req: Request, res: Response) {
     }
 
     if (!(await bcrypt.compare(parsed.data.password, user.password))) {
-      return res.status(401).json({ success: false, error: 'La contraseña no coincide' });
+      throw wrongPassword();
     }
 
     if (await User.exists({ email: parsed.data.newEmail })) {
@@ -488,8 +509,7 @@ export async function changeEmail(req: Request, res: Response) {
 
     return res.json({ success: true, message: 'Te enviamos un correo a la nueva dirección.' });
   } catch (error) {
-    console.error('❌ [AUTH] changeEmail:', error);
-    return res.status(500).json({ success: false, error: errMsg(error) });
+    return next(error);
   }
 }
 
