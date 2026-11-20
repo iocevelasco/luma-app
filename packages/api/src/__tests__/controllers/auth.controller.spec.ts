@@ -19,6 +19,10 @@ vi.mock('../../services/auth.service.js', () => ({
   generateTokens: vi.fn(() => ({ accessToken: 'access', refreshToken: 'refresh' })),
 }));
 vi.mock('../../services/jwt.service.js', () => ({ JWTService: {} }));
+vi.mock('../../services/session.service.js', () => ({
+  forgetTokenVersion: vi.fn(),
+  tokenVersionOf: vi.fn(() => 0),
+}));
 vi.mock('../../services/organization.service.js', () => ({ createPersonalOrganization: vi.fn() }));
 vi.mock('../../services/subscription.service.js', () => ({ startTrialFor: vi.fn() }));
 vi.mock('../../services/recaptcha.service.js', () => ({ verifyRecaptchaFromRequest: vi.fn() }));
@@ -209,6 +213,25 @@ describe('cuentas activadas con un enlace que pasó por manos de quien invitó',
       expect(user.email_verified).toBe(true);
       expect(user.claimedViaLinkBy).toBeUndefined();
       expect(user.activationLinkHeldBy).toBeUndefined();
+    });
+
+    it('cierra todas las sesiones abiertas: sube tokenVersion y lo hace regir ya', async () => {
+      const { forgetTokenVersion } = await import('../../services/session.service.js');
+      const user = tokenOwner({ _id: 'user-1', password: 'hash-viejo', tokenVersion: 2 });
+
+      await resetPassword({ body: { token: 'tok', password: 'Clave-de-la-dueña-1' } } as never, mockRes());
+
+      expect(user.tokenVersion).toBe(3);
+      expect(user.save).toHaveBeenCalled();
+      expect(forgetTokenVersion).toHaveBeenCalledWith('user-1');
+    });
+
+    it('una cuenta anterior al campo arranca en 0 y pasa a 1', async () => {
+      const user = tokenOwner({ password: 'hash-viejo' });
+
+      await resetPassword({ body: { token: 'tok', password: 'Clave-de-la-dueña-1' } } as never, mockRes());
+
+      expect(user.tokenVersion).toBe(1);
     });
   });
 

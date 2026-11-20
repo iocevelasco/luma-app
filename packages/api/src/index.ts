@@ -126,6 +126,14 @@ const chatOrigin = nexusbotOrigin();
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
+    // Google (el permiso de Drive, el Picker) abre un popup que tiene que poder
+    // devolverle el resultado a esta ventana. Con el `same-origin` por defecto
+    // de helmet el popup queda aislado y nunca contesta.
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    // Google comprueba el origen y la restricción por dominio de las claves con
+    // el `Referer`. Con el `no-referrer` por defecto no llega; así viaja sólo el
+    // origen hacia afuera, nunca la ruta.
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     contentSecurityPolicy: isProduction
       ? {
           directives: {
@@ -133,7 +141,18 @@ app.use(
             // Stripe: Stripe.js y el checkout embebido de la suscripción.
             // NexusBot ya no carga ningún script: el chat es un componente de la
             // SPA y sólo necesita `connectSrc` para el stream de mensajes.
-            scriptSrc: ["'self'", 'https://www.google.com', 'https://www.gstatic.com', 'https://js.stripe.com'],
+            // Google Drive (ADR-005 §4): el permiso (`gsi/client`) y el Picker
+            // (`apis.google.com`). Rutas exactas: un host de Google entero en
+            // `script-src` es una vía conocida para saltarse la CSP.
+            scriptSrc: [
+              "'self'",
+              'https://www.google.com',
+              'https://www.gstatic.com',
+              'https://js.stripe.com',
+              'https://accounts.google.com/gsi/client',
+              'https://apis.google.com/js/api.js',
+              'https://apis.google.com/_/scs/',
+            ],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
             imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google.com', 'https://www.gstatic.com', 'https://*.stripe.com'],
@@ -144,6 +163,9 @@ app.use(
               'https://js.stripe.com',
               'https://hooks.stripe.com',
               'https://checkout.stripe.com',
+              'https://accounts.google.com/gsi/',
+              'https://docs.google.com',
+              'https://drive.google.com',
             ],
             connectSrc: [
               "'self'",
@@ -151,6 +173,10 @@ app.use(
               'https://www.gstatic.com',
               'https://api.stripe.com',
               'https://checkout.stripe.com',
+              // Bajar y subir archivos de Drive desde el navegador.
+              'https://accounts.google.com/gsi/',
+              'https://www.googleapis.com',
+              'https://content.googleapis.com',
               ...(chatOrigin ? [chatOrigin] : []),
             ],
             objectSrc: ["'none'"],

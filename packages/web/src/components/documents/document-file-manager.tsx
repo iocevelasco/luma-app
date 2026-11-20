@@ -22,6 +22,8 @@ import {
   useDeleteProjectDocuments,
   useUpdateProjectDocuments,
 } from '@/hooks/documents/use-document-queries';
+import { useGoogleDrive } from '@/hooks/documents/use-google-drive';
+import { Badge } from '@/components/ui/badge';
 import { errorMessage } from '@/lib/error-message';
 import { cn } from '@/lib/utils';
 import '@/lib/svar-icons';
@@ -130,6 +132,8 @@ export function DocumentFileManager({
   const createDocument = useCreateProjectDocument(projectId);
   const updateDocuments = useUpdateProjectDocuments(projectId);
   const deleteDocuments = useDeleteProjectDocuments(projectId);
+  const drive = useGoogleDrive(projectId);
+  const apiRef = useRef<IApi | null>(null);
 
   // Espacios nuevos sin ningún archivo todavía: sólo existen en la pantalla.
   const [draftSpaces, setDraftSpaces] = useState<FolderRef[]>([]);
@@ -161,11 +165,51 @@ export function DocumentFileManager({
     createDocument,
     updateDocuments,
     deleteDocuments,
+    drive,
     t,
   });
-  latest.current = { tree, draftSpaces, createDocument, updateDocuments, deleteDocuments, t };
+  latest.current = { tree, draftSpaces, createDocument, updateDocuments, deleteDocuments, drive, t };
+
+  /** La carpeta abierta y lo seleccionado en el panel activo, para las acciones de Drive. */
+  const panelState = useCallback(() => {
+    const state = apiRef.current?.getState();
+    const panel = state?.panels?.[state.activePanel ?? 0];
+    const { tree } = latest.current;
+    return {
+      folder: panel?.path ? tree.folders.get(panel.path) : undefined,
+      selected: (panel?.selected ?? [])
+        .map((id) => tree.files.get(String(id)))
+        .filter((doc): doc is ProjectDocument => doc !== undefined),
+    };
+  }, []);
+
+  /** Importar desde Drive a la carpeta abierta. Corre dentro del clic (ver `useGoogleDrive`). */
+  const importFromDrive = useCallback(() => {
+    const { folder } = panelState();
+    if (!folder) {
+      toast.error(latest.current.t('document.fm.errors.noUploadAtRoot'));
+      return;
+    }
+    latest.current.drive.importInto({
+      category: folder.category,
+      space: folder.space,
+      titleFor: (name) => titleFromName(name, name) || name,
+    });
+  }, [panelState]);
+
+  /** Exportar a Drive lo seleccionado (o el archivo del menú contextual). */
+  const exportToDrive = useCallback(
+    (context?: { id?: string | number }) => {
+      const { selected } = panelState();
+      const clicked = context?.id ? latest.current.tree.files.get(String(context.id)) : undefined;
+      const documents = selected.length > 0 ? selected : clicked ? [clicked] : [];
+      latest.current.drive.exportDocuments(documents);
+    },
+    [panelState],
+  );
 
   const handleInit = useCallback((api: IApi) => {
+    apiRef.current = api;
     const fail = (key: string) => toast.error(latest.current.t(key));
 
     api.intercept('rename-file', ({ id, name }) => {
@@ -334,12 +378,13 @@ export function DocumentFileManager({
    * por la carpeta abierta. Subir o crear una carpeta en la raíz o en un tipo
    * que no lo admite se rechaza al ejecutar la acción, con su aviso.
    */
+  const driveAvailable = drive.available;
   const menuOptions = useCallback(
     (mode: TContextMenuType, item?: { id: string }): IFileMenuOption[] | false => {
       const { tree } = latest.current;
       const folder = item ? tree.folders.get(item.id) : undefined;
 
-      return getMenuOptions(mode).filter((option) => {
+      const options: IFileMenuOption[] = getMenuOptions(mode).filter((option) => {
         if (option.id && HIDDEN_MENU_IDS.has(String(option.id))) return false;
         // Una carpeta de tipo es fija: sólo se abre.
         if (mode === 'folder' && folder && folder.space === undefined) {
@@ -347,8 +392,30 @@ export function DocumentFileManager({
         }
         return true;
       });
+
+      if (!driveAvailable) return options;
+      // "Añadir" sólo se dibuja para quien puede subir (`readonly` lo esconde).
+      if (mode === 'add') {
+        options.push({
+          id: 'drive-import',
+          icon: 'luma-drive-import',
+          text: t('document.drive.import'),
+          handler: () => importFromDrive(),
+        });
+      }
+      // Quien sólo lee exporta desde la vista previa: con `readonly` la librería
+      // reemplaza este menú por el suyo.
+      if (mode === 'file' || mode === 'multiselect') {
+        options.push({
+          id: 'drive-export',
+          icon: 'luma-drive-export',
+          text: t('document.drive.export'),
+          handler: (event) => exportToDrive(event.context as { id?: string } | undefined),
+        });
+      }
+      return options;
     },
-    [],
+    [driveAvailable, t, importFromDrive, exportToDrive],
   );
 
   // La raíz se ordena por `order` (el orden de `CATEGORY_ORDER`), no alfabético:
@@ -371,7 +438,7 @@ export function DocumentFileManager({
     <div
       className={cn(
         // Claro como el área de contenido del panel, y con la misma sombra que el resto de las superficies.
-        'luma-filemanager min-h-0 min-w-0 overflow-hidden rounded-lg bg-card shadow-surface [&_.wx-theme]:h-full',
+        'luma-filemanager relative min-h-0 min-w-0 overflow-hidden rounded-lg bg-card shadow-surface [&_.wx-theme]:h-full',
         className,
       )}
     >
@@ -388,10 +455,33 @@ export function DocumentFileManager({
           />
         </Locale>
       </Willow>
+      {drive.progress && (
+        <Badge
+          role="status"
+          aria-live="polite"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2"
+        >
+          {t(`document.drive.progress.${drive.progress.kind}`, {
+            done: drive.progress.done,
+            total: drive.progress.total,
+          })}
+        </Badge>
+      )}
       <DocumentPreview
         projectId={projectId}
         doc={documents.find((doc) => doc.id === previewId) ?? null}
         onClose={() => setPreviewId(null)}
+        onExportToDrive={
+          drive.available
+            ? (doc) => {
+                // El permiso se pide en este clic; la vista previa se cierra
+                // para que su capa no tape el Picker de Google.
+                drive.exportDocuments([doc]);
+                setPreviewId(null);
+              }
+            : undefined
+        }
+        exportBusy={drive.busy}
       />
     </div>
   );

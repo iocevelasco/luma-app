@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { authFile } from './e2e/helpers/users';
+import { E2E_LOCALE } from './e2e/helpers/locale';
 
 // E2E_BASE_URL apunta la suite a un entorno remoto.
 // Local: (default) http://localhost:6173
@@ -27,6 +28,8 @@ export default defineConfig({
 
   use: {
     baseURL: BASE_URL,
+    // Idioma de la suite: los specs escriben el vocabulario es-AR (ver helpers/locale.ts).
+    locale: E2E_LOCALE,
     // Sesión por defecto: el admin de E2E. Un spec que necesita otra cuenta
     // la pide con `test.use({ storageState: authFile('supervisor') })` — el
     // globalSetup guarda una por cada usuario de `e2e/fixtures/users.json`.

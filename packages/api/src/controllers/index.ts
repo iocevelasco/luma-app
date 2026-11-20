@@ -14,6 +14,7 @@ export * from './provider.controller.js';
 export * from './provider-engagement.controller.js';
 export * from './crew.controller.js';
 export * from './document.controller.js';
+export * from './public-config.controller.js';
 export * from './milestone.controller.js';
 export * from './milestone-attachment.controller.js';
 export * from './notification.controller.js';
