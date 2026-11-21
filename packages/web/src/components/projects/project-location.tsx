@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 import { useUpdateProjectLocation } from '@/hooks/projects/use-project-queries';
-import { usePublicConfig } from '@/hooks/public-config/use-public-config';
+import { useIntegrationsConfig } from '@/hooks/integrations-config/use-integrations-config';
 import { directionsUrl, mapEmbedUrl, mapsLanguage } from '@/lib/google-places';
 
 interface ProjectLocationProps {
@@ -27,7 +27,7 @@ interface ProjectLocationProps {
  */
 export function ProjectLocation({ project, canEdit }: ProjectLocationProps) {
   const { t, i18n } = useTranslation();
-  const { data: config } = usePublicConfig();
+  const { data: config } = useIntegrationsConfig();
   const apiKey = config?.maps?.apiKey;
   const [showMap, setShowMap] = useState(false);
   const [editing, setEditing] = useState(false);

@@ -2,7 +2,7 @@ import { MapPin } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
-import { usePublicConfig } from '@/hooks/public-config/use-public-config';
+import { useIntegrationsConfig } from '@/hooks/integrations-config/use-integrations-config';
 import {
   fetchPlaceSuggestions,
   mapsLanguage,
@@ -47,7 +47,7 @@ export function LocationField({
   autoFocus,
 }: LocationFieldProps) {
   const { t, i18n } = useTranslation();
-  const { data: config } = usePublicConfig();
+  const { data: config } = useIntegrationsConfig();
   const apiKey = config?.maps?.apiKey;
   const listId = useId();
 

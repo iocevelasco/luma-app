@@ -80,6 +80,8 @@ igual que `STORAGE_CONFIG`.
    token no lo usa, y `GOOGLE_GCP_CLIENT_SECRET` se sacó de `.env.example`.
 3. **La SPA recibe la configuración pública de la API, en runtime**, como hoy la
    clave publicable de Stripe (`stripe.service.ts:183,221`):
+   *(Separado el 2026-11-21: sin sesión sale sólo el client id del login; las
+   claves de Maps y Drive, por `GET /api/config/integrations`, con sesión.)*
    `GET /api/public/config`, sin sesión (`skipAuth: true`,
    `QueryKeys.publicConfig`), devuelve por entrega su dato o `null`. Es la única
    fuente de "entrega deshabilitada". No va como build arg `VITE_*`: duplicaría el
