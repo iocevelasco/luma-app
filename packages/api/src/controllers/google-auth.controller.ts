@@ -138,15 +138,90 @@ async function linkByAuthoritativeEmail(
 }
 
 /**
- * `POST /api/auth/google` — `{ credential, acceptedTerms? }`.
+ * Activa con Google la cuenta invitada de un enlace de `/activate` (ADR-005
+ * §1.9 bis). El token prueba que la persona tiene la casilla invitada, y la
+ * credencial, que tiene ese Google: se unen aunque los correos no coincidan
+ * (invitada como `ana@estudio.com`, entra con `ana.perez@gmail.com`).
+ *
+ * - Si el enlace pasó por manos de quien invitó (el mail no salió), el token
+ *   no prueba nada y no sirve para Google: quien invitó lo uniría a su propio
+ *   Google. Ahí se elige una contraseña (que deja la cuenta atada a ese enlace
+ *   hasta recuperarla por mail) o se entra con el Google del correo invitado.
+ * - Si ese Google ya es de otra cuenta, no se entra a esa en silencio: la
+ *   invitada quedaría pendiente y sus obras, en otro lado.
+ * - Una cuenta con contraseña que recibe un enlace de activación nuevo es una
+ *   atada a un enlace en mano (`claimedViaLinkBy`): esa contraseña no la eligió
+ *   su dueño. Se borra y se cierran sus sesiones.
+ *
+ * Una sola escritura, condicionada a que el token siga vigente, sin Google y
+ * sin enlace en mano.
+ */
+async function activateWithLink(res: Response, token: string, identity: GoogleIdentity) {
+  const user = await User.findOne({
+    emailVerificationToken: token,
+    emailVerificationTokenExpires: { $gt: new Date() },
+  }).select(`${AUTH_USER_FIELDS} +emailVerificationToken`);
+  if (!user || user.googleSub) throw badRequest('El enlace es inválido o venció.');
+  assertCanUseGoogle(user);
+  if (user.activationLinkHeldBy) {
+    throw badRequest(
+      'Este enlace no sirve para entrar con Google. Elige una contraseña, o entra con la cuenta de Google del correo al que te invitaron.',
+    );
+  }
+
+  const owner = await User.exists({ googleSub: identity.sub });
+  if (owner) throw googleAlreadyLinked();
+
+  const hadPassword = Boolean(user.password);
+  let activated: IUser | null;
+  try {
+    activated = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        emailVerificationToken: token,
+        googleSub: { $exists: false },
+        activationLinkHeldBy: { $exists: false },
+      },
+      {
+        $set: { googleSub: identity.sub, googleEmail: identity.email, email_verified: true },
+        $unset: {
+          emailVerificationToken: '',
+          emailVerificationTokenExpires: '',
+          claimedViaLinkBy: '',
+          ...(hadPassword && { password: '', passwordProvenAt: '', resetToken: '', resetTokenExpires: '' }),
+        },
+        ...(hadPassword && { $inc: { tokenVersion: 1 } }),
+      },
+      { new: true },
+    ).select(AUTH_USER_FIELDS);
+  } catch (error) {
+    if (isDuplicateKeyError(error)) throw googleAlreadyLinked();
+    throw error;
+  }
+  if (!activated) throw badRequest('El enlace es inválido o venció.');
+  if (hadPassword) forgetTokenVersion(String(activated._id));
+
+  notifyLinkChanged(activated, identity.email, true, hadPassword);
+  return res.json({ success: true, data: issueSession(res, activated) });
+}
+
+/**
+ * `POST /api/auth/google` — `{ credential, acceptedTerms?, activationToken? }`.
  *
  * El mismo pedido desde `/login` y desde `/register`: la API no necesita saber
  * de qué pantalla viene. Responde como `login`.
  */
 export async function googleAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    const { credential, acceptedTerms } = parseOrThrow(googleAuthRequestSchema.safeParse(req.body));
+    const { credential, acceptedTerms, activationToken } = parseOrThrow(
+      googleAuthRequestSchema.safeParse(req.body),
+    );
     const identity = await verifyGoogleCredential(credential);
+
+    // Desde `/activate`: activa la invitada del enlace, no la del correo de Google.
+    if (activationToken) {
+      return await activateWithLink(res, activationToken, identity);
+    }
 
     // 1. Ya conectada: la identidad es el `sub`, el correo puede haber cambiado.
     const linked = await User.findOne({ googleSub: identity.sub }).select(AUTH_USER_FIELDS);

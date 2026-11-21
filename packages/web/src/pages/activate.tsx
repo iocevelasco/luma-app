@@ -37,8 +37,11 @@ export function ActivatePage() {
             <p className="text-center text-xs text-muted-foreground">
               {t('legal.notice.body')}
             </p>
-            {/* Con un Gmail o un Workspace del mismo dominio, Google activa la cuenta sin elegir contraseña. */}
-            <GoogleAuthSection text="continue_with" divider />
+            {/*
+              Con el token del enlace, Google activa esta cuenta invitada sin
+              elegir contraseña, aunque el correo de Google sea otro.
+            */}
+            <GoogleAuthSection text="continue_with" divider activationToken={token} />
             <TermsDialog
               open={chosenPassword !== null}
               onCancel={() => {
