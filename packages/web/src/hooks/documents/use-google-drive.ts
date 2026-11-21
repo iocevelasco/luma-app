@@ -10,7 +10,7 @@ import {
   type ProjectDocument,
 } from '@luma/shared';
 import { documentsApi } from '@/api/documents';
-import { usePublicConfig } from '@/hooks/public-config/use-public-config';
+import { useIntegrationsConfig } from '@/hooks/integrations-config/use-integrations-config';
 import { errorMessage } from '@/lib/error-message';
 import {
   DriveError,
@@ -57,8 +57,8 @@ interface ImportTarget {
 export function useGoogleDrive(projectId: string) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
-  const { data: publicConfig } = usePublicConfig();
-  const drive: DrivePublicConfig | null = publicConfig?.drive ?? null;
+  const { data: integrations } = useIntegrationsConfig();
+  const drive: DrivePublicConfig | null = integrations?.drive ?? null;
   const [progress, setProgress] = useState<DriveProgress | null>(null);
 
   useEffect(() => {

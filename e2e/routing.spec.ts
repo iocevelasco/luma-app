@@ -27,7 +27,7 @@ test.describe('rutas sin sesión', () => {
     // los errores de la app y no la falta de backend.
     if (process.env.E2E_API_UP !== '1') {
       await page.route('**/api/public/config', (route) =>
-        route.fulfill({ json: { success: true, data: { googleLogin: null, drive: null } } }),
+        route.fulfill({ json: { success: true, data: { googleLogin: null } } }),
       );
     }
 

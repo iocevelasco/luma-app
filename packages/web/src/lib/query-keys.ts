@@ -35,6 +35,7 @@ export enum QueryKeys {
   activityCrew = 'activity-crew',
   projectDocuments = 'project-documents',
   projectDocumentFile = 'project-document-file',
+  integrationsConfig = 'integrations-config',
   publicConfig = 'public-config',
   milestones = 'milestones',
   notifications = 'notifications',
