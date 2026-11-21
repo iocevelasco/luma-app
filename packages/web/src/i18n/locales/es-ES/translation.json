@@ -485,7 +485,9 @@
       "unlinkBody": "Ya no podrás entrar con {{email}}. Para confirmarlo, escribe tu contraseña.",
       "noPasswordBody": "Entras con Google y tu cuenta no tiene contraseña. Te enviaremos un enlace al correo para crearla. Al crearla, Google se desconecta y tendrás que volver a conectarlo.",
       "createPassword": "Crear contraseña",
-      "emailNeedsPassword": "Para cambiar el correo necesitas una contraseña. Créala en la tarjeta de contraseña."
+      "emailNeedsPassword": "Para cambiar el correo necesitas una contraseña. Créala en la tarjeta de contraseña.",
+      "forgotHint": "¿No recuerdas la contraseña?",
+      "forgotAction": "Recupérala"
     },
     "calendarFeed": {
       "title": "Calendario",

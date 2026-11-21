@@ -159,15 +159,68 @@ describe('POST /api/auth/google', () => {
     expect(EmailService.sendEmailVerificationEmail).toHaveBeenCalled();
   });
 
-  it('una cuenta con ese correo y contraseña no se toca: GOOGLE_LINK_REQUIRED', async () => {
+  it('una cuenta con contraseña y un Gmail: Google se une solo, se borra la contraseña y se cierran las sesiones', async () => {
+    const { forgetTokenVersion } = await import('../../services/session.service.js');
     googleSays();
     findOneReturns(null, aUser({ password: PASSWORD_HASH }));
+    const linkedNow = aUser({ googleSub: 'google-sub-1', tokenVersion: 3 });
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({
+      select: vi.fn().mockResolvedValue(linkedNow),
+    } as never);
+
+    const { res, error } = await callGoogle();
+
+    expect(error).toBeUndefined();
+    const [filter, update] = vi.mocked(User.findOneAndUpdate).mock.calls[0] as unknown as [
+      Record<string, unknown>,
+      { $set: Record<string, unknown>; $unset: Record<string, unknown>; $inc: Record<string, unknown> },
+    ];
+    // Condicionado a que siga sin Google: un `googleSub` nunca se pisa.
+    expect(filter).toEqual({ _id: 'user-1', googleSub: { $exists: false } });
+    expect(update.$set).toMatchObject({ googleSub: 'google-sub-1', email_verified: true });
+    // Quien registró antes ese correo con una contraseña suya queda afuera.
+    expect(update.$unset).toMatchObject({ password: '', resetToken: '', pendingEmail: '', claimedViaLinkBy: '' });
+    expect(update.$inc).toEqual({ tokenVersion: 1 });
+    expect(forgetTokenVersion).toHaveBeenCalledWith('user-1');
+    expect(res.cookie).toHaveBeenCalled();
+    expect(EmailService.sendGoogleLinkChanged).toHaveBeenCalledWith(
+      expect.objectContaining({ linked: true, passwordRemoved: true }),
+    );
+  });
+
+  it('una cuenta con contraseña y un correo que no es de Gmail ni Workspace: no se toca, GOOGLE_LINK_REQUIRED', async () => {
+    googleSays({ email: 'ana@hotmail.com' });
+    findOneReturns(null, aUser({ email: 'ana@hotmail.com', password: PASSWORD_HASH }));
 
     const { error } = await callGoogle({ credential: 'cred', acceptedTerms: true });
 
     expect(error?.code).toBe('GOOGLE_LINK_REQUIRED');
     expect(User.findOneAndUpdate).not.toHaveBeenCalled();
     expect(User.updateOne).not.toHaveBeenCalled();
+  });
+
+  it('una cuenta de Workspace del mismo dominio también se une sola', async () => {
+    googleSays({ email: 'ana@estudio.com', hd: 'estudio.com' });
+    findOneReturns(null, aUser({ email: 'ana@estudio.com', password: PASSWORD_HASH }));
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({
+      select: vi.fn().mockResolvedValue(aUser({ email: 'ana@estudio.com', googleSub: 'google-sub-1' })),
+    } as never);
+
+    const { error } = await callGoogle();
+
+    expect(error).toBeUndefined();
+    expect(User.findOneAndUpdate).toHaveBeenCalled();
+  });
+
+  it('si otro pedido la unió en el medio, no pisa nada: GOOGLE_LINK_REQUIRED', async () => {
+    googleSays();
+    findOneReturns(null, aUser({ password: PASSWORD_HASH }));
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({ select: vi.fn().mockResolvedValue(null) } as never);
+
+    const { res, error } = await callGoogle();
+
+    expect(error?.code).toBe('GOOGLE_LINK_REQUIRED');
+    expect(res.cookie).not.toHaveBeenCalled();
   });
 
   it('una cuenta con ese correo y OTRO sub: GOOGLE_LINK_REQUIRED, el sub no se pisa', async () => {
@@ -192,7 +245,7 @@ describe('POST /api/auth/google', () => {
 
     expect(error).toBeUndefined();
     expect(User.findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: 'user-1', password: { $exists: false }, googleSub: { $exists: false } },
+      { _id: 'user-1', googleSub: { $exists: false } },
       expect.objectContaining({
         $set: expect.objectContaining({ googleSub: 'google-sub-1', email_verified: true }),
       }),
@@ -200,7 +253,7 @@ describe('POST /api/auth/google', () => {
     );
     expect(res.json).toHaveBeenCalled();
     expect(EmailService.sendGoogleLinkChanged).toHaveBeenCalledWith(
-      expect.objectContaining({ linked: true, googleEmail: 'ana@gmail.com' }),
+      expect.objectContaining({ linked: true, googleEmail: 'ana@gmail.com', passwordRemoved: false }),
     );
   });
 

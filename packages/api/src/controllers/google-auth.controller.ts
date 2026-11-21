@@ -14,6 +14,7 @@ import {
   type GoogleIdentity,
 } from '../services/google-identity.service.js';
 import { AUTH_USER_FIELDS, issueSession, toAuthUser } from '../services/session-issue.service.js';
+import { forgetTokenVersion } from '../services/session.service.js';
 import { createAccount } from '../services/signup.service.js';
 import {
   badRequest,
@@ -32,10 +33,13 @@ import { randomToken } from './auth.controller.js';
 /**
  * Entrar, registrarse, conectar y desconectar con Google (ADR-005 §1).
  *
- * La regla de fondo: **Google nunca se une solo a una cuenta que ya tiene
- * contraseña**. Se conecta poniendo esa contraseña una vez. Lo único
- * automático es activar una cuenta invitada que nunca tuvo contraseña, y sólo
- * cuando Google es autoridad sobre el correo.
+ * La regla de fondo (ADR-005 §1, cuarta ronda): **Google se une solo a una
+ * cuenta con ese correo únicamente si Google es autoridad sobre el correo**
+ * (`@gmail.com` o Workspace del mismo dominio). Al unirse, la cuenta queda en
+ * manos de quien prueba tener la casilla: se cierran todas las sesiones y se
+ * borra la contraseña. Así, si alguien había registrado ese correo antes con
+ * una contraseña suya, queda afuera en el acto. Para cualquier otro correo, y
+ * para una cuenta que ya tiene otro Google, se conecta poniendo la contraseña.
  *
  * No se guarda ningún token de Google: sólo el `sub` (la identidad) y el
  * correo de esa cuenta, para mostrarlo.
@@ -56,35 +60,57 @@ function assertCanUseGoogle(user: IUser): void {
   if (user.role === 'admin') throw googleNotAllowed();
 }
 
-function notifyLinkChanged(user: IUser, googleEmail: string, linked: boolean): void {
+function notifyLinkChanged(
+  user: IUser,
+  googleEmail: string,
+  linked: boolean,
+  passwordRemoved = false,
+): void {
   // Un correo nunca voltea la acción que lo dispara.
   void EmailService.sendGoogleLinkChanged({
     to: user.email,
     name: user.name,
     googleEmail,
     linked,
+    passwordRemoved,
   }).catch(() => undefined);
 }
 
 /**
- * Activa con Google una cuenta invitada que nunca tuvo contraseña (§1.9). Una
- * sola operación condicionada a que siga sin contraseña ni Google: si en el
- * medio alguien eligió la contraseña con el enlace, no se pisa nada.
+ * Une Google a la cuenta que tiene ese correo, cuando Google es autoridad sobre
+ * él. Una sola operación condicionada a que la cuenta siga sin Google.
+ *
+ * Quien entra prueba tener la casilla, y nada de lo que había antes lo prueba:
+ * la contraseña pudo elegirla otra persona (registrar un correo ajeno no exige
+ * confirmarlo para entrar), igual que un enlace de activación que pasó por
+ * otras manos. Por eso se borran la contraseña y todo token pendiente, y se
+ * sube `tokenVersion`: cualquier sesión abierta con la contraseña vieja cae ya.
+ * Quien de verdad tenía esa contraseña sigue entrando con Google, y puede crear
+ * otra con «Olvidé mi contraseña».
  */
-async function activateInvitedAccount(user: IUser, identity: GoogleIdentity): Promise<IUser | null> {
-  return User.findOneAndUpdate(
-    { _id: user._id, password: { $exists: false }, googleSub: { $exists: false } },
+async function linkByAuthoritativeEmail(user: IUser, identity: GoogleIdentity): Promise<IUser | null> {
+  const linked = await User.findOneAndUpdate(
+    { _id: user._id, googleSub: { $exists: false } },
     {
       $set: { googleSub: identity.sub, googleEmail: identity.email, email_verified: true },
       $unset: {
+        password: '',
+        resetToken: '',
+        resetTokenExpires: '',
         emailVerificationToken: '',
         emailVerificationTokenExpires: '',
+        pendingEmail: '',
+        emailChangeToken: '',
+        emailChangeTokenExpires: '',
         activationLinkHeldBy: '',
         claimedViaLinkBy: '',
       },
+      $inc: { tokenVersion: 1 },
     },
     { new: true },
   ).select(AUTH_USER_FIELDS);
+  if (linked) forgetTokenVersion(String(linked._id));
+  return linked;
 }
 
 /**
@@ -118,13 +144,18 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
 
     assertCanUseGoogle(existing);
 
-    // 3. Invitada sin activar y Google es autoridad: la activa.
-    if (!existing.password && !existing.googleSub && isGoogleAuthoritative(identity)) {
-      const activated = await activateInvitedAccount(existing, identity);
-      if (activated) {
-        notifyLinkChanged(activated, identity.email, true);
-        return res.json({ success: true, data: issueSession(res, activated) });
+    // 3. Google es autoridad sobre el correo y la cuenta no tiene otro Google:
+    // se une sola. Sirve para la invitada que nunca activó y para quien ya
+    // tenía contraseña; en los dos casos la cuenta queda sólo con Google.
+    if (!existing.googleSub && isGoogleAuthoritative(identity)) {
+      const hadPassword = Boolean(existing.password);
+      const linkedNow = await linkByAuthoritativeEmail(existing, identity);
+      if (linkedNow) {
+        notifyLinkChanged(linkedNow, identity.email, true, hadPassword);
+        return res.json({ success: true, data: issueSession(res, linkedNow) });
       }
+      // Otro pedido la unió en el medio: un `googleSub` nunca se pisa.
+      throw googleLinkRequired();
     }
 
     // 4. Invitada sin activar, pero Google no es autoridad sobre ese correo: la
@@ -133,8 +164,8 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
       throw googleLinkRequired('invited');
     }
 
-    // 5. Tiene contraseña u otro `sub`: se conecta con la contraseña. Un
-    // `googleSub` nunca se pisa.
+    // 5. Tiene contraseña y Google no es autoridad, o ya tiene otro Google: se
+    // conecta con la contraseña. Un `googleSub` nunca se pisa.
     throw googleLinkRequired();
   } catch (error) {
     return next(error);

@@ -116,6 +116,14 @@ igual que `STORAGE_CONFIG`.
 
 ### 1. Login con Google
 
+**Cambiado el 2026-11-21 (cuarta ronda):** Google se une solo a la cuenta de
+ese correo cuando Google es autoridad sobre él (punto 7). Al unirse se borran la
+contraseña y todo token pendiente, y se cierran todas las sesiones. Para
+cualquier otro correo, Google se conecta poniendo la contraseña una vez. El
+texto de abajo describe la regla anterior donde la tabla del punto 6 dice
+"`GOOGLE_LINK_REQUIRED`" para una cuenta con contraseña: ver "Decisiones
+tomadas".
+
 Google nunca se une solo a una cuenta que ya tiene contraseña: se conecta
 poniendo esa contraseña una vez. Lo único automático es activar una cuenta
 invitada que nunca tuvo contraseña.
@@ -398,7 +406,8 @@ un scope no sensible: no hay verificación de Google ni auditoría.
 
 ### Login — cómo se une Google a una cuenta que ya tiene contraseña
 
-**Opción A (elegida): sólo con la contraseña.** Entrar con Google a un correo
+**Opción A (elegida el 2026-11-14, reemplazada el 2026-11-21 por la B segura):
+sólo con la contraseña.** Entrar con Google a un correo
 que ya tiene cuenta con contraseña responde `GOOGLE_LINK_REQUIRED`; la persona
 pone su contraseña una vez, en `/login` o en su cuenta, y queda conectada. Lo
 único automático es activar una cuenta invitada que nunca tuvo contraseña.
@@ -695,6 +704,30 @@ Se aprobaron las ocho recomendaciones de quien coordina.
 3. **Orden:** Drive va después del login y antes que Maps y calendario. Drive
    usa el mismo cliente OAuth que el login, así que no suma configuración nueva
    de Google Cloud salvo la Picker API.
+
+**Cuarta ronda (2026-11-21), con el login ya en la demo**
+
+1. **Login — cuenta que ya existe con ese correo: vinculación automática
+   segura** (reemplaza la decisión 1 de la segunda ronda). Pedir la contraseña
+   frenaba a casi todos los que ya tenían cuenta. Ahora:
+   - Se une sola **sólo si Google es autoridad sobre el correo** (`@gmail.com`
+     o Workspace del mismo dominio). Para cualquier otro correo, sigue
+     `GOOGLE_LINK_REQUIRED` y la contraseña.
+   - Al unirse, en una sola operación condicionada a que la cuenta siga sin
+     Google: se borran la contraseña, los tokens de reset, verificación y cambio
+     de correo, `pendingEmail` y las marcas de enlace en mano; se marca el correo
+     verificado y se sube `tokenVersion`, que cierra todas las sesiones. Quien
+     hubiera registrado antes ese correo con una contraseña suya queda afuera.
+   - Correo de aviso que dice que se quitó la contraseña y se cerraron las
+     sesiones.
+   - Costo aceptado: quien de verdad tenía esa contraseña la pierde y queda
+     entrando con Google; puede crear otra con «Olvidé mi contraseña» (que
+     desconecta Google, §1.14).
+   - Lo que hizo segura esta opción, frente a la B descartada el 2026-11-14:
+     `tokenVersion` ya existe (#83), y borrar la contraseña evita depender de
+     una prueba de la casilla (`emailVerifiedAt`) que no hay.
+   - En el aviso de `GOOGLE_LINK_REQUIRED` se suma un enlace a «Olvidé mi
+     contraseña».
 
 Queda sin saber, y ya no hace falta para este diseño, si producción corrió alguna
 vez con `REQUIRE_EMAIL_VERIFICATION=false`. Le importa al ADR-004.

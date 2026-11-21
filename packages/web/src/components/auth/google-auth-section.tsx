@@ -116,6 +116,18 @@ export function GoogleAuthSection({
               {t('auth.google.goToLogin')}
             </Link>
           )}
+          {/*
+            Si no se acuerda la contraseña, recuperarla es la salida: además
+            desconecta a cualquiera que hubiera registrado ese correo antes.
+          */}
+          {linkRequired && !invited && (
+            <p className="text-sm text-muted-foreground">
+              {t('auth.google.forgotHint')}{' '}
+              <Link className="text-primary hover:underline" to={ROUTES.FORGOT_PASSWORD}>
+                {t('auth.google.forgotAction')}
+              </Link>
+            </p>
+          )}
         </div>
       )}
 
