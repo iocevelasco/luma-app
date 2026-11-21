@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  integrationsConfigFromEnv,
-  publicConfigFromEnv,
-} from '../../controllers/public-config.controller.js';
+import { integrationsConfigFromEnv } from '../../controllers/integrations-config.controller.js';
+import { publicConfigFromEnv } from '../../controllers/public-config.controller.js';
 
 const ALL_ON = {
   CLIENT_ID: 'client.apps.googleusercontent.com',

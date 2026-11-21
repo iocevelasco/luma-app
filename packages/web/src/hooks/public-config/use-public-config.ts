@@ -11,7 +11,9 @@ export function usePublicConfig() {
   return useQuery({
     queryKey: [QueryKeys.publicConfig],
     queryFn: () => publicConfigApi.get(),
-    staleTime: Infinity,
-    retry: 1,
+    // No cambia sin un redeploy, pero tampoco se congela: si el primer pedido
+    // falla (un deploy en curso, la red), se reintenta y vuelve a pedirse al
+    // enfocar la pestaña, en vez de dejar la integración apagada toda la sesión.
+    retry: 3,
   });
 }

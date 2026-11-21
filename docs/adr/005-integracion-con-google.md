@@ -78,15 +78,21 @@ igual que `STORAGE_CONFIG`.
    (ya está en `.env.example`), la clave de navegador de Maps, y la clave y el
    número de proyecto para el Picker. **No hay client secret**: el flujo de ID
    token no lo usa, y `GOOGLE_GCP_CLIENT_SECRET` se sacó de `.env.example`.
-3. **La SPA recibe la configuración pública de la API, en runtime**, como hoy la
-   clave publicable de Stripe (`stripe.service.ts:183,221`):
-   *(Separado el 2026-11-21: sin sesión sale sólo el client id del login; las
-   claves de Maps y Drive, por `GET /api/config/integrations`, con sesión.)*
-   `GET /api/public/config`, sin sesión (`skipAuth: true`,
-   `QueryKeys.publicConfig`), devuelve por entrega su dato o `null`. Es la única
-   fuente de "entrega deshabilitada". No va como build arg `VITE_*`: duplicaría el
-   client id (la API lo necesita para validar `aud`, la web para el botón), exige
-   rebuild, y el camino de `VITE_RECAPTCHA_SITE_KEY` nunca corrió en producción.
+3. **La SPA recibe la configuración de la API, en runtime**, como hoy la
+   clave publicable de Stripe (`stripe.service.ts:183,221`), en dos partes
+   (separadas el 2026-11-21):
+   - `GET /api/public/config`, sin sesión (`skipAuth: true`,
+     `QueryKeys.publicConfig`): sólo el client id del login, que las pantallas
+     públicas necesitan antes de entrar.
+   - `GET /api/config/integrations`, con sesión (`enabled: isAuthenticated`,
+     `QueryKeys.integrationsConfig`): las claves de navegador de Maps y Drive.
+     Pedir sesión no las vuelve secretas (el registro es abierto, y la de Maps
+     va en el iframe del mapa): las protege la restricción por dominio y por
+     API, y la cuota (punto 4).
+   Cada entrega llega con su dato o `null`, y esa es la única fuente de "entrega
+   deshabilitada". No va como build arg `VITE_*`: duplicaría el client id (la
+   API lo necesita para validar `aud`, la web para el botón), exige rebuild, y
+   el camino de `VITE_RECAPTCHA_SITE_KEY` nunca corrió en producción.
 4. **Cuotas diarias y por minuto por API** en Cloud Console: es lo único que
    corta el gasto. El presupuesto con alerta se suma, pero sólo avisa. La
    restricción por dominio de una clave de navegador se falsifica fuera del

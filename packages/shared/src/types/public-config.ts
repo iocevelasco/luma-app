@@ -16,18 +16,21 @@
  */
 export interface PublicConfig {
   /** Entrar y registrarse con Google (ADR-005 §1). */
-  googleLogin: GoogleLoginPublicConfig | null;
+  googleLogin: GoogleLoginConfig | null;
 }
 
 export interface IntegrationsConfig {
   /** Autocompletar la dirección de la obra y verla en el mapa (ADR-005 §2). */
-  maps: MapsPublicConfig | null;
+  maps: MapsIntegrationConfig | null;
   /** Importar y exportar con Google Drive (ADR-005 §4). */
-  drive: DrivePublicConfig | null;
+  drive: DriveIntegrationConfig | null;
 }
 
-/** Datos públicos del proyecto de Google Cloud para el Picker. Ninguno es secreto. */
-export interface DrivePublicConfig {
+/**
+ * Lo que el Picker de Drive necesita. Va con sesión (`IntegrationsConfig`):
+ * ninguno es secreto, pero no se reparte a quien no entró.
+ */
+export interface DriveIntegrationConfig {
   /** Client id del cliente OAuth web. */
   clientId: string;
   /** Clave de navegador con la Picker API, restringida por dominio. */
@@ -36,15 +39,17 @@ export interface DrivePublicConfig {
   appId: string;
 }
 
-/** Lo que el botón de Google necesita. El client id no es secreto. */
-export interface GoogleLoginPublicConfig {
+/** Lo que el botón de Google necesita. El client id no es secreto: va sin sesión. */
+export interface GoogleLoginConfig {
   clientId: string;
 }
 
 /**
- * Clave de navegador con Places API (New) y Maps Embed API, restringida por
- * dominio y con cuota diaria. No es secreta: la protección está en la consola.
+ * Clave de navegador con Maps JavaScript API, Places API (New) y Maps Embed
+ * API. Va con sesión (`IntegrationsConfig`), pero termina en el navegador igual:
+ * lo que la protege es la restricción por dominio y por API, y la cuota, en
+ * Google Cloud.
  */
-export interface MapsPublicConfig {
+export interface MapsIntegrationConfig {
   apiKey: string;
 }
