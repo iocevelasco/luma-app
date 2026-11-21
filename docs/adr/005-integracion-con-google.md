@@ -116,9 +116,17 @@ igual que `STORAGE_CONFIG`.
 
 ### 1. Login con Google
 
-Google nunca se une solo a una cuenta que ya tiene contraseña: se conecta
+**Cambiado el 2026-11-21 (cuarta ronda):** Google se une solo a la cuenta de
+ese correo cuando Google es autoridad sobre él (punto 7). Si la contraseña de esa
+cuenta no está probada (`passwordProvenAt`), al unirse se borran la contraseña y
+todo token pendiente, y se cierran todas las sesiones; si está probada, se
+conserva. Para cualquier otro correo, Google se conecta poniendo la contraseña
+una vez. La tabla del punto 6 y los puntos 9 y 12 ya dicen la regla nueva; el
+párrafo de abajo es la regla original, que queda como registro.
+
+~~Google nunca se une solo a una cuenta que ya tiene contraseña: se conecta
 poniendo esa contraseña una vez. Lo único automático es activar una cuenta
-invitada que nunca tuvo contraseña.
+invitada que nunca tuvo contraseña.~~
 
 1. **El botón es el de Google, no un `Button` propio.** El ID token sólo sale del
    botón que dibuja Google (`google.accounts.id.renderButton`, un iframe): no
@@ -156,9 +164,10 @@ invitada que nunca tuvo contraseña.
    | Una cuenta con ese `googleSub` | Abre sesión |
    | Ninguna cuenta con ese correo y `acceptedTerms: true` | Crea la cuenta (punto 8) y abre sesión, venga de `/login` o de `/register` |
    | Ninguna cuenta con ese correo, sin `acceptedTerms` | `GOOGLE_SIGNUP_REQUIRED`, sin crear nada: la pantalla abre `TermsDialog` y reenvía la misma credencial con `acceptedTerms: true` |
-   | Una cuenta invitada y sin activar (sin contraseña ni `googleSub`), y Google es autoridad sobre el correo (punto 7) | La activa (punto 9) y abre sesión |
-   | Una cuenta con ese correo que ya tiene contraseña | `GOOGLE_LINK_REQUIRED`, sin tocar la cuenta: Google se conecta con la contraseña (punto 12) |
-   | Una cuenta con ese correo y otro `googleSub`, o invitada sin activar cuando Google no es autoridad | `GOOGLE_LINK_REQUIRED`. Un `googleSub` nunca se pisa |
+   | Una cuenta con ese correo, sin `googleSub`, y Google es autoridad sobre el correo (punto 7) | La une (punto 9) y abre sesión. Si la contraseña no está probada, la borra y cierra las sesiones |
+   | Una cuenta con contraseña, y Google no es autoridad sobre el correo | `GOOGLE_LINK_REQUIRED` (`reason: password`), sin tocar la cuenta: Google se conecta con la contraseña (punto 12) |
+   | Invitada sin activar cuando Google no es autoridad | `GOOGLE_LINK_REQUIRED` (`reason: invited`): se activa desde el correo |
+   | Una cuenta con ese correo y otro `googleSub` | `GOOGLE_LINK_REQUIRED` (`reason: otherGoogle`). Un `googleSub` nunca se pisa |
 
 7. **Google es autoridad sobre un correo** sólo si termina en `@gmail.com` o si
    el token trae `hd` (cuenta de Workspace) y coincide con el dominio del correo.
@@ -178,11 +187,15 @@ invitada que nunca tuvo contraseña.
      correo de Google ("Vas a crear una cuenta nueva con ana@gmail.com") y un
      enlace "¿Ya tienes cuenta con otro correo? Entra con tu contraseña y conecta
      Google". Riesgo aceptado: si igual la crea, queda una cuenta vacía más.
-9. **Activar una cuenta invitada** es una sola operación condicionada a que no
-   tenga contraseña ni `googleSub`: guarda `googleSub`, marca el correo como
-   verificado y limpia el token de activación, `activationLinkHeldBy` y
-   `claimedViaLinkBy`. Como esa cuenta nunca tuvo contraseña, nunca tuvo sesión:
-   no hay nada ajeno que heredar. Los Términos los pide `TermsGate`.
+9. **Unir Google a la cuenta del correo** (invitada o con contraseña) es una
+   sola operación condicionada a que la cuenta siga sin `googleSub`: guarda
+   `googleSub`, marca el correo verificado y limpia `activationLinkHeldBy` y
+   `claimedViaLinkBy`. Si la contraseña **no está probada** (`passwordProvenAt`,
+   que escriben `resetPassword`, `setPassword` con un enlace que sólo viajó por
+   mail, `verifyEmail` y `confirmEmailChange`), además borra la contraseña y los
+   tokens pendientes y sube `tokenVersion`. Si está probada, la conserva junto
+   con las sesiones. El índice único frena una carrera con otra cuenta
+   (`GOOGLE_ALREADY_LINKED`). Los Términos los pide `TermsGate`.
 10. **"Cuenta activada" pasa a ser "tiene contraseña o `googleSub`"**, en un
     helper único que usen `resendMemberInvitation`, `resendVerification` y el
     `pending` de Equipo. `setPassword` no acepta el token de una cuenta con
@@ -198,7 +211,8 @@ invitada que nunca tuvo contraseña.
     mira el correo, así que sirve también para quien usa otro correo en Google.
     `GOOGLE_ALREADY_LINKED` si ese `googleSub` ya es de otra cuenta (también
     cuando lo dice el índice único). **Camino corto en `/login`**: tras un
-    `GOOGLE_LINK_REQUIRED` la credencial queda en memoria y, si la persona entra
+    `GOOGLE_LINK_REQUIRED` con `reason: password` la credencial queda en
+    memoria y, si la persona entra
     con su contraseña en ese momento, la misma pantalla conecta Google sin pasar
     por la cuenta.
 13. **Desvincular**: `DELETE /api/auth/google/link`, con contraseña y
@@ -398,7 +412,8 @@ un scope no sensible: no hay verificación de Google ni auditoría.
 
 ### Login — cómo se une Google a una cuenta que ya tiene contraseña
 
-**Opción A (elegida): sólo con la contraseña.** Entrar con Google a un correo
+**Opción A (elegida el 2026-11-14, reemplazada el 2026-11-21 por la B segura):
+sólo con la contraseña.** Entrar con Google a un correo
 que ya tiene cuenta con contraseña responde `GOOGLE_LINK_REQUIRED`; la persona
 pone su contraseña una vez, en `/login` o en su cuenta, y queda conectada. Lo
 único automático es activar una cuenta invitada que nunca tuvo contraseña.
@@ -695,6 +710,40 @@ Se aprobaron las ocho recomendaciones de quien coordina.
 3. **Orden:** Drive va después del login y antes que Maps y calendario. Drive
    usa el mismo cliente OAuth que el login, así que no suma configuración nueva
    de Google Cloud salvo la Picker API.
+
+**Cuarta ronda (2026-11-21), con el login ya en la demo**
+
+1. **Login — cuenta que ya existe con ese correo: vinculación automática
+   segura** (reemplaza la decisión 1 de la segunda ronda). Pedir la contraseña
+   frenaba a casi todos los que ya tenían cuenta. Ahora:
+   - Se une sola **sólo si Google es autoridad sobre el correo** (`@gmail.com`
+     o Workspace del mismo dominio). Para cualquier otro correo, sigue
+     `GOOGLE_LINK_REQUIRED` y la contraseña.
+   - Al unirse, en una sola operación condicionada a que la cuenta siga sin
+     Google, se marca el correo verificado. Si la contraseña **no está
+     probada**, además se borran la contraseña, los tokens de reset,
+     verificación y cambio de correo, `pendingEmail` y las marcas de enlace en
+     mano, y se sube `tokenVersion`, que cierra todas las sesiones: quien
+     hubiera registrado antes ese correo con una contraseña suya queda afuera.
+   - **Contraseña probada** (`User.passwordProvenAt`, un hecho nuevo): la
+     escriben los caminos que prueban la casilla con la contraseña puesta
+     (recuperarla, activar con un enlace que sólo viajó por mail, confirmar el
+     correo o un cambio de correo). Con ella, la contraseña y las sesiones se
+     conservan. Sin este hecho, quien recuperaba la contraseña (que desconecta
+     Google, §1.14) y volvía a entrar con Google la perdía otra vez: nunca podía
+     tener las dos.
+   - Correo de aviso; si se quitó la contraseña, lo dice.
+   - Costo aceptado: la primera vez, quien tenía una contraseña sin probar la
+     pierde y queda entrando con Google. La que cree después con «Olvidé mi
+     contraseña» ya queda probada.
+   - Lo que hizo segura esta opción, frente a la B descartada el 2026-11-14:
+     `tokenVersion` ya existe (#83), y la prueba de la casilla (`passwordProvenAt`)
+     se guarda desde ahora.
+   - Avisos: `GOOGLE_LINK_REQUIRED` trae `reason` (`password`, `invited`,
+     `otherGoogle`) y cada uno su texto; el de `password` suma «Olvidé mi
+     contraseña» (salvo en `/login`, que ya lo tiene). En `/login`, una
+     contraseña incorrecta suma "¿Entrabas con Google?", igual para todos para no
+     delatar qué cuentas existen.
 
 Queda sin saber, y ya no hace falta para este diseño, si producción corrió alguna
 vez con `REQUIRE_EMAIL_VERIFICATION=false`. Le importa al ADR-004.

@@ -349,6 +349,8 @@ export class EmailService {
     name?: string;
     googleEmail: string;
     linked: boolean;
+    /** Google se unió solo por el correo: se quitó la contraseña y se cerraron las sesiones. */
+    passwordRemoved?: boolean;
   }): Promise<boolean> {
     const url = appUrl('/forgot-password');
     const name = params.name || params.to.split('@')[0];
@@ -368,12 +370,24 @@ export class EmailService {
             <p>Hola ${escapeHtml(name)},</p>
             <p>Tu cuenta de ${escapeHtml(APP_NAME)} quedó ${what} la cuenta de Google
                <strong>${escapeHtml(params.googleEmail)}</strong>.</p>
+            ${
+              params.passwordRemoved
+                ? `<p>Por seguridad quitamos la contraseña de tu cuenta y cerramos las
+                   sesiones abiertas en otros dispositivos. A partir de ahora entras con
+                   Google; si quieres volver a tener contraseña, créala con «Olvidé mi
+                   contraseña».</p>`
+                : ''
+            }
             <p>Si no fuiste tú, recupera tu contraseña: eso desconecta Google y cierra
                todas las sesiones abiertas.</p>`,
           cta: { label: 'Recuperar mi contraseña', url },
           note: 'Si fuiste tú, no tienes que hacer nada.',
         }),
-        text: `Tu cuenta de ${APP_NAME} quedó ${what} ${params.googleEmail}.\n\nSi no fuiste tú, recupera tu contraseña: ${url}`,
+        text: `Tu cuenta de ${APP_NAME} quedó ${what} ${params.googleEmail}.${
+          params.passwordRemoved
+            ? '\n\nPor seguridad quitamos la contraseña de tu cuenta y cerramos las sesiones abiertas. A partir de ahora entras con Google.'
+            : ''
+        }\n\nSi no fuiste tú, recupera tu contraseña: ${url}`,
       },
       'mail de Google conectado',
     );

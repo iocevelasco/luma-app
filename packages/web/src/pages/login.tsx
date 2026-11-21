@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useLinkGoogle, useLogin } from '@/hooks/auth/use-auth-queries';
+import { usePublicConfig } from '@/hooks/public-config/use-public-config';
 import { isApiError } from '@/lib/api-client';
 import { errorMessage } from '@/lib/error-message';
 import { ROUTES } from '@/lib/routes';
@@ -24,6 +25,8 @@ type LoginForm = z.infer<typeof loginCredentialsSchema>;
 export function LoginPage() {
   const { t } = useTranslation();
   const login = useLogin();
+  const { data: publicConfig } = usePublicConfig();
+  const googleEnabled = Boolean(publicConfig?.googleLogin);
   const linkGoogle = useLinkGoogle();
   // Tras un `GOOGLE_LINK_REQUIRED`: si entra ahora con su contraseña, se
   // conecta ese Google sin pasar por la cuenta. Sólo en memoria.
@@ -117,6 +120,15 @@ export function LoginPage() {
                   {t('auth.login.pendingAction')}
                 </Link>
               </p>
+            )}
+            {/*
+              Quien conectó Google con un Gmail pudo quedarse sin contraseña
+              (ADR-005 §1, cuarta ronda) y la sigue escribiendo. El servidor no
+              puede decirlo sin delatar qué cuentas existen: la pista va igual
+              para todos, y sólo si el botón de Google está.
+            */}
+            {isApiError(login.error) && login.error.status === 401 && googleEnabled && (
+              <p className="text-sm text-muted-foreground">{t('auth.login.googleHint')}</p>
             )}
           </div>
         )}

@@ -220,6 +220,16 @@ describe('cuentas activadas con un enlace que pasó por manos de quien invitó',
       expect(user.claimedViaLinkBy).toBeUndefined();
     });
 
+    it('la contraseña elegida con un enlace que sólo viajó por mail queda probada; con uno en mano, no', async () => {
+      const byMail = tokenOwner({});
+      await activate();
+      expect(byMail.passwordProvenAt).toBeInstanceOf(Date);
+
+      const held = tokenOwner({ activationLinkHeldBy: 'owner-1', passwordProvenAt: new Date() });
+      await activate();
+      expect(held.passwordProvenAt).toBeUndefined();
+    });
+
     it('no le quita la verificación a una casilla que ya estaba probada', async () => {
       const user = tokenOwner({ activationLinkHeldBy: 'owner-1', email_verified: true });
 
@@ -261,6 +271,14 @@ describe('cuentas activadas con un enlace que pasó por manos de quien invitó',
       expect(user.googleSub).toBeUndefined();
       expect(user.googleEmail).toBeUndefined();
       expect(user.save).toHaveBeenCalled();
+    });
+
+    it('la contraseña nueva queda probada: la eligió quien tiene la casilla', async () => {
+      const user = tokenOwner({ password: 'hash-viejo' });
+
+      await resetPassword({ body: { token: 'tok', password: 'Clave-de-la-dueña-1' } } as never, mockRes());
+
+      expect(user.passwordProvenAt).toBeInstanceOf(Date);
     });
 
     it('una cuenta anterior al campo arranca en 0 y pasa a 1', async () => {
