@@ -2570,7 +2570,8 @@
           "paragraphs": [
             "No vendemos ni alquilamos tus datos personales ni los de tu obra.",
             "No mostramos publicidad de terceros ni compartimos tus datos con anunciantes.",
-            "No usamos los datos de tu obra para fines comerciales propios ni ajenos: son para que tu obra funcione."
+            "No usamos los datos de tu obra para fines comerciales propios ni ajenos: son para que tu obra funcione.",
+            "El uso que hacemos de la información que recibimos de las API de Google, y su transferencia a cualquier otra aplicación, cumple la Política de datos de usuario de los servicios de API de Google, incluidos los requisitos de Uso Limitado. No usamos esos datos para publicidad ni para entrenar modelos de inteligencia artificial."
           ]
         },
         {
