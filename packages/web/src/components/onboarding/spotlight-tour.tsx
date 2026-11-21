@@ -13,6 +13,12 @@ export interface TourStep {
   body: string;
   /** Si viene, el último paso la muestra como botón principal en vez de "Siguiente". */
   cta?: { label: string; icon?: LucideIcon; onPress: () => void };
+  /**
+   * Ilustración en lugar de la banda verde (la bienvenida). Ruta dentro de `public/`, sin
+   * la base: se le antepone `BASE_URL` (en producción la SPA vive bajo `/app/`). Si no
+   * carga, queda la banda con el ícono.
+   */
+  illustration?: string;
 }
 
 /** Aire entre el elemento marcado y su borde resaltado, y entre éste y la tarjeta. */
@@ -49,6 +55,7 @@ export function SpotlightTour({
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [size, setSize] = useState({ width: 320, height: 240 });
+  const [brokenIllustration, setBrokenIllustration] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const step = steps[index];
@@ -147,11 +154,25 @@ export function SpotlightTour({
         className="surface-light absolute w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl bg-card text-card-foreground shadow-overlay"
         style={cardStyle}
       >
-        <div className="flex h-16 items-center justify-center bg-primary text-primary-foreground" aria-hidden="true">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-background/30">
-            <Icon className="size-5" />
-          </span>
-        </div>
+        {step.illustration && !brokenIllustration ? (
+          // Decorativa: el título ya dice qué es. `mix-blend-multiply` funde el blanco de la
+          // imagen con la tarjeta, como las ilustraciones de los estados vacíos.
+          <img
+            src={`${import.meta.env.BASE_URL}${step.illustration}`}
+            alt=""
+            width={320}
+            height={160}
+            className="h-40 w-full object-contain mix-blend-multiply"
+            onError={() => setBrokenIllustration(true)}
+            data-testid="tour-illustration"
+          />
+        ) : (
+          <div className="flex h-16 items-center justify-center bg-primary text-primary-foreground" aria-hidden="true">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-background/30">
+              <Icon className="size-5" />
+            </span>
+          </div>
+        )}
 
         <div className="flex flex-col items-center gap-3 px-5 pt-4 pb-5 text-center">
           <div className="flex flex-col gap-1">

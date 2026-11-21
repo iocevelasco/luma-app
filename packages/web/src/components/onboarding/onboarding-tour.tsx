@@ -63,7 +63,14 @@ export function OnboardingTour() {
   const steps = useMemo<TourStep[]>(() => {
     if (level === 'home') {
       return [
-        { id: 'welcome', icon: Sparkles, title: t('tour.welcomeTitle'), body: t('tour.welcomeBody') },
+        {
+          id: 'welcome',
+          icon: Sparkles,
+          title: t('tour.welcomeTitle'),
+          body: t('tour.welcomeBody'),
+          // La pantalla de bienvenida es este paso, con la ilustración del set de vacíos.
+          illustration: 'onboarding/bienvenida.webp',
+        },
         ...DASHBOARD_DESTINATIONS.map<TourStep>((destination) => ({
           id: destination.labelKey,
           target: `[data-testid="${destination.testId}"], [data-testid="${destination.testId}-mobile"]`,
