@@ -6,7 +6,7 @@ import {
   DOCUMENT_MAX_BYTES,
   DOCUMENT_MIME_TYPES,
   type DocumentCategory,
-  type DrivePublicConfig,
+  type DriveIntegrationConfig,
   type ProjectDocument,
 } from '@luma/shared';
 import { documentsApi } from '@/api/documents';
@@ -58,7 +58,7 @@ export function useGoogleDrive(projectId: string) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const { data: integrations } = useIntegrationsConfig();
-  const drive: DrivePublicConfig | null = integrations?.drive ?? null;
+  const drive: DriveIntegrationConfig | null = integrations?.drive ?? null;
   const [progress, setProgress] = useState<DriveProgress | null>(null);
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export function useGoogleDrive(projectId: string) {
   }, [drive]);
 
   const pickOptions = useCallback(
-    (config: DrivePublicConfig, token: string, title: string) => ({
+    (config: DriveIntegrationConfig, token: string, title: string) => ({
       config,
       token,
       locale: pickerLocale(i18n.language),
@@ -81,7 +81,7 @@ export function useGoogleDrive(projectId: string) {
       tokenPromise,
       target,
     }: {
-      config: DrivePublicConfig;
+      config: DriveIntegrationConfig;
       tokenPromise: Promise<string>;
       target: ImportTarget;
     }) => {
@@ -139,7 +139,7 @@ export function useGoogleDrive(projectId: string) {
       tokenPromise,
       documents,
     }: {
-      config: DrivePublicConfig;
+      config: DriveIntegrationConfig;
       tokenPromise: Promise<string>;
       documents: ProjectDocument[];
     }) => {
@@ -181,7 +181,7 @@ export function useGoogleDrive(projectId: string) {
   const busy = progress !== null || importMutation.isPending || exportMutation.isPending;
 
   /** Llamar desde el clic: abre el permiso de Google en el mismo gesto. */
-  const startToken = useCallback((): { config: DrivePublicConfig; tokenPromise: Promise<string> } | null => {
+  const startToken = useCallback((): { config: DriveIntegrationConfig; tokenPromise: Promise<string> } | null => {
     if (!drive || busy) return null;
     if (!isGoogleDriveLoaded()) {
       toast.error(t('document.drive.errors.unavailable'));

@@ -14,7 +14,9 @@ export function useIntegrationsConfig() {
     queryFn: () => integrationsConfigApi.get(),
     // Obligatorio en toda query protegida: un 401 en una pantalla pública patea a /login.
     enabled: isAuthenticated,
-    staleTime: Infinity,
-    retry: 1,
+    // No cambia sin un redeploy, pero tampoco se congela: si el primer pedido
+    // falla (un deploy en curso, la red), se reintenta y vuelve a pedirse al
+    // enfocar la pestaña, en vez de dejar la integración apagada toda la sesión.
+    retry: 3,
   });
 }
