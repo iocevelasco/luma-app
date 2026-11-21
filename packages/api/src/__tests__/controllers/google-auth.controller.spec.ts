@@ -8,7 +8,13 @@ import type { NextFunction, Response } from 'express';
  * tiene contraseña, y un `googleSub` nunca se pisa.
  */
 vi.mock('../../models/User.js', () => ({
-  User: { findOne: vi.fn(), findById: vi.fn(), findOneAndUpdate: vi.fn(), updateOne: vi.fn() },
+  User: {
+    findOne: vi.fn(),
+    findById: vi.fn(),
+    findOneAndUpdate: vi.fn(),
+    updateOne: vi.fn(),
+    exists: vi.fn(),
+  },
 }));
 vi.mock('../../services/email.service.js', () => ({
   EmailService: {
@@ -159,9 +165,38 @@ describe('POST /api/auth/google', () => {
     expect(EmailService.sendEmailVerificationEmail).toHaveBeenCalled();
   });
 
-  it('una cuenta con ese correo y contraseña no se toca: GOOGLE_LINK_REQUIRED', async () => {
+  it('una cuenta con contraseña y un Gmail: Google se une solo, se borra la contraseña y se cierran las sesiones', async () => {
+    const { forgetTokenVersion } = await import('../../services/session.service.js');
     googleSays();
     findOneReturns(null, aUser({ password: PASSWORD_HASH }));
+    const linkedNow = aUser({ googleSub: 'google-sub-1', tokenVersion: 3 });
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({
+      select: vi.fn().mockResolvedValue(linkedNow),
+    } as never);
+
+    const { res, error } = await callGoogle();
+
+    expect(error).toBeUndefined();
+    const [filter, update] = vi.mocked(User.findOneAndUpdate).mock.calls[0] as unknown as [
+      Record<string, unknown>,
+      { $set: Record<string, unknown>; $unset: Record<string, unknown>; $inc: Record<string, unknown> },
+    ];
+    // Condicionado a que siga sin Google: un `googleSub` nunca se pisa.
+    expect(filter).toEqual({ _id: 'user-1', googleSub: { $exists: false } });
+    expect(update.$set).toMatchObject({ googleSub: 'google-sub-1', email_verified: true });
+    // Quien registró antes ese correo con una contraseña suya queda afuera.
+    expect(update.$unset).toMatchObject({ password: '', resetToken: '', pendingEmail: '', claimedViaLinkBy: '' });
+    expect(update.$inc).toEqual({ tokenVersion: 1 });
+    expect(forgetTokenVersion).toHaveBeenCalledWith('user-1');
+    expect(res.cookie).toHaveBeenCalled();
+    expect(EmailService.sendGoogleLinkChanged).toHaveBeenCalledWith(
+      expect.objectContaining({ linked: true, passwordRemoved: true }),
+    );
+  });
+
+  it('una cuenta con contraseña y un correo que no es de Gmail ni Workspace: no se toca, GOOGLE_LINK_REQUIRED', async () => {
+    googleSays({ email: 'ana@hotmail.com' });
+    findOneReturns(null, aUser({ email: 'ana@hotmail.com', password: PASSWORD_HASH }));
 
     const { error } = await callGoogle({ credential: 'cred', acceptedTerms: true });
 
@@ -170,13 +205,82 @@ describe('POST /api/auth/google', () => {
     expect(User.updateOne).not.toHaveBeenCalled();
   });
 
-  it('una cuenta con ese correo y OTRO sub: GOOGLE_LINK_REQUIRED, el sub no se pisa', async () => {
+  it('una cuenta de Workspace del mismo dominio también se une sola', async () => {
+    googleSays({ email: 'ana@estudio.com', hd: 'estudio.com' });
+    findOneReturns(null, aUser({ email: 'ana@estudio.com', password: PASSWORD_HASH }));
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({
+      select: vi.fn().mockResolvedValue(aUser({ email: 'ana@estudio.com', googleSub: 'google-sub-1' })),
+    } as never);
+
+    const { error } = await callGoogle();
+
+    expect(error).toBeUndefined();
+    const [, update] = vi.mocked(User.findOneAndUpdate).mock.calls[0] as unknown as [
+      unknown,
+      { $unset: Record<string, unknown>; $inc?: Record<string, unknown> },
+    ];
+    expect(update.$unset).toMatchObject({ password: '' });
+    expect(update.$inc).toEqual({ tokenVersion: 1 });
+    expect(EmailService.sendGoogleLinkChanged).toHaveBeenCalledWith(
+      expect.objectContaining({ passwordRemoved: true }),
+    );
+  });
+
+  it('con una contraseña probada (la eligió quien tiene la casilla) la conserva, y no cierra sesiones', async () => {
+    const { forgetTokenVersion } = await import('../../services/session.service.js');
+    googleSays();
+    findOneReturns(null, aUser({ password: PASSWORD_HASH, passwordProvenAt: new Date('2026-11-01') }));
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({
+      select: vi.fn().mockResolvedValue(aUser({ password: PASSWORD_HASH, googleSub: 'google-sub-1' })),
+    } as never);
+
+    const { error } = await callGoogle();
+
+    expect(error).toBeUndefined();
+    const [, update] = vi.mocked(User.findOneAndUpdate).mock.calls[0] as unknown as [
+      unknown,
+      { $set: Record<string, unknown>; $unset: Record<string, unknown>; $inc?: unknown },
+    ];
+    expect(update.$set).toMatchObject({ googleSub: 'google-sub-1' });
+    expect(update.$unset).not.toHaveProperty('password');
+    expect(update.$inc).toBeUndefined();
+    expect(forgetTokenVersion).not.toHaveBeenCalled();
+    expect(EmailService.sendGoogleLinkChanged).toHaveBeenCalledWith(
+      expect.objectContaining({ passwordRemoved: false }),
+    );
+  });
+
+  it('si ese Google se unió a otra cuenta en el medio, el índice único lo frena: GOOGLE_ALREADY_LINKED, no un 500', async () => {
+    googleSays();
+    findOneReturns(null, aUser({ password: PASSWORD_HASH }));
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({
+      select: vi.fn().mockRejectedValue(Object.assign(new Error('dup'), { code: 11000 })),
+    } as never);
+
+    const { error } = await callGoogle();
+
+    expect(error?.code).toBe('GOOGLE_ALREADY_LINKED');
+  });
+
+  it('si otro pedido la unió en el medio, no pisa nada: GOOGLE_LINK_REQUIRED', async () => {
+    googleSays();
+    findOneReturns(null, aUser({ password: PASSWORD_HASH }));
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({ select: vi.fn().mockResolvedValue(null) } as never);
+
+    const { res, error } = await callGoogle();
+
+    expect(error?.code).toBe('GOOGLE_LINK_REQUIRED');
+    expect(res.cookie).not.toHaveBeenCalled();
+  });
+
+  it('una cuenta con ese correo y OTRO sub: GOOGLE_LINK_REQUIRED con reason otherGoogle, el sub no se pisa', async () => {
     googleSays();
     findOneReturns(null, aUser({ googleSub: 'otro-sub' }));
 
     const { error } = await callGoogle();
 
     expect(error?.code).toBe('GOOGLE_LINK_REQUIRED');
+    expect(error?.details).toEqual({ reason: 'otherGoogle' });
     expect(User.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
@@ -192,7 +296,7 @@ describe('POST /api/auth/google', () => {
 
     expect(error).toBeUndefined();
     expect(User.findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: 'user-1', password: { $exists: false }, googleSub: { $exists: false } },
+      { _id: 'user-1', googleSub: { $exists: false } },
       expect.objectContaining({
         $set: expect.objectContaining({ googleSub: 'google-sub-1', email_verified: true }),
       }),
@@ -200,7 +304,7 @@ describe('POST /api/auth/google', () => {
     );
     expect(res.json).toHaveBeenCalled();
     expect(EmailService.sendGoogleLinkChanged).toHaveBeenCalledWith(
-      expect.objectContaining({ linked: true, googleEmail: 'ana@gmail.com' }),
+      expect.objectContaining({ linked: true, googleEmail: 'ana@gmail.com', passwordRemoved: false }),
     );
   });
 
@@ -241,6 +345,116 @@ describe('POST /api/auth/google', () => {
     const { error } = await callGoogle({ credential: 'cred', acceptedTerms: true });
 
     expect(error?.code).toBe('GOOGLE_LINK_REQUIRED');
+  });
+});
+
+/**
+ * Desde `/activate`, con el token del enlace: activa esa invitada aunque el
+ * correo de Google sea otro (ADR-005 §1.9 bis).
+ */
+describe('POST /api/auth/google con activationToken', () => {
+  const activate = () => callGoogle({ credential: 'cred', activationToken: 'tok-activacion' });
+
+  function invited(overrides: Record<string, unknown> = {}) {
+    return aUser({ email: 'ana@estudio.com', email_verified: false, ...overrides });
+  }
+
+  it('activa la invitada del enlace con un Google de otro correo, en una sola operación condicionada', async () => {
+    googleSays({ email: 'ana.perez@gmail.com' });
+    findOneReturns(invited());
+    vi.mocked(User.exists).mockResolvedValue(null as never);
+    const activated = invited({ googleSub: 'google-sub-1', email_verified: true });
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({ select: vi.fn().mockResolvedValue(activated) } as never);
+
+    const { res, error } = await activate();
+
+    expect(error).toBeUndefined();
+    expect(User.findOne).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(User.findOne).mock.calls[0]![0]).toMatchObject({ emailVerificationToken: 'tok-activacion' });
+    const [filter, update] = vi.mocked(User.findOneAndUpdate).mock.calls[0] as unknown as [
+      Record<string, unknown>,
+      { $set: Record<string, unknown>; $unset: Record<string, unknown>; $inc?: unknown },
+    ];
+    expect(filter).toEqual({
+      _id: 'user-1',
+      emailVerificationToken: 'tok-activacion',
+      googleSub: { $exists: false },
+      activationLinkHeldBy: { $exists: false },
+    });
+    expect(update.$set).toEqual({ googleSub: 'google-sub-1', googleEmail: 'ana.perez@gmail.com', email_verified: true });
+    expect(update.$unset).toMatchObject({ emailVerificationToken: '', claimedViaLinkBy: '' });
+    // Sin contraseña no hay sesiones ajenas que cerrar.
+    expect(update.$inc).toBeUndefined();
+    expect(res.cookie).toHaveBeenCalled();
+  });
+
+  it('con el enlace en manos de quien invitó (el mail no salió) no sirve para Google', async () => {
+    googleSays({ email: 'otro@gmail.com' });
+    findOneReturns(invited({ activationLinkHeldBy: 'owner-1' }));
+
+    const { res, error } = await activate();
+
+    expect(error?.code).toBe('VALIDATION');
+    expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(res.cookie).not.toHaveBeenCalled();
+  });
+
+  it('un enlace vencido o inexistente no activa nada', async () => {
+    googleSays();
+    findOneReturns(null);
+
+    const { error } = await activate();
+
+    expect(error?.code).toBe('VALIDATION');
+    expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('si ese Google ya es de otra cuenta, no entra a esa en silencio: GOOGLE_ALREADY_LINKED', async () => {
+    googleSays({ email: 'ana.perez@gmail.com' });
+    findOneReturns(invited());
+    vi.mocked(User.exists).mockResolvedValue({ _id: 'otra' } as never);
+
+    const { res, error } = await activate();
+
+    expect(error?.code).toBe('GOOGLE_ALREADY_LINKED');
+    expect(User.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(res.cookie).not.toHaveBeenCalled();
+  });
+
+  it('una cuenta atada a un enlace en mano (con contraseña) se activa sin esa contraseña y con las sesiones cerradas', async () => {
+    const { forgetTokenVersion } = await import('../../services/session.service.js');
+    googleSays({ email: 'ana.perez@gmail.com' });
+    findOneReturns(invited({ password: PASSWORD_HASH, claimedViaLinkBy: 'owner-1' }));
+    vi.mocked(User.exists).mockResolvedValue(null as never);
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({
+      select: vi.fn().mockResolvedValue(invited({ googleSub: 'google-sub-1' })),
+    } as never);
+
+    const { error } = await activate();
+
+    expect(error).toBeUndefined();
+    const [, update] = vi.mocked(User.findOneAndUpdate).mock.calls[0] as unknown as [
+      unknown,
+      { $unset: Record<string, unknown>; $inc?: Record<string, unknown> },
+    ];
+    expect(update.$unset).toMatchObject({ password: '', claimedViaLinkBy: '' });
+    expect(update.$inc).toEqual({ tokenVersion: 1 });
+    expect(forgetTokenVersion).toHaveBeenCalledWith('user-1');
+    expect(EmailService.sendGoogleLinkChanged).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'ana@estudio.com', passwordRemoved: true }),
+    );
+  });
+
+  it('si el token se usó en el medio (otro clic, o eligió contraseña), no pisa nada', async () => {
+    googleSays();
+    findOneReturns(invited());
+    vi.mocked(User.exists).mockResolvedValue(null as never);
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({ select: vi.fn().mockResolvedValue(null) } as never);
+
+    const { res, error } = await activate();
+
+    expect(error?.code).toBe('VALIDATION');
+    expect(res.cookie).not.toHaveBeenCalled();
   });
 });
 

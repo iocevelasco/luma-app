@@ -92,6 +92,16 @@ export interface IUser extends Document {
   googleEmail?: string;
 
   /**
+   * Cuándo quedó probado que la contraseña actual la eligió quien tiene la
+   * casilla: se recuperó por mail, se activó con un enlace que sólo viajó por
+   * mail, o se confirmó el correo (o un cambio de correo) con ella puesta. Sin
+   * esto, Google borra la contraseña al unirse solo (ADR-005 §1, cuarta ronda):
+   * pudo elegirla alguien que registró un correo ajeno. Es un hecho, no un
+   * derivado: no se puede reconstruir después.
+   */
+  passwordProvenAt?: Date;
+
+  /**
    * SHA-256 del token del feed de calendario (ADR-005 §3). El token se muestra
    * una sola vez; con el hash se busca el feed. Se borra al dar de baja la
    * cuenta, no sólo al purgarla.
@@ -155,6 +165,7 @@ const userSchema = new Schema<IUser>(
     tokenVersion: { type: Number, default: 0 },
     googleSub: { type: String, select: false, unique: true, sparse: true },
     googleEmail: { type: String, lowercase: true, trim: true },
+    passwordProvenAt: { type: Date },
     calendarFeedTokenHash: { type: String, select: false, unique: true, sparse: true },
     calendarFeedCreatedAt: { type: Date },
   },

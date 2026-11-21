@@ -247,6 +247,8 @@ export async function resetPassword(req: Request, res: Response) {
     }
 
     user.password = await bcrypt.hash(parsed.data.password, BCRYPT_ROUNDS);
+    // El enlace viajó sólo por mail: esta contraseña la eligió quien tiene la casilla.
+    user.passwordProvenAt = new Date();
     user.resetToken = undefined;
     user.resetTokenExpires = undefined;
     // El enlace viajó sólo por el mail: usarlo prueba que se tiene la casilla, y
@@ -304,9 +306,11 @@ export async function setPassword(req: Request, res: Response) {
     user.activationLinkHeldBy = undefined;
     if (heldBy && !user.email_verified) {
       user.claimedViaLinkBy = heldBy;
+      user.passwordProvenAt = undefined;
     } else {
       user.email_verified = true;
       user.claimedViaLinkBy = undefined;
+      user.passwordProvenAt = new Date();
     }
 
     // Se escribe condicionado a que siga sin Google, en la misma operación: si
@@ -323,12 +327,14 @@ export async function setPassword(req: Request, res: Response) {
           termsAcceptedIp: user.termsAcceptedIp,
           termsAcceptedUserAgent: user.termsAcceptedUserAgent,
           ...(user.claimedViaLinkBy && { claimedViaLinkBy: user.claimedViaLinkBy }),
+          ...(user.passwordProvenAt && { passwordProvenAt: user.passwordProvenAt }),
         },
         $unset: {
           emailVerificationToken: '',
           emailVerificationTokenExpires: '',
           activationLinkHeldBy: '',
           ...(!user.claimedViaLinkBy && { claimedViaLinkBy: '' }),
+          ...(!user.passwordProvenAt && { passwordProvenAt: '' }),
         },
       },
     );
@@ -363,6 +369,8 @@ export async function verifyEmail(req: Request, res: Response) {
     }
 
     user.email_verified = true;
+    // Quien registró la cuenta (y eligió la contraseña) prueba ahora la casilla.
+    user.passwordProvenAt = new Date();
     user.emailVerificationToken = undefined;
     user.emailVerificationTokenExpires = undefined;
     await user.save();
@@ -513,6 +521,8 @@ export async function confirmEmailChange(req: Request, res: Response) {
 
     user.email = user.pendingEmail;
     user.email_verified = true;
+    // Pidió el cambio con la contraseña y probó la casilla nueva: es la misma persona.
+    user.passwordProvenAt = new Date();
     user.activationLinkHeldBy = undefined;
     user.claimedViaLinkBy = undefined;
     user.pendingEmail = undefined;

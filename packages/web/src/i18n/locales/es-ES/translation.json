@@ -389,7 +389,8 @@
       "noAccount": "¿No tienes cuenta?",
       "register": "Crea una",
       "pendingHint": "¿Te han invitado y todavía no has elegido tu contraseña?",
-      "pendingAction": "Pide un enlace de activación nuevo"
+      "pendingAction": "Pide un enlace de activación nuevo",
+      "googleHint": "¿Entrabas con Google? Usa el botón de Google: si lo conectaste con un Gmail, tu cuenta puede no tener contraseña."
     },
     "register": {
       "title": "Crear cuenta",
@@ -485,7 +486,9 @@
       "unlinkBody": "Ya no podrás entrar con {{email}}. Para confirmarlo, escribe tu contraseña.",
       "noPasswordBody": "Entras con Google y tu cuenta no tiene contraseña. Te enviaremos un enlace al correo para crearla. Al crearla, Google se desconecta y tendrás que volver a conectarlo.",
       "createPassword": "Crear contraseña",
-      "emailNeedsPassword": "Para cambiar el correo necesitas una contraseña. Créala en la tarjeta de contraseña."
+      "emailNeedsPassword": "Para cambiar el correo necesitas una contraseña. Créala en la tarjeta de contraseña.",
+      "forgotHint": "¿No recuerdas la contraseña?",
+      "forgotAction": "Recupérala"
     },
     "calendarFeed": {
       "title": "Calendario",
@@ -1804,7 +1807,8 @@
     "googleLinkInvited": "Ya te invitaron con ese correo. Activa tu cuenta desde el enlace que te llegó por correo.",
     "googleAlreadyLinked": "Esa cuenta de Google ya está conectada a otra cuenta de Luma.",
     "googleUnlinkNeedsPassword": "Tu cuenta no tiene contraseña: si desconectas Google no podrías entrar. Crea una contraseña primero.",
-    "googleNotAllowed": "Esta cuenta no puede entrar con Google."
+    "googleNotAllowed": "Esta cuenta no puede entrar con Google.",
+    "googleLinkOtherGoogle": "Tu cuenta de Luma ya tiene otra cuenta de Google conectada. Entra con esa, o con tu contraseña."
   },
   "directory": {
     "providersEmpty": "Todavía no hay proveedores en tu Empresa.",

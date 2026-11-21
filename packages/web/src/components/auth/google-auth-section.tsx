@@ -22,12 +22,33 @@ interface GoogleAuthSectionProps {
   onLinkRequired?: (credential: string) => void;
   /** Un "o" arriba del botón. Va acá y no en la pantalla: sin Google, no queda un divisor suelto. */
   divider?: boolean;
+  /**
+   * En `/activate`: el token del enlace de invitación. Con él, Google activa
+   * esa cuenta invitada aunque el correo de Google sea otro.
+   */
+  activationToken?: string;
   className?: string;
 }
 
 interface PendingSignup {
   credential: string;
   details: GoogleSignupDetails;
+}
+
+type LinkReason = 'password' | 'invited' | 'otherGoogle';
+
+/** Qué texto mostrar para cada `details.reason` de `GOOGLE_LINK_REQUIRED`. */
+const LINK_REASON_KEY: Record<LinkReason, string> = {
+  password: 'errors.googleLinkRequired',
+  invited: 'errors.googleLinkInvited',
+  otherGoogle: 'errors.googleLinkOtherGoogle',
+};
+
+/** La salida que pide un `GOOGLE_LINK_REQUIRED`, o `null` si el error es otro. */
+function linkReason(error: unknown): LinkReason | null {
+  if (!isApiError(error) || error.code !== 'GOOGLE_LINK_REQUIRED') return null;
+  const reason = (error.details as { reason?: string } | undefined)?.reason;
+  return reason === 'invited' || reason === 'otherGoogle' ? reason : 'password';
 }
 
 function signupDetails(error: unknown): GoogleSignupDetails | null {
@@ -50,6 +71,7 @@ export function GoogleAuthSection({
   text,
   onLinkRequired,
   divider = false,
+  activationToken,
   className,
 }: GoogleAuthSectionProps) {
   const { t } = useTranslation();
@@ -62,7 +84,7 @@ export function GoogleAuthSection({
 
   const handleCredential = (credential: string) => {
     google.mutate(
-      { credential },
+      { credential, ...(activationToken && { activationToken }) },
       {
         onError: (error) => {
           const details = signupDetails(error);
@@ -72,7 +94,9 @@ export function GoogleAuthSection({
             google.reset();
             return;
           }
-          if (isApiError(error) && error.code === 'GOOGLE_LINK_REQUIRED') {
+          // Sólo cuando poner la contraseña conectaría este Google: con otro
+          // Google ya conectado, `linkGoogle` lo rechazaría igual.
+          if (isApiError(error) && linkReason(error) === 'password') {
             onLinkRequired?.(credential);
           }
         },
@@ -85,9 +109,9 @@ export function GoogleAuthSection({
     google.reset();
   };
 
-  const linkRequired = isApiError(google.error) && google.error.code === 'GOOGLE_LINK_REQUIRED';
-  const invited =
-    linkRequired && (google.error as { details?: { reason?: string } }).details?.reason === 'invited';
+  const reason = linkReason(google.error);
+  // Lo que hace falta para conectar este Google es la contraseña de esa cuenta.
+  const needsPassword = reason === 'password';
 
   return (
     <div className={className}>
@@ -109,12 +133,25 @@ export function GoogleAuthSection({
       {google.isError && !signup && (
         <div role="alert" className="mt-3 flex flex-col gap-1">
           <p className="text-sm text-destructive">
-            {invited ? t('errors.googleLinkInvited') : errorMessage(google.error, t)}
+            {reason ? t(LINK_REASON_KEY[reason]) : errorMessage(google.error, t)}
           </p>
-          {linkRequired && !invited && !onLinkRequired && (
+          {needsPassword && !onLinkRequired && (
             <Link className="text-sm text-primary hover:underline" to={ROUTES.LOGIN}>
               {t('auth.google.goToLogin')}
             </Link>
+          )}
+          {/*
+            Si no se acuerda la contraseña, recuperarla es la salida: además
+            desconecta a cualquiera que hubiera registrado ese correo antes.
+            En /login (`onLinkRequired`) el formulario ya tiene ese enlace.
+          */}
+          {needsPassword && !onLinkRequired && (
+            <p className="text-sm text-muted-foreground">
+              {t('auth.google.forgotHint')}{' '}
+              <Link className="text-primary hover:underline" to={ROUTES.FORGOT_PASSWORD}>
+                {t('auth.google.forgotAction')}
+              </Link>
+            </p>
           )}
         </div>
       )}

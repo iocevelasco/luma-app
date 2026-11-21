@@ -72,7 +72,8 @@ export type ApiErrorCode =
   /**
    * Hay una cuenta con ese correo y Google no se une solo: se conecta poniendo
    * la contraseña una vez (ADR-005 §1). `details.reason`: `password` (entrar
-   * con la contraseña y conectar) o `invited` (activar desde el correo).
+   * con la contraseña y conectar), `invited` (activar desde el correo) u
+   * `otherGoogle` (la cuenta ya tiene otro Google conectado).
    */
   | 'GOOGLE_LINK_REQUIRED'
   /** Esa cuenta de Google ya está conectada a otra cuenta de Luma. */

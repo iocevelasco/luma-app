@@ -31,10 +31,13 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
   `tokenVersion`: recuperar la contraseña la sube y cierra todas las sesiones.
 - **Entrar con Google** (ADR-005 §1, `google-auth.controller.ts`): ID token del
   botón de Google verificado en la API; se guarda `googleSub` (la identidad) y
-  `googleEmail`, nunca tokens. **Google nunca se une solo a una cuenta con
-  contraseña**: se conecta poniéndola una vez (`GOOGLE_LINK_REQUIRED`). Sólo
-  activa sola una invitada sin contraseña, y sólo si Google es autoridad sobre el
-  correo (`@gmail.com` o Workspace del mismo dominio). Los admins no usan Google.
+  `googleEmail`, nunca tokens. **Google se une solo a la cuenta de ese correo
+  únicamente si Google es autoridad sobre él** (`@gmail.com` o Workspace del
+  mismo dominio). Si la contraseña no está probada (`passwordProvenAt`), al
+  unirse **la borra y sube `tokenVersion`**: quien hubiera registrado antes ese
+  correo queda afuera. Si está probada, se conserva. Para otro correo, se
+  conecta con la contraseña (`GOOGLE_LINK_REQUIRED`). Un `googleSub` nunca se
+  pisa. Los admins no usan Google.
   "Cuenta activada" = contraseña **o** Google (`isAccountActivated`).
 - **Google Maps** (ADR-005 §2): de Google la obra guarda sólo `placeId`, **nunca
   `lat`/`lng`** (las políticas de Places limitan conservarlas a 30 días).

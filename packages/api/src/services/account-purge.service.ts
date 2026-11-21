@@ -275,6 +275,7 @@ export async function purgeAccount(
       $unset: {
         picture: '',
         password: '',
+        passwordProvenAt: '',
         resetToken: '',
         resetTokenExpires: '',
         emailVerificationToken: '',
