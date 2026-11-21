@@ -196,6 +196,17 @@ invitada que nunca tuvo contraseña.~~
    tokens pendientes y sube `tokenVersion`. Si está probada, la conserva junto
    con las sesiones. El índice único frena una carrera con otra cuenta
    (`GOOGLE_ALREADY_LINKED`). Los Términos los pide `TermsGate`.
+9 bis. **Activar desde `/activate` con el enlace** (2026-11-21): el botón de
+   Google de esa pantalla manda la credencial junto con el token de activación
+   (`activationToken`). La API activa **esa** cuenta invitada aunque el correo
+   de Google sea otro (invitada como `ana@estudio.com`, entra con
+   `ana.perez@gmail.com`): el token prueba la casilla y la credencial, el Google.
+   Una sola escritura condicionada a que el token siga vigente, sin `googleSub`
+   y sin enlace en mano. Si el enlace pasó por manos de quien invitó
+   (`activationLinkHeldBy`), el token no prueba nada y no sirve para Google. Si
+   ese Google ya es de otra cuenta, `GOOGLE_ALREADY_LINKED`, sin entrar a la
+   otra. Una cuenta atada a un enlace en mano (con contraseña) se activa sin esa
+   contraseña y con las sesiones cerradas.
 10. **"Cuenta activada" pasa a ser "tiene contraseña o `googleSub`"**, en un
     helper único que usen `resendMemberInvitation`, `resendVerification` y el
     `pending` de Equipo. `setPassword` no acepta el token de una cuenta con
@@ -744,6 +755,11 @@ Se aprobaron las ocho recomendaciones de quien coordina.
      contraseña» (salvo en `/login`, que ya lo tiene). En `/login`, una
      contraseña incorrecta suma "¿Entrabas con Google?", igual para todos para no
      delatar qué cuentas existen.
+
+2. **Login — invitada con otro correo en Google:** desde `/activate`, Google
+   activa la invitada del enlace aunque los correos no coincidan (§1.9 bis).
+   Antes, una invitada como `ana@estudio.com` que entraba con su Gmail terminaba
+   creando una cuenta nueva y vacía, con las obras en la invitada pendiente.
 
 Queda sin saber, y ya no hace falta para este diseño, si producción corrió alguna
 vez con `REQUIRE_EMAIL_VERIFICATION=false`. Le importa al ADR-004.

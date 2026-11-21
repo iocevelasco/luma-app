@@ -78,6 +78,12 @@ const googleCredentialSchema = z.string().min(1, 'Falta la credencial de Google'
 export const googleAuthRequestSchema = z.object({
   credential: googleCredentialSchema,
   acceptedTerms: acceptedTermsSchema.optional(),
+  /**
+   * Desde `/activate`: el token del enlace de invitación. Activa **esa** cuenta
+   * invitada con este Google aunque los correos no coincidan, igual que elegir
+   * una contraseña con el enlace.
+   */
+  activationToken: z.string().trim().min(1).max(200).optional(),
 });
 
 /** Conectar Google a la cuenta: la prueba es la contraseña actual. */

@@ -22,6 +22,11 @@ interface GoogleAuthSectionProps {
   onLinkRequired?: (credential: string) => void;
   /** Un "o" arriba del botón. Va acá y no en la pantalla: sin Google, no queda un divisor suelto. */
   divider?: boolean;
+  /**
+   * En `/activate`: el token del enlace de invitación. Con él, Google activa
+   * esa cuenta invitada aunque el correo de Google sea otro.
+   */
+  activationToken?: string;
   className?: string;
 }
 
@@ -66,6 +71,7 @@ export function GoogleAuthSection({
   text,
   onLinkRequired,
   divider = false,
+  activationToken,
   className,
 }: GoogleAuthSectionProps) {
   const { t } = useTranslation();
@@ -78,7 +84,7 @@ export function GoogleAuthSection({
 
   const handleCredential = (credential: string) => {
     google.mutate(
-      { credential },
+      { credential, ...(activationToken && { activationToken }) },
       {
         onError: (error) => {
           const details = signupDetails(error);
