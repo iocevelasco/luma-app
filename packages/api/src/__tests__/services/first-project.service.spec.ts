@@ -10,11 +10,13 @@ vi.mock('../../models/User.js', () => ({ User: { findById: vi.fn() } }));
 vi.mock('../../models/OrganizationMember.js', () => ({ OrganizationMember: { find: vi.fn() } }));
 vi.mock('../../models/ProjectMembership.js', () => ({ ProjectMembership: { find: vi.fn() } }));
 vi.mock('../../services/subscription.service.js', () => ({ statesFor: vi.fn() }));
+vi.mock('../../models/Project.js', () => ({ Project: { exists: vi.fn() } }));
 
 const { User } = await import('../../models/User.js');
 const { OrganizationMember } = await import('../../models/OrganizationMember.js');
 const { ProjectMembership } = await import('../../models/ProjectMembership.js');
 const { statesFor } = await import('../../services/subscription.service.js');
+const { Project } = await import('../../models/Project.js');
 const { firstProjectPrompt } = await import('../../services/first-project.service.js');
 
 function state(status: SubscriptionState['status']): SubscriptionState {
@@ -26,12 +28,15 @@ function setup({
   status = 'active',
   subscription = 'sin_iniciar',
   roles = [],
+  everHadProject = true,
 }: {
   email?: string;
   status?: string;
   subscription?: SubscriptionState['status'] | null;
   roles?: string[];
+  everHadProject?: boolean;
 } = {}) {
+  vi.mocked(Project.exists).mockResolvedValue((everHadProject ? { _id: 'p1' } : null) as never);
   vi.mocked(User.findById).mockReturnValue({
     select: () => ({ lean: () => Promise.resolve({ email, account_status: status }) }),
   } as never);
@@ -60,6 +65,27 @@ describe('firstProjectPrompt', () => {
     setup();
     expect(await firstProjectPrompt('u1', 2)).toBe(false);
     expect(User.findById).not.toHaveBeenCalled();
+  });
+
+  it('sí: se registró sola, la prueba ya corre (arranca en el alta) y nunca creó una obra', async () => {
+    setup({ subscription: 'prueba', everHadProject: false });
+    expect(await firstProjectPrompt('u1', 0)).toBe(true);
+    // Mira también la papelera: nombra `deletedAt` para saltear el hook.
+    expect(Project.exists).toHaveBeenCalledWith({
+      organization: { $in: ['org-1'] },
+      deletedAt: { $exists: true },
+    });
+  });
+
+  it('no: está en prueba y ya tuvo una obra, aunque la haya eliminado', async () => {
+    setup({ subscription: 'prueba', everHadProject: true });
+    expect(await firstProjectPrompt('u1', 0)).toBe(false);
+  });
+
+  it('no: en prueba pero participa en la obra de otro (no mira obras propias)', async () => {
+    setup({ subscription: 'prueba', everHadProject: false, roles: ['supervisor'] });
+    expect(await firstProjectPrompt('u1', 0)).toBe(false);
+    expect(Project.exists).not.toHaveBeenCalled();
   });
 
   it('no: tiene membresía, aunque venciera o se le purgaran las obras', async () => {
