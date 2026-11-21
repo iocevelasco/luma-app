@@ -209,7 +209,51 @@ describe('POST /api/auth/google', () => {
     const { error } = await callGoogle();
 
     expect(error).toBeUndefined();
-    expect(User.findOneAndUpdate).toHaveBeenCalled();
+    const [, update] = vi.mocked(User.findOneAndUpdate).mock.calls[0] as unknown as [
+      unknown,
+      { $unset: Record<string, unknown>; $inc?: Record<string, unknown> },
+    ];
+    expect(update.$unset).toMatchObject({ password: '' });
+    expect(update.$inc).toEqual({ tokenVersion: 1 });
+    expect(EmailService.sendGoogleLinkChanged).toHaveBeenCalledWith(
+      expect.objectContaining({ passwordRemoved: true }),
+    );
+  });
+
+  it('con una contraseña probada (la eligió quien tiene la casilla) la conserva, y no cierra sesiones', async () => {
+    const { forgetTokenVersion } = await import('../../services/session.service.js');
+    googleSays();
+    findOneReturns(null, aUser({ password: PASSWORD_HASH, passwordProvenAt: new Date('2026-11-01') }));
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({
+      select: vi.fn().mockResolvedValue(aUser({ password: PASSWORD_HASH, googleSub: 'google-sub-1' })),
+    } as never);
+
+    const { error } = await callGoogle();
+
+    expect(error).toBeUndefined();
+    const [, update] = vi.mocked(User.findOneAndUpdate).mock.calls[0] as unknown as [
+      unknown,
+      { $set: Record<string, unknown>; $unset: Record<string, unknown>; $inc?: unknown },
+    ];
+    expect(update.$set).toMatchObject({ googleSub: 'google-sub-1' });
+    expect(update.$unset).not.toHaveProperty('password');
+    expect(update.$inc).toBeUndefined();
+    expect(forgetTokenVersion).not.toHaveBeenCalled();
+    expect(EmailService.sendGoogleLinkChanged).toHaveBeenCalledWith(
+      expect.objectContaining({ passwordRemoved: false }),
+    );
+  });
+
+  it('si ese Google se unió a otra cuenta en el medio, el índice único lo frena: GOOGLE_ALREADY_LINKED, no un 500', async () => {
+    googleSays();
+    findOneReturns(null, aUser({ password: PASSWORD_HASH }));
+    vi.mocked(User.findOneAndUpdate).mockReturnValue({
+      select: vi.fn().mockRejectedValue(Object.assign(new Error('dup'), { code: 11000 })),
+    } as never);
+
+    const { error } = await callGoogle();
+
+    expect(error?.code).toBe('GOOGLE_ALREADY_LINKED');
   });
 
   it('si otro pedido la unió en el medio, no pisa nada: GOOGLE_LINK_REQUIRED', async () => {
@@ -223,13 +267,14 @@ describe('POST /api/auth/google', () => {
     expect(res.cookie).not.toHaveBeenCalled();
   });
 
-  it('una cuenta con ese correo y OTRO sub: GOOGLE_LINK_REQUIRED, el sub no se pisa', async () => {
+  it('una cuenta con ese correo y OTRO sub: GOOGLE_LINK_REQUIRED con reason otherGoogle, el sub no se pisa', async () => {
     googleSays();
     findOneReturns(null, aUser({ googleSub: 'otro-sub' }));
 
     const { error } = await callGoogle();
 
     expect(error?.code).toBe('GOOGLE_LINK_REQUIRED');
+    expect(error?.details).toEqual({ reason: 'otherGoogle' });
     expect(User.findOneAndUpdate).not.toHaveBeenCalled();
   });
 

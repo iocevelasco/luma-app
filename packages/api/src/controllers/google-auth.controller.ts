@@ -80,37 +80,61 @@ function notifyLinkChanged(
  * Une Google a la cuenta que tiene ese correo, cuando Google es autoridad sobre
  * él. Una sola operación condicionada a que la cuenta siga sin Google.
  *
- * Quien entra prueba tener la casilla, y nada de lo que había antes lo prueba:
- * la contraseña pudo elegirla otra persona (registrar un correo ajeno no exige
- * confirmarlo para entrar), igual que un enlace de activación que pasó por
- * otras manos. Por eso se borran la contraseña y todo token pendiente, y se
- * sube `tokenVersion`: cualquier sesión abierta con la contraseña vieja cae ya.
- * Quien de verdad tenía esa contraseña sigue entrando con Google, y puede crear
- * otra con «Olvidé mi contraseña».
+ * Quien entra prueba tener la casilla. Lo que había antes depende:
+ *
+ * - **Contraseña probada** (`passwordProvenAt`: la eligió quien tiene la
+ *   casilla, ver `User`): se conserva, junto con las sesiones. Es la misma
+ *   persona; así puede tener contraseña y Google a la vez.
+ * - **Contraseña sin probar, o ninguna**: pudo elegirla otra persona
+ *   (registrar un correo ajeno no exige confirmarlo para entrar), igual que un
+ *   enlace de activación que pasó por otras manos. Se borran la contraseña y
+ *   todo token pendiente, y se sube `tokenVersion`: cualquier sesión abierta
+ *   con la contraseña vieja cae ya. Quien de verdad la tenía sigue entrando con
+ *   Google, y puede crear otra (probada) con «Olvidé mi contraseña».
+ *
+ * Devuelve la cuenta unida y si se quitó la contraseña, o `null` si otro pedido
+ * la unió en el medio.
  */
-async function linkByAuthoritativeEmail(user: IUser, identity: GoogleIdentity): Promise<IUser | null> {
-  const linked = await User.findOneAndUpdate(
-    { _id: user._id, googleSub: { $exists: false } },
-    {
-      $set: { googleSub: identity.sub, googleEmail: identity.email, email_verified: true },
-      $unset: {
-        password: '',
-        resetToken: '',
-        resetTokenExpires: '',
-        emailVerificationToken: '',
-        emailVerificationTokenExpires: '',
-        pendingEmail: '',
-        emailChangeToken: '',
-        emailChangeTokenExpires: '',
-        activationLinkHeldBy: '',
-        claimedViaLinkBy: '',
-      },
-      $inc: { tokenVersion: 1 },
-    },
-    { new: true },
-  ).select(AUTH_USER_FIELDS);
-  if (linked) forgetTokenVersion(String(linked._id));
-  return linked;
+async function linkByAuthoritativeEmail(
+  user: IUser,
+  identity: GoogleIdentity,
+): Promise<{ user: IUser; passwordRemoved: boolean } | null> {
+  const keepsPassword = Boolean(user.password && user.passwordProvenAt);
+  const link = { googleSub: identity.sub, googleEmail: identity.email, email_verified: true };
+
+  let linked: IUser | null;
+  try {
+    linked = await User.findOneAndUpdate(
+      { _id: user._id, googleSub: { $exists: false } },
+      keepsPassword
+        ? { $set: link, $unset: { activationLinkHeldBy: '', claimedViaLinkBy: '' } }
+        : {
+            $set: link,
+            $unset: {
+              password: '',
+              passwordProvenAt: '',
+              resetToken: '',
+              resetTokenExpires: '',
+              emailVerificationToken: '',
+              emailVerificationTokenExpires: '',
+              pendingEmail: '',
+              emailChangeToken: '',
+              emailChangeTokenExpires: '',
+              activationLinkHeldBy: '',
+              claimedViaLinkBy: '',
+            },
+            $inc: { tokenVersion: 1 },
+          },
+      { new: true },
+    ).select(AUTH_USER_FIELDS);
+  } catch (error) {
+    // Ese `sub` se unió a otra cuenta en el medio: lo frena el índice único.
+    if (isDuplicateKeyError(error)) throw googleAlreadyLinked();
+    throw error;
+  }
+  if (!linked) return null;
+  if (!keepsPassword) forgetTokenVersion(String(linked._id));
+  return { user: linked, passwordRemoved: !keepsPassword && Boolean(user.password) };
 }
 
 /**
@@ -148,14 +172,19 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
     // se une sola. Sirve para la invitada que nunca activó y para quien ya
     // tenía contraseña; en los dos casos la cuenta queda sólo con Google.
     if (!existing.googleSub && isGoogleAuthoritative(identity)) {
-      const hadPassword = Boolean(existing.password);
-      const linkedNow = await linkByAuthoritativeEmail(existing, identity);
-      if (linkedNow) {
-        notifyLinkChanged(linkedNow, identity.email, true, hadPassword);
-        return res.json({ success: true, data: issueSession(res, linkedNow) });
+      const result = await linkByAuthoritativeEmail(existing, identity);
+      if (result) {
+        notifyLinkChanged(result.user, identity.email, true, result.passwordRemoved);
+        return res.json({ success: true, data: issueSession(res, result.user) });
       }
       // Otro pedido la unió en el medio: un `googleSub` nunca se pisa.
-      throw googleLinkRequired();
+      throw googleLinkRequired('otherGoogle');
+    }
+
+    // La cuenta ya tiene otra cuenta de Google conectada: no se pisa, y poner la
+    // contraseña tampoco la cambiaría (`linkGoogle` lo rechaza). Se entra con esa.
+    if (existing.googleSub) {
+      throw googleLinkRequired('otherGoogle');
     }
 
     // 4. Invitada sin activar, pero Google no es autoridad sobre ese correo: la
@@ -164,8 +193,8 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
       throw googleLinkRequired('invited');
     }
 
-    // 5. Tiene contraseña y Google no es autoridad, o ya tiene otro Google: se
-    // conecta con la contraseña. Un `googleSub` nunca se pisa.
+    // 5. Tiene contraseña y Google no es autoridad sobre el correo: se conecta
+    // con la contraseña.
     throw googleLinkRequired();
   } catch (error) {
     return next(error);

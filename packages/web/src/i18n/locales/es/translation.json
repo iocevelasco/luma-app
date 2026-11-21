@@ -389,7 +389,8 @@
       "noAccount": "¿No tenés cuenta?",
       "register": "Creá una",
       "pendingHint": "¿Te invitaron y todavía no elegiste tu contraseña?",
-      "pendingAction": "Pedí un enlace de activación nuevo"
+      "pendingAction": "Pedí un enlace de activación nuevo",
+      "googleHint": "¿Entrabas con Google? Usá el botón de Google: si lo conectaste con un Gmail, tu cuenta puede no tener contraseña."
     },
     "register": {
       "title": "Crear cuenta",
@@ -1806,7 +1807,8 @@
     "googleLinkInvited": "Ya te invitaron con ese correo. Activá tu cuenta desde el enlace que te llegó por correo.",
     "googleAlreadyLinked": "Esa cuenta de Google ya está conectada a otra cuenta de Luma.",
     "googleUnlinkNeedsPassword": "Tu cuenta no tiene contraseña: si desconectás Google no podrías entrar. Creá una contraseña primero.",
-    "googleNotAllowed": "Esta cuenta no puede entrar con Google."
+    "googleNotAllowed": "Esta cuenta no puede entrar con Google.",
+    "googleLinkOtherGoogle": "Tu cuenta de Luma ya tiene otra cuenta de Google conectada. Entrá con esa, o con tu contraseña."
   },
   "directory": {
     "providersEmpty": "Todavía no hay proveedores en tu Empresa.",

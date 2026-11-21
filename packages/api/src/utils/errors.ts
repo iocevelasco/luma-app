@@ -145,16 +145,19 @@ export const googleSignupRequired = (details: { email: string; name: string }) =
 /**
  * `details.reason` le dice a la UI qué salida ofrecer sin comparar el texto:
  * `password` = entrar con la contraseña y conectar; `invited` = activar la
- * cuenta desde el correo de invitación.
+ * cuenta desde el correo de invitación; `otherGoogle` = la cuenta ya tiene otro
+ * Google conectado, se entra con ese.
  */
-export const googleLinkRequired = (reason: 'password' | 'invited' = 'password') =>
-  new AppError(
-    'GOOGLE_LINK_REQUIRED',
-    reason === 'invited'
-      ? 'Ya te invitaron con ese correo. Activa tu cuenta desde el enlace que te llegó por correo.'
-      : 'Ya tienes una cuenta con ese correo. Entra con tu contraseña una vez y conectaremos tu Google.',
-    { reason },
-  );
+const LINK_REQUIRED_MESSAGES = {
+  password:
+    'Ya tienes una cuenta con ese correo. Entra con tu contraseña una vez y conectaremos tu Google.',
+  invited: 'Ya te invitaron con ese correo. Activa tu cuenta desde el enlace que te llegó por correo.',
+  otherGoogle:
+    'Tu cuenta de Luma ya tiene otra cuenta de Google conectada. Entra con esa, o con tu contraseña.',
+} as const;
+
+export const googleLinkRequired = (reason: keyof typeof LINK_REQUIRED_MESSAGES = 'password') =>
+  new AppError('GOOGLE_LINK_REQUIRED', LINK_REQUIRED_MESSAGES[reason], { reason });
 
 export const googleAlreadyLinked = (
   message = 'Esa cuenta de Google ya está conectada a otra cuenta de Luma.',

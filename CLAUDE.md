@@ -33,8 +33,9 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
   botón de Google verificado en la API; se guarda `googleSub` (la identidad) y
   `googleEmail`, nunca tokens. **Google se une solo a la cuenta de ese correo
   únicamente si Google es autoridad sobre él** (`@gmail.com` o Workspace del
-  mismo dominio), y al unirse **borra la contraseña y sube `tokenVersion`**:
-  quien hubiera registrado antes ese correo queda afuera. Para otro correo, se
+  mismo dominio). Si la contraseña no está probada (`passwordProvenAt`), al
+  unirse **la borra y sube `tokenVersion`**: quien hubiera registrado antes ese
+  correo queda afuera. Si está probada, se conserva. Para otro correo, se
   conecta con la contraseña (`GOOGLE_LINK_REQUIRED`). Un `googleSub` nunca se
   pisa. Los admins no usan Google.
   "Cuenta activada" = contraseña **o** Google (`isAccountActivated`).
