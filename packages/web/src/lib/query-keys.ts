@@ -6,6 +6,7 @@
  */
 export enum QueryKeys {
   currentUser = 'current-user',
+  calendarFeed = 'calendar-feed',
   emailVerification = 'email-verification',
   projects = 'projects',
   project = 'project',
@@ -34,6 +35,8 @@ export enum QueryKeys {
   activityCrew = 'activity-crew',
   projectDocuments = 'project-documents',
   projectDocumentFile = 'project-document-file',
+  integrationsConfig = 'integrations-config',
+  publicConfig = 'public-config',
   milestones = 'milestones',
   notifications = 'notifications',
   paymentSchedule = 'payment-schedule',

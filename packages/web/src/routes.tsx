@@ -2,7 +2,12 @@ import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { DashboardLayout } from './components/dashboard-layout';
 import { PlatformLayout } from './components/platform/platform-layout';
-import { AdminLayout, AuthenticatedLayout, PublicOnlyLayout } from './components/route-layouts';
+import {
+  AdminLayout,
+  AuthenticatedLayout,
+  HomeRedirect,
+  PublicOnlyLayout,
+} from './components/route-layouts';
 import { RouteLoading } from './components/routes/route-loading';
 import { ROUTES } from './lib/routes';
 
@@ -324,7 +329,7 @@ export function AppRoutes() {
         </Route>
       </Route>
 
-      <Route path="/" element={<Navigate to={ROUTES.ADMIN} replace />} />
+      <Route path="/" element={<HomeRedirect />} />
       <Route path={ROUTES.NOT_FOUND} element={<LazyRoute><NotFoundPage /></LazyRoute>} />
     </Routes>
   );

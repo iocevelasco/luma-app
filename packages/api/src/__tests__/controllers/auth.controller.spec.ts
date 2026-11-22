@@ -8,7 +8,9 @@ import { LEGAL_VERSION } from '@luma/shared';
  * el correo. Mandarle el de verificación la dejaba "verificada" y sin poder
  * entrar nunca.
  */
-vi.mock('../../models/User.js', () => ({ User: { findOne: vi.fn() } }));
+vi.mock('../../models/User.js', () => ({
+  User: { findOne: vi.fn(), updateOne: vi.fn(async () => ({ matchedCount: 1 })) },
+}));
 vi.mock('../../services/email.service.js', () => ({
   EmailService: {
     sendAccountActivationEmail: vi.fn(),
@@ -19,6 +21,10 @@ vi.mock('../../services/auth.service.js', () => ({
   generateTokens: vi.fn(() => ({ accessToken: 'access', refreshToken: 'refresh' })),
 }));
 vi.mock('../../services/jwt.service.js', () => ({ JWTService: {} }));
+vi.mock('../../services/session.service.js', () => ({
+  forgetTokenVersion: vi.fn(),
+  tokenVersionOf: vi.fn(() => 0),
+}));
 vi.mock('../../services/organization.service.js', () => ({ createPersonalOrganization: vi.fn() }));
 vi.mock('../../services/subscription.service.js', () => ({ startTrialFor: vi.fn() }));
 vi.mock('../../services/recaptcha.service.js', () => ({ verifyRecaptchaFromRequest: vi.fn() }));
@@ -165,7 +171,7 @@ describe('cuentas activadas con un enlace que pasó por manos de quien invitó',
       await activate({ acceptedTerms: false });
 
       expect(user.password).toBeUndefined();
-      expect(user.save).not.toHaveBeenCalled();
+      expect(User.updateOne).not.toHaveBeenCalled();
     });
 
     it('con un enlace entregado a mano la cuenta anda, pero no queda verificada y queda atada a quien lo tenía', async () => {
@@ -177,7 +183,32 @@ describe('cuentas activadas con un enlace que pasó por manos de quien invitó',
       expect(user.email_verified).toBe(false);
       expect(user.claimedViaLinkBy).toBe('owner-1');
       expect(user.activationLinkHeldBy).toBeUndefined();
-      expect(user.save).toHaveBeenCalled();
+      expect(User.updateOne).toHaveBeenCalled();
+    });
+
+    it('no le elige la contraseña a una cuenta que ya entra con Google', async () => {
+      tokenOwner({ googleSub: 'google-sub-1' });
+
+      await activate();
+
+      expect(User.updateOne).not.toHaveBeenCalled();
+    });
+
+    it('si se activó con Google entre la lectura y la escritura, el enlace ya no vale', async () => {
+      tokenOwner({});
+      vi.mocked(User.updateOne).mockResolvedValueOnce({ matchedCount: 0 } as never);
+      const res = mockRes();
+
+      await setPassword(
+        { body: { token: 'tok', password: 'Una-clave-123', acceptedTerms: true }, ip: '1', get: () => '' } as never,
+        res,
+      );
+
+      expect(User.updateOne).toHaveBeenCalledWith(
+        expect.objectContaining({ googleSub: { $exists: false } }),
+        expect.anything(),
+      );
+      expect(res.status).toHaveBeenCalledWith(400);
     });
 
     it('con un enlace que sólo viajó por mail verifica la cuenta', async () => {
@@ -187,6 +218,16 @@ describe('cuentas activadas con un enlace que pasó por manos de quien invitó',
 
       expect(user.email_verified).toBe(true);
       expect(user.claimedViaLinkBy).toBeUndefined();
+    });
+
+    it('la contraseña elegida con un enlace que sólo viajó por mail queda probada; con uno en mano, no', async () => {
+      const byMail = tokenOwner({});
+      await activate();
+      expect(byMail.passwordProvenAt).toBeInstanceOf(Date);
+
+      const held = tokenOwner({ activationLinkHeldBy: 'owner-1', passwordProvenAt: new Date() });
+      await activate();
+      expect(held.passwordProvenAt).toBeUndefined();
     });
 
     it('no le quita la verificación a una casilla que ya estaba probada', async () => {
@@ -209,6 +250,43 @@ describe('cuentas activadas con un enlace que pasó por manos de quien invitó',
       expect(user.email_verified).toBe(true);
       expect(user.claimedViaLinkBy).toBeUndefined();
       expect(user.activationLinkHeldBy).toBeUndefined();
+    });
+
+    it('cierra todas las sesiones abiertas: sube tokenVersion y lo hace regir ya', async () => {
+      const { forgetTokenVersion } = await import('../../services/session.service.js');
+      const user = tokenOwner({ _id: 'user-1', password: 'hash-viejo', tokenVersion: 2 });
+
+      await resetPassword({ body: { token: 'tok', password: 'Clave-de-la-dueña-1' } } as never, mockRes());
+
+      expect(user.tokenVersion).toBe(3);
+      expect(user.save).toHaveBeenCalled();
+      expect(forgetTokenVersion).toHaveBeenCalledWith('user-1');
+    });
+
+    it('desconecta Google: quien lo conectó con una contraseña robada sale también por ahí', async () => {
+      const user = tokenOwner({ password: 'hash-viejo', googleSub: 'sub-1', googleEmail: 'x@gmail.com' });
+
+      await resetPassword({ body: { token: 'tok', password: 'Clave-de-la-dueña-1' } } as never, mockRes());
+
+      expect(user.googleSub).toBeUndefined();
+      expect(user.googleEmail).toBeUndefined();
+      expect(user.save).toHaveBeenCalled();
+    });
+
+    it('la contraseña nueva queda probada: la eligió quien tiene la casilla', async () => {
+      const user = tokenOwner({ password: 'hash-viejo' });
+
+      await resetPassword({ body: { token: 'tok', password: 'Clave-de-la-dueña-1' } } as never, mockRes());
+
+      expect(user.passwordProvenAt).toBeInstanceOf(Date);
+    });
+
+    it('una cuenta anterior al campo arranca en 0 y pasa a 1', async () => {
+      const user = tokenOwner({ password: 'hash-viejo' });
+
+      await resetPassword({ body: { token: 'tok', password: 'Clave-de-la-dueña-1' } } as never, mockRes());
+
+      expect(user.tokenVersion).toBe(1);
     });
   });
 

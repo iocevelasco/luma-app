@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
+import { LocationField } from '@/components/projects/location-field';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { isApiError } from '@/lib/api-client';
@@ -118,6 +119,8 @@ export function ProjectNewPage() {
     handleSubmit,
     control,
     trigger,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<CreateProjectInput>({
     resolver: zodResolver(createProjectSchema),
@@ -286,7 +289,23 @@ export function ProjectNewPage() {
                 <Input aria-invalid={Boolean(errors.name)} id="name" autoFocus {...register('name')} />
               </FieldRow>
               <FieldRow id="location" label={t('project.fields.location')} error={errors.location?.message}>
-                <Input aria-invalid={Boolean(errors.location)} id="location" {...register('location')} />
+                <Controller
+                  name="location"
+                  control={control}
+                  render={({ field }) => (
+                    <LocationField
+                      id="location"
+                      value={field.value ?? ''}
+                      placeId={watch('placeId')}
+                      invalid={Boolean(errors.location)}
+                      onBlur={field.onBlur}
+                      onChange={(location, placeId) => {
+                        field.onChange(location);
+                        setValue('placeId', placeId);
+                      }}
+                    />
+                  )}
+                />
               </FieldRow>
               <FieldRow id="size" label={t('project.fields.size')} error={errors.size?.message}>
                 <Input id="size" {...register('size')} />

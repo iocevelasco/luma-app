@@ -72,6 +72,43 @@ export interface IUser extends Document {
    */
   purgedAt?: Date;
 
+  /**
+   * Versión de las sesiones. Cada token lleva la que había al emitirlo
+   * (`tv`); subirla cierra todas las sesiones abiertas de la cuenta, en todos
+   * los dispositivos. La suben `resetPassword` y `seed-admin`; quien la sube
+   * desde la API llama después a `forgetTokenVersion` (`session.service.ts`).
+   * No es un dato personal: un contador.
+   */
+  tokenVersion: number;
+
+  /**
+   * La cuenta de Google conectada (ADR-005 §1). La identidad es el `sub`, no
+   * el correo: el correo de una cuenta de Google puede cambiar. `select: false`
+   * como todo lo que abre la puerta de la cuenta. Se quita con `$unset`, nunca
+   * con `null`: el índice es disperso, y dos `null` chocarían.
+   */
+  googleSub?: string;
+  /** El correo de esa cuenta de Google, sólo para mostrar con cuál está conectada. */
+  googleEmail?: string;
+
+  /**
+   * Cuándo quedó probado que la contraseña actual la eligió quien tiene la
+   * casilla: se recuperó por mail, se activó con un enlace que sólo viajó por
+   * mail, o se confirmó el correo (o un cambio de correo) con ella puesta. Sin
+   * esto, Google borra la contraseña al unirse solo (ADR-005 §1, cuarta ronda):
+   * pudo elegirla alguien que registró un correo ajeno. Es un hecho, no un
+   * derivado: no se puede reconstruir después.
+   */
+  passwordProvenAt?: Date;
+
+  /**
+   * SHA-256 del token del feed de calendario (ADR-005 §3). El token se muestra
+   * una sola vez; con el hash se busca el feed. Se borra al dar de baja la
+   * cuenta, no sólo al purgarla.
+   */
+  calendarFeedTokenHash?: string;
+  calendarFeedCreatedAt?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -125,6 +162,12 @@ const userSchema = new Schema<IUser>(
     deactivated_at: { type: Date },
     deactivated_by: { type: Schema.Types.ObjectId, ref: 'User' },
     purgedAt: { type: Date },
+    tokenVersion: { type: Number, default: 0 },
+    googleSub: { type: String, select: false, unique: true, sparse: true },
+    googleEmail: { type: String, lowercase: true, trim: true },
+    passwordProvenAt: { type: Date },
+    calendarFeedTokenHash: { type: String, select: false, unique: true, sparse: true },
+    calendarFeedCreatedAt: { type: Date },
   },
   { timestamps: true },
 );
@@ -139,6 +182,9 @@ const userSchema = new Schema<IUser>(
 userSchema.pre('save', function stampDeactivation(next) {
   if (this.isModified('account_status') && this.account_status === 'inactive') {
     this.deactivated_at ??= new Date();
+    // Dar de baja apaga el calendario: la URL no puede seguir leyendo obras.
+    this.calendarFeedTokenHash = undefined;
+    this.calendarFeedCreatedAt = undefined;
   }
   next();
 });
@@ -151,6 +197,18 @@ userSchema.pre(['updateOne', 'updateMany', 'findOneAndUpdate'], function stampDe
   const status = update?.$set?.account_status ?? update?.account_status;
   if (status === 'inactive' && update?.$set?.deactivated_at === undefined) {
     this.set({ deactivated_at: new Date() });
+  }
+  if (status === 'inactive') {
+    // Dar de baja apaga el calendario: la URL no puede seguir leyendo obras.
+    const current = this.getUpdate() as Record<string, unknown>;
+    this.setUpdate({
+      ...current,
+      $unset: {
+        ...((current.$unset as Record<string, unknown>) ?? {}),
+        calendarFeedTokenHash: '',
+        calendarFeedCreatedAt: '',
+      },
+    });
   }
   next();
 });

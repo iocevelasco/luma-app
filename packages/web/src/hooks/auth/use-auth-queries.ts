@@ -3,8 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/lib/toast';
 import type {
+  AuthUserResponse,
   ChangeEmailRequest,
   ChangePasswordRequest,
+  GoogleAuthRequestInput,
+  GoogleLinkRequestInput,
+  GoogleUnlinkRequestInput,
   LoginCredentials,
   RegisterCredentials,
   ResetPasswordRequest,
@@ -13,6 +17,7 @@ import type {
 import { authApi } from '@/api/auth';
 import { errorMessage } from '@/lib/error-message';
 import { QueryKeys } from '@/lib/query-keys';
+import { homePathFor } from '@/lib/roles';
 import { ROUTES } from '@/lib/routes';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -65,7 +70,63 @@ export function useLogin() {
     mutationFn: (credentials: LoginCredentials) => authApi.login(credentials),
     onSuccess: (data) => {
       login(data.accessToken, data.user);
-      navigate(ROUTES.ADMIN);
+      navigate(homePathFor(data.user.role));
+    },
+  });
+}
+
+/**
+ * Entrar o registrarse con Google. Sin `onError`: la pantalla decide qué hacer
+ * con cada código (`GOOGLE_SIGNUP_REQUIRED` abre los Términos,
+ * `GOOGLE_LINK_REQUIRED` ofrece entrar con la contraseña).
+ */
+export function useGoogleAuth() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (payload: GoogleAuthRequestInput) => authApi.google(payload),
+    onSuccess: (data) => {
+      login(data.accessToken, data.user);
+      navigate(homePathFor(data.user.role));
+    },
+  });
+}
+
+/** Deja la cuenta al día en el provider y en la caché después de tocar Google. */
+function useApplyUser() {
+  const { updateUser } = useAuth();
+  const queryClient = useQueryClient();
+  return (data: { user: AuthUserResponse['user'] }) => {
+    updateUser(data.user);
+    queryClient.setQueryData([QueryKeys.currentUser], data);
+  };
+}
+
+/** Conectar Google desde la cuenta (o justo después de entrar con la contraseña). */
+export function useLinkGoogle() {
+  const { t } = useTranslation();
+  const applyUser = useApplyUser();
+
+  return useMutation({
+    mutationFn: (payload: GoogleLinkRequestInput) => authApi.linkGoogle(payload),
+    onSuccess: (data) => {
+      applyUser(data);
+      toast.success(t('auth.google.linked'));
+    },
+    // Sin `onError`: en la cuenta lo muestra el banner del formulario.
+  });
+}
+
+export function useUnlinkGoogle() {
+  const { t } = useTranslation();
+  const applyUser = useApplyUser();
+
+  return useMutation({
+    mutationFn: (payload: GoogleUnlinkRequestInput) => authApi.unlinkGoogle(payload),
+    onSuccess: (data) => {
+      applyUser(data);
+      toast.success(t('auth.google.unlinked'));
     },
   });
 }
@@ -134,7 +195,7 @@ export function useSetPassword() {
     mutationFn: (payload: SetPasswordRequest) => authApi.setPassword(payload),
     onSuccess: (data) => {
       login(data.accessToken, data.user);
-      navigate(ROUTES.ADMIN);
+      navigate(homePathFor(data.user.role));
     },
     // Sin `onError`: se envía desde el diálogo de Términos, que muestra la
     // falla como banner pegado al botón.

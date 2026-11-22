@@ -21,6 +21,7 @@ const KEY_BY_CODE: Record<ApiErrorCode, string> = {
   VALIDATION: 'errors.validation',
   UNAUTHENTICATED: 'errors.unauthenticated',
   INVALID_CREDENTIALS: 'errors.invalidCredentials',
+  WRONG_PASSWORD: 'errors.wrongPassword',
   FORBIDDEN: 'errors.forbidden',
   NOT_FOUND: 'errors.notFound',
   CONFLICT: 'errors.conflict',
@@ -31,6 +32,14 @@ const KEY_BY_CODE: Record<ApiErrorCode, string> = {
   SUBSCRIPTION_REQUIRED: 'errors.subscriptionRequired',
   PAID_PLAN_REQUIRED: 'errors.paidPlanRequired',
   TERMS_REQUIRED: 'errors.termsRequired',
+  PASSWORD_NOT_SET: 'errors.passwordNotSet',
+  GOOGLE_TOKEN_INVALID: 'errors.googleTokenInvalid',
+  GOOGLE_EMAIL_NOT_VERIFIED: 'errors.googleEmailNotVerified',
+  GOOGLE_SIGNUP_REQUIRED: 'errors.googleSignupRequired',
+  GOOGLE_LINK_REQUIRED: 'errors.googleLinkRequired',
+  GOOGLE_ALREADY_LINKED: 'errors.googleAlreadyLinked',
+  GOOGLE_UNLINK_NEEDS_PASSWORD: 'errors.googleUnlinkNeedsPassword',
+  GOOGLE_NOT_ALLOWED: 'errors.googleNotAllowed',
   INTERNAL: 'errors.internal',
 };
 
@@ -44,17 +53,31 @@ const KEY_BY_CODE: Record<ApiErrorCode, string> = {
  *   nadie.
  * - `INVALID_CREDENTIALS`: el servidor no sabe más que el código, y el nuestro
  *   está traducido.
+ * - `WRONG_PASSWORD`: ídem — la contraseña que confirma un cambio en la cuenta
+ *   no coincide, y eso es todo lo que hay para decir.
  * - `SUBSCRIPTION_REQUIRED` / `PAID_PLAN_REQUIRED`: el servidor no sabe nada
  *   que el código no diga, y el nuestro está traducido.
+ * - Los de Google y `PASSWORD_NOT_SET`: lo mismo. El único con dos variantes,
+ *   `GOOGLE_LINK_REQUIRED`, la dice en `details.reason` y la resuelve
+ *   `GoogleAuthSection`.
  */
 const PREFER_OWN_MESSAGE: ReadonlySet<string> = new Set<ApiErrorCode>([
   'INTERNAL',
   'UNAUTHENTICATED',
   'INVALID_CREDENTIALS',
+  'WRONG_PASSWORD',
   // Los límites de la suscripción no dependen de nada que sólo sepa el
   // servidor, y el texto propio está en el idioma de quien lo lee.
   'SUBSCRIPTION_REQUIRED',
   'PAID_PLAN_REQUIRED',
+  'PASSWORD_NOT_SET',
+  'GOOGLE_TOKEN_INVALID',
+  'GOOGLE_EMAIL_NOT_VERIFIED',
+  'GOOGLE_SIGNUP_REQUIRED',
+  'GOOGLE_LINK_REQUIRED',
+  'GOOGLE_ALREADY_LINKED',
+  'GOOGLE_UNLINK_NEEDS_PASSWORD',
+  'GOOGLE_NOT_ALLOWED',
 ]);
 
 export function errorMessage(error: unknown, t: TFunction): string | null {

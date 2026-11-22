@@ -2,8 +2,8 @@
 #
 # Dispara un deploy en Coolify.
 #
-# Normalmente no hace falta: el webhook de GitHub despliega solo en cada push a
-# `main`. Esto es para forzar un redeploy sin commit — por ejemplo después de
+# Normalmente no hace falta: Coolify despliega solo en cada push a `main`
+# (producción) y a `stage` (demo). Esto es para forzar un redeploy sin commit — por ejemplo después de
 # cambiar una variable de entorno.
 #
 #   pnpm deploy            # la app (API + SPA)

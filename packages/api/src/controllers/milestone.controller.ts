@@ -10,6 +10,7 @@ import { User } from '../models/User.js';
 import type { IProject } from '../models/Project.js';
 import { notifyProject } from '../services/notification.service.js';
 import { deleteObject, signObjectUrl } from '../services/storage.service.js';
+import { milestoneAudienceFilter } from '../services/milestone-audience.js';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
@@ -101,10 +102,10 @@ export async function listMilestones(req: Request, res: Response) {
   try {
     const project = req.project as IProject;
 
-    const filter: Record<string, unknown> = { project: project._id };
-    if (!req.can?.('milestone.report')) {
-      filter.audience = 'cliente';
-    }
+    const filter = {
+      project: project._id,
+      ...milestoneAudienceFilter((capability) => req.can?.(capability) === true),
+    };
 
     const docs = await Milestone.find(filter).sort({ occurredOn: -1, createdAt: -1 }).limit(200);
     const { userNames, activityNames } = await resolveNames(docs);

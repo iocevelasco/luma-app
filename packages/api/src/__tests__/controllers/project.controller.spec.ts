@@ -16,7 +16,9 @@ vi.mock('../../models/User.js', () => ({
     exists: vi.fn(),
   },
 }));
-vi.mock('../../models/Project.js', () => ({ Project: { find: vi.fn(), create: vi.fn() } }));
+vi.mock('../../models/Project.js', () => ({
+  Project: { find: vi.fn(), create: vi.fn(), findByIdAndUpdate: vi.fn() },
+}));
 vi.mock('../../services/subscription.service.js', () => ({
   statesFor: vi.fn(),
   decideProjectCreation: vi.fn(),
@@ -64,6 +66,7 @@ const {
   createProject,
   updateProjectMemberRole,
   removeProjectMember,
+  updateProject,
 } = await import('../../controllers/project.controller.js');
 
 /** El estado de la suscripción de `org-1`, como lo devuelve `statesFor`. */
@@ -652,5 +655,47 @@ describe('createProject: límites de la suscripción', () => {
       expect.objectContaining({ organization: 'org-1', createdBy: 'user-1' }),
     );
     expect(res.status).toHaveBeenCalledWith(201);
+  });
+});
+
+/**
+ * Editar la ubicación de una obra (ADR-005 §2.9). La dirección y su lugar de
+ * Google van juntos: un texto nuevo sin lugar borra el anterior, porque si no
+ * el mapa seguiría apuntando a la dirección vieja.
+ */
+describe('updateProject: ubicación', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  async function update(body: Record<string, unknown>) {
+    vi.mocked(Project.findByIdAndUpdate).mockResolvedValue(projectDoc('p1', 'u1') as never);
+    const res = mockRes();
+    await updateProject({ body, project: { _id: 'p1' } } as never, res);
+    return { res, call: vi.mocked(Project.findByIdAndUpdate).mock.calls[0] };
+  }
+
+  it('con dirección y lugar guarda los dos', async () => {
+    const { call } = await update({ location: 'Av. Siempre Viva 742', placeId: 'ChIJ-abc_123' });
+    expect(call?.[1]).toEqual({ $set: { location: 'Av. Siempre Viva 742', placeId: 'ChIJ-abc_123' } });
+  });
+
+  it('una dirección nueva sin lugar borra el lugar anterior', async () => {
+    const { call } = await update({ location: 'Calle escrita a mano 12' });
+    expect(call?.[1]).toEqual({ $set: { location: 'Calle escrita a mano 12' }, $unset: { placeId: '' } });
+  });
+
+  it('un lugar sin dirección no se acepta', async () => {
+    const { res } = await update({ placeId: 'ChIJ-abc' });
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(Project.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('un lugar con caracteres raros no se acepta', async () => {
+    const { res } = await update({ location: 'X', placeId: 'abc"><script>' });
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('los interruptores de visibilidad no tocan la ubicación', async () => {
+    const { call } = await update({ paymentsVisibleToClient: false });
+    expect(call?.[1]).toEqual({ paymentsVisibleToClient: false });
   });
 });

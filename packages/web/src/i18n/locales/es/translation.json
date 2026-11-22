@@ -366,6 +366,19 @@
       "endsIn": "Termina {{distance}}",
       "endedAgo": "Terminó {{distance}}",
       "open": "Abrir"
+    },
+    "location": {
+      "placeholder": "Escribí la calle y el número…",
+      "hint": "Empezá a escribir y elegí una dirección de Google Maps para que la obra tenga mapa.",
+      "placeChosen": "Dirección elegida en Google Maps: la obra va a tener mapa.",
+      "suggestions": "Direcciones sugeridas",
+      "showMap": "Ver en el mapa",
+      "hideMap": "Ocultar el mapa",
+      "directions": "Cómo llegar",
+      "edit": "Editar ubicación",
+      "mapTitle": "Mapa de {{location}}",
+      "editTitle": "Editar ubicación",
+      "saved": "Ubicación guardada."
     }
   },
   "auth": {
@@ -377,7 +390,8 @@
       "noAccount": "¿No tenés cuenta?",
       "register": "Creá una",
       "pendingHint": "¿Te invitaron y todavía no elegiste tu contraseña?",
-      "pendingAction": "Pedí un enlace de activación nuevo"
+      "pendingAction": "Pedí un enlace de activación nuevo",
+      "googleHint": "¿Entrabas con Google? Usá el botón de Google: si lo conectaste con un Gmail, tu cuenta puede no tener contraseña."
     },
     "register": {
       "title": "Crear cuenta",
@@ -452,6 +466,55 @@
       "manageAction": "Creá una cuenta gratis",
       "invitedQuestion": "¿Te invitaron a una obra?",
       "invitedAction": "Revisá tu correo de invitación"
+    },
+    "google": {
+      "linked": "Google conectado a tu cuenta.",
+      "unlinked": "Google desconectado de tu cuenta.",
+      "goToLogin": "Entrar con mi contraseña",
+      "signupIntro": "Vas a crear una cuenta nueva con {{email}}.",
+      "otherAccountHint": "¿Ya tenés cuenta con otro correo?",
+      "otherAccountAction": "Entrá con tu contraseña y conectá Google desde tu cuenta.",
+      "cardTitle": "Google",
+      "linkedBody": "Podés entrar con tu cuenta de Google además de con tu contraseña.",
+      "unlinkedBody": "Conectá tu cuenta de Google para entrar sin escribir la contraseña.",
+      "connected": "Conectado",
+      "unlink": "Desconectar",
+      "unlinkNeedsPassword": "Tu cuenta no tiene contraseña: si desconectás Google no podrías entrar. Creá una contraseña primero.",
+      "linkPassword": "Tu contraseña actual",
+      "linkHint": "Escribila y después elegí tu cuenta de Google. Puede ser un Google con otro correo.",
+      "passwordFirst": "Escribí tu contraseña actual antes de elegir la cuenta de Google.",
+      "unlinkTitle": "¿Desconectar Google?",
+      "unlinkBody": "Ya no vas a poder entrar con {{email}}. Para confirmarlo, escribí tu contraseña.",
+      "noPasswordBody": "Entrás con Google y tu cuenta no tiene contraseña. Te vamos a mandar un enlace al correo para crearla. Al crearla, Google se desconecta y vas a tener que volver a conectarlo.",
+      "createPassword": "Crear contraseña",
+      "emailNeedsPassword": "Para cambiar el correo necesitás una contraseña. Creala en la tarjeta de contraseña.",
+      "forgotHint": "¿No te acordás la contraseña?",
+      "forgotAction": "Recuperala"
+    },
+    "calendarFeed": {
+      "title": "Calendario",
+      "description": "Tus actividades, reuniones y vencimientos de cuotas en Google Calendar, Apple o Outlook.",
+      "generate": "Crear enlace del calendario",
+      "showOnce": "Este es tu enlace. Copialo ahora: por seguridad no lo vamos a volver a mostrar.",
+      "urlLabel": "Enlace del calendario",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "addToGoogle": "Agregar a Google Calendar",
+      "openCalendarApp": "Abrir en mi app de calendario",
+      "activeSince": "Tenés un calendario activo desde el {{date}}. Si perdiste el enlace, creá uno nuevo.",
+      "caveats": [
+        "Quien tenga el enlace puede ver tu calendario: no lo compartas.",
+        "Los calendarios externos se actualizan cada varias horas.",
+        "Apagarlo no borra lo que tu calendario ya copió.",
+        "Muestra nombres y fechas, nunca montos."
+      ],
+      "regenerate": "Crear un enlace nuevo",
+      "disable": "Apagar el calendario",
+      "regenerateTitle": "¿Crear un enlace nuevo?",
+      "regenerateBody": "El enlace anterior va a dejar de funcionar. Vas a tener que volver a agregar el calendario donde lo usabas.",
+      "disableTitle": "¿Apagar el calendario?",
+      "disableBody": "El enlace va a dejar de funcionar. Lo que tu calendario ya copió no se borra: sacalo desde ahí.",
+      "disabled": "Calendario apagado."
     }
   },
   "routeError": {
@@ -798,6 +861,39 @@
       "copy": "No pudimos copiar la lista.",
       "pdf": "No pudimos generar el PDF. Probá de nuevo.",
       "share": "No se pudo compartir la lista. Probá copiarla o descargar el PDF."
+    },
+    "import": {
+      "button": "Importar de Google Sheets",
+      "pickTitle": "Elegí la planilla con los materiales",
+      "title": "Importar materiales",
+      "summary_one": "Se va a agregar {{count}} material como Pendiente.",
+      "summary_other": "Se van a agregar {{count}} materiales como Pendientes.",
+      "submit_one": "Agregar {{count}} material",
+      "submit_other": "Agregar {{count}} materiales",
+      "more_one": "y {{count}} más",
+      "more_other": "y {{count}} más",
+      "skipped_one": "Se saltea {{count}} fila:",
+      "skipped_other": "Se saltean {{count}} filas:",
+      "skippedRow": "Fila {{line}}: {{reason}}",
+      "rowErrors": {
+        "name": "falta el nombre",
+        "quantity": "falta la cantidad o no es un número mayor a 0",
+        "unit": "no reconocemos la unidad",
+        "cost": "el costo no es un número"
+      },
+      "noneValid": "No pudimos leer ninguna fila. Corregilas en la planilla y volvé a importarla.",
+      "reasons": {
+        "empty": "La planilla está vacía.",
+        "noName": "No encontramos la columna del material.",
+        "noQuantity": "No encontramos la columna de la cantidad.",
+        "tooMany": "Son más de 200 materiales. Dividí la planilla e importala por partes."
+      },
+      "columnsHint": "La primera fila tiene que tener los nombres de las columnas: Material y Cantidad y, si querés, Unidad, Costo y Proveedor.",
+      "pickOther": "Elegir otra planilla",
+      "previewLabel": "Materiales a agregar",
+      "close": "Cerrar",
+      "done_one": "Se agregó {{count}} material.",
+      "done_other": "Se agregaron {{count}} materiales."
     }
   },
   "provider": {
@@ -1233,6 +1329,35 @@
         "openInTab": "Abrir en otra pestaña",
         "unavailable": "La vista previa no está disponible: la carga de documentación todavía no está configurada en este entorno.",
         "loadFailed": "No pudimos cargar la imagen. Cerrá la vista previa y volvé a abrirla."
+      }
+    },
+    "drive": {
+      "import": "Importar desde Google Drive",
+      "export": "Guardar en Google Drive",
+      "importTitle": "Elegí los archivos que querés importar",
+      "exportTitle": "Elegí la carpeta de Drive donde guardarlos",
+      "imported_one": "{{count}} archivo importado desde Google Drive.",
+      "imported_other": "{{count}} archivos importados desde Google Drive.",
+      "exported_one": "{{count}} documento guardado en tu Google Drive.",
+      "exported_other": "{{count}} documentos guardados en tu Google Drive.",
+      "openInDrive": "Abrir en Drive",
+      "progress": {
+        "import": "Importando {{done}} de {{total}}…",
+        "export": "Guardando en Drive {{done}} de {{total}}…"
+      },
+      "rejected": {
+        "fileType": "«{{name}}» no se importó: sólo se aceptan PDF e imágenes.",
+        "fileSize": "«{{name}}» no se importó: pesa más de 20 MB."
+      },
+      "errors": {
+        "unavailable": "No pudimos cargar Google Drive. Revisá tu conexión y volvé a intentar.",
+        "popupBlocked": "El navegador bloqueó la ventana de Google. Permití las ventanas emergentes y volvé a intentar.",
+        "denied": "No se dio permiso para usar Google Drive.",
+        "download": "No pudimos traer el archivo de Google Drive.",
+        "upload": "No pudimos guardar el archivo en tu Google Drive.",
+        "exportTooLarge": "El documento de Google es demasiado grande para convertirlo a PDF.",
+        "sheet": "No pudimos crear la planilla en tu Google Drive.",
+        "sheetRead": "No pudimos leer la planilla. Probá de nuevo."
       }
     }
   },
@@ -1700,6 +1825,7 @@
     "validation": "Revisá los datos: hay campos con errores.",
     "unauthenticated": "Se cerró tu sesión. Volvé a entrar.",
     "invalidCredentials": "El correo o la contraseña no son correctos.",
+    "wrongPassword": "La contraseña actual no es correcta.",
     "forbidden": "Tu rol no permite esta acción.",
     "notFound": "No encontramos lo que buscabas. Puede que alguien lo haya borrado.",
     "conflict": "Eso choca con algo que ya existe.",
@@ -1712,7 +1838,17 @@
     "internal": "Algo falló de nuestro lado. Probá de nuevo en un momento.",
     "network": "No pudimos conectarnos. Revisá tu conexión.",
     "title": "No se pudo guardar",
-    "termsRequired": "Para seguir tenés que aceptar los Términos y la Política de Privacidad."
+    "termsRequired": "Para seguir tenés que aceptar los Términos y la Política de Privacidad.",
+    "passwordNotSet": "Tu cuenta no tiene contraseña: entrás con Google. Creala con «Olvidé mi contraseña».",
+    "googleTokenInvalid": "No pudimos confirmar tu cuenta de Google. Probá de nuevo.",
+    "googleEmailNotVerified": "Google no tiene verificado el correo de esa cuenta. Entrá con tu correo y contraseña.",
+    "googleSignupRequired": "No hay ninguna cuenta con ese correo. Para crearla, aceptá los Términos.",
+    "googleLinkRequired": "Ya tenés una cuenta con ese correo. Entrá con tu contraseña una vez y conectamos tu Google.",
+    "googleLinkInvited": "Ya te invitaron con ese correo. Activá tu cuenta desde el enlace que te llegó por correo.",
+    "googleAlreadyLinked": "Esa cuenta de Google ya está conectada a otra cuenta de Luma.",
+    "googleUnlinkNeedsPassword": "Tu cuenta no tiene contraseña: si desconectás Google no podrías entrar. Creá una contraseña primero.",
+    "googleNotAllowed": "Esta cuenta no puede entrar con Google.",
+    "googleLinkOtherGoogle": "Tu cuenta de Luma ya tiene otra cuenta de Google conectada. Entrá con esa, o con tu contraseña."
   },
   "directory": {
     "providersEmpty": "Todavía no hay proveedores en tu Empresa.",
@@ -2268,16 +2404,16 @@
     },
     "feedback": {
       "summary": "{{responses}} respuestas de {{respondents}} personas.",
-      "suppressed": "Todavía hay menos de {{min}} personas que respondieron: por privacidad no mostramos promedios ni comentarios.",
-      "commentsTitle": "Comentarios",
-      "noComments": "Nadie dejó comentarios todavía.",
+      "suppressed": "Todavía hay menos de {{min}} personas que respondieron: por privacidad no mostramos promedios.",
       "questions": {
         "timeSaved": "¿Luma te ahorra tiempo en la gestión de tus obras?",
         "clarity": "¿Encontrás rápido lo que necesitás?",
         "control": "¿Sentís más control sobre el avance y la plata de la obra?"
       },
-      "changesTitle": "Cambios que piden",
-      "noChanges": "Nadie pidió cambios todavía."
+      "answersTitle": "Respuestas",
+      "noAnswers": "Nadie respondió todavía.",
+      "changeLabel": "Qué cambiaría",
+      "commentLabel": "Comentario"
     },
     "census": {
       "intro": "Hoy suman {{total}} cuentas. Solo {{membership}} tienen una membresía: {{client}} son clientes que miran el estado de su obra, {{staff}} son empleados de la obra de otra persona, {{noProject}} no tienen obra y {{inactive}} están dadas de baja.",
@@ -2459,7 +2595,7 @@
         {
           "title": "2. Qué datos tratamos",
           "paragraphs": [
-            "Datos de tu cuenta: nombre, correo electrónico y contraseña (que guardamos cifrada, nunca en texto legible).",
+            "Datos de tu cuenta: nombre, correo electrónico y contraseña (que guardamos cifrada, nunca en texto legible). Si entrás con Google, guardamos el identificador de tu cuenta de Google y su correo; nunca tu contraseña de Google ni acceso a tus datos en Google.",
             "Datos de tu obra: actividades, materiales, presupuestos, cobros, gastos, comprobantes, fotos, documentos y las personas que participan. Son tuyos: nosotros los guardamos para que puedas usarlos.",
             "Datos de pagos de la suscripción: banco, referencia y cédula o documento de quien paga, cuando elegís pagar en bolívares. Si pagás con tarjeta, los datos de la tarjeta los procesa Stripe y no pasan por nuestros servidores.",
             "Datos técnicos de la aceptación: cuando aceptás estos Términos guardamos la versión, la fecha y hora, tu dirección IP y el navegador que usaste. Sirven como constancia de que la aceptación ocurrió.",
@@ -2478,14 +2614,16 @@
           "paragraphs": [
             "No vendemos ni alquilamos tus datos personales ni los de tu obra.",
             "No mostramos publicidad de terceros ni compartimos tus datos con anunciantes.",
-            "No usamos los datos de tu obra para fines comerciales propios ni ajenos: son para que tu obra funcione."
+            "No usamos los datos de tu obra para fines comerciales propios ni ajenos: son para que tu obra funcione.",
+            "El uso que hacemos de la información que recibimos de las API de Google, y su transferencia a cualquier otra aplicación, cumple la Política de datos de usuario de los servicios de API de Google, incluidos los requisitos de Uso Limitado. No usamos esos datos para publicidad ni para entrenar modelos de inteligencia artificial."
           ]
         },
         {
           "title": "5. Con quién los compartimos",
           "paragraphs": [
             "Con las personas de tu obra, según el rol de cada una (gerente, supervisor, cliente): cada quien ve sólo lo que su rol permite, y una obra nunca es visible para quien no fue invitado.",
-            "Con proveedores que nos ayudan a operar el servicio, y sólo lo necesario para su función: el alojamiento de los servidores, el envío de correos (Resend), el cobro con tarjeta (Stripe), la verificación contra abusos en el registro (Google reCAPTCHA), el almacenamiento de archivos y, si usás el Consultor IA, el proveedor del modelo de inteligencia artificial (Anthropic), a quien enviamos lo necesario para responder tu consulta.",
+            "Con proveedores que nos ayudan a operar el servicio, y sólo lo necesario para su función: el alojamiento de los servidores, el envío de correos (Resend), el cobro con tarjeta (Stripe), la verificación contra abusos en el registro (Google reCAPTCHA), Google cuando elegís entrar con tu cuenta de Google, Google Maps cuando buscás la dirección de una obra o abrís su mapa (recibe lo que escribís y tu dirección IP), el almacenamiento de archivos, Google Drive cuando elegís importar o guardar archivos con él y, si usás el Consultor IA, el proveedor del modelo de inteligencia artificial (Anthropic), a quien enviamos lo necesario para responder tu consulta.",
+            "Si activás el calendario, quien tenga su enlace, y el servicio de calendario donde lo agregues, ve los nombres de tus obras, actividades y reuniones, y las fechas de vencimiento de las cuotas, sin montos.",
             "Con autoridades competentes, únicamente cuando nos lo exija una orden o una norma válida."
           ]
         },
@@ -2502,7 +2640,7 @@
           "title": "7. Cuánto tiempo los conservamos y qué pasa si te das de baja",
           "paragraphs": [
             "Conservamos tus datos mientras tu cuenta esté activa. Al darte de baja, guardamos la cuenta 90 días por si te arrepentís y después borramos tus datos personales: correo, nombre, foto, contraseña, teléfono, los datos de pago de la suscripción (banco, referencia, documento y comprobante) y el registro técnico de tu aceptación. También cerramos tu cliente en el procesador de pagos con tarjeta y eliminamos tus notificaciones y tus accesos a las obras.",
-            "Las obras que eliminás pasan 90 días en la papelera y después se borran con todo lo que tenían. Si tu Empresa no tenía a nadie más, queda sin nombre ni contacto. Los montos y fechas de los pagos, y el historial de una obra compartida con otras personas, se conservan atados a una «Cuenta eliminada» y sin datos que te identifiquen. Lo que otras personas hayan escrito con texto libre en una obra compartida (por ejemplo, una nota) podría seguir mencionándote."
+            "Las obras que eliminás pasan 90 días en la papelera y después se borran con todo lo que tenían. Si tu Empresa no tenía a nadie más, queda sin nombre ni contacto. Lo que guardás en tu Google Drive desde Luma es una copia en tu cuenta de Google: ni el borrado de tu cuenta ni el de la obra en Luma la alcanzan. Los montos y fechas de los pagos, y el historial de una obra compartida con otras personas, se conservan atados a una «Cuenta eliminada» y sin datos que te identifiquen. Lo que otras personas hayan escrito con texto libre en una obra compartida (por ejemplo, una nota) podría seguir mencionándote."
           ]
         },
         {
@@ -2812,5 +2950,14 @@
     "stepOf": "Paso {{current}} de {{total}}",
     "projectIntro": "Un vistazo rápido a las secciones de esta obra.",
     "done": "Entendido"
+  },
+  "drive": {
+    "sheet": {
+      "label": "Google Sheets",
+      "hint": "Una planilla nueva en tu Google Drive.",
+      "folderTitle": "Elegí la carpeta de Drive donde guardar la planilla",
+      "saved": "Planilla guardada en tu Google Drive.",
+      "open": "Abrir"
+    }
   }
 }

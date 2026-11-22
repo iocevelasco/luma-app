@@ -2,6 +2,7 @@ import type { MaterialItem, MaterialStatus } from '@luma/shared';
 import { describe, expect, it } from 'vitest';
 import {
   buildPurchaseCsv,
+  purchaseTable,
   buildPurchaseRows,
   bulkActionsFor,
   buildPurchaseText,
@@ -219,6 +220,19 @@ describe('buildPurchaseRows — versión de la foto', () => {
   it('sin foto no hay versión', () => {
     const [row] = buildPurchaseRows([material('a', 'pendiente')]);
     expect(row.photoVersion).toBeNull();
+  });
+});
+
+describe('purchaseTable', () => {
+  it('es la misma lista del CSV, con la cantidad como número', () => {
+    const rows = buildPurchaseRows([withSupplier('a', 'Corralón Sur', 'solicitado', 'Arena')]);
+    const table = purchaseTable(rows, {
+      header: { material: 'Material', quantity: 'Cantidad', unit: 'Unidad', supplier: 'Proveedor', note: 'Nota' },
+      unit: () => 'Unidad',
+      tag: 'ya pedido',
+    });
+    expect(table.header).toEqual(['Material', 'Cantidad', 'Unidad', 'Proveedor', 'Nota']);
+    expect(table.rows).toEqual([['Arena', 1, 'Unidad', 'Corralón Sur', 'ya pedido']]);
   });
 });
 

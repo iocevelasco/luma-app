@@ -21,6 +21,13 @@ export type ApiErrorCode =
   | 'UNAUTHENTICATED'
   /** El login no coincide. Aparte de `UNAUTHENTICATED`: acá nunca hubo una sesión que se cerrara. */
   | 'INVALID_CREDENTIALS'
+  /**
+   * Hay sesión, y la contraseña que se pidió para confirmar una acción sobre la
+   * cuenta (cambiar la contraseña, cambiar el correo) no es la de la cuenta.
+   * Aparte de `UNAUTHENTICATED` y de `INVALID_CREDENTIALS`: la sesión sigue
+   * valiendo. Nunca un 401 — ver `STATUS_BY_ERROR_CODE`.
+   */
+  | 'WRONG_PASSWORD'
   /** Hay sesión, pero este rol no puede. */
   | 'FORBIDDEN'
   /** No existe, o existe y no es de quien pregunta — ver abajo. */
@@ -48,6 +55,33 @@ export type ApiErrorCode =
   | 'PAID_PLAN_REQUIRED'
   /** Hay que aceptar los Términos y la Política de Privacidad para seguir. */
   | 'TERMS_REQUIRED'
+  /**
+   * La cuenta no tiene contraseña (entra sólo con Google) y la acción la pide:
+   * cambiar la contraseña o el correo. Se crea con «Olvidé mi contraseña».
+   */
+  | 'PASSWORD_NOT_SET'
+  /** La credencial de Google no vale: firma, emisor, audiencia o vencida. */
+  | 'GOOGLE_TOKEN_INVALID'
+  /** Google no da el correo de esa cuenta por verificado. */
+  | 'GOOGLE_EMAIL_NOT_VERIFIED'
+  /**
+   * No hay cuenta con ese correo: crearla pide aceptar los Términos. Trae
+   * `details: { email, name }` para que el diálogo diga con qué correo se crea.
+   */
+  | 'GOOGLE_SIGNUP_REQUIRED'
+  /**
+   * Hay una cuenta con ese correo y Google no se une solo: se conecta poniendo
+   * la contraseña una vez (ADR-005 §1). `details.reason`: `password` (entrar
+   * con la contraseña y conectar), `invited` (activar desde el correo) u
+   * `otherGoogle` (la cuenta ya tiene otro Google conectado).
+   */
+  | 'GOOGLE_LINK_REQUIRED'
+  /** Esa cuenta de Google ya está conectada a otra cuenta de Luma. */
+  | 'GOOGLE_ALREADY_LINKED'
+  /** Desconectar Google dejaría la cuenta sin forma de entrar. */
+  | 'GOOGLE_UNLINK_NEEDS_PASSWORD'
+  /** Esta cuenta no puede usar Google (los admins de plataforma). */
+  | 'GOOGLE_NOT_ALLOWED'
   /** Cualquier otra cosa. Nunca lleva el detalle interno hacia afuera. */
   | 'INTERNAL';
 
@@ -89,6 +123,22 @@ export const STATUS_BY_ERROR_CODE: Record<ApiErrorCode, number> = {
   PAID_PLAN_REQUIRED: 402,
   // 403 como FORBIDDEN: `errorCodeForStatus(403)` devuelve el primero.
   TERMS_REQUIRED: 403,
+  // 403 y no 401: el cliente lee todo 401 con token como sesión vencida —
+  // renueva, reintenta y, si vuelve a fallar, cierra la sesión. Una contraseña
+  // mal escrita en "Mi cuenta" no puede desloguear a nadie.
+  // Va después de FORBIDDEN: `errorCodeForStatus(403)` devuelve el primero.
+  WRONG_PASSWORD: 403,
+  // Ninguno de Google sale con 401: el popup de Google pasa también con sesión
+  // abierta (conectar desde la cuenta), y un 401 la cerraría. Todos van después
+  // del genérico de su status, así `errorCodeForStatus` no cambia.
+  PASSWORD_NOT_SET: 409,
+  GOOGLE_TOKEN_INVALID: 400,
+  GOOGLE_EMAIL_NOT_VERIFIED: 400,
+  GOOGLE_SIGNUP_REQUIRED: 409,
+  GOOGLE_LINK_REQUIRED: 409,
+  GOOGLE_ALREADY_LINKED: 409,
+  GOOGLE_UNLINK_NEEDS_PASSWORD: 409,
+  GOOGLE_NOT_ALLOWED: 403,
   INTERNAL: 500,
 };
 

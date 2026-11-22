@@ -9,6 +9,8 @@ import {
   confirmEmailChange,
   forgotPassword,
   getCurrentUser,
+  googleAuth,
+  linkGoogle,
   login,
   logout,
   refreshToken,
@@ -16,6 +18,7 @@ import {
   resendVerification,
   resetPassword,
   setPassword,
+  unlinkGoogle,
   verifyEmail,
 } from '../controllers/index.js';
 
@@ -37,10 +40,31 @@ const authLimiter =
       })
     : (_req: Request, _res: Response, next: NextFunction) => next();
 
+/**
+ * Conectar y desconectar Google piden la contraseña: sin un tope por cuenta,
+ * quien robó una sesión abierta la prueba por fuerza bruta. Por cuenta y no
+ * por IP, porque ya hay sesión.
+ */
+const googleLinkLimiter =
+  process.env.NODE_ENV === 'production'
+    ? rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 10,
+        keyGenerator: (req) => `google-link:${req.user?.sub ?? 'anon'}`,
+        message: 'Demasiados intentos. Prueba de nuevo en unos minutos.',
+        standardHeaders: true,
+        legacyHeaders: false,
+      })
+    : (_req: Request, _res: Response, next: NextFunction) => next();
+
 authRouter.use(cookieParser());
 
 authRouter.post('/login', authLimiter, login);
 authRouter.post('/register', authLimiter, register);
+// Sin reCAPTCHA: la credencial de Google ya prueba que hay una persona del otro lado.
+authRouter.post('/google', authLimiter, googleAuth);
+authRouter.post('/google/link', isAuthenticated, googleLinkLimiter, linkGoogle);
+authRouter.delete('/google/link', isAuthenticated, googleLinkLimiter, unlinkGoogle);
 authRouter.post('/refresh', authLimiter, refreshToken);
 authRouter.post('/logout', isAuthenticated, logout);
 authRouter.get('/me', isAuthenticated, getCurrentUser);

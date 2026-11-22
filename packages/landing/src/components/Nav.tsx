@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { switchLanguage } from '../i18n/config';
 import { LOGIN_URL } from '../lib/app-url';
 import { CTA_PRIMARY } from '../lib/cta';
 import { Logo } from './Logo';
@@ -8,13 +7,13 @@ const LINKS = [
   { href: '#roles', key: 'roles' },
   { href: '#features', key: 'features' },
   { href: '#how', key: 'how' },
+  { href: '#equipo', key: 'team' },
   { href: '#pricing', key: 'pricing' },
   { href: '#faq', key: 'faq' },
 ] as const;
 
 export function Nav() {
-  const { t, i18n } = useTranslation();
-  const current = i18n.language.startsWith('pt') ? 'pt' : 'es';
+  const { t } = useTranslation();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
@@ -37,22 +36,6 @@ export function Nav() {
         </ul>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center" role="group" aria-label={t('nav.language')}>
-            {(['es', 'pt'] as const).map((lng) => (
-              <button
-                key={lng}
-                type="button"
-                onClick={() => void switchLanguage(lng)}
-                aria-pressed={current === lng}
-                className={`nav-label px-2 py-1 text-xs ${
-                  current === lng ? 'text-foreground' : 'text-muted-foreground'
-                }`}
-              >
-                {lng.toUpperCase()}
-              </button>
-            ))}
-          </div>
-
           <a
             href={LOGIN_URL}
             className={`${CTA_PRIMARY} h-9 px-4 text-xs`}

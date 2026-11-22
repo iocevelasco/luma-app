@@ -1,4 +1,5 @@
 export * from './auth.controller.js';
+export * from './google-auth.controller.js';
 export * from './organization.controller.js';
 export * from './directory.controller.js';
 export * from './project.controller.js';
@@ -14,6 +15,9 @@ export * from './provider.controller.js';
 export * from './provider-engagement.controller.js';
 export * from './crew.controller.js';
 export * from './document.controller.js';
+export * from './public-config.controller.js';
+export * from './integrations-config.controller.js';
+export * from './calendar-feed.controller.js';
 export * from './milestone.controller.js';
 export * from './milestone-attachment.controller.js';
 export * from './notification.controller.js';

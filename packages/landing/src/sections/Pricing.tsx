@@ -15,9 +15,9 @@ export function Pricing() {
           </h2>
         </div>
 
-        <div className="rounded-3xl border border-border bg-card p-8 shadow-surface sm:p-10">
+        <div className="rounded-none border border-border bg-background p-8 shadow-surface sm:p-10">
           <p className="flex items-baseline gap-3">
-            <span className="text-6xl tracking-tight text-foreground sm:text-7xl">
+            <span className="text-6xl tracking-tight text-brand sm:text-7xl">
               {t('pricing.amount')}
             </span>
             <span className="text-lg text-muted-foreground">{t('pricing.period')}</span>
@@ -26,7 +26,7 @@ export function Pricing() {
           <ul className="mt-8 space-y-3 border-t border-border pt-8">
             {perks.map((perk) => (
               <li key={perk} className="flex items-center gap-3 text-base text-foreground">
-                <Check aria-hidden="true" className="h-5 w-5 shrink-0 text-primary" />
+                <Check aria-hidden="true" className="h-5 w-5 shrink-0 text-brand" />
                 {perk}
               </li>
             ))}

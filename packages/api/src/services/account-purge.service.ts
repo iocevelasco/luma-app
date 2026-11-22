@@ -97,7 +97,7 @@ export const PERSONAL_FIELDS: Record<string, Record<string, 'purged' | 'third-pa
   // Quien retira material del patio: un nombre de un tercero, parte del kardex.
   StockMovement: { receiver: 'third-party' },
   SubscriptionPayment: { bank: 'purged', reference: 'purged', payerId: 'purged' },
-  User: { email: 'purged', picture: 'purged' },
+  User: { email: 'purged', picture: 'purged', googleEmail: 'purged' },
 };
 
 export interface AccountPurgeRun {
@@ -275,6 +275,7 @@ export async function purgeAccount(
       $unset: {
         picture: '',
         password: '',
+        passwordProvenAt: '',
         resetToken: '',
         resetTokenExpires: '',
         emailVerificationToken: '',
@@ -284,6 +285,12 @@ export async function purgeAccount(
         emailChangeTokenExpires: '',
         termsAcceptedIp: '',
         termsAcceptedUserAgent: '',
+        // Sin esto la persona no podría volver a registrarse con su Google: el
+        // `sub` seguiría atado a esta cuenta purgada.
+        googleSub: '',
+        googleEmail: '',
+        calendarFeedTokenHash: '',
+        calendarFeedCreatedAt: '',
       },
     },
   );

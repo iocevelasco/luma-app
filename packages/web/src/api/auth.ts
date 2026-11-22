@@ -5,6 +5,9 @@ import type {
   ChangeEmailRequest,
   ChangePasswordRequest,
   ForgotPasswordRequest,
+  GoogleAuthRequestInput,
+  GoogleLinkRequestInput,
+  GoogleUnlinkRequestInput,
   LoginCredentials,
   RegisterCredentials,
   ResetPasswordRequest,
@@ -53,6 +56,16 @@ export const authApi = {
     unwrap<{ user: AuthUser }>(
       apiClient.post('/api/auth/register', credentials, { skipAuth: true }),
     ),
+
+  /** Entrar o registrarse con Google: el mismo pedido desde `/login` y `/register`. */
+  google: (payload: GoogleAuthRequestInput) =>
+    unwrap<AuthResponse>(apiClient.post('/api/auth/google', payload, { skipAuth: true })),
+
+  linkGoogle: (payload: GoogleLinkRequestInput) =>
+    unwrap<{ user: AuthUser }>(apiClient.post('/api/auth/google/link', payload)),
+
+  unlinkGoogle: (payload: GoogleUnlinkRequestInput) =>
+    unwrap<{ user: AuthUser }>(apiClient.delete('/api/auth/google/link', { body: JSON.stringify(payload) })),
 
   logout: () => unwrapMessage(apiClient.post('/api/auth/logout', {})),
 

@@ -36,6 +36,38 @@ workspace: con `--frozen-lockfile`, si falta uno, el build aborta con un
 URI de Mongo: `mongodb://<user>:<pass>@mongo:27017/<db>?authSource=admin`. El
 nombre de la base no admite guiones en el formulario de Coolify.
 
+## Ramas y entornos
+
+Dos entornos, cada uno con sus propios recursos en Coolify (`app`, landing y
+Mongo) y su propia rama. Coolify despliega solo al recibir un push en la rama
+que tiene configurada cada recurso (Auto Deploy, por la GitHub App).
+
+| Rama | Entorno | Cómo se llega |
+|---|---|---|
+| `stage` | demo | PR desde la rama de feature |
+| `main` | producción | PR de `stage` a `main` |
+
+```
+feat/…  ──PR──▶  stage  ──PR──▶  main
+                   │               │
+                 demo          producción
+```
+
+- **Una feature sale de `main` y su PR apunta a `stage`.** Al mergear, la demo
+  se despliega. Cuando lo que hay en la demo está bien, un PR de `stage` a
+  `main` lo lleva a producción.
+- **El PR de `stage` a `main` se mergea con merge commit, no con squash**: un
+  squash deja a `stage` con commits que `main` no reconoce y el PR siguiente
+  vuelve a mostrar todo.
+- **Un arreglo urgente** va directo a `main` por PR y enseguida se trae a
+  `stage` (PR de `main` a `stage`), para que la demo no quede atrás.
+- En Coolify, los recursos de la demo (`app` y landing) tienen **Git Branch =
+  `stage`** y Auto Deploy activado; los de producción, `main`. Cambiar la rama
+  no despliega: hace falta un deploy o un push.
+- Variables, base y dominio son de cada entorno. La demo nunca apunta a la
+  base de producción (ver `docs/SUSCRIPCION.md` para sembrarla).
+- CI corre en los PR y en cada push a `main` y a `stage`.
+
 ## Dos trampas operativas
 
 1. **El network alias de `luma-landing` se fija ANTES del primer deploy.** Si no, Docker
@@ -61,6 +93,9 @@ nombre de la base no admite guiones en el formulario de Coolify.
 | `LANDING_URL` | `http://luma-landing:8080` | cae a `http://landing:8080` — **que en la red compartida de Coolify puede ser la landing de otra app** |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `APP_NAME` | mails (cómo configurar Resend y el dominio: `docs/CORREOS.md`) | aviso; los mails quedan deshabilitados |
 | `MEDIA_SERVICE_URL`, `MEDIA_SERVICE_API_KEY` | storage de archivos (evidencia RF-04 y documentación de obra) vía el microservicio `media-service` (ej. `https://media.matflow.site`); la key se emite con `bucket key create luma` | aviso; subir archivos da 503, el resto de la app sigue |
+| `GOOGLE_GCP_CLIENT_ID` | entrar y registrarse con Google (ADR-005 §1): client id del cliente OAuth web, con los orígenes de la app autorizados (en desarrollo, también los de stage). Público, sin secreto | aviso; login, registro y activación no muestran el botón de Google |
+| `GOOGLE_GCP_MAPS_BROWSER_KEY` | dirección de la obra con Google Maps (ADR-005 §2): clave de navegador con Maps JavaScript API, Places API (New) y Maps Embed API, restringida por dominio (`https://<DOMINIO>/*`: la app manda sólo el origen como referrer) y por esas tres APIs, con cuota diaria. Sin secreto: la API la entrega sólo con sesión (`/api/config/integrations`), pero el registro es abierto y va en el iframe del mapa, así que **lo único que la protege es esa restricción y la cuota**. Sólo se cobra el autocompletado (10.000 gratis por mes) | aviso; la dirección es texto libre, sin mapa |
+| `GOOGLE_GCP_CLIENT_ID`, `GOOGLE_GCP_PICKER_API_KEY`, `GOOGLE_GCP_PROJECT_NUMBER` | importar y exportar con Google Drive en Documentación, y guardar listas como Google Sheet (ADR-005 §4): client id del cliente OAuth web, clave de navegador con la Picker API (restringida por dominio y con cuota) y número del proyecto de Google Cloud. Públicas, sin secreto. Para las planillas, además, la **Google Sheets API** habilitada en el proyecto (no va en la clave: se usa el token de la persona) | aviso; Documentación no ofrece Drive |
 | `STORAGE_SIGNED_URL_TTL` | opcional: vida de las URLs firmadas de lectura | `3600` segundos (máximo que admite el servicio) |
 | `STRIPE_SECRET_KEY` | pago de la suscripción con tarjeta. **Sólo se ofrece con `sk_live_…`**: con una `sk_test_…` queda apagado | no se ofrece pago con tarjeta |
 | `STRIPE_TEST_MODE` | `true` ofrece la tarjeta con una clave `sk_test_…` (sólo para probar en local, nunca en producción) | con `sk_test_` no se ofrece tarjeta |
