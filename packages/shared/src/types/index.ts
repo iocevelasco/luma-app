@@ -17,6 +17,12 @@ export interface JWTPayload {
   roles: UserRole[];
   /** Sólo presente en el refresh token. */
   type?: 'refresh';
+  /**
+   * `User.tokenVersion` al emitir el token. Si la cuenta la subió después
+   * (recuperó la contraseña), el token ya no vale. Ausente en los tokens
+   * emitidos antes de que existiera: cuenta como 0.
+   */
+  tv?: number;
   iat?: number;
   exp?: number;
 }
@@ -41,6 +47,20 @@ export interface AuthUser {
   account_status: AccountStatus;
   /** Falta aceptar los Términos vigentes. Lo resuelve la API, la UI no lo deriva. */
   terms_pending: boolean;
+  /** Tiene contraseña. Sin ella entra sólo con Google. */
+  has_password: boolean;
+  /** Tiene una cuenta de Google conectada. */
+  google_linked: boolean;
+  /** El correo de la cuenta de Google conectada, para mostrarlo. */
+  google_email?: string;
+  /** Puede conectar Google: la entrega está prendida y no es admin. */
+  google_available: boolean;
+}
+
+/** Detalle de `GOOGLE_SIGNUP_REQUIRED`: con qué datos de Google se crearía la cuenta. */
+export interface GoogleSignupDetails {
+  email: string;
+  name: string;
 }
 
 export interface LoginCredentials {
@@ -108,7 +128,9 @@ export * from './notification.js';
 export * from './money.js';
 export * from './payment.js';
 export * from './errors.js';
+export * from './calendar.js';
 export * from './subscription.js';
 export * from './platform.js';
 export * from './campaign.js';
 export * from './inventory.js';
+export * from './public-config.js';

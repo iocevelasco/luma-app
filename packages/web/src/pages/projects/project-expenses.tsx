@@ -24,6 +24,8 @@ import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
 import { MovementDetail, RowOpenButton } from '@/components/finance/movement-detail';
 import { MovementExport } from '@/components/finance/movement-export';
+import { useSaveAsSheet } from '@/hooks/google-drive/use-save-as-sheet';
+import type { ExpensesCsvLabels } from '@/lib/movements-csv';
 import { MovementFilterBar } from '@/components/finance/movement-filter-bar';
 import {
   AlertDialog,
@@ -473,6 +475,7 @@ export function ProjectExpensesPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const dateLocale = useDateLocale();
   const { data: projectData } = useProject(projectId);
+  const sheets = useSaveAsSheet();
   const { data, isLoading, isError } = useExpenses(projectId);
   const { can } = useProjectCapabilities(projectId);
   // El resumen trae el margen: lo recibe el gerente y el contador, nunca el cliente
@@ -509,6 +512,43 @@ export function ProjectExpensesPage() {
     void import('jspdf-autotable');
   }
 
+  /** Encabezados y textos de la tabla de gastos: los comparten el CSV y la Google Sheet. */
+  function expenseLabels(): Omit<ExpensesCsvLabels, 'number'> {
+    return {
+      header: {
+        date: t('finance.export.columnDate'),
+        description: t('finance.fields.description'),
+        category: t('finance.fields.category'),
+        method: t('finance.fields.method'),
+        provider: t('finance.fields.provider'),
+        activity: t('finance.fields.activity'),
+        amount: t('finance.export.columnAmount'),
+        currency: t('finance.export.columnCurrency'),
+        originalAmount: t('finance.export.columnOriginalAmount'),
+        originalCurrency: t('finance.export.columnOriginalCurrency'),
+        rate: t('finance.export.columnRate'),
+        notes: t('finance.export.columnNotes'),
+      },
+      category: (category) => t(`finance.category.${category}`),
+      method: (method) => t(`finance.method.${method}`),
+    };
+  }
+
+  /** Lo que la pantalla muestra, como Google Sheet en el Drive de la persona. */
+  function handleSaveSheet() {
+    if (visible.length === 0) return;
+    sheets.save(async () => {
+      const [{ expensesTable }, { expensesFileName }] = await Promise.all([
+        import('@/lib/movements-csv'),
+        import('@/lib/expenses-pdf'),
+      ]);
+      return {
+        name: expensesFileName(projectData?.project.name ?? '', new Date(), 'csv').replace(/\.csv$/, ''),
+        table: expensesTable(groups.flatMap((group) => group.expenses), currency, expenseLabels()),
+      };
+    });
+  }
+
   async function handleDownloadCsv() {
     if (visible.length === 0) return;
     try {
@@ -522,22 +562,7 @@ export function ProjectExpensesPage() {
       const numberFormat = new Intl.NumberFormat(i18n.language, { useGrouping: false, maximumFractionDigits: 6 });
       const csv = buildExpensesCsv(rows, currency, {
         number: (value) => numberFormat.format(value),
-        header: {
-          date: t('finance.export.columnDate'),
-          description: t('finance.fields.description'),
-          category: t('finance.fields.category'),
-          method: t('finance.fields.method'),
-          provider: t('finance.fields.provider'),
-          activity: t('finance.fields.activity'),
-          amount: t('finance.export.columnAmount'),
-          currency: t('finance.export.columnCurrency'),
-          originalAmount: t('finance.export.columnOriginalAmount'),
-          originalCurrency: t('finance.export.columnOriginalCurrency'),
-          rate: t('finance.export.columnRate'),
-          notes: t('finance.export.columnNotes'),
-        },
-        category: (category) => t(`finance.category.${category}`),
-        method: (method) => t(`finance.method.${method}`),
+        ...expenseLabels(),
       });
       downloadBlob(
         new Blob([csv], { type: 'text/csv;charset=utf-8' }),
@@ -597,12 +622,14 @@ export function ProjectExpensesPage() {
       disabled={visible.length === 0}
       onPdf={() => void handleDownloadPdf()}
       onCsv={() => void handleDownloadCsv()}
+      onSheet={sheets.available ? handleSaveSheet : undefined}
       onWarm={warmPdf}
       labels={{
         download: t('finance.export.download'),
         generating: t('finance.expenses.pdf.generating'),
         pdf: t('finance.export.pdf'),
         csv: t('finance.export.csv'),
+        sheet: t('drive.sheet.label'),
         pdfButton: t('finance.expenses.pdf.button'),
         csvButton: t('finance.export.csvButton'),
       }}

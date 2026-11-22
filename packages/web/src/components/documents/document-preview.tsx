@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ProjectDocument } from '@luma/shared';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, HardDriveUpload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +26,9 @@ interface DocumentPreviewProps {
   projectId: string;
   doc: ProjectDocument | null;
   onClose: () => void;
+  /** Sin esto (Drive apagado en el entorno), no se ofrece. */
+  onExportToDrive?: (doc: ProjectDocument) => void;
+  exportBusy?: boolean;
 }
 
 /**
@@ -60,7 +63,13 @@ function usePdfUrl(projectId: string, doc: ProjectDocument | null) {
  * `Content-Security-Policy: sandbox` y el navegador no la abre en un `<iframe>`,
  * así que se pide a la API y se muestra como `blob:`.
  */
-export function DocumentPreview({ projectId, doc, onClose }: DocumentPreviewProps) {
+export function DocumentPreview({
+  projectId,
+  doc,
+  onClose,
+  onExportToDrive,
+  exportBusy = false,
+}: DocumentPreviewProps) {
   const { t } = useTranslation();
   const isImage = doc?.contentType.startsWith('image/') ?? false;
   const pdf = usePdfUrl(projectId, doc);
@@ -90,14 +99,22 @@ export function DocumentPreview({ projectId, doc, onClose }: DocumentPreviewProp
           )}
         </div>
 
-        {doc?.url && (
-          <div className="flex justify-end">
-            <Button variant="outline" asChild>
-              <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="size-4" />
-                {t('document.fm.preview.openInTab')}
-              </a>
-            </Button>
+        {doc && (doc.url || onExportToDrive) && (
+          <div className="flex flex-wrap justify-end gap-2">
+            {onExportToDrive && (
+              <Button variant="outline" disabled={exportBusy} onClick={() => onExportToDrive(doc)}>
+                <HardDriveUpload className="size-4" />
+                {t('document.drive.export')}
+              </Button>
+            )}
+            {doc.url && (
+              <Button variant="outline" asChild>
+                <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="size-4" />
+                  {t('document.fm.preview.openInTab')}
+                </a>
+              </Button>
+            )}
           </div>
         )}
       </DialogContent>

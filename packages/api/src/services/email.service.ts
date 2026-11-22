@@ -339,6 +339,60 @@ export class EmailService {
     );
   }
 
+  /**
+   * Aviso de que la cuenta quedó conectada o desconectada de Google (ADR-005
+   * §1.17). Va al correo de la cuenta: si no fue la persona, recuperar la
+   * contraseña desconecta Google y cierra todas las sesiones.
+   */
+  static async sendGoogleLinkChanged(params: {
+    to: string;
+    name?: string;
+    googleEmail: string;
+    linked: boolean;
+    /** Google se unió solo por el correo: se quitó la contraseña y se cerraron las sesiones. */
+    passwordRemoved?: boolean;
+  }): Promise<boolean> {
+    const url = appUrl('/forgot-password');
+    const name = params.name || params.to.split('@')[0];
+    const what = params.linked ? 'conectada a' : 'desconectada de';
+
+    return send(
+      {
+        from: FROM_EMAIL,
+        to: params.to,
+        subject: params.linked
+          ? `Conectaste Google a tu cuenta de ${APP_NAME}`
+          : `Desconectaste Google de tu cuenta de ${APP_NAME}`,
+        html: layout({
+          heading: params.linked ? 'Google quedó conectado' : 'Google quedó desconectado',
+          preheader: `Tu cuenta quedó ${what} ${params.googleEmail}.`,
+          bodyHtml: `
+            <p>Hola ${escapeHtml(name)},</p>
+            <p>Tu cuenta de ${escapeHtml(APP_NAME)} quedó ${what} la cuenta de Google
+               <strong>${escapeHtml(params.googleEmail)}</strong>.</p>
+            ${
+              params.passwordRemoved
+                ? `<p>Por seguridad quitamos la contraseña de tu cuenta y cerramos las
+                   sesiones abiertas en otros dispositivos. A partir de ahora entras con
+                   Google; si quieres volver a tener contraseña, créala con «Olvidé mi
+                   contraseña».</p>`
+                : ''
+            }
+            <p>Si no fuiste tú, recupera tu contraseña: eso desconecta Google y cierra
+               todas las sesiones abiertas.</p>`,
+          cta: { label: 'Recuperar mi contraseña', url },
+          note: 'Si fuiste tú, no tienes que hacer nada.',
+        }),
+        text: `Tu cuenta de ${APP_NAME} quedó ${what} ${params.googleEmail}.${
+          params.passwordRemoved
+            ? '\n\nPor seguridad quitamos la contraseña de tu cuenta y cerramos las sesiones abiertas. A partir de ahora entras con Google.'
+            : ''
+        }\n\nSi no fuiste tú, recupera tu contraseña: ${url}`,
+      },
+      'mail de Google conectado',
+    );
+  }
+
   /** Confirmación de cambio de email: se manda a la dirección NUEVA. */
   static async sendEmailChangeConfirmationEmail(
     newEmail: string,

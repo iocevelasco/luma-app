@@ -12,4 +12,8 @@ describe('currencyChoices', () => {
     expect(currencyChoices('UYU')).toContain('UYU');
     expect(currencyChoices('ARS', 'CHF')).toContain('CHF');
   });
+
+  it('ofrece sólo USD, VES y EUR', () => {
+    expect(currencyChoices('USD')).toEqual(['USD', 'VES', 'EUR']);
+  });
 });

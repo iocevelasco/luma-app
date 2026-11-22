@@ -50,4 +50,10 @@ describe('rebote al alta de la primera obra', () => {
     });
     expect(() => markSentToFirstProject()).not.toThrow();
   });
+
+  it('es por persona: otra cuenta en la misma pestaña rebota su vez', () => {
+    markSentToFirstProject('ana');
+    expect(hasBeenSentToFirstProject('ana')).toBe(true);
+    expect(hasBeenSentToFirstProject('beto')).toBe(false);
+  });
 });

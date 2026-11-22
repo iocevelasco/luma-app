@@ -10,6 +10,7 @@ import {
   receiptUpload,
 } from '../middleware/receipt-upload.middleware.js';
 import {
+  bulkCreateMaterials,
   bulkDeleteMaterials,
   bulkUpdateMaterials,
   createMaterial,
@@ -37,6 +38,7 @@ materialRouter.get('/', requireCapability('material.read'), listMaterials);
 materialRouter.post('/', requireCapability('material.write'), createMaterial);
 // Antes de `/:materialId`: si no, "bulk" se lee como un id. El borrado en
 // lote es un POST porque un DELETE con body se pierde en algunos proxies.
+materialRouter.post('/bulk', requireCapability('material.write'), bulkCreateMaterials);
 materialRouter.patch('/bulk', requireCapability('material.write'), bulkUpdateMaterials);
 materialRouter.post('/bulk/delete', requireCapability('material.write'), bulkDeleteMaterials);
 // Facturas: un gasto, pero con su propia capacidad. Ver material-invoice.controller.ts.

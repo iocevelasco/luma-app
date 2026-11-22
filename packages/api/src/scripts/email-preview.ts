@@ -23,6 +23,9 @@ await EmailService.sendAccountActivationEmail('beto@ejemplo.com', 'token-de-ejem
 });
 await EmailService.sendPasswordResetEmail('ana@ejemplo.com', 'token-de-ejemplo');
 await EmailService.sendEmailChangeConfirmationEmail('ana.nueva@ejemplo.com', 'token-de-ejemplo', 'Ana Pérez');
+await EmailService.sendGoogleLinkChanged({ to: 'ana@ejemplo.com', name: 'Ana Pérez', googleEmail: 'ana@gmail.com', linked: true });
+await EmailService.sendGoogleLinkChanged({ to: 'ana@ejemplo.com', name: 'Ana Pérez', googleEmail: 'ana@gmail.com', linked: false });
+await EmailService.sendGoogleLinkChanged({ to: 'ana@gmail.com', name: 'Ana Pérez', googleEmail: 'ana@gmail.com', linked: true, passwordRemoved: true });
 await EmailService.sendProjectInvitation({
   to: 'carla@ejemplo.com',
   name: 'Carla',

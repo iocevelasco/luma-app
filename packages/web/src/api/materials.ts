@@ -1,5 +1,6 @@
 import type {
   ApiResponse,
+  BulkCreateMaterialsInput,
   BulkDeleteMaterialsInput,
   BulkUpdateMaterialsInput,
   CreateMaterialInvoiceInput,
@@ -38,6 +39,10 @@ export const materialsApi = {
     unwrap<{ materialId: string }>(
       apiClient.delete(`/api/projects/${projectId}/materials/${materialId}`),
     ),
+
+  /** Alta en lote (importar una planilla). Todos entran en Pendiente. */
+  bulkCreate: (projectId: string, payload: BulkCreateMaterialsInput) =>
+    unwrap<MaterialBulkResponse>(apiClient.post(`/api/projects/${projectId}/materials/bulk`, payload)),
 
   bulkUpdate: (projectId: string, payload: BulkUpdateMaterialsInput) =>
     unwrap<MaterialBulkResponse>(

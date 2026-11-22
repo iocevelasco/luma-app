@@ -13,7 +13,6 @@ import {
   type ProjectRole,
 } from '@luma/shared';
 import { User } from '../models/User.js';
-import { projectCapabilitiesFor } from '../middleware/project.middleware.js';
 import { Project, type IProject } from '../models/Project.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
 import {
@@ -23,11 +22,14 @@ import {
 import { createPersonalOrganization, findMyOrganizationId } from '../services/organization.service.js';
 import { firstProjectPrompt } from '../services/first-project.service.js';
 import { removedProjectsForMember } from '../services/project-deletion.service.js';
-import { decideProjectCreation, statesFor } from '../services/subscription.service.js';
+import { decideProjectCreation } from '../services/subscription.service.js';
+import { myProjectsWithAccess } from '../services/my-projects.service.js';
 import { syncStripeExtras } from '../services/stripe.service.js';
 import { AppError, forbidden, isAppError } from '../utils/errors.js';
 import { EmailService } from '../services/email.service.js';
 import {
+  ACTIVATED_ACCOUNT_FILTER,
+  accountIsActivated,
   isLinkedToAnotherInviter,
   LINK_HELD_BY_ANOTHER_MESSAGE,
   recordActivationDelivery,
@@ -50,6 +52,7 @@ export function toProjectDTO(project: IProject): ProjectDTO {
     name: project.name,
     description: project.description ?? '',
     location: project.location,
+    placeId: project.placeId || undefined,
     size: project.size,
     estimatedStartDate: project.estimatedStartDate,
     estimatedEndDate: project.estimatedEndDate,
@@ -84,7 +87,15 @@ export async function updateProject(req: Request, res: Response) {
     }
 
     const current = req.project as IProject;
-    const project = await Project.findByIdAndUpdate(current._id, parsed.data, { new: true });
+    const { placeId, ...fields } = parsed.data;
+    // Ubicación y lugar van juntos: un texto nuevo sin lugar borra el anterior.
+    const update =
+      fields.location === undefined
+        ? fields
+        : placeId
+          ? { $set: { ...fields, placeId } }
+          : { $set: fields, $unset: { placeId: '' } };
+    const project = await Project.findByIdAndUpdate(current._id, update, { new: true });
     if (!project) {
       return res.status(404).json({ success: false, error: 'Obra no encontrada' });
     }
@@ -163,42 +174,19 @@ export async function listProjects(req: Request, res: Response) {
 
   try {
     const userId = req.user.sub;
-    // Dos orígenes de acceso y no tres: desde que el supervisor es por obra,
-    // ser miembro de la Empresa ya no abre ninguna obra por sí solo.
-    const memberships = await ProjectMembership.find({ user: userId }).select('project role');
-    const roleByProject = new Map(memberships.map((m) => [String(m.project), m.role]));
-
-    const projects = await Project.find({
-      $or: [{ createdBy: userId }, { _id: { $in: memberships.map((m) => m.project) } }],
-    })
-      .sort({ updatedAt: -1 })
-      .limit(100);
-
-    // Cada obra puede ser de una Empresa distinta (las que me invitaron son
-    // de otros): el estado de todas en dos consultas.
-    const subscriptions = await statesFor(projects.map((p) => p.organization));
+    const mine = await myProjectsWithAccess(userId);
 
     return res.json({
       success: true,
       data: {
         removedProjects: await removedProjectsForMember(userId),
-        firstProjectPrompt: await firstProjectPrompt(userId, projects.length),
-        projects: projects.map((project) => {
-          // El dueño no tiene fila: sale de `createdBy` y gana sobre cualquier
-          // membresía (mismo criterio que `requireProjectAccess`). Otro gerente
-          // sí la tiene, con `role: 'gerente'`.
-          const role: ProjectRole =
-            String(project.createdBy) === userId
-              ? 'gerente'
-              : (roleByProject.get(String(project._id)) as ProjectRole);
-          const readOnly = subscriptions.get(String(project.organization))?.canWrite === false;
-          return {
-            ...toProjectDTO(project),
-            role,
-            capabilities: projectCapabilitiesFor(project, role, userId, readOnly),
-            readOnly,
-          };
-        }),
+        firstProjectPrompt: await firstProjectPrompt(userId, mine.length),
+        projects: mine.map(({ project, role, capabilities, readOnly }) => ({
+          ...toProjectDTO(project),
+          role,
+          capabilities,
+          readOnly,
+        })),
       },
     });
   } catch (error) {
@@ -277,7 +265,7 @@ async function listProjectMembers(
     (
       await User.find({
         _id: { $in: [project.createdBy, ...rows.map((row) => row.user._id)] },
-        password: { $exists: true },
+        ...ACTIVATED_ACCOUNT_FILTER,
       }).select('_id')
     ).map((found) => String(found._id)),
   );
@@ -447,7 +435,7 @@ export async function inviteProjectMember(req: Request, res: Response, next: Nex
 
     // Una cuenta que esta invitación acaba de crear no tiene contraseña todavía.
     const hasPassword =
-      !activation && Boolean(await User.exists({ _id: user._id, password: { $exists: true } }));
+      !activation && (await accountIsActivated(user._id));
 
     const member: ProjectMemberSummary = {
       id: String(membership._id),
@@ -522,9 +510,7 @@ export async function updateProjectMemberRole(req: Request, res: Response, next:
     const user = await User.findById(membership.user).select(
       'email name email_verified account_status',
     );
-    const hasPassword = Boolean(
-      await User.exists({ _id: membership.user, password: { $exists: true } }),
-    );
+    const hasPassword = await accountIsActivated(membership.user);
 
     const member: ProjectMemberSummary = {
       id: String(membership._id),

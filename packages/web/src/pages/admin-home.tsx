@@ -18,6 +18,8 @@ import { BinancePaymentDrawer } from '@/components/subscription/binance-payment-
 import { BolivaresPaymentDrawer } from '@/components/subscription/bolivares-payment-drawer';
 import { useMySubscription } from '@/hooks/subscription/use-subscription-queries';
 import { hasBeenSentToFirstProject, markSentToFirstProject } from '@/lib/first-project-redirect';
+import { hasSeenTour } from '@/lib/onboarding-seen';
+import { useAuth } from '@/providers/auth-provider';
 import { nextProjectState } from '@/lib/subscription';
 
 const PHASE_DOT: Record<ProjectPhase, string> = {
@@ -146,14 +148,24 @@ export function AdminHomePage() {
   // persona (`firstProjectPrompt`): no un cliente ni un empleado, ni quien ya tiene
   // membresía —venza o no—, ni las cuentas de prueba. Una sola vez por sesión: si cancela
   // y vuelve al listado, ve la invitación y no rebota otra vez.
+  //
+  // El recorrido de bienvenida va antes (decisión de producto): mientras no se vio, no
+  // se rebota, y su último paso es el que lleva a crear la obra. Se lee una vez, al
+  // llegar: al cerrar el recorrido en esta misma visita la persona se queda en el
+  // inicio; el rebote queda para la próxima vez que vuelva, una vez por sesión.
+  const { user } = useAuth();
+  const [tourSeenOnArrival] = useState(() => (user ? hasSeenTour('home', user.id) : true));
   const sendToFirstProject =
-    !isLoading && data?.firstProjectPrompt === true && !hasBeenSentToFirstProject();
+    !isLoading &&
+    data?.firstProjectPrompt === true &&
+    tourSeenOnArrival &&
+    !hasBeenSentToFirstProject(user?.id);
 
   // Se marca en un efecto y no durante el render: en desarrollo React renderiza dos veces
   // (`StrictMode`), y la segunda pasada vería la marca y devolvería el listado sin rebotar.
   useEffect(() => {
-    if (sendToFirstProject) markSentToFirstProject();
-  }, [sendToFirstProject]);
+    if (sendToFirstProject) markSentToFirstProject(user?.id);
+  }, [sendToFirstProject, user?.id]);
   // "Nueva obra" hace lo que corresponde según la suscripción: en la prueba
   // con 3 activas abre el pase al plan (la cuarta no se puede crear gratis)
   // y vencida lleva a pagar. El resto entra al alta como siempre.

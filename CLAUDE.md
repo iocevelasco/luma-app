@@ -27,6 +27,31 @@ Los scripts están en el `package.json` raíz. `packages/shared` se buildea
 
 - **Auth**: access token en `Authorization: Bearer`, refresh en cookie httpOnly
   `refresh_token` (90 días). HS256 si hay `JWT_SECRET`, si no RS256 con el par PEM.
+  Toda sesión se abre con `issueSession` (`session-issue.service.ts`) y lleva
+  `tokenVersion`: recuperar la contraseña la sube y cierra todas las sesiones.
+- **Entrar con Google** (ADR-005 §1, `google-auth.controller.ts`): ID token del
+  botón de Google verificado en la API; se guarda `googleSub` (la identidad) y
+  `googleEmail`, nunca tokens. **Google se une solo a la cuenta de ese correo
+  únicamente si Google es autoridad sobre él** (`@gmail.com` o Workspace del
+  mismo dominio). Si la contraseña no está probada (`passwordProvenAt`), al
+  unirse **la borra y sube `tokenVersion`**: quien hubiera registrado antes ese
+  correo queda afuera. Si está probada, se conserva. Para otro correo, se
+  conecta con la contraseña (`GOOGLE_LINK_REQUIRED`). Un `googleSub` nunca se
+  pisa. Los admins no usan Google.
+  "Cuenta activada" = contraseña **o** Google (`isAccountActivated`).
+- **Google Maps** (ADR-005 §2): de Google la obra guarda sólo `placeId`, **nunca
+  `lat`/`lng`** (las políticas de Places limitan conservarlas a 30 días).
+  `location` y `placeId` van juntos: un texto nuevo sin `placeId` lo borra. El
+  autocompletado usa `AutocompleteSuggestion` del SDK de Maps JS
+  (`lib/google-places.ts`), no la API REST de Places: esa pide claves
+  restringidas por IP. El mapa se carga sólo a pedido. Crear una obra nunca
+  depende de Google.
+- **Feed de calendario** (ADR-005 §3, `calendar-feed.service.ts`): un ICS por
+  persona en `/api/public/calendar/:token.ics`, sin sesión. En `User` va sólo el
+  SHA-256 del token (la URL se muestra una vez). El contenido sale de
+  `myProjectsWithAccess`, la misma resolución de permisos que el listado de
+  obras: nada que el rol no deje ver, sin montos ni texto libre de las cuotas.
+  Dar de baja la cuenta apaga el feed.
 - **Roles de plataforma**: `admin` y `user`. Middlewares: `isAuthenticated` →
   `requireAdmin` | `requireRole`. No gatean ninguna pantalla del panel de obras:
   el admin tiene su propia área, `/plataforma` (cuentas y pagos), con

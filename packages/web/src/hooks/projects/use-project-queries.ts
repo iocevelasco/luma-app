@@ -81,6 +81,26 @@ export function useUpdateProject(projectId: string) {
 }
 
 /**
+ * Editar la ubicación de la obra (ADR-005 §2.9). Aparte de `useUpdateProject`
+ * porque se envía desde un formulario: la falla la muestra el banner de
+ * `FormShell`, no un toast.
+ */
+export function useUpdateProjectLocation(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: { location: string; placeId?: string }) =>
+      projectsApi.update(projectId, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.project, projectId] });
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.projects] });
+      toast.success(t('project.location.saved'));
+    },
+  });
+}
+
+/**
  * Agregar una especialidad propia. Sin `onError` propio: quien la usa decide
  * dónde mostrar la falla (el selector la pone junto al campo, no en un toast).
  */

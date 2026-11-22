@@ -30,4 +30,30 @@ describe('baja de una cuenta', () => {
     await runPreSave(user);
     expect(user.deactivated_at).toEqual(earlier);
   });
+
+  it('dar de baja apaga el feed de calendario: la URL no sigue leyendo obras', async () => {
+    const user = new User({
+      email: 'a@x.com',
+      name: 'A',
+      calendarFeedTokenHash: 'a'.repeat(64),
+      calendarFeedCreatedAt: new Date(),
+    });
+    user.account_status = 'inactive';
+    await runPreSave(user);
+    expect(user.calendarFeedTokenHash).toBeUndefined();
+    expect(user.calendarFeedCreatedAt).toBeUndefined();
+  });
+
+  it('también cuando la baja llega por un update', () => {
+    const query = User.updateOne({ _id: 'u1' }, { $set: { account_status: 'inactive' } });
+    const { hooks } = (User.schema as unknown as { s: { hooks: PreHooks } }).s;
+    return new Promise<void>((resolve, reject) => {
+      hooks.execPre('updateOne', query, [], (error) => {
+        if (error) return reject(error);
+        const update = query.getUpdate() as { $unset?: Record<string, unknown> };
+        expect(update.$unset).toMatchObject({ calendarFeedTokenHash: '', calendarFeedCreatedAt: '' });
+        resolve();
+      });
+    });
+  });
 });

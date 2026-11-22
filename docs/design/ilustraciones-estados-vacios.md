@@ -66,3 +66,12 @@ call-site cambió. Un ícono sin ilustración sigue con el círculo.
 - **La ruta sale de `import.meta.env.BASE_URL`**: en producción la SPA se monta bajo `/app/`
   (`base` de Vite), y un `/empty-states/…` suelto da 404. Todo asset de `public/` va con ese prefijo.
 - Son decorativas: `alt=""`. El título y la descripción dicen lo que pasa.
+
+## Fuera del set: la bienvenida
+
+`packages/web/public/onboarding/bienvenida.webp` (640×320, se ve a 320×160) es la imagen
+del primer paso del recorrido de bienvenida (`onboarding-tour.tsx`, `SpotlightTour`). Mismo
+estilo y misma `--style-file`, con `obras.webp` y `actividades.webp` como referencia de
+estilo: el casco al centro, el calendario y el plano asomando y la insignia con ✓. Es la
+única ilustración horizontal; si se rehace, va con `--width 640 --height 320 --max-kb 30`.
+

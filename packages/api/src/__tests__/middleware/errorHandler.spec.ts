@@ -8,7 +8,9 @@ vi.mock('../../config/app.config.js', () => config);
 
 const { errorHandler } = await import('../../middleware/errorHandler.js');
 const { normalizeErrors } = await import('../../middleware/normalizeErrors.js');
-const { badRequest, conflict, forbidden, notFound } = await import('../../utils/errors.js');
+const { badRequest, conflict, forbidden, notFound, wrongPassword } = await import(
+  '../../utils/errors.js'
+);
 
 function mockRes(): Response & { body?: unknown; code?: number } {
   const res = {} as Response & { body?: unknown; code?: number };
@@ -46,6 +48,8 @@ describe('errorHandler', () => {
     [forbidden(), 403, 'FORBIDDEN'],
     [conflict('Ya tiene acceso.'), 409, 'CONFLICT'],
     [badRequest('Falta el archivo.'), 400, 'VALIDATION'],
+    // Con sesión y la contraseña mal: 403, nunca el 401 que cierra la sesión.
+    [wrongPassword(), 403, 'WRONG_PASSWORD'],
   ])('mapea cada helper a su status', (error, status, code) => {
     const res = mockRes();
 

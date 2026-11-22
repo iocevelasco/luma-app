@@ -64,6 +64,48 @@ export const acceptTermsRequestSchema = z.object({
   acceptedTerms: acceptedTermsSchema,
 });
 
+/**
+ * La credencial es el ID token que entrega el botón de Google. Es largo (un
+ * JWT firmado), pero no infinito: el tope corta un body absurdo antes de
+ * verificar nada.
+ */
+const googleCredentialSchema = z.string().min(1, 'Falta la credencial de Google').max(4096);
+
+/**
+ * Entrar o registrarse con Google: el mismo pedido desde `/login` y desde
+ * `/register`. Sin `acceptedTerms` no se crea ninguna cuenta.
+ */
+export const googleAuthRequestSchema = z.object({
+  credential: googleCredentialSchema,
+  acceptedTerms: acceptedTermsSchema.optional(),
+  /**
+   * Desde `/activate`: el token del enlace de invitación. Activa **esa** cuenta
+   * invitada con este Google aunque los correos no coincidan, igual que elegir
+   * una contraseña con el enlace.
+   */
+  activationToken: z.string().trim().min(1).max(200).optional(),
+});
+
+/** Conectar Google a la cuenta: la prueba es la contraseña actual. */
+export const googleLinkRequestSchema = z.object({
+  credential: googleCredentialSchema,
+  password: z.string().min(1, 'La contraseña es obligatoria'),
+});
+
+/** Desconectar Google: también con la contraseña. */
+export const googleUnlinkRequestSchema = z.object({
+  password: z.string().min(1, 'La contraseña es obligatoria'),
+});
+
+export type GoogleAuthRequestInput = z.infer<typeof googleAuthRequestSchema>;
+export type GoogleLinkRequestInput = z.infer<typeof googleLinkRequestSchema>;
+export type GoogleUnlinkRequestInput = z.infer<typeof googleUnlinkRequestSchema>;
+
+/** Generar el feed de calendario: en qué idioma van los textos fijos. */
+export const createCalendarFeedSchema = z.object({
+  language: z.enum(['es-ES', 'es-AR', 'pt']).default('es-ES'),
+});
+
 export const resendVerificationSchema = z.object({
   email: emailSchema,
 });
