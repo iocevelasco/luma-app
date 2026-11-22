@@ -78,8 +78,12 @@ export function LocationField({
           setActive(-1);
           setOpen(found.length > 0);
         })
-        // Sin sugerencias se sigue escribiendo a mano: no hay nada que avisar.
-        .catch(() => !stale && setSuggestions([]));
+        // Sin sugerencias se sigue escribiendo a mano: no hay nada que avisar en
+        // pantalla, pero sí en la consola, o una clave mal restringida no se ve.
+        .catch((error: unknown) => {
+          console.warn('[maps] sin sugerencias de Google:', error);
+          if (!stale) setSuggestions([]);
+        });
     }, QUERY_DEBOUNCE_MS);
     return () => {
       stale = true;
