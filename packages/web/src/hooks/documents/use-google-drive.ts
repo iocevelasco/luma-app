@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -10,18 +10,14 @@ import {
   type ProjectDocument,
 } from '@luma/shared';
 import { documentsApi } from '@/api/documents';
-import { useIntegrationsConfig } from '@/hooks/integrations-config/use-integrations-config';
+import { useDriveAccess } from '@/hooks/google-drive/use-drive-access';
 import { errorMessage } from '@/lib/error-message';
 import {
   DriveError,
   downloadDriveFile,
-  isGoogleDriveLoaded,
-  pickerLocale,
   pickExportFolder,
   pickFilesToImport,
   planImport,
-  preloadGoogleDrive,
-  requestDriveToken,
   uploadToDrive,
 } from '@/lib/google-drive';
 import { QueryKeys } from '@/lib/query-keys';
@@ -49,31 +45,14 @@ interface ImportTarget {
 /**
  * Capa 2 de Google Drive en la Documentación (ADR-005 §4).
  *
- * El permiso se pide **sincrónico, dentro del clic** (`importInto` /
- * `exportDocuments` lo hacen antes de la mutación): el popup de Google sólo se
- * abre en el mismo gesto de la persona, y en Safari cualquier `await` previo
- * hace que el navegador lo bloquee. Por eso los scripts se precargan al montar.
+ * El permiso se pide dentro del clic (`importInto` / `exportDocuments` llaman a
+ * `useDriveAccess().start` antes de la mutación): ver por qué en ese hook.
  */
 export function useGoogleDrive(projectId: string) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { data: integrations } = useIntegrationsConfig();
-  const drive: DriveIntegrationConfig | null = integrations?.drive ?? null;
+  const { available, start, pickOptions } = useDriveAccess();
   const [progress, setProgress] = useState<DriveProgress | null>(null);
-
-  useEffect(() => {
-    if (drive) void preloadGoogleDrive().catch(() => undefined);
-  }, [drive]);
-
-  const pickOptions = useCallback(
-    (config: DriveIntegrationConfig, token: string, title: string) => ({
-      config,
-      token,
-      locale: pickerLocale(i18n.language),
-      title,
-    }),
-    [i18n.language],
-  );
 
   const importMutation = useMutation({
     mutationFn: async ({
@@ -181,18 +160,7 @@ export function useGoogleDrive(projectId: string) {
   const busy = progress !== null || importMutation.isPending || exportMutation.isPending;
 
   /** Llamar desde el clic: abre el permiso de Google en el mismo gesto. */
-  const startToken = useCallback((): { config: DriveIntegrationConfig; tokenPromise: Promise<string> } | null => {
-    if (!drive || busy) return null;
-    if (!isGoogleDriveLoaded()) {
-      toast.error(t('document.drive.errors.unavailable'));
-      void preloadGoogleDrive().catch(() => undefined);
-      return null;
-    }
-    const tokenPromise = requestDriveToken(drive.clientId);
-    // Si la persona cierra el popup y nadie llegó a esperar la promesa, que no quede un rechazo suelto.
-    tokenPromise.catch(() => undefined);
-    return { config: drive, tokenPromise };
-  }, [drive, busy, t]);
+  const startToken = useCallback(() => (busy ? null : start()), [busy, start]);
 
   const importInto = useCallback(
     (target: ImportTarget) => {
@@ -211,5 +179,5 @@ export function useGoogleDrive(projectId: string) {
     [startToken, exportMutation],
   );
 
-  return { available: drive !== null, busy, progress, importInto, exportDocuments };
+  return { available, busy, progress, importInto, exportDocuments };
 }

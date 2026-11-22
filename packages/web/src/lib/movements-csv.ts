@@ -1,12 +1,13 @@
 import type { Expense, Payment } from '@luma/shared';
-import { csvCell } from './materials';
+import type { SheetTable } from './google-sheets';
+import { tableToCsv } from './materials';
 
 /**
  * El CSV de un listado de movimientos de plata (gastos o cobros), para abrir en
  * Excel o en una planilla. Mismas reglas que el CSV de Compras: separador `;` y
  * decimales con coma (lo que Excel espera en español y portugués), BOM para que
  * los acentos no salgan rotos y `csvCell` para entrecomillar y neutralizar lo que
- * Excel tomaría por una fórmula.
+ * Excel tomaría por una fórmula (todo eso vive en `tableToCsv`).
  *
  * Lleva más que el PDF, que es para leer: acá va también el importe original, su
  * moneda y la cotización congelada de cada movimiento, para poder rehacer la
@@ -14,8 +15,7 @@ import { csvCell } from './materials';
  * movimiento.
  */
 export function buildMovementsCsv(header: string[], rows: string[][], separator = ';'): string {
-  const line = (cells: string[]) => cells.map((cell) => csvCell(cell, separator)).join(separator);
-  return '﻿' + [line(header), ...rows.map(line)].join('\r\n') + '\r\n';
+  return tableToCsv({ header, rows }, String, separator);
 }
 
 interface CsvLabels {
@@ -42,10 +42,15 @@ export interface ExpensesCsvLabels extends CsvLabels {
   method: (method: NonNullable<Expense['method']>) => string;
 }
 
-export function buildExpensesCsv(expenses: Expense[], projectCurrency: string, labels: ExpensesCsvLabels): string {
+/** Los gastos como tabla: la usan el CSV y la Google Sheet. Los importes van como números. */
+export function expensesTable(
+  expenses: Expense[],
+  projectCurrency: string,
+  labels: Omit<ExpensesCsvLabels, 'number'>,
+): SheetTable {
   const { header } = labels;
-  return buildMovementsCsv(
-    [
+  return {
+    header: [
       header.date,
       header.description,
       header.category,
@@ -59,21 +64,25 @@ export function buildExpensesCsv(expenses: Expense[], projectCurrency: string, l
       header.rate,
       header.notes,
     ],
-    expenses.map((expense) => [
+    rows: expenses.map((expense) => [
       expense.spentOn,
       expense.description,
       labels.category(expense.category),
       expense.method ? labels.method(expense.method) : '',
       expense.providerName ?? '',
       expense.activityName ?? '',
-      labels.number(expense.amountInProjectCurrency),
+      expense.amountInProjectCurrency,
       projectCurrency,
-      labels.number(expense.amount),
+      expense.amount,
       expense.currency,
-      labels.number(expense.exchangeRate),
+      expense.exchangeRate,
       expense.notes ?? '',
     ]),
-  );
+  };
+}
+
+export function buildExpensesCsv(expenses: Expense[], projectCurrency: string, labels: ExpensesCsvLabels): string {
+  return tableToCsv(expensesTable(expenses, projectCurrency, labels), labels.number);
 }
 
 export interface PaymentsCsvLabels extends CsvLabels {
@@ -94,10 +103,15 @@ export interface PaymentsCsvLabels extends CsvLabels {
   method: (method: Payment['method']) => string;
 }
 
-export function buildPaymentsCsv(payments: Payment[], projectCurrency: string, labels: PaymentsCsvLabels): string {
+/** Los cobros como tabla: la usan el CSV y la Google Sheet. Los importes van como números. */
+export function paymentsTable(
+  payments: Payment[],
+  projectCurrency: string,
+  labels: Omit<PaymentsCsvLabels, 'number'>,
+): SheetTable {
   const { header } = labels;
-  return buildMovementsCsv(
-    [
+  return {
+    header: [
       header.date,
       header.concept,
       header.method,
@@ -109,17 +123,21 @@ export function buildPaymentsCsv(payments: Payment[], projectCurrency: string, l
       header.rate,
       header.notes,
     ],
-    payments.map((payment) => [
+    rows: payments.map((payment) => [
       payment.paidOn,
       payment.scheduleItemConcept ?? labels.onAccount,
       labels.method(payment.method),
       payment.reference ?? '',
-      labels.number(payment.amountInProjectCurrency),
+      payment.amountInProjectCurrency,
       projectCurrency,
-      labels.number(payment.amount),
+      payment.amount,
       payment.currency,
-      labels.number(payment.exchangeRate),
+      payment.exchangeRate,
       payment.notes ?? '',
     ]),
-  );
+  };
+}
+
+export function buildPaymentsCsv(payments: Payment[], projectCurrency: string, labels: PaymentsCsvLabels): string {
+  return tableToCsv(paymentsTable(payments, projectCurrency, labels), labels.number);
 }

@@ -1,4 +1,4 @@
-import { ChevronDown, FileDown, FileSpreadsheet } from 'lucide-react';
+import { ChevronDown, FileDown, FileSpreadsheet, Sheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,7 +10,8 @@ import { Spinner } from '@/components/ui/spinner';
 
 /**
  * Las descargas de un listado de plata (gastos o cobros). Un solo control, como
- * pide la arquitectura de la información: "Descargar" abre un menú con PDF y CSV.
+ * pide la arquitectura de la información: "Descargar" abre un menú con PDF, CSV y,
+ * si hay Google Drive, Google Sheets.
  *
  * En el panel de filtros del celular (`compact`) no hay menú: un desplegable
  * dentro de un panel que se cierra al tocarlo se llevaría el menú con él, así que
@@ -26,6 +27,7 @@ export function MovementExport({
   disabled,
   onPdf,
   onCsv,
+  onSheet,
   onWarm,
   labels,
 }: {
@@ -34,8 +36,18 @@ export function MovementExport({
   disabled: boolean;
   onPdf: () => void;
   onCsv: () => void;
+  /** Guardar como Google Sheet. Sin esto (sin Google Drive configurado) no se ofrece. */
+  onSheet?: () => void;
   onWarm: () => void;
-  labels: { download: string; generating: string; pdf: string; csv: string; pdfButton: string; csvButton: string };
+  labels: {
+    download: string;
+    generating: string;
+    pdf: string;
+    csv: string;
+    sheet: string;
+    pdfButton: string;
+    csvButton: string;
+  };
 }) {
   const busy = generatingPdf;
 
@@ -59,6 +71,12 @@ export function MovementExport({
           <FileSpreadsheet className="size-4" />
           {labels.csvButton}
         </Button>
+        {onSheet && (
+          <Button type="button" variant="outline" disabled={disabled} onClick={onSheet}>
+            <Sheet className="size-4" />
+            {labels.sheet}
+          </Button>
+        )}
       </>
     );
   }
@@ -88,6 +106,12 @@ export function MovementExport({
           <FileSpreadsheet className="size-4" />
           {labels.csv}
         </DropdownMenuItem>
+        {onSheet && (
+          <DropdownMenuItem onSelect={onSheet}>
+            <Sheet className="size-4" />
+            {labels.sheet}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

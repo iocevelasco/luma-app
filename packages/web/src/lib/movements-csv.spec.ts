@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Expense, Payment } from '@luma/shared';
-import { buildExpensesCsv, buildMovementsCsv, buildPaymentsCsv } from './movements-csv';
+import { buildExpensesCsv, buildMovementsCsv, buildPaymentsCsv, expensesTable } from './movements-csv';
 
 const number = (value: number) => String(value).replace('.', ',');
 
@@ -36,6 +36,16 @@ describe('buildExpensesCsv', () => {
     const lines = buildExpensesCsv([expense], 'USD', labels).split('\r\n');
     expect(lines[0]).toContain('Importe original');
     expect(lines[1]).toBe('2026-10-21;Cemento;Materiales;;Sol;;110;USD;100;EUR;1,1;');
+  });
+
+  it('para la Google Sheet, los importes y la cotización van como números', () => {
+    const expense = {
+      spentOn: '2026-10-21', description: 'Cemento', category: 'material', amount: 100, currency: 'EUR',
+      exchangeRate: 1.1, amountInProjectCurrency: 110,
+    } as Expense;
+    expect(expensesTable([expense], 'USD', labels).rows[0]).toEqual([
+      '2026-10-21', 'Cemento', 'Materiales', '', '', '', 110, 'USD', 100, 'EUR', 1.1, '',
+    ]);
   });
 });
 

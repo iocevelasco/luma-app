@@ -36,7 +36,8 @@ export type DriveErrorCode =
   | 'denied'
   | 'download'
   | 'upload'
-  | 'exportTooLarge';
+  | 'exportTooLarge'
+  | 'sheet';
 
 /** Un error de Google no es un `ApiError`: la UI lo traduce por `code` (`document.drive.errors.*`). */
 export class DriveError extends Error {

@@ -1318,7 +1318,8 @@
         "denied": "No se ha dado permiso para usar Google Drive.",
         "download": "No hemos podido traer el archivo de Google Drive.",
         "upload": "No hemos podido guardar el archivo en tu Google Drive.",
-        "exportTooLarge": "El documento de Google es demasiado grande para convertirlo a PDF."
+        "exportTooLarge": "El documento de Google es demasiado grande para convertirlo a PDF.",
+        "sheet": "No hemos podido crear la hoja de cálculo en tu Google Drive."
       }
     }
   },
@@ -2911,5 +2912,14 @@
     "stepOf": "Paso {{current}} de {{total}}",
     "projectIntro": "Un vistazo rápido a las secciones de esta obra.",
     "done": "Entendido"
+  },
+  "drive": {
+    "sheet": {
+      "label": "Google Sheets",
+      "hint": "Una hoja de cálculo nueva en tu Google Drive.",
+      "folderTitle": "Elige la carpeta de Drive donde guardar la hoja",
+      "saved": "Hoja de cálculo guardada en tu Google Drive.",
+      "open": "Abrir"
+    }
   }
 }

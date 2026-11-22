@@ -427,6 +427,29 @@ un scope no sensible: no hay verificación de Google ni auditoría.
     días lo alcanzan. La Política de Privacidad lo dice en el PR de esta entrega.
 15. CSP: el `connect-src` de `www.googleapis.com` ya está en la lista de Drive.
 
+**Listas como Google Sheet** (sumado el 2026-11-22)
+
+16. "Google Sheets" es una opción más de cada menú "Descargar" que ya ofrece CSV:
+    Compras (por comprar y comprados, también sobre una selección), Gastos y
+    Cobros. Es una sola pieza (`useSaveAsSheet`, `lib/google-sheets.ts`); quien la
+    usa sólo arma la tabla.
+17. **Misma tabla que el CSV**, del mismo orden y con los mismos filtros de la
+    pantalla: `purchaseTable`, `expensesTable` y `paymentsTable` alimentan a los
+    dos. Exporta quien hoy puede bajar el CSV: la grilla no cambia.
+18. **No se convierte el CSV.** Va con `;` y decimales con coma, y la conversión de
+    Drive lo partiría o leería mal los números según el idioma de la cuenta. Se crea
+    la planilla vacía con Drive y se escriben las celdas con la **API de Sheets**
+    (`values` con `valueInputOption=RAW`): los números llegan como números y un
+    texto que empieza con `=` queda como texto, nunca como fórmula.
+19. Alcanza `drive.file` (la planilla la creó la app): no hay scope nuevo ni
+    verificación. Sí hay que **habilitar la Google Sheets API** en el proyecto de
+    GCP; sin ella la creación falla con `document.drive.errors.sheet` y el detalle
+    de Google en la consola.
+20. Es una **foto**, como el resto de lo exportado (punto 14): un cambio posterior
+    en Luma no llega a la planilla. Una planilla viva que Luma reescribe se descartó
+    por ahora: quien la tenga ve la lista sin pasar por la grilla.
+21. CSP: suma `https://sheets.googleapis.com` al `connect-src`.
+
 ## Opciones consideradas
 
 ### Login — cómo se une Google a una cuenta que ya tiene contraseña
