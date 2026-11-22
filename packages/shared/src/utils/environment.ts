@@ -109,14 +109,14 @@ export function getEnvironmentInfo(hostname?: string | null): EnvironmentInfo {
  * al mismo lugar; si se separan, la SPA habla con un puerto donde no hay nadie
  * —o peor, con otra app que responde y confunde el diagnóstico.
  *
- * 8081 y no 8080: ver el comentario de `SERVER_CONFIG.PORT` en la API.
+ * 6170 y no 8080 ni 8081: ver el comentario de `SERVER_CONFIG.PORT` en la API.
  */
 export function getApiBaseUrl(devUrl?: string, productionUrl: string = ''): string {
   if (isProduction()) {
     return productionUrl;
   }
 
-  return devUrl || 'http://localhost:8081';
+  return devUrl || 'http://localhost:6170';
 }
 
 /** reCAPTCHA se desactiva en localhost: en desarrollo no hay site key válida. */

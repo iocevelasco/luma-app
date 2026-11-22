@@ -19,15 +19,16 @@ export const isTest = NODE_ENV === 'test';
 
 export const SERVER_CONFIG = {
   /**
-   * 8081 en desarrollo. **En producción NO manda este default**: el Dockerfile
+   * 6170 en desarrollo. **En producción NO manda este default**: el Dockerfile
    * fija `ENV PORT=8080` y Coolify mapea ese puerto, así que ahí sigue siendo
    * 8080 y cambiarlo acá no lo toca.
    *
-   * El 8081 es local y deliberado: el 8080 de esta máquina lo ocupa otro
-   * proyecto, y dos APIs peleando por un puerto producen el peor error de
-   * todos — una contesta, así que no parece caída, pero es la equivocada.
+   * El 6170 es local y deliberado: el 8081 lo usa Metro (Expo) y el 8080 de
+   * esta máquina lo ocupa otro proyecto. Dos servidores en el mismo puerto
+   * producen el peor error — uno contesta, así que no parece caído, pero es
+   * el equivocado.
    */
-  PORT: Number(process.env.PORT ?? 8081),
+  PORT: Number(process.env.PORT ?? 6170),
   HOST: process.env.HOST ?? '0.0.0.0',
   NODE_ENV,
   /** Origen del frontend, para CORS y para los redirects. */
@@ -48,7 +49,7 @@ export const SERVER_CONFIG = {
     process.env.PUBLIC_API_URL ??
     (process.env.NODE_ENV === 'production'
       ? new URL(process.env.APP_URL ?? process.env.FRONTEND_URL ?? 'http://localhost:6173').origin
-      : `http://localhost:${process.env.PORT ?? 8081}`),
+      : `http://localhost:${process.env.PORT ?? 6170}`),
   /** Hostname interno de la landing en la red de Docker. */
   LANDING_URL: process.env.LANDING_URL ?? 'http://landing:8080',
 } as const;
@@ -341,7 +342,7 @@ export const LIVE_CONFIG = {
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    PORT: z.coerce.number().int().positive().default(8081),
+    PORT: z.coerce.number().int().positive().default(6170),
     MONGODB_URI: z.string().min(1, 'MONGODB_URI es obligatorio'),
     JWT_SECRET: z.string().min(16).optional(),
     JWT_PRIVATE_KEY_PEM: z.string().optional(),

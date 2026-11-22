@@ -37,7 +37,7 @@ describe('environment', () => {
     // Tiene que coincidir con `SERVER_CONFIG.PORT` y con el proxy de
     // vite.config.ts. Si los tres se separan, la SPA habla con un puerto donde
     // no hay nadie — o con otra app, que es peor porque responde.
-    expect(getApiBaseUrl()).toBe('http://localhost:8081');
+    expect(getApiBaseUrl()).toBe('http://localhost:6170');
   });
 
   it('marca el entorno de test', () => {

@@ -15,6 +15,7 @@ import {
   sessionClearScript,
   type Session,
 } from './session';
+import { useTopInset } from './safe-top';
 import { colors } from './theme';
 import { appEntryUrl, isLoginUrl, type WebTarget } from './urls';
 
@@ -32,6 +33,7 @@ export function AppWebView({
   const canGoBack = useRef(false);
   const [ready, setReady] = useState(false);
   const [cookieError, setCookieError] = useState<string | null>(null);
+  const topInset = useTopInset();
 
   useEffect(() => {
     let cancelled = false;
@@ -92,7 +94,7 @@ export function AppWebView({
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingTop: topInset }]}>
       <StatusBar style="light" />
       <WebView<object>
         ref={webRef}

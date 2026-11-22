@@ -14,6 +14,8 @@ import { StatusBar } from 'expo-status-bar';
 import { loginRequest } from './auth-api';
 import type { MobileConfig } from './config';
 import { saveSession, type Session } from './session';
+import { LumaLogo } from './LumaLogo';
+import { useTopInset } from './safe-top';
 import { colors } from './theme';
 import { forgotPasswordUrl } from './urls';
 
@@ -28,6 +30,7 @@ export function LoginScreen({
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const topInset = useTopInset();
 
   const submit = async () => {
     if (!email.trim() || !password) {
@@ -53,59 +56,63 @@ export function LoginScreen({
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <StatusBar style="light" />
-      <View style={styles.card}>
-        <Text style={styles.brand}>Luma</Text>
-        <Text style={styles.title}>Entrar</Text>
-        <Text style={styles.subtitle}>Accede con tu correo y contraseña.</Text>
+      <View style={[styles.logo, { top: topInset + 56 }]}>
+        <LumaLogo />
+      </View>
+      <View style={styles.center}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Entrar</Text>
+          <Text style={styles.subtitle}>Accede con tu correo y contraseña.</Text>
 
-        <Text style={styles.label}>Correo electrónico</Text>
-        <TextInput
-          autoCapitalize="none"
-          autoComplete="email"
-          autoCorrect={false}
-          keyboardType="email-address"
-          onChangeText={setEmail}
-          placeholder="ana@estudio.com"
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-          textContentType="username"
-          value={email}
-        />
+          <Text style={styles.label}>Correo electrónico</Text>
+          <TextInput
+            autoCapitalize="none"
+            autoComplete="email"
+            autoCorrect={false}
+            keyboardType="email-address"
+            onChangeText={setEmail}
+            placeholder="ana@estudio.com"
+            placeholderTextColor={colors.muted}
+            style={styles.input}
+            textContentType="username"
+            value={email}
+          />
 
-        <Text style={styles.label}>Contraseña</Text>
-        <TextInput
-          autoComplete="password"
-          onChangeText={setPassword}
-          onSubmitEditing={() => void submit()}
-          placeholder="••••••••"
-          placeholderTextColor={colors.muted}
-          secureTextEntry
-          style={styles.input}
-          textContentType="password"
-          value={password}
-        />
+          <Text style={styles.label}>Contraseña</Text>
+          <TextInput
+            autoComplete="password"
+            onChangeText={setPassword}
+            onSubmitEditing={() => void submit()}
+            placeholder="••••••••"
+            placeholderTextColor={colors.muted}
+            secureTextEntry
+            style={styles.input}
+            textContentType="password"
+            value={password}
+          />
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Pressable
-          accessibilityRole="button"
-          disabled={pending}
-          onPress={() => void submit()}
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, pending && styles.buttonDisabled]}
-        >
-          {pending ? (
-            <ActivityIndicator color={colors.onPrimary} />
-          ) : (
-            <Text style={styles.buttonText}>Entrar</Text>
-          )}
-        </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={pending}
+            onPress={() => void submit()}
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, pending && styles.buttonDisabled]}
+          >
+            {pending ? (
+              <ActivityIndicator color={colors.onPrimary} />
+            ) : (
+              <Text style={styles.buttonText}>Entrar</Text>
+            )}
+          </Pressable>
 
-        <Pressable
-          accessibilityRole="link"
-          onPress={() => void Linking.openURL(forgotPasswordUrl(config.target))}
-        >
-          <Text style={styles.forgot}>¿Has olvidado tu contraseña?</Text>
-        </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL(forgotPasswordUrl(config.target))}
+          >
+            <Text style={styles.forgot}>¿Has olvidado tu contraseña?</Text>
+          </Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -115,20 +122,25 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  logo: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  center: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 24,
   },
   card: {
+    alignSelf: 'stretch',
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 24,
-  },
-  brand: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    marginBottom: 16,
   },
   title: {
     color: colors.text,

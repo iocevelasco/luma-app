@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppWebView } from './src/AppWebView';
 import { isMobileConfig, readConfig } from './src/config';
 import { LoginScreen } from './src/LoginScreen';
@@ -29,35 +30,34 @@ export default function App() {
     };
   }, [config]);
 
+  let body;
   if (!isMobileConfig(config)) {
-    return (
+    body = (
       <View style={styles.screen}>
         <StatusBar style="light" />
         <Text style={styles.error}>{config.error}</Text>
       </View>
     );
-  }
-
-  if (session === undefined) {
-    return (
+  } else if (session === undefined) {
+    body = (
       <View style={styles.screen}>
         <StatusBar style="light" />
         <ActivityIndicator color={colors.primary} />
       </View>
     );
+  } else if (!session) {
+    body = <LoginScreen config={config} onLoggedIn={setSession} />;
+  } else {
+    body = (
+      <AppWebView
+        target={config.target}
+        session={session}
+        onSessionEnded={() => setSession(null)}
+      />
+    );
   }
 
-  if (!session) {
-    return <LoginScreen config={config} onLoggedIn={setSession} />;
-  }
-
-  return (
-    <AppWebView
-      target={config.target}
-      session={session}
-      onSessionEnded={() => setSession(null)}
-    />
-  );
+  return <SafeAreaProvider>{body}</SafeAreaProvider>;
 }
 
 const styles = StyleSheet.create({

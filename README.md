@@ -20,10 +20,10 @@ pnpm install
 cp .env.example .env            # y completá al menos MONGODB_URI y JWT_SECRET
 cp .env packages/api/.env
 pnpm --filter @luma/api seed:admin   # crea el primer admin desde ADMIN_EMAIL/PASSWORD
-pnpm dev                             # api (8080) + web (6173)
-pnpm dev:landing                     # landing (5174)
+pnpm dev                             # api (6170) + web (6173)
+pnpm dev:landing                     # landing (5174); sus links de entrar van a la web (6173)
 cp packages/mobile/.env.example packages/mobile/.env   # misma MOBILE_CLIENT_KEY que la API
-pnpm --filter @luma/mobile start     # login nativo; abre la web que ya levantó `pnpm dev`
+pnpm --filter @luma/mobile start     # Metro en el 8081
 ```
 
 Entrá en `http://localhost:6173/login` con las credenciales que sembraste.
