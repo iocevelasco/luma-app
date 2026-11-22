@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import type {
+  BulkCreateMaterialsInput,
   BulkDeleteMaterialsInput,
   BulkUpdateMaterialsInput,
   CreateMaterialInput,
@@ -200,6 +201,23 @@ export function useBulkUpdateMaterials(projectId: string) {
     onError: (error) => {
       void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
       toast.error(errorMessage(error, t));
+    },
+  });
+}
+
+/**
+ * Alta en lote desde una planilla. El error no va en toast: lo muestra el
+ * diálogo de la importación, que es el formulario detrás.
+ */
+export function useBulkCreateMaterials(projectId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: (payload: BulkCreateMaterialsInput) => materialsApi.bulkCreate(projectId, payload),
+    onSuccess: ({ materialIds }) => {
+      void queryClient.invalidateQueries({ queryKey: [QueryKeys.materials, projectId] });
+      toast.success(t('material.import.done', { count: materialIds.length }));
     },
   });
 }

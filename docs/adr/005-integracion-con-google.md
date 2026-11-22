@@ -427,6 +427,47 @@ un scope no sensible: no hay verificación de Google ni auditoría.
     días lo alcanzan. La Política de Privacidad lo dice en el PR de esta entrega.
 15. CSP: el `connect-src` de `www.googleapis.com` ya está en la lista de Drive.
 
+**Listas como Google Sheet** (sumado el 2026-11-22)
+
+16. "Google Sheets" es una opción más de cada menú "Descargar" que ya ofrece CSV:
+    Compras (por comprar y comprados, también sobre una selección), Gastos y
+    Cobros. Es una sola pieza (`useSaveAsSheet`, `lib/google-sheets.ts`); quien la
+    usa sólo arma la tabla.
+17. **Misma tabla que el CSV**, del mismo orden y con los mismos filtros de la
+    pantalla: `purchaseTable`, `expensesTable` y `paymentsTable` alimentan a los
+    dos. Exporta quien hoy puede bajar el CSV: la grilla no cambia.
+18. **No se convierte el CSV.** Va con `;` y decimales con coma, y la conversión de
+    Drive lo partiría o leería mal los números según el idioma de la cuenta. Se crea
+    la planilla vacía con Drive y se escriben las celdas con la **API de Sheets**
+    (`values` con `valueInputOption=RAW`): los números llegan como números y un
+    texto que empieza con `=` queda como texto, nunca como fórmula.
+19. Alcanza `drive.file` (la planilla la creó la app): no hay scope nuevo ni
+    verificación. Sí hay que **habilitar la Google Sheets API** en el proyecto de
+    GCP; sin ella la creación falla con `document.drive.errors.sheet` y el detalle
+    de Google en la consola.
+20. Es una **foto**, como el resto de lo exportado (punto 14): un cambio posterior
+    en Luma no llega a la planilla. Una planilla viva que Luma reescribe se descartó
+    por ahora: quien la tenga ve la lista sin pasar por la grilla.
+21. CSP: suma `https://sheets.googleapis.com` al `connect-src`.
+
+**Importar materiales desde una Google Sheet** (sumado el 2026-11-22)
+
+22. En Compras, "Importar de Google Sheets" va junto a "Añadir material" (es un
+    alta, `dockActions`) y también en la pantalla vacía. Lo ve quien tiene
+    `material.write`. La persona elige la planilla en el Picker (eso le da a la app
+    acceso a ese archivo con `drive.file`), se lee la primera hoja sin formato
+    (`valueRenderOption=UNFORMATTED_VALUE`, hasta `A1:Z1000`) y se muestra qué se
+    va a añadir antes de escribir nada.
+23. Las columnas se reconocen **por el nombre del encabezado** (`lib/material-import.ts`,
+    con tests): material y cantidad son obligatorias; unidad, costo y proveedor,
+    opcionales; en castellano, portugués o inglés. Entra también una lista que
+    salió de Luma. Una fila ilegible se salta y se informa con su número de fila;
+    no frena al resto.
+24. Todo entra en **Pendiente**, sin tarea y con el proveedor como texto: es una
+    lista para revisar, no compras hechas, así que nada va al patio. El alta es
+    `POST /materials/bulk` (`bulkCreateMaterialsSchema`), todo o nada, con el mismo
+    tope de 200 que las acciones en lote.
+
 ## Opciones consideradas
 
 ### Login — cómo se une Google a una cuenta que ya tiene contraseña

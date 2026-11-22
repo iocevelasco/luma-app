@@ -368,6 +368,8 @@
       "open": "Abrir"
     },
     "location": {
+      "placeholder": "Digite a rua e o número…",
+      "hint": "Comece a digitar e escolha um endereço do Google Maps para que a obra tenha mapa.",
       "placeChosen": "Endereço escolhido no Google Maps: a obra terá mapa.",
       "suggestions": "Endereços sugeridos",
       "showMap": "Ver no mapa",
@@ -376,7 +378,6 @@
       "edit": "Editar localização",
       "mapTitle": "Mapa de {{location}}",
       "editTitle": "Editar localização",
-      "editHint": "Escolha o endereço entre as sugestões para que a obra tenha mapa. Você também pode digitá-lo.",
       "saved": "Localização salva."
     }
   },
@@ -860,6 +861,39 @@
       "copy": "Não conseguimos copiar a lista.",
       "pdf": "Não conseguimos gerar o PDF. Tente de novo.",
       "share": "Não foi possível compartilhar a lista. Tente copiá-la ou baixar o PDF."
+    },
+    "import": {
+      "button": "Importar do Google Sheets",
+      "pickTitle": "Escolha a planilha com os materiais",
+      "title": "Importar materiais",
+      "summary_one": "Será adicionado {{count}} material como Pendente.",
+      "summary_other": "Serão adicionados {{count}} materiais como Pendentes.",
+      "submit_one": "Adicionar {{count}} material",
+      "submit_other": "Adicionar {{count}} materiais",
+      "more_one": "e mais {{count}}",
+      "more_other": "e mais {{count}}",
+      "skipped_one": "{{count}} linha será ignorada:",
+      "skipped_other": "{{count}} linhas serão ignoradas:",
+      "skippedRow": "Linha {{line}}: {{reason}}",
+      "rowErrors": {
+        "name": "falta o nome",
+        "quantity": "falta a quantidade ou não é um número maior que 0",
+        "unit": "não reconhecemos a unidade",
+        "cost": "o custo não é um número"
+      },
+      "noneValid": "Não conseguimos ler nenhuma linha. Corrija-as na planilha e importe de novo.",
+      "reasons": {
+        "empty": "A planilha está vazia.",
+        "noName": "Não encontramos a coluna do material.",
+        "noQuantity": "Não encontramos a coluna da quantidade.",
+        "tooMany": "São mais de 200 materiais. Divida a planilha e importe por partes."
+      },
+      "columnsHint": "A primeira linha precisa ter os nomes das colunas: Material e Quantidade e, se quiser, Unidade, Custo e Fornecedor.",
+      "pickOther": "Escolher outra planilha",
+      "previewLabel": "Materiais a adicionar",
+      "close": "Fechar",
+      "done_one": "{{count}} material adicionado.",
+      "done_other": "{{count}} materiais adicionados."
     }
   },
   "provider": {
@@ -1317,7 +1351,9 @@
         "denied": "Não foi dada permissão para usar o Google Drive.",
         "download": "Não conseguimos trazer o arquivo do Google Drive.",
         "upload": "Não conseguimos salvar o arquivo no seu Google Drive.",
-        "exportTooLarge": "O documento do Google é grande demais para convertê-lo em PDF."
+        "exportTooLarge": "O documento do Google é grande demais para convertê-lo em PDF.",
+        "sheet": "Não conseguimos criar a planilha no seu Google Drive.",
+        "sheetRead": "Não conseguimos ler a planilha. Tente de novo."
       }
     }
   },
@@ -2910,5 +2946,14 @@
     "stepOf": "Passo {{current}} de {{total}}",
     "projectIntro": "Um olhar rápido pelas seções desta obra.",
     "done": "Entendi"
+  },
+  "drive": {
+    "sheet": {
+      "label": "Google Sheets",
+      "hint": "Uma planilha nova no seu Google Drive.",
+      "folderTitle": "Escolha a pasta do Drive onde salvar a planilha",
+      "saved": "Planilha salva no seu Google Drive.",
+      "open": "Abrir"
+    }
   }
 }

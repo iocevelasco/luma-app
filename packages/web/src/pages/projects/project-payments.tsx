@@ -23,6 +23,8 @@ import { EmptyState } from '@/components/common/empty-state';
 import { FormDrawer } from '@/components/common/form-drawer';
 import { MovementDetail, RowOpenButton } from '@/components/finance/movement-detail';
 import { MovementExport } from '@/components/finance/movement-export';
+import { useSaveAsSheet } from '@/hooks/google-drive/use-save-as-sheet';
+import type { PaymentsCsvLabels } from '@/lib/movements-csv';
 import { MovementFilterBar } from '@/components/finance/movement-filter-bar';
 import { fromDayKey, toDayKey } from '@/lib/day-key';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -399,6 +401,7 @@ export function ProjectPaymentsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const dateLocale = useDateLocale();
   const { data: projectData } = useProject(projectId);
+  const sheets = useSaveAsSheet();
   const { data, isLoading, isError } = usePaymentSchedule(projectId);
   const { data: paymentsData } = usePayments(projectId);
   const deleteItem = useDeleteScheduleItem(projectId!);
@@ -448,6 +451,41 @@ export function ProjectPaymentsPage() {
     void import('jspdf-autotable');
   }
 
+  /** Encabezados y textos de la tabla de cobros: los comparten el CSV y la Google Sheet. */
+  function paymentLabels(): Omit<PaymentsCsvLabels, 'number'> {
+    return {
+      header: {
+        date: t('finance.export.columnDate'),
+        concept: t('finance.export.columnConcept'),
+        method: t('finance.fields.method'),
+        reference: t('finance.fields.reference'),
+        amount: t('finance.export.columnAmount'),
+        currency: t('finance.export.columnCurrency'),
+        originalAmount: t('finance.export.columnOriginalAmount'),
+        originalCurrency: t('finance.export.columnOriginalCurrency'),
+        rate: t('finance.export.columnRate'),
+        notes: t('finance.export.columnNotes'),
+      },
+      onAccount: t('finance.payments.onAccount'),
+      method: (method) => t(`finance.method.${method}`),
+    };
+  }
+
+  /** Lo que la pantalla muestra, como Google Sheet en el Drive de la persona. */
+  function handleSaveSheet() {
+    if (visible.length === 0) return;
+    sheets.save(async () => {
+      const [{ paymentsTable }, { paymentsFileName }] = await Promise.all([
+        import('@/lib/movements-csv'),
+        import('@/lib/payments-pdf'),
+      ]);
+      return {
+        name: paymentsFileName(projectData?.project.name ?? '', new Date(), 'csv').replace(/\.csv$/, ''),
+        table: paymentsTable(groups.flatMap((group) => group.payments), currency, paymentLabels()),
+      };
+    });
+  }
+
   async function handleDownloadCsv() {
     if (visible.length === 0) return;
     try {
@@ -461,20 +499,7 @@ export function ProjectPaymentsPage() {
       const numberFormat = new Intl.NumberFormat(i18n.language, { useGrouping: false, maximumFractionDigits: 6 });
       const csv = buildPaymentsCsv(rows, currency, {
         number: (value) => numberFormat.format(value),
-        header: {
-          date: t('finance.export.columnDate'),
-          concept: t('finance.export.columnConcept'),
-          method: t('finance.fields.method'),
-          reference: t('finance.fields.reference'),
-          amount: t('finance.export.columnAmount'),
-          currency: t('finance.export.columnCurrency'),
-          originalAmount: t('finance.export.columnOriginalAmount'),
-          originalCurrency: t('finance.export.columnOriginalCurrency'),
-          rate: t('finance.export.columnRate'),
-          notes: t('finance.export.columnNotes'),
-        },
-        onAccount: t('finance.payments.onAccount'),
-        method: (method) => t(`finance.method.${method}`),
+        ...paymentLabels(),
       });
       downloadBlob(
         new Blob([csv], { type: 'text/csv;charset=utf-8' }),
@@ -559,12 +584,14 @@ export function ProjectPaymentsPage() {
       disabled={visible.length === 0}
       onPdf={() => void handleDownloadPdf()}
       onCsv={() => void handleDownloadCsv()}
+      onSheet={sheets.available ? handleSaveSheet : undefined}
       onWarm={warmPdf}
       labels={{
         download: t('finance.export.download'),
         generating: t('finance.payments.pdf.generating'),
         pdf: t('finance.export.pdf'),
         csv: t('finance.export.csv'),
+        sheet: t('drive.sheet.label'),
         pdfButton: t('finance.payments.pdf.button'),
         csvButton: t('finance.export.csvButton'),
       }}

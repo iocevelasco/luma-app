@@ -50,6 +50,7 @@ export function LocationField({
   const { data: config } = useIntegrationsConfig();
   const apiKey = config?.maps?.apiKey;
   const listId = useId();
+  const hintId = useId();
 
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -78,8 +79,12 @@ export function LocationField({
           setActive(-1);
           setOpen(found.length > 0);
         })
-        // Sin sugerencias se sigue escribiendo a mano: no hay nada que avisar.
-        .catch(() => !stale && setSuggestions([]));
+        // Sin sugerencias se sigue escribiendo a mano: no hay nada que avisar en
+        // pantalla, pero sí en la consola, o una clave mal restringida no se ve.
+        .catch((error: unknown) => {
+          console.warn('[maps] sin sugerencias de Google:', error);
+          if (!stale) setSuggestions([]);
+        });
     }, QUERY_DEBOUNCE_MS);
     return () => {
       stale = true;
@@ -105,7 +110,9 @@ export function LocationField({
         value={value}
         autoFocus={autoFocus}
         autoComplete="off"
+        placeholder={apiKey ? t('project.location.placeholder') : undefined}
         aria-invalid={invalid}
+        aria-describedby={apiKey ? hintId : undefined}
         role={apiKey ? 'combobox' : undefined}
         aria-autocomplete={apiKey ? 'list' : undefined}
         aria-expanded={apiKey ? showList : undefined}
@@ -138,10 +145,11 @@ export function LocationField({
           }
         }}
       />
-      {placeId && !typing && (
-        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-          <MapPin aria-hidden="true" className="size-3" />
-          {t('project.location.placeChosen')}
+      {/* Sin la ayuda no se ve que el campo sugiere direcciones: parece un input común. */}
+      {apiKey && (
+        <p id={hintId} className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <MapPin aria-hidden="true" className="size-3 shrink-0" />
+          {placeId && !typing ? t('project.location.placeChosen') : t('project.location.hint')}
         </p>
       )}
       {showList && (

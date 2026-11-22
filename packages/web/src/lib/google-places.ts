@@ -70,11 +70,38 @@ export interface GoogleMapsNamespace {
 const mapsReady = () => typeof window.google?.maps?.importLibrary === 'function';
 let placesLibrary: Promise<PlacesLibrary> | null = null;
 
+/** Lo llama Google cuando la API terminó de cargar (`&callback=`). */
+const READY_CALLBACK = '__lumaMapsReady';
+/** Sin respuesta en este tiempo (la CSP o una extensión frenaron `main.js`) se da por fallida. */
+export const MAPS_LOAD_TIMEOUT_MS = 15_000;
+
+/**
+ * Con `loading=async`, el script de la URL es sólo un cargador: define `google.maps`
+ * y recién después pide `main.js`, que es el que trae `importLibrary`. Su `onload`
+ * llega antes de que la API esté lista, así que se espera el `callback` de Google.
+ */
+function waitForMaps(apiKey: string): Promise<void> {
+  if (mapsReady()) return Promise.resolve();
+  return new Promise<void>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error('Google Maps no terminó de cargar')), MAPS_LOAD_TIMEOUT_MS);
+    const win = window as unknown as Record<string, unknown>;
+    win[READY_CALLBACK] = () => {
+      window.clearTimeout(timer);
+      resolve();
+    };
+    loadGoogleScript(
+      `${MAPS_URL}?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async&callback=${READY_CALLBACK}`,
+      // El cargador ya corrió: lo que falta lo avisa el callback.
+      () => typeof window.google?.maps === 'object',
+    ).catch((error: unknown) => {
+      window.clearTimeout(timer);
+      reject(error);
+    });
+  });
+}
+
 function loadPlaces(apiKey: string): Promise<PlacesLibrary> {
-  placesLibrary ??= loadGoogleScript(
-    `${MAPS_URL}?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async`,
-    mapsReady,
-  )
+  placesLibrary ??= waitForMaps(apiKey)
     .then(() => window.google!.maps!.importLibrary('places') as Promise<PlacesLibrary>)
     .catch((error: unknown) => {
       // Que el próximo intento pruebe de nuevo (p. ej. volvió la conexión).
