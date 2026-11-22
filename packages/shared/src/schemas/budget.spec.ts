@@ -61,6 +61,22 @@ describe('createBudgetSchema', () => {
     ).toBe(false);
   });
 
+  it('acepta un nombre de partida largo y rechaza el que pasa de 500', () => {
+    const longName = 'A'.repeat(180);
+    expect(
+      createBudgetSchema.safeParse({
+        totalAmount: 100,
+        lines: [{ ...validLine, name: longName }],
+      }).success,
+    ).toBe(true);
+    expect(
+      createBudgetSchema.safeParse({
+        totalAmount: 100,
+        lines: [{ ...validLine, name: 'A'.repeat(501) }],
+      }).success,
+    ).toBe(false);
+  });
+
   it('rechaza un ítem sin capítulo', () => {
     const { chapter: _chapter, ...rest } = validLine;
     expect(

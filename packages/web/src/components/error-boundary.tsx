@@ -23,6 +23,11 @@ interface Props {
   resetKey?: string;
   /** Etiqueta para distinguir en consola qué boundary saltó. */
   label?: string;
+  /**
+   * Pantalla propia del error. Sin esto, el fallo reemplaza la app entera
+   * por la página de "Algo se rompió".
+   */
+  fallback?: (reset: () => void) => ReactNode;
 }
 
 interface State {
@@ -58,12 +63,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.error) {
-      return (
-        <RouteError
-          error={this.state.error}
-          resetErrorBoundary={() => this.setState({ error: null })}
-        />
-      );
+      const reset = () => this.setState({ error: null });
+      if (this.props.fallback) return this.props.fallback(reset);
+      return <RouteError error={this.state.error} resetErrorBoundary={reset} />;
     }
     return this.props.children;
   }

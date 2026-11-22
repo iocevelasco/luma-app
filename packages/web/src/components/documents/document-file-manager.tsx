@@ -4,6 +4,7 @@ import {
   Filemanager,
   Willow,
   getMenuOptions,
+  type FilePreview,
   type IApi,
   type IFileMenuOption,
   type TContextMenuType,
@@ -30,6 +31,7 @@ import '@/lib/svar-icons';
 import {
   buildDocumentTree,
   checkSpaceName,
+  documentPreviewUrl,
   documentsInSpace,
   pathSegment,
   planMove,
@@ -104,6 +106,8 @@ interface DocumentFileManagerProps {
   projectId: string;
   documents: ProjectDocument[];
   canWrite: boolean;
+  /** `false` cuando este entorno no puede guardar archivos: no se ofrece subir. */
+  uploadsEnabled: boolean;
   /** Carpeta de categoría donde abrir el explorador (`?category=` del resumen de la obra). */
   initialCategory?: ProjectDocument['category'];
   className?: string;
@@ -125,6 +129,7 @@ export function DocumentFileManager({
   projectId,
   documents,
   canWrite,
+  uploadsEnabled,
   initialCategory,
   className,
 }: DocumentFileManagerProps) {
@@ -165,10 +170,38 @@ export function DocumentFileManager({
     createDocument,
     updateDocuments,
     deleteDocuments,
+    uploadsEnabled,
     drive,
     t,
   });
-  latest.current = { tree, draftSpaces, createDocument, updateDocuments, deleteDocuments, drive, t };
+  latest.current = {
+    tree,
+    draftSpaces,
+    createDocument,
+    updateDocuments,
+    deleteDocuments,
+    uploadsEnabled,
+    drive,
+    t,
+  };
+
+  // La librería congela `icons` y `previews` en el primer render. Leen el árbol
+  // por el ref para que una URL firmada nueva (vence a la hora) se vea igual.
+  const fileThumbnail = useCallback((file: FilePreview, size: 'sm' | 'md') => {
+    if (!file.id || file.type !== 'file') return false;
+    return documentPreviewUrl(latest.current.tree.files.get(file.id), size);
+  }, []);
+  const icons = useCallback(
+    (file: FilePreview, size: 'big' | 'small') => fileThumbnail(file, size === 'small' ? 'sm' : 'md'),
+    [fileThumbnail],
+  );
+  const previews = useCallback(
+    (file: FilePreview, width: number) => {
+      const url = fileThumbnail(file, width <= 200 ? 'sm' : 'md');
+      return url || null;
+    },
+    [fileThumbnail],
+  );
 
   /** La carpeta abierta y lo seleccionado en el panel activo, para las acciones de Drive. */
   const panelState = useCallback(() => {
@@ -248,51 +281,67 @@ export function DocumentFileManager({
     });
 
     api.intercept('create-file', ({ file, parent }) => {
-      const { tree, draftSpaces, createDocument, t } = latest.current;
-      const target = tree.folders.get(parent);
+      try {
+        const { tree, draftSpaces, createDocument, uploadsEnabled: canUpload, t } = latest.current;
+        const target = tree.folders.get(parent);
 
-      if (!target) {
-        fail('document.fm.errors.noUploadAtRoot');
-        return false;
-      }
+        if (!file) return false;
 
-      if (file.type === 'folder') {
-        if (target.space !== undefined || !isSpaceScoped(target.category)) {
-          fail('document.fm.errors.foldersOnlyInPlans');
+        if (!canUpload && file.type !== 'folder') {
+          fail('document.uploadsDisabled');
           return false;
         }
-        // Sin barras: el nombre es parte de la ruta de la carpeta (ver `pathSegment`).
-        const space = pathSegment(file.name);
-        const check = checkSpaceName(tree, target.category, space);
-        if (check !== 'ok') {
-          if (check !== 'empty') toast.error(t(`document.fm.errors.space.${check}`));
+
+        if (!target) {
+          fail('document.fm.errors.noUploadAtRoot');
           return false;
         }
-        setDraftSpaces([...draftSpaces, { category: target.category, space }]);
-        return false;
-      }
 
-      const upload = file.file;
-      if (!upload) return false;
-      if (!DOCUMENT_MIME_TYPES.includes(upload.type)) {
-        fail('document.errors.fileType');
-        return false;
-      }
-      if (upload.size > DOCUMENT_MAX_BYTES) {
-        fail('document.errors.fileSize');
-        return false;
-      }
+        if (file.type === 'folder') {
+          if (target.space !== undefined || !isSpaceScoped(target.category)) {
+            fail('document.fm.errors.foldersOnlyInPlans');
+            return false;
+          }
+          // Sin barras: el nombre es parte de la ruta de la carpeta (ver `pathSegment`).
+          const space = pathSegment(file.name);
+          const check = checkSpaceName(tree, target.category, space);
+          if (check !== 'ok') {
+            if (check !== 'empty') toast.error(t(`document.fm.errors.space.${check}`));
+            return false;
+          }
+          setDraftSpaces([...draftSpaces, { category: target.category, space }]);
+          return false;
+        }
 
-      createDocument
-        .mutateAsync({
-          category: target.category,
-          space: target.space,
-          title: titleFromName(upload.name, upload.name) || upload.name,
-          notes: undefined,
-          file: upload,
-        })
-        .catch((error: unknown) => toast.error(errorMessage(error, t)));
-      return false;
+        const upload = file.file;
+        if (!upload) return false;
+        if (!DOCUMENT_MIME_TYPES.includes(upload.type)) {
+          fail('document.errors.fileType');
+          return false;
+        }
+        if (upload.size > DOCUMENT_MAX_BYTES) {
+          fail('document.errors.fileSize');
+          return false;
+        }
+
+        createDocument
+          .mutateAsync({
+            category: target.category,
+            space: target.space,
+            title: titleFromName(upload.name, upload.name) || upload.name,
+            notes: undefined,
+            file: upload,
+          })
+          .catch((error: unknown) => {
+            const message = errorMessage(error, t);
+            if (message) toast.error(message);
+          });
+        return false;
+      } catch (error) {
+        const message = errorMessage(error, latest.current.t);
+        toast.error(message ?? latest.current.t('document.fm.crashed'));
+        return false;
+      }
     });
 
     api.intercept('move-files', ({ ids, target }) => {
@@ -385,6 +434,7 @@ export function DocumentFileManager({
       const folder = item ? tree.folders.get(item.id) : undefined;
 
       const options: IFileMenuOption[] = getMenuOptions(mode).filter((option) => {
+        if (!latest.current.uploadsEnabled && option.id === 'upload') return false;
         if (option.id && HIDDEN_MENU_IDS.has(String(option.id))) return false;
         // Una carpeta de tipo es fija: sólo se abre.
         if (mode === 'folder' && folder && folder.space === undefined) {
@@ -395,7 +445,8 @@ export function DocumentFileManager({
 
       if (!driveAvailable) return options;
       // "Añadir" sólo se dibuja para quien puede subir (`readonly` lo esconde).
-      if (mode === 'add') {
+      // Importar de Drive es subir: sin subidas habilitadas, tampoco va.
+      if (mode === 'add' && latest.current.uploadsEnabled) {
         options.push({
           id: 'drive-import',
           icon: 'luma-drive-import',
@@ -448,7 +499,8 @@ export function DocumentFileManager({
             data={tree.entities}
             readonly={!canWrite}
             mode="table"
-            icons="simple"
+            icons={icons}
+            previews={previews}
             menuOptions={menuOptions}
             panels={panels}
             init={handleInit}

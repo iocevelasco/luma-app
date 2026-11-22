@@ -177,9 +177,10 @@ describe('listProjectDocuments', () => {
     await listProjectDocuments({ project: { _id: 'project-1' } } as unknown as Request, res);
 
     const payload = vi.mocked(res.json).mock.calls[0][0] as {
-      data: { documents: Record<string, unknown>[] };
+      data: { documents: Record<string, unknown>[]; uploadsEnabled: boolean };
     };
     expect(payload.data.documents).toHaveLength(2);
+    expect(typeof payload.data.uploadsEnabled).toBe('boolean');
     expect(signObjectUrl).toHaveBeenCalledTimes(2);
     // Una sola consulta de usuarios para toda la lista, no una por documento.
     expect(User.find).toHaveBeenCalledTimes(1);

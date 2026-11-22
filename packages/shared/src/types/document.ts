@@ -84,6 +84,12 @@ export interface ProjectDocument {
 
 export interface ProjectDocumentListResponse {
   documents: ProjectDocument[];
+  /**
+   * Si este entorno puede guardar archivos. En `false` el explorador no
+   * ofrece subir: el widget se rompe si arranca una carga que el servidor
+   * va a rechazar.
+   */
+  uploadsEnabled: boolean;
 }
 
 export interface ProjectDocumentResponse {

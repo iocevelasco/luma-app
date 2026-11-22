@@ -94,6 +94,7 @@ export async function createBudget(req: Request, res: Response) {
   try {
     const parsed = createBudgetSchema.safeParse(req.body);
     if (!parsed.success) {
+      // `details` es lo que la pantalla usa para decir qué partida falló.
       return res
         .status(400)
         .json({ success: false, error: 'Datos inválidos', details: parsed.error.issues });
