@@ -88,7 +88,6 @@ export function ProjectLocation({ project, canEdit }: ProjectLocationProps) {
           open={editing}
           onOpenChange={(open) => !open && !update.isPending && setEditing(false)}
           title={t('project.location.editTitle')}
-          description={t('project.location.editHint')}
         >
           <FormShell
             variant="embedded"
