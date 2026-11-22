@@ -1,5 +1,5 @@
 {
-  "brand": "Luma",
+  "brand": "Luma Gestión de Obra",
   "nav": {
     "login": "Entrar",
     "language": "Idioma",
@@ -228,7 +228,8 @@
     "tagline": "Gestão de obra com controle compartilhado.",
     "credit": "Criado por <studio>Ido Arquitectura</studio> e Ioce Velasco.",
     "legal": "Termos e Privacidade",
-    "contact": "Contato"
+    "contact": "Contato",
+    "appName": "Luma Gestión de Obra"
   },
   "team": {
     "label": "Quem somos",
