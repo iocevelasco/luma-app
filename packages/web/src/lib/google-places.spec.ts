@@ -112,3 +112,33 @@ describe('mapsLanguage', () => {
     ['pt', 'pt-BR'],
   ])('%s → %s', (language, code) => expect(mapsLanguage(language)).toBe(code));
 });
+
+describe('carga del SDK', () => {
+  it('espera el callback de Google: el onload del cargador llega antes que importLibrary', async () => {
+    const appended: HTMLScriptElement[] = [];
+    const spy = vi.spyOn(document.head, 'appendChild').mockImplementation((node) => {
+      appended.push(node as HTMLScriptElement);
+      return node;
+    });
+    const pending = fetchPlaceSuggestions('k', 'calle', newPlacesSession(), 'es');
+
+    // Corre el cargador: define `google.maps`, todavía sin `importLibrary`.
+    const script = appended[0]!;
+    expect(script.src).toContain('callback=__lumaMapsReady');
+    window.google = { maps: {} } as never;
+    script.onload?.(new Event('load'));
+
+    // Llega `main.js` y Google llama al callback.
+    const fetchAutocompleteSuggestions = vi.fn(async () => ({
+      suggestions: [{ placePrediction: { placeId: 'p1', text: { text: 'Calle 1' } } }],
+    }));
+    class AutocompleteSessionToken {}
+    window.google = {
+      maps: { importLibrary: vi.fn(async () => ({ AutocompleteSessionToken, AutocompleteSuggestion: { fetchAutocompleteSuggestions } })) },
+    } as never;
+    (window as unknown as Record<string, () => void>).__lumaMapsReady!();
+
+    await expect(pending).resolves.toEqual([{ placeId: 'p1', text: 'Calle 1', main: 'Calle 1', secondary: undefined }]);
+    spy.mockRestore();
+  });
+});

@@ -368,6 +368,8 @@
       "open": "Abrir"
     },
     "location": {
+      "placeholder": "Digite a rua e o número…",
+      "hint": "Comece a digitar e escolha um endereço do Google Maps para que a obra tenha mapa.",
       "placeChosen": "Endereço escolhido no Google Maps: a obra terá mapa.",
       "suggestions": "Endereços sugeridos",
       "showMap": "Ver no mapa",
@@ -376,7 +378,6 @@
       "edit": "Editar localização",
       "mapTitle": "Mapa de {{location}}",
       "editTitle": "Editar localização",
-      "editHint": "Escolha o endereço entre as sugestões para que a obra tenha mapa. Você também pode digitá-lo.",
       "saved": "Localização salva."
     }
   },
