@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/user-store';
 import { isTokenExpired, getTokenExpirationTime } from '@/lib/jwt-utils';
 import { initializeVersionManager } from '@/lib/version-manager';
 import { apiClient } from '@/lib/api-client';
+import { notifyNativeSessionEnded } from '@/lib/native-bridge';
 import { ROUTES } from '@/lib/routes';
 import { clearDriveToken } from '@/lib/google-drive';
 
@@ -96,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Clear session and logout
    */
   const clearSession = useCallback(() => {
+    // Antes de borrar: si esto corre dentro de la app, ella cierra el WebView.
+    notifyNativeSessionEnded();
     setTokenState(null);
     setUser(null);
     localStorage.removeItem(TOKEN_KEY);

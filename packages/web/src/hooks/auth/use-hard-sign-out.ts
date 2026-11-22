@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { authApi } from '@/api/auth';
+import { notifyNativeSessionEnded } from '@/lib/native-bridge';
 import { ROUTES } from '@/lib/routes';
 
 /**
@@ -64,6 +65,8 @@ export function useHardSignOut() {
       }
     }
 
+    // Este camino no pasa por AuthProvider: el aviso va aparte del replace.
+    notifyNativeSessionEnded();
     window.location.replace(`${base}${ROUTES.LOGIN}`);
   }, []);
 

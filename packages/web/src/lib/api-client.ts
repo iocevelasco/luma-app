@@ -7,6 +7,7 @@
 // máxima de la sesión: al vencer, el usuario era pateado a /login sin aviso.
 
 import { getApiBaseUrl } from '@luma/shared';
+import { notifyNativeSessionEnded } from './native-bridge';
 import { ROUTES } from './routes';
 
 interface RequestConfig extends RequestInit {
@@ -273,6 +274,7 @@ class ApiClient {
       this.unauthorizedHandler();
       return;
     }
+    notifyNativeSessionEnded();
     window.location.href = ROUTES.LOGIN;
   }
 

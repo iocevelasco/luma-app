@@ -438,6 +438,11 @@ export function validateConfig(): void {
   if (isProduction && !process.env.APP_URL) {
     console.warn('⚠️  [CONFIG] Sin APP_URL: los links de los mails pueden apuntar mal.');
   }
+  if (!process.env.MOBILE_CLIENT_KEY) {
+    console.warn(
+      '⚠️  [CONFIG] Sin MOBILE_CLIENT_KEY: el login de la app móvil no puede saltar reCAPTCHA ni recibir el refresh token.',
+    );
+  }
 
   console.log(`✅ [CONFIG] Entorno ${NODE_ENV}, JWT ${JWT_USE_HS256 ? 'HS256' : 'RS256'}`);
 }

@@ -87,6 +87,7 @@ feat/…  ──PR──▶  stage  ──PR──▶  main
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | opcionales | `7d` / `90d` |
 | `RECAPTCHA_SECRET_KEY` | reCAPTCHA v3 | **la API no arranca en producción** |
 | `SKIP_RECAPTCHA` | `true` desactiva la verificación en el servidor | con la clave puesta y sin esto, **login y registro rechazan a todos**: ver la nota de abajo |
+| `MOBILE_CLIENT_KEY` | la app nativa la manda en `X-Luma-Client-Key` para entrar sin reCAPTCHA y recibir el refresh token | aviso; el login de la app móvil no funciona, el de la web sigue igual |
 | `FRONTEND_URL` | origen del front | `http://localhost:6173` |
 | `APP_URL` | raíz del SPA **con subpath**: `https://<DOMINIO>/app` | cae a `FRONTEND_URL`; rompe los links de los mails y los redirects |
 | `ALLOWED_ORIGINS` | whitelist de CORS, separada por comas | sólo entra `FRONTEND_URL` |
