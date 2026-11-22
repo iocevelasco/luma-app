@@ -860,6 +860,39 @@
       "copy": "No pudimos copiar la lista.",
       "pdf": "No pudimos generar el PDF. Probá de nuevo.",
       "share": "No se pudo compartir la lista. Probá copiarla o descargar el PDF."
+    },
+    "import": {
+      "button": "Importar de Google Sheets",
+      "pickTitle": "Elegí la planilla con los materiales",
+      "title": "Importar materiales",
+      "summary_one": "Se va a agregar {{count}} material como Pendiente.",
+      "summary_other": "Se van a agregar {{count}} materiales como Pendientes.",
+      "submit_one": "Agregar {{count}} material",
+      "submit_other": "Agregar {{count}} materiales",
+      "more_one": "y {{count}} más",
+      "more_other": "y {{count}} más",
+      "skipped_one": "Se saltea {{count}} fila:",
+      "skipped_other": "Se saltean {{count}} filas:",
+      "skippedRow": "Fila {{line}}: {{reason}}",
+      "rowErrors": {
+        "name": "falta el nombre",
+        "quantity": "falta la cantidad o no es un número mayor a 0",
+        "unit": "no reconocemos la unidad",
+        "cost": "el costo no es un número"
+      },
+      "noneValid": "No pudimos leer ninguna fila. Corregilas en la planilla y volvé a importarla.",
+      "reasons": {
+        "empty": "La planilla está vacía.",
+        "noName": "No encontramos la columna del material.",
+        "noQuantity": "No encontramos la columna de la cantidad.",
+        "tooMany": "Son más de 200 materiales. Dividí la planilla e importala por partes."
+      },
+      "columnsHint": "La primera fila tiene que tener los nombres de las columnas: Material y Cantidad y, si querés, Unidad, Costo y Proveedor.",
+      "pickOther": "Elegir otra planilla",
+      "previewLabel": "Materiales a agregar",
+      "close": "Cerrar",
+      "done_one": "Se agregó {{count}} material.",
+      "done_other": "Se agregaron {{count}} materiales."
     }
   },
   "provider": {
@@ -1318,7 +1351,8 @@
         "download": "No pudimos traer el archivo de Google Drive.",
         "upload": "No pudimos guardar el archivo en tu Google Drive.",
         "exportTooLarge": "El documento de Google es demasiado grande para convertirlo a PDF.",
-        "sheet": "No pudimos crear la planilla en tu Google Drive."
+        "sheet": "No pudimos crear la planilla en tu Google Drive.",
+        "sheetRead": "No pudimos leer la planilla. Probá de nuevo."
       }
     }
   },

@@ -70,6 +70,30 @@ export async function createSpreadsheet(
   return sheet;
 }
 
+/** Tope de lo que se lee de una planilla: alcanza para cualquier lista de una obra. */
+export const SHEET_READ_RANGE = 'A1:Z1000';
+
+/**
+ * Las celdas de la primera hoja de una planilla que la persona eligió en el
+ * Picker (eso le da permiso a la app sobre ese archivo con `drive.file`).
+ * Sin formato: los números llegan como número, no como el texto que muestra la
+ * planilla según su idioma.
+ */
+export async function readSpreadsheet(token: string, spreadsheetId: string): Promise<SheetCell[][]> {
+  const response = await fetch(
+    `${SHEETS_API}/${encodeURIComponent(spreadsheetId)}/values/${SHEET_READ_RANGE}?valueRenderOption=UNFORMATTED_VALUE&majorDimension=ROWS`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!response.ok) {
+    console.warn('[sheets]', response.status, await response.text().catch(() => ''));
+    throw new DriveError('sheetRead');
+  }
+  const body = (await response.json()) as { values?: unknown[][] };
+  return (body.values ?? []).map((row) =>
+    row.map((cell) => (typeof cell === 'number' ? cell : cell == null ? '' : String(cell))),
+  );
+}
+
 /** Congela la primera fila, la pone en negrita y ajusta el ancho de las columnas. */
 export function headerFormatRequests(columns: number) {
   return {

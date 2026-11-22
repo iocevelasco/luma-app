@@ -14,6 +14,7 @@ vi.mock('../../models/Activity.js', () => ({
 vi.mock('../../models/MaterialItem.js', () => ({
   MaterialItem: {
     create: vi.fn(),
+    insertMany: vi.fn(),
     findOne: vi.fn(),
     findOneAndUpdate: vi.fn(),
     findOneAndDelete: vi.fn(),
@@ -48,6 +49,7 @@ const { Activity } = await import('../../models/Activity.js');
 const { Provider } = await import('../../models/Provider.js');
 const { MaterialItem } = await import('../../models/MaterialItem.js');
 const {
+  bulkCreateMaterials,
   bulkDeleteMaterials,
   bulkUpdateMaterials,
   createMaterial,
@@ -529,6 +531,55 @@ describe('acciones en lote', () => {
     expect(thrownBy(next)).toMatchObject({ code: 'MATERIAL_LOCKED', status: 409 });
     expect((next.mock.calls[0]?.[0] as { details: unknown }).details).toEqual({ ids: [B] });
     expect(MaterialItem.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('alta en lote (importar una planilla)', () => {
+  function bulkReq(body: Record<string, unknown>): Request {
+    return { user: { sub: 'user-1' }, project: { _id: 'project-1' }, body } as unknown as Request;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('crea todo en Pendiente, sin tarea ni proveedor del directorio', async () => {
+    vi.mocked(MaterialItem.insertMany).mockResolvedValue([{ _id: 'm1' }, { _id: 'm2' }] as never);
+    const res = mockRes();
+    const next = mockNext();
+
+    await bulkCreateMaterials(
+      bulkReq({
+        items: [
+          { name: 'Cemento', quantity: 10, unit: 'bolsa', estimatedCost: 12.5, supplier: 'Ferretería' },
+          // Aunque mande otra cosa, el estado no se elige al importar.
+          { name: 'Arena', quantity: 2, unit: 'm3', status: 'en_obra', supplier: '' },
+        ],
+      }),
+      res,
+      next,
+    );
+
+    expect(next).not.toHaveBeenCalled();
+    const [docs, options] = vi.mocked(MaterialItem.insertMany).mock.calls[0]!;
+    expect(options).toEqual({ ordered: true });
+    expect(docs).toEqual([
+      expect.objectContaining({ name: 'Cemento', status: 'pendiente', supplier: 'Ferretería', provider: null, activity: null, project: 'project-1', createdBy: 'user-1' }),
+      expect.objectContaining({ name: 'Arena', status: 'pendiente', supplier: undefined }),
+    ]);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: { materialIds: ['m1', 'm2'] } });
+    expect(recordPurchaseEntries).not.toHaveBeenCalled();
+  });
+
+  it('400 y no escribe nada si una fila es inválida, o la lista vacía o de más', async () => {
+    const tooMany = Array.from({ length: 201 }, () => ({ name: 'x', quantity: 1, unit: 'un' }));
+    for (const items of [[], tooMany, [{ name: 'Cemento', quantity: 1, unit: 'un' }, { name: '', quantity: 1, unit: 'un' }]]) {
+      const next = mockNext();
+      await bulkCreateMaterials(bulkReq({ items }), mockRes(), next);
+      expect(thrownBy(next)).toMatchObject({ code: 'VALIDATION', status: 400 });
+    }
+    expect(MaterialItem.insertMany).not.toHaveBeenCalled();
   });
 });
 

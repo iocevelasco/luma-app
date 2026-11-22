@@ -860,6 +860,39 @@
       "copy": "No hemos podido copiar la lista.",
       "pdf": "No hemos podido generar el PDF. Prueba de nuevo.",
       "share": "No se ha podido compartir la lista. Prueba a copiarla o a descargar el PDF."
+    },
+    "import": {
+      "button": "Importar de Google Sheets",
+      "pickTitle": "Elige la hoja de cálculo con los materiales",
+      "title": "Importar materiales",
+      "summary_one": "Se añadirá {{count}} material como Pendiente.",
+      "summary_other": "Se añadirán {{count}} materiales como Pendientes.",
+      "submit_one": "Añadir {{count}} material",
+      "submit_other": "Añadir {{count}} materiales",
+      "more_one": "y {{count}} más",
+      "more_other": "y {{count}} más",
+      "skipped_one": "Se salta {{count}} fila:",
+      "skipped_other": "Se saltan {{count}} filas:",
+      "skippedRow": "Fila {{line}}: {{reason}}",
+      "rowErrors": {
+        "name": "falta el nombre",
+        "quantity": "falta la cantidad o no es un número mayor que 0",
+        "unit": "no reconocemos la unidad",
+        "cost": "el coste no es un número"
+      },
+      "noneValid": "No hemos podido leer ninguna fila. Corrígelas en la hoja de cálculo y vuelve a importarla.",
+      "reasons": {
+        "empty": "La hoja de cálculo está vacía.",
+        "noName": "No hemos encontrado la columna del material.",
+        "noQuantity": "No hemos encontrado la columna de la cantidad.",
+        "tooMany": "Son más de 200 materiales. Divide la hoja de cálculo e impórtala por partes."
+      },
+      "columnsHint": "La primera fila tiene que llevar los nombres de las columnas: Material y Cantidad y, si quieres, Unidad, Coste y Proveedor.",
+      "pickOther": "Elegir otra hoja de cálculo",
+      "previewLabel": "Materiales que se añadirán",
+      "close": "Cerrar",
+      "done_one": "Se ha añadido {{count}} material.",
+      "done_other": "Se han añadido {{count}} materiales."
     }
   },
   "provider": {
@@ -1318,7 +1351,8 @@
         "download": "No hemos podido traer el archivo de Google Drive.",
         "upload": "No hemos podido guardar el archivo en tu Google Drive.",
         "exportTooLarge": "El documento de Google es demasiado grande para convertirlo a PDF.",
-        "sheet": "No hemos podido crear la hoja de cálculo en tu Google Drive."
+        "sheet": "No hemos podido crear la hoja de cálculo en tu Google Drive.",
+        "sheetRead": "No hemos podido leer la hoja de cálculo. Prueba de nuevo."
       }
     }
   },

@@ -37,7 +37,8 @@ export type DriveErrorCode =
   | 'download'
   | 'upload'
   | 'exportTooLarge'
-  | 'sheet';
+  | 'sheet'
+  | 'sheetRead';
 
 /** Un error de Google no es un `ApiError`: la UI lo traduce por `code` (`document.drive.errors.*`). */
 export class DriveError extends Error {
@@ -297,6 +298,18 @@ export async function pickFilesToImport(
     .setSelectFolderEnabled(false);
   const docs = await openPicker(view, options, true);
   return docs ? docs.map(toPicked) : null;
+}
+
+/** Elegir una Google Sheet para leerla. `null` = la persona cerró el Picker. */
+export async function pickSpreadsheet(options: PickOptions): Promise<PickedFile | null> {
+  const picker = window.google?.picker;
+  if (!picker) throw new DriveError('unavailable');
+  const view = new picker.DocsView(picker.ViewId.DOCS)
+    .setMimeTypes('application/vnd.google-apps.spreadsheet')
+    .setIncludeFolders(true)
+    .setSelectFolderEnabled(false);
+  const docs = await openPicker(view, options, false);
+  return docs?.[0] ? toPicked(docs[0]) : null;
 }
 
 /** Elegir la carpeta destino de una exportación. `null` = la persona cerró el Picker. */

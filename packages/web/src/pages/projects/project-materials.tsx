@@ -40,6 +40,7 @@ import {
 import { fromDayKey } from '@/lib/day-key';
 import { MaterialDrawer } from '@/components/materials/material-drawer';
 import { MaterialPhotoThumb, useValidMaterialPhoto } from '@/components/materials/material-photo';
+import { MaterialImportButton } from '@/components/materials/material-import';
 import { MaterialInvoiceDialog } from '@/components/materials/material-invoice-dialog';
 import { ProviderCombobox } from '@/components/materials/provider-combobox';
 import { MaterialStatusBadge } from '@/components/materials/material-status-badge';
@@ -1543,6 +1544,7 @@ export function ProjectMaterialsPage() {
     <PageLayout
       // Mientras hay selección, la barra ocupa el lugar del botón flotante.
       action={canWrite && !hasSelection ? <NewMaterialButton projectId={projectId!} /> : undefined}
+      dockActions={canWrite && !hasSelection ? <MaterialImportButton projectId={projectId!} /> : undefined}
       empty={total === 0 ? { icon: Package, title: t(canWrite ? 'material.list.empty' : 'material.list.emptyReadOnly') } : undefined}
     >
       {/*
