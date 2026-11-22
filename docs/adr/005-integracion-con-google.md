@@ -450,6 +450,24 @@ un scope no sensible: no hay verificación de Google ni auditoría.
     por ahora: quien la tenga ve la lista sin pasar por la grilla.
 21. CSP: suma `https://sheets.googleapis.com` al `connect-src`.
 
+**Importar materiales desde una Google Sheet** (sumado el 2026-11-22)
+
+22. En Compras, "Importar de Google Sheets" va junto a "Añadir material" (es un
+    alta, `dockActions`) y también en la pantalla vacía. Lo ve quien tiene
+    `material.write`. La persona elige la planilla en el Picker (eso le da a la app
+    acceso a ese archivo con `drive.file`), se lee la primera hoja sin formato
+    (`valueRenderOption=UNFORMATTED_VALUE`, hasta `A1:Z1000`) y se muestra qué se
+    va a añadir antes de escribir nada.
+23. Las columnas se reconocen **por el nombre del encabezado** (`lib/material-import.ts`,
+    con tests): material y cantidad son obligatorias; unidad, costo y proveedor,
+    opcionales; en castellano, portugués o inglés. Entra también una lista que
+    salió de Luma. Una fila ilegible se salta y se informa con su número de fila;
+    no frena al resto.
+24. Todo entra en **Pendiente**, sin tarea y con el proveedor como texto: es una
+    lista para revisar, no compras hechas, así que nada va al patio. El alta es
+    `POST /materials/bulk` (`bulkCreateMaterialsSchema`), todo o nada, con el mismo
+    tope de 200 que las acciones en lote.
+
 ## Opciones consideradas
 
 ### Login — cómo se une Google a una cuenta que ya tiene contraseña

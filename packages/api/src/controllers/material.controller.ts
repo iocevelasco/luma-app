@@ -1,6 +1,7 @@
 import { pipeline } from 'node:stream/promises';
 import type { NextFunction, Request, Response } from 'express';
 import {
+  bulkCreateMaterialsSchema,
   bulkDeleteMaterialsSchema,
   bulkUpdateMaterialsSchema,
   createMaterialSchema,
@@ -239,6 +240,39 @@ export const createMaterial = wrap(async (req, res) => {
   // Exige una capacidad de escritura — quien la llama siempre puede ver el
   // detalle completo de lo que acaba de crear.
   return res.status(201).json({ success: true, data: { material: toMaterialDTO(material, true) } });
+});
+
+/**
+ * Requiere `requireProjectAccess` + el `requireCapability(...)` que declara el router antes.
+ *
+ * Alta en lote desde una planilla importada. Todo o nada: el schema valida
+ * cada fila antes de escribir, y `insertMany` va ordenado, así que si la base
+ * rechaza una no queda la mitad de la lista. Entran en Pendiente, sin tarea ni
+ * proveedor del directorio: nada que llevar al patio.
+ */
+export const bulkCreateMaterials = wrap(async (req, res) => {
+  if (!req.user) throw unauthenticated();
+
+  const parsed = bulkCreateMaterialsSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest('Datos inválidos', parsed.error.issues);
+
+  const project = req.project as IProject;
+  const created = await MaterialItem.insertMany(
+    parsed.data.items.map((item) => ({
+      ...item,
+      supplier: item.supplier || undefined,
+      status: 'pendiente',
+      activity: null,
+      provider: null,
+      project: project._id,
+      createdBy: req.user!.sub,
+    })),
+    { ordered: true },
+  );
+
+  return res
+    .status(201)
+    .json({ success: true, data: { materialIds: created.map((material) => String(material._id)) } });
 });
 
 /**

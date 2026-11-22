@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DriveError } from './google-drive';
-import { createSpreadsheet, headerFormatRequests, SPREADSHEET_MIME } from './google-sheets';
+import { createSpreadsheet, headerFormatRequests, readSpreadsheet, SPREADSHEET_MIME } from './google-sheets';
 
 const table = { header: ['Material', 'Cantidad'], rows: [['=HYPERLINK("x")', 2.5]] };
 
@@ -57,5 +57,30 @@ describe('headerFormatRequests', () => {
     const { requests } = headerFormatRequests(5);
     expect(requests[0]!.updateSheetProperties!.properties.gridProperties.frozenRowCount).toBe(1);
     expect(requests[2]!.autoResizeDimensions!.dimensions.endIndex).toBe(5);
+  });
+});
+
+describe('readSpreadsheet', () => {
+  it('lee la primera hoja sin formato y deja cada celda como número o texto', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ values: [['Material', 'Cantidad'], ['Cemento', 10, null, true]] }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(readSpreadsheet('tok', 's1')).resolves.toEqual([
+      ['Material', 'Cantidad'],
+      ['Cemento', 10, '', 'true'],
+    ]);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toContain('/spreadsheets/s1/values/A1:Z1000');
+    expect(url).toContain('valueRenderOption=UNFORMATTED_VALUE');
+    expect(init.headers).toEqual({ Authorization: 'Bearer tok' });
+  });
+
+  it('una planilla vacía es una lista vacía; una falla de Google, DriveError("sheetRead")', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({})));
+    await expect(readSpreadsheet('tok', 's1')).resolves.toEqual([]);
+
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ error: 'nope' }, false)));
+    await expect(readSpreadsheet('tok', 's1')).rejects.toEqual(new DriveError('sheetRead'));
   });
 });

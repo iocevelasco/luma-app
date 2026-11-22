@@ -105,7 +105,30 @@ export const bulkDeleteMaterialsSchema = z.object({
   ids: materialIdsSchema,
 });
 
+/**
+ * Alta en lote: lo que llega de una planilla importada (Compras → Importar de
+ * Google Sheets). Entran siempre en Pendiente y sin tarea ni proveedor del
+ * directorio: es una lista para revisar, no compras que ya pasaron. El
+ * proveedor, si la planilla lo trae, va como texto.
+ */
+export const bulkCreateMaterialItemSchema = z.object({
+  name: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'Es demasiado largo'),
+  quantity: z.number().positive('Tiene que ser mayor a 0'),
+  unit: materialUnitSchema,
+  estimatedCost: z.number().min(0, 'No puede ser negativo').optional(),
+  supplier: z.string().trim().max(120, 'Es demasiado largo').optional(),
+});
+
+export const bulkCreateMaterialsSchema = z.object({
+  items: z
+    .array(bulkCreateMaterialItemSchema)
+    .min(1, 'No hay materiales para añadir')
+    .max(MATERIAL_BULK_MAX, `Son demasiados: hasta ${MATERIAL_BULK_MAX} por vez`),
+});
+
 export type CreateMaterialInput = z.infer<typeof createMaterialSchema>;
+export type BulkCreateMaterialItem = z.infer<typeof bulkCreateMaterialItemSchema>;
+export type BulkCreateMaterialsInput = z.infer<typeof bulkCreateMaterialsSchema>;
 export type UpdateMaterialInput = z.infer<typeof updateMaterialSchema>;
 export type EditMaterialInput = z.infer<typeof editMaterialSchema>;
 export type BulkUpdateMaterialsInput = z.infer<typeof bulkUpdateMaterialsSchema>;
