@@ -4,6 +4,8 @@ import {
   buildDocumentTree,
   checkSpaceName,
   displayName,
+  documentPreviewUrl,
+  documentThumbnailUrl,
   documentsInSpace,
   planMove,
   titleFromName,
@@ -74,6 +76,27 @@ describe('buildDocumentTree', () => {
     expect(documentsInSpace(tree, { category: 'plano', space: 'Cocina' }).map((d) => d.id)).toEqual([
       'a',
     ]);
+  });
+});
+
+describe('miniatura', () => {
+  const image = doc({
+    contentType: 'image/jpeg',
+    url: 'https://media.example/v1/f/abc?exp=1&sig=xyz',
+  });
+
+  it('pide la variante reducida sobre la URL firmada', () => {
+    expect(documentThumbnailUrl(image.url!, 'sm')).toBe(
+      'https://media.example/v1/f/abc?exp=1&sig=xyz&variant=sm',
+    );
+  });
+
+  it('una imagen tiene miniatura y un PDF no', () => {
+    expect(documentPreviewUrl(image, 'md')).toContain('variant=md');
+    expect(documentPreviewUrl(doc({ url: 'https://media.example/v1/f/abc?exp=1&sig=xyz' }), 'sm')).toBe(
+      false,
+    );
+    expect(documentPreviewUrl(doc({ contentType: 'image/png', url: null }), 'sm')).toBe(false);
   });
 });
 

@@ -10,9 +10,16 @@ import { roundMoney } from '../utils/money.js';
  * mensaje claro, no un ajuste silencioso.
  */
 
+/** Una partida de obra describe el trabajo completo; 160 se quedaba corto. */
+export const BUDGET_LINE_NAME_MAX = 500;
+
 const budgetLineInputSchema = z.object({
   chapter: z.string().trim().min(1, 'El capítulo es obligatorio').max(120, 'Es demasiado largo'),
-  name: z.string().trim().min(1, 'El nombre es obligatorio').max(160, 'Es demasiado largo'),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'El nombre es obligatorio')
+    .max(BUDGET_LINE_NAME_MAX, 'Es demasiado largo'),
   unit: z.string().trim().min(1, 'La unidad es obligatoria').max(20, 'Es demasiado larga'),
   quantity: z.number().positive('Tiene que ser mayor a 0').optional(),
   unitCost: z.number().min(0, 'No puede ser negativo').optional(),

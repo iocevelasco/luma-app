@@ -58,6 +58,33 @@ export function displayName(doc: Pick<ProjectDocument, 'title' | 'fileName'>): s
   return ext && !title.toLowerCase().endsWith(ext.toLowerCase()) ? `${title}${ext}` : title;
 }
 
+/** Lado máximo que pide el media-service: `sm` en la fila, `md` en la tarjeta. */
+export type ThumbnailSize = 'sm' | 'md';
+
+/**
+ * La URL firmada con `variant`. El servicio devuelve la imagen ya reducida;
+ * la firma no incluye ese parámetro, así que se puede agregar.
+ * `null` si la URL no se puede interpretar.
+ */
+export function documentThumbnailUrl(url: string, size: ThumbnailSize): string | null {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set('variant', size);
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** La miniatura de un documento, o `false` si no es una imagen con URL. */
+export function documentPreviewUrl(
+  doc: Pick<ProjectDocument, 'contentType' | 'url'> | undefined,
+  size: ThumbnailSize,
+): string | false {
+  if (!doc?.url || !doc.contentType.startsWith('image/')) return false;
+  return documentThumbnailUrl(doc.url, size) ?? false;
+}
+
 /** Inverso de `displayName`: lo que se guarda como título al renombrar o subir. */
 export function titleFromName(name: string, fileName: string): string {
   const ext = extensionOf(fileName);
