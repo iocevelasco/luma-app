@@ -9,3 +9,9 @@ export const LOGIN_URL = `${APP_URL}/login`;
 export const REGISTER_URL = `${APP_URL}/register`;
 /** Términos y Política de Privacidad: viven en la SPA, una sola fuente del texto. */
 export const LEGAL_URL = `${APP_URL}/legal`;
+
+/** Contacto general. Buzón real en el dominio de Luma (Purelymail). */
+export const CONTACT_EMAIL = 'hola@luma-app.site';
+
+/** WhatsApp de contacto, en formato internacional sin el `+` (wa.me). */
+export const WHATSAPP_NUMBER = '584129176403';

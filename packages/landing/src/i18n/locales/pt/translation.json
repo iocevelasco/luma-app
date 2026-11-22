@@ -8,7 +8,8 @@
       "features": "O que inclui",
       "how": "Como funciona",
       "pricing": "Preço",
-      "faq": "Perguntas"
+      "faq": "Perguntas",
+      "team": "Quem somos"
     }
   },
   "hero": {
@@ -40,13 +41,15 @@
       "nextPaymentValue": "Parcela 3 de 6"
     },
     "photo": {
-      "alt": "Operários trabalhando sobre a fôrma de uma laje, em uma obra em construção.",
-      "caption": "Uma laje em andamento."
+      "alt": "Arquiteto revisando o andamento da obra em um tablet e um notebook, em um canteiro em construção.",
+      "label": "Em obra",
+      "title": "Cada planta, cada mudança, na mesma mesa.",
+      "body": "Gerente, arquiteto e engenheiro revisam o andamento com a mesma informação, sem esperar alguém mandar o relatório."
     }
   },
   "problem": {
     "label": "Soa familiar?",
-    "title": "E mais duas que você com certeza já se fez.",
+    "title": "E mais três que com certeza você já se fez.",
     "items": [
       {
         "q": "Já foi comprar a mesma coisa de novo?",
@@ -55,12 +58,16 @@
       {
         "q": "Já avisou todo mundo o que tem que fazer?",
         "a": "Entre conversas e planilhas, sempre se perde alguma coisa. Aqui cada atividade tem seu responsável e todos a veem."
+      },
+      {
+        "q": "Seu cliente ainda duvida que as coisas custam o que custam?",
+        "a": "Aqui cada gasto e cada parcela ficam à vista, com o comprovante."
       }
     ]
   },
   "roles": {
     "label": "Controle compartilhado",
-    "title": "Quatro papéis, uma só obra.",
+    "title": "Sete papéis, uma só obra.",
     "subtitle": "O papel é atribuído obra por obra. Cada um vê o seu, sem precisar pedir nada.",
     "sees": "Vê e faz",
     "never": "Não vê",
@@ -76,16 +83,34 @@
         "never": "O dinheiro: nem orçamento, nem recebimentos, nem gastos."
       },
       {
+        "name": "Arquiteto",
+        "does": "Planeja o cronograma e as atividades, e carrega plantas e documentação. Faz o que faz o supervisor.",
+        "never": "O dinheiro nem a gestão da obra."
+      },
+      {
+        "name": "Engenheiro",
+        "does": "Planeja atividades e carrega documentação técnica. Faz o que faz o supervisor.",
+        "never": "O dinheiro nem a gestão da obra."
+      },
+      {
+        "name": "Designer",
+        "does": "Planeja atividades e carrega plantas e documentos de design. Faz o que faz o supervisor.",
+        "never": "O dinheiro nem a gestão da obra."
+      },
+      {
         "name": "Contador",
         "does": "Cuida de recebimentos e gastos com seus comprovantes.",
-        "never": "Atividades, pessoal e documentação da obra."
+        "never": "Atividades, pessoal e documentação da obra.",
+        "hook": "Seu contador esqueceu ou perdeu a nota?"
       },
       {
         "name": "Cliente",
         "does": "Acompanha o avanço, vê o cronograma de pagamentos, recebe os marcos publicados e acessa plantas e documentos.",
         "never": "Os gastos de quem executa a obra."
       }
-    ]
+    ],
+    "prev": "Anterior",
+    "next": "Próximo"
   },
   "features": {
     "label": "O que inclui",
@@ -101,7 +126,8 @@
       },
       {
         "title": "Recebimentos e gastos",
-        "body": "Vão separados, com comprovante, moeda e a cotação do dia em que aconteceram. Os saldos se calculam sozinhos."
+        "body": "Vão separados, com comprovante, moeda e a cotação do dia em que aconteceram. Os saldos se calculam sozinhos.",
+        "hook": "Guardou a nota, mas a perdeu?"
       },
       {
         "title": "Pessoal e materiais",
@@ -201,6 +227,65 @@
   "footer": {
     "tagline": "Gestão de obra com controle compartilhado.",
     "credit": "Criado por <studio>Ido Arquitectura</studio> e Ioce Velasco.",
-    "legal": "Termos e Privacidade"
+    "legal": "Termos e Privacidade",
+    "contact": "Contato"
+  },
+  "team": {
+    "label": "Quem somos",
+    "title": "As pessoas por trás da Luma.",
+    "subtitle": "A Luma nasceu de montar orçamentos no Excel e cobrar pelo WhatsApp. Agora resolvemos isso nós mesmos, sem complicação.",
+    "photoPlaceholder": "Foto de {{name}}, pendente",
+    "linkedin": "LinkedIn de {{name}}",
+    "members": {
+      "m1": {
+        "role": "Arquiteto · Cofundador",
+        "bio": "Arquiteto formado pela UCV e diretor da IDO Arquitectura desde 2020. Lidera a gestão de projetos e o olhar de obra que aparece na Luma."
+      },
+      "m2": {
+        "role": "Software Engineer · Cofundador de Tecnologia",
+        "bio": "Dez anos construindo produtos digitais que automatizam processos e tornam a experiência do usuário mais simples. Cada solução é pensada a partir de quem a usa: se não se entende de primeira, ainda não está pronta."
+      }
+    }
+  },
+  "testimonials": {
+    "label": "O que dizem",
+    "title": "O que nos diz quem já está na obra."
+  },
+  "adaptable": {
+    "label": "Se adapta ao seu negócio",
+    "title": "A Luma se ajusta à sua forma de trabalhar, e não o contrário.",
+    "subtitle": "Sua empresa não precisa mudar para entrar. Você começa com o que precisa e acrescenta o resto quando quiser.",
+    "cta": "Testar grátis",
+    "items": [
+      {
+        "title": "Seus papéis, suas obras",
+        "body": "Gerente, supervisor, arquiteto, engenheiro, contador ou cliente: cada um vê o que lhe cabe, obra por obra."
+      },
+      {
+        "title": "Seu jeito de cobrar",
+        "body": "Bolívares à taxa BCV ou dólares, com suas parcelas e seus comprovantes. Sem trocar de sistema a cada cliente."
+      },
+      {
+        "title": "Seu tamanho",
+        "body": "Uma construtora pequena com duas obras ou uma empresa com dez. Você começa e vai somando sem complicação."
+      }
+    ]
+  },
+  "scene": {
+    "label": "Da obra",
+    "title": "Você sabe como está cada obra sem ligar para ninguém.",
+    "body": "Cronograma, cobranças e gastos num só lugar, para o engenheiro, o arquiteto e o cliente verem a mesma coisa sem ficar perguntando.",
+    "alt": "Arquiteto revisando o cronograma de uma obra no notebook, com um tablet e um capacete de segurança ao lado"
+  },
+  "whatsapp": {
+    "label": "Fale com a gente pelo WhatsApp",
+    "message": "Olá, quero saber mais sobre a Luma."
+  },
+  "contact": {
+    "label": "Contato",
+    "title": "Vamos conversar sobre a sua obra.",
+    "subtitle": "Escreva para este e-mail e respondemos. Se preferir, copie e cole no seu aplicativo de e-mail.",
+    "copy": "Copiar e-mail",
+    "copied": "Copiado"
   }
 }

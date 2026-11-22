@@ -14,7 +14,7 @@ export function Problem() {
 
         <ol className="mt-12 grid gap-8 sm:grid-cols-2">
           {items.map((item, index) => (
-            <li key={item.q} className="border-t border-border-strong pt-6">
+            <li key={item.q} className="border-t border-border-strong pt-6 sm:last:col-span-2">
               <span className="feature-num">{String(index + 1).padStart(2, '0')}</span>
               <h3 className="mt-3 text-lg font-medium text-foreground">{item.q}</h3>
               <p className="mt-2 text-base leading-relaxed text-muted-foreground">{item.a}</p>

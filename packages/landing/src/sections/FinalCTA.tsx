@@ -6,7 +6,7 @@ export function FinalCTA() {
   const { t } = useTranslation();
 
   return (
-    <section className="bg-card px-6 py-section-sm sm:py-section">
+    <section className="px-6 py-section-sm sm:py-section">
       <div className="mx-auto flex max-w-6xl flex-col items-start gap-6">
         <h2 className="max-w-2xl text-4xl leading-[1.1] tracking-tight text-foreground sm:text-5xl">
           {t('finalCta.title')}
