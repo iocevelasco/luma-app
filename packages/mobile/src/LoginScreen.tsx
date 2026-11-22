@@ -81,9 +81,8 @@ export function LoginScreen({
           <Text style={styles.label}>Contraseña</Text>
           <TextInput
             autoComplete="password"
-            onChangeText={setPassword}
-            onSubmitEditing={() => void submit()}
-            placeholder="••••••••"
+          onChangeText={setPassword}
+          placeholder="••••••••"
             placeholderTextColor={colors.muted}
             secureTextEntry
             style={styles.input}

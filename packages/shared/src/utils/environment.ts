@@ -103,20 +103,30 @@ export function getEnvironmentInfo(hostname?: string | null): EnvironmentInfo {
  * En producción devuelve cadena vacía: la SPA y la API comparten origen, así que
  * las URLs relativas son correctas y evitan un preflight de CORS por request.
  *
- * En desarrollo devuelve una URL **absoluta**, y eso tiene una consecuencia que
- * conviene tener presente: el navegador va derecho a ese puerto y **el proxy
- * `/api` de `vite.config.ts` no participa**. Las dos cosas tienen que apuntar
- * al mismo lugar; si se separan, la SPA habla con un puerto donde no hay nadie
- * —o peor, con otra app que responde y confunde el diagnóstico.
+ * En `localhost` devuelve una URL absoluta al puerto de la API: el navegador de
+ * esta máquina va derecho y el proxy `/api` de Vite no participa. En una IP de
+ * la red (el teléfono) `localhost` sería el propio aparato, así que devuelve
+ * cadena vacía y las llamadas salen al mismo origen, donde Vite las reenvía.
  *
  * 6170 y no 8080 ni 8081: ver el comentario de `SERVER_CONFIG.PORT` en la API.
  */
-export function getApiBaseUrl(devUrl?: string, productionUrl: string = ''): string {
-  if (isProduction()) {
+export function getApiBaseUrl(
+  devUrl?: string,
+  productionUrl: string = '',
+  hostname?: string | null,
+): string {
+  const host = hostname === undefined ? getHostname() : hostname;
+  if (isProduction(host)) {
     return productionUrl;
   }
 
-  return devUrl || 'http://localhost:6170';
+  if (devUrl) return devUrl;
+
+  if (host && isLocalhost(host) && host !== 'localhost' && host !== '127.0.0.1') {
+    return '';
+  }
+
+  return 'http://localhost:6170';
 }
 
 /** reCAPTCHA se desactiva en localhost: en desarrollo no hay site key válida. */
