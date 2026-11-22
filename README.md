@@ -11,6 +11,7 @@ suscripción. Sesión de usuario, sistema de diseño, i18n y despliegue resuelto
 - `packages/web` — Vite 6 + React 19 + Tailwind v4 + shadcn/ui
 - `packages/landing` — landing estática (Vite + React + i18next), servida por nginx
 - `packages/shared` — tipos y schemas Zod que comparten API y web
+- `packages/mobile` — app Expo: login nativo y la web dentro de un WebView
 
 ## Arrancar
 
@@ -21,9 +22,13 @@ cp .env packages/api/.env
 pnpm --filter @luma/api seed:admin   # crea el primer admin desde ADMIN_EMAIL/PASSWORD
 pnpm dev                             # api (8080) + web (6173)
 pnpm dev:landing                     # landing (5174)
+cp packages/mobile/.env.example packages/mobile/.env   # misma MOBILE_CLIENT_KEY que la API
+pnpm --filter @luma/mobile start     # login nativo; abre la web que ya levantó `pnpm dev`
 ```
 
 Entrá en `http://localhost:6173/login` con las credenciales que sembraste.
+
+La app no abre en Expo Go: la cookie de sesión la guarda un módulo nativo. La primera vez compilá con `pnpm --filter @luma/mobile exec expo run:android` o `expo run:ios`. En el simulador iOS el origen es `http://localhost:6173`; en el emulador Android, `http://10.0.2.2:6173`.
 
 ## Comandos
 
