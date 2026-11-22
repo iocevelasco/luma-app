@@ -22,6 +22,7 @@ import {
   Trash2,
   Truck,
   X,
+  Sheet,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -94,6 +95,7 @@ import { useProject } from '@/hooks/projects/use-project-queries';
 import { useProviders } from '@/hooks/providers/use-provider-queries';
 import { useProjectCapabilities } from '@/hooks/projects/use-project-capabilities';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { useSaveAsSheet } from '@/hooks/google-drive/use-save-as-sheet';
 import {
   NEXT_MATERIAL_STATUS,
   buildPurchaseCsv,
@@ -105,6 +107,7 @@ import {
   materialTab,
   organizeMaterials,
   providerMatchFor,
+  purchaseTable,
   selectionState,
   supplierName,
   type PurchaseListKind,
@@ -169,6 +172,8 @@ interface ExportActionsProps {
   canShare: boolean;
   onDownloadPdf: () => void;
   onDownloadCsv: () => void;
+  /** Sin esto (sin Google Drive configurado) no se ofrece. */
+  onSaveSheet?: () => void;
   onCopy: () => void;
   onShare: () => void;
   /** Hay señal de que se va a exportar: que se vayan bajando las fotos. */
@@ -185,6 +190,7 @@ function ExportDrawer({
   canShare,
   onDownloadPdf,
   onDownloadCsv,
+  onSaveSheet,
   onCopy,
   onShare,
   onWarm,
@@ -241,6 +247,17 @@ function ExportDrawer({
             <FileSpreadsheet className="size-4" />
             <ExportFormat label={t('material.export.csv')} hint={t('material.export.csvHint')} />
           </Button>
+          {onSaveSheet && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto min-h-11 justify-start py-2 text-left"
+              onClick={run(onSaveSheet)}
+            >
+              <Sheet className="size-4" />
+              <ExportFormat label={t('drive.sheet.label')} hint={t('drive.sheet.hint')} />
+            </Button>
+          )}
           <Button type="button" variant="outline" className="min-h-11 justify-start" onClick={run(onCopy)}>
             <Copy className="size-4" />
             {t('material.list.copyList')}
@@ -268,6 +285,7 @@ function ExportButtons({
   canShare,
   onDownloadPdf,
   onDownloadCsv,
+  onSaveSheet,
   onCopy,
   onShare,
   onWarm,
@@ -298,6 +316,12 @@ function ExportButtons({
             <FileSpreadsheet className="size-4" />
             <ExportFormat label={t('material.export.csv')} hint={t('material.export.csvHint')} />
           </DropdownMenuItem>
+          {onSaveSheet && (
+            <DropdownMenuItem className="max-sm:min-h-11" onSelect={onSaveSheet}>
+              <Sheet className="size-4" />
+              <ExportFormat label={t('drive.sheet.label')} hint={t('drive.sheet.hint')} />
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <Button
@@ -960,6 +984,7 @@ function SelectionBar({
   onInvoice,
   onDownloadPdf,
   onDownloadCsv,
+  onSaveSheet,
   onCopy,
   onShare,
   onClear,
@@ -972,6 +997,7 @@ function SelectionBar({
   onInvoice?: () => void;
   onDownloadPdf: () => void;
   onDownloadCsv: () => void;
+  onSaveSheet?: () => void;
   onCopy: () => void;
   onShare: () => void;
   onClear: () => void;
@@ -1065,6 +1091,12 @@ function SelectionBar({
             <FileSpreadsheet className="size-4" />
             <ExportFormat label={t('material.export.csv')} hint={t('material.export.csvHint')} />
           </DropdownMenuItem>
+          {onSaveSheet && (
+            <DropdownMenuItem className="max-sm:min-h-11" onSelect={onSaveSheet}>
+              <Sheet className="size-4" />
+              <ExportFormat label={t('drive.sheet.label')} hint={t('drive.sheet.hint')} />
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem className="max-sm:min-h-11" onSelect={onCopy}>
             <Copy className="size-4" />
             {t('material.list.copyList')}
@@ -1130,6 +1162,7 @@ export function ProjectMaterialsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { data: materialsData, isLoading, isError } = useMaterials(projectId);
   const { data: projectData } = useProject(projectId);
+  const sheets = useSaveAsSheet();
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const { data: activitiesData } = useAllActivities(projectId);
   const deleteMaterial = useDeleteMaterial(projectId!);
@@ -1364,6 +1397,20 @@ export function ProjectMaterialsPage() {
    * El CSV de la misma lista, para Excel o una planilla. Sin fotos ni
    * costos, igual que el texto: son los mismos datos que el PDF.
    */
+  function purchaseLabels(kind: PurchaseListKind) {
+    return {
+      header: {
+        material: t('material.pdf.columnMaterial'),
+        quantity: t('material.pdf.columnQuantity'),
+        unit: t('material.export.columnUnit'),
+        supplier: t('material.pdf.columnSupplier'),
+        note: t('material.export.columnNote'),
+      },
+      unit: (unit: PurchaseRow['unit']) => t(`material.unit.${unit}`),
+      tag: t(EXPORT_COPY[kind].tag),
+    };
+  }
+
   async function handleDownloadCsv(rows: PurchaseRow[], kind: PurchaseListKind) {
     const { purchaseFileName } = await import('@/lib/materials-pdf');
     const now = new Date();
@@ -1372,15 +1419,7 @@ export function ProjectMaterialsPage() {
       maximumFractionDigits: 4,
     });
     const csv = buildPurchaseCsv(rows, {
-      header: {
-        material: t('material.pdf.columnMaterial'),
-        quantity: t('material.pdf.columnQuantity'),
-        unit: t('material.export.columnUnit'),
-        supplier: t('material.pdf.columnSupplier'),
-        note: t('material.export.columnNote'),
-      },
-      unit: (unit) => t(`material.unit.${unit}`),
-      tag: t(EXPORT_COPY[kind].tag),
+      ...purchaseLabels(kind),
       number: (value) => numberFormat.format(value),
     });
     downloadBlob(
@@ -1389,6 +1428,19 @@ export function ProjectMaterialsPage() {
     );
     toast.success(t('material.export.csvDownloaded'));
   }
+
+  /** La misma tabla del CSV, como Google Sheet en el Drive de la persona. */
+  function handleSaveSheet(rows: PurchaseRow[], kind: PurchaseListKind) {
+    sheets.save(async () => {
+      const { purchaseFileName } = await import('@/lib/materials-pdf');
+      return {
+        name: purchaseFileName(projectData?.project.name ?? '', new Date(), EXPORT_COPY[kind].filePrefix, 'csv').replace(/\.csv$/, ''),
+        table: purchaseTable(rows, purchaseLabels(kind)),
+      };
+    });
+  }
+  const saveSheet = (rows: PurchaseRow[], kind: PurchaseListKind) =>
+    sheets.available && rows.length > 0 ? () => handleSaveSheet(rows, kind) : undefined;
 
   /**
    * Compartir el texto de la lista y, si el dispositivo lo permite, las fotos
@@ -1457,6 +1509,7 @@ export function ProjectMaterialsPage() {
         onInvoice={canInvoice ? () => setInvoicing(selectedMaterials) : undefined}
         onDownloadPdf={() => void handleDownloadPdf(selectedRows, selectedKind)}
         onDownloadCsv={() => void handleDownloadCsv(selectedRows, selectedKind)}
+        onSaveSheet={saveSheet(selectedRows, selectedKind)}
         onCopy={() => void handleCopy(selectedRows, selectedKind)}
         onShare={() => void handleShare(selectedRows, selectedKind)}
         onClear={clearSelection}
@@ -1532,6 +1585,7 @@ export function ProjectMaterialsPage() {
             canShare={canShare}
             onDownloadPdf={() => void handleDownloadPdf(activeRows, activeTab)}
             onDownloadCsv={() => void handleDownloadCsv(activeRows, activeTab)}
+            onSaveSheet={saveSheet(activeRows, activeTab)}
             onCopy={() => void handleCopy(activeRows, activeTab)}
             onShare={() => void handleShare(activeRows, activeTab)}
             onWarm={() => warmPhotos(activeRows)}
@@ -1554,6 +1608,7 @@ export function ProjectMaterialsPage() {
                 canShare={canShare}
                 onDownloadPdf={() => void handleDownloadPdf(purchaseRows, 'toBuy')}
                 onDownloadCsv={() => void handleDownloadCsv(purchaseRows, 'toBuy')}
+                onSaveSheet={saveSheet(purchaseRows, 'toBuy')}
                 onCopy={() => void handleCopy(purchaseRows, 'toBuy')}
                 onShare={() => void handleShare(purchaseRows, 'toBuy')}
                 onWarm={() => warmPhotos(purchaseRows)}
@@ -1605,6 +1660,7 @@ export function ProjectMaterialsPage() {
                     canShare={canShare}
                     onDownloadPdf={() => void handleDownloadPdf(boughtRows, 'bought')}
                     onDownloadCsv={() => void handleDownloadCsv(boughtRows, 'bought')}
+                    onSaveSheet={saveSheet(boughtRows, 'bought')}
                     onCopy={() => void handleCopy(boughtRows, 'bought')}
                     onShare={() => void handleShare(boughtRows, 'bought')}
                     onWarm={() => warmPhotos(boughtRows)}

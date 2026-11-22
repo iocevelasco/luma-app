@@ -1317,7 +1317,8 @@
         "denied": "Não foi dada permissão para usar o Google Drive.",
         "download": "Não conseguimos trazer o arquivo do Google Drive.",
         "upload": "Não conseguimos salvar o arquivo no seu Google Drive.",
-        "exportTooLarge": "O documento do Google é grande demais para convertê-lo em PDF."
+        "exportTooLarge": "O documento do Google é grande demais para convertê-lo em PDF.",
+        "sheet": "Não conseguimos criar a planilha no seu Google Drive."
       }
     }
   },
@@ -2910,5 +2911,14 @@
     "stepOf": "Passo {{current}} de {{total}}",
     "projectIntro": "Um olhar rápido pelas seções desta obra.",
     "done": "Entendi"
+  },
+  "drive": {
+    "sheet": {
+      "label": "Google Sheets",
+      "hint": "Uma planilha nova no seu Google Drive.",
+      "folderTitle": "Escolha a pasta do Drive onde salvar a planilha",
+      "saved": "Planilha salva no seu Google Drive.",
+      "open": "Abrir"
+    }
   }
 }

@@ -197,6 +197,8 @@ app.use(
               'https://accounts.google.com/gsi/',
               'https://www.googleapis.com',
               'https://content.googleapis.com',
+              // Escribir las celdas de una lista guardada como Google Sheet.
+              'https://sheets.googleapis.com',
               // Autocompletar la dirección de la obra: el SDK de Maps habla con
               // Places (New) y con su propio host.
               'https://places.googleapis.com',

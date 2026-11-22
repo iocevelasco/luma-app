@@ -1,3 +1,4 @@
+import type { SheetCell, SheetTable } from './google-sheets';
 import { supplierKey, type MaterialItem, type MaterialStatus } from '@luma/shared';
 
 export { supplierKey };
@@ -278,41 +279,47 @@ export function csvCell(value: string, separator: string): string {
 }
 
 /**
- * La misma lista del PDF y de copiar, para abrir en Excel o en una planilla.
+ * Una tabla como CSV para abrir en Excel o en una planilla.
  *
  * Separador `;` y decimales con coma: es lo que Excel espera en español y en
  * portugués (con `,` la lista entera cae en una sola columna). Sheets y
  * Numbers detectan el `;` solos. Empieza con BOM porque, sin él, Excel lee el
  * archivo como Windows-1252 y los acentos y la ñ salen rotos.
  */
+export function tableToCsv(table: SheetTable, number: (value: number) => string, separator = ';'): string {
+  const line = (cells: SheetCell[]) =>
+    cells.map((cell) => csvCell(typeof cell === 'number' ? number(cell) : cell, separator)).join(separator);
+  return '\uFEFF' + [line(table.header), ...table.rows.map(line)].join('\r\n') + '\r\n';
+}
+
+export interface PurchaseTableLabels {
+  header: { material: string; quantity: string; unit: string; supplier: string; note: string };
+  unit: (unit: PurchaseRow['unit']) => string;
+  tag: string;
+}
+
+/** La misma lista del PDF y de copiar, como tabla: la usan el CSV y la Google Sheet. */
+export function purchaseTable(rows: PurchaseRow[], labels: PurchaseTableLabels): SheetTable {
+  const { header } = labels;
+  return {
+    header: [header.material, header.quantity, header.unit, header.supplier, header.note],
+    rows: rows.map((row) => [
+      row.name,
+      row.quantity,
+      labels.unit(row.unit),
+      row.supplier ?? '',
+      row.tagged ? labels.tag : '',
+    ]),
+  };
+}
+
 export function buildPurchaseCsv(
   rows: PurchaseRow[],
-  labels: {
-    header: { material: string; quantity: string; unit: string; supplier: string; note: string };
-    unit: (unit: PurchaseRow['unit']) => string;
-    tag: string;
+  labels: PurchaseTableLabels & {
     /** Número con el separador decimal del idioma. */
     number: (value: number) => string;
   },
   separator = ';',
 ): string {
-  const line = (cells: string[]) => cells.map((cell) => csvCell(cell, separator)).join(separator);
-  const { header } = labels;
-
-  return (
-    '\uFEFF' +
-    [
-      line([header.material, header.quantity, header.unit, header.supplier, header.note]),
-      ...rows.map((row) =>
-        line([
-          row.name,
-          labels.number(row.quantity),
-          labels.unit(row.unit),
-          row.supplier ?? '',
-          row.tagged ? labels.tag : '',
-        ]),
-      ),
-    ].join('\r\n') +
-    '\r\n'
-  );
+  return tableToCsv(purchaseTable(rows, labels), labels.number, separator);
 }

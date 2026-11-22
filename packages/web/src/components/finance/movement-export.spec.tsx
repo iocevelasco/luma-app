@@ -5,7 +5,7 @@ import { MovementExport } from './movement-export';
 
 const labels = {
   download: 'Descargar', generating: 'Generando PDF…', pdf: 'PDF', csv: 'CSV (Excel)',
-  pdfButton: 'Descargar PDF', csvButton: 'Descargar CSV',
+  pdfButton: 'Descargar PDF', csvButton: 'Descargar CSV', sheet: 'Google Sheets',
 };
 
 function setup(overrides: Partial<Parameters<typeof MovementExport>[0]> = {}) {
@@ -40,5 +40,20 @@ describe('MovementExport', () => {
     setup({ compact: true, disabled: true });
     expect((screen.getByRole('button', { name: 'Descargar PDF' }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole('button', { name: 'Descargar CSV' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('ofrece Google Sheets sólo si hay Drive', async () => {
+    const onSheet = vi.fn();
+    setup({ onSheet });
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Google Sheets' }));
+    expect(onSheet).toHaveBeenCalledOnce();
+  });
+
+  it('sin Drive no aparece Google Sheets', async () => {
+    setup();
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar' }));
+    await screen.findByRole('menuitem', { name: 'CSV (Excel)' });
+    expect(screen.queryByRole('menuitem', { name: 'Google Sheets' })).toBeNull();
   });
 });
