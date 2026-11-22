@@ -12,6 +12,8 @@ export function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex flex-col gap-1">
           <Logo />
+          {/* El nombre de la app tal cual figura en Google Cloud: Google lo busca en esta página para verificar la marca. */}
+          <p className="text-sm text-foreground">{t('footer.appName')}</p>
           <p className="text-sm text-muted-foreground">{t('footer.tagline')}</p>
           <p className="text-sm text-muted-foreground">
             <Trans
