@@ -129,6 +129,18 @@ importers:
 
   packages/landing:
     dependencies:
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      embla-carousel:
+        specifier: 8.5.1
+        version: 8.5.1
+      embla-carousel-autoplay:
+        specifier: 8.5.1
+        version: 8.5.1(embla-carousel@8.5.1)
+      embla-carousel-react:
+        specifier: 8.5.1
+        version: 8.5.1(react@19.2.0)
       i18next:
         specifier: ^25.6.3
         version: 25.6.3(typescript@5.6.3)
@@ -147,6 +159,9 @@ importers:
       react-i18next:
         specifier: ^16.3.5
         version: 16.3.5(i18next@25.6.3)(react-dom@19.2.0)(react@19.2.0)(typescript@5.6.3)
+      tailwind-merge:
+        specifier: ^3.7.0
+        version: 3.7.0
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.1.9
@@ -6192,6 +6207,14 @@ packages:
   /electron-to-chromium@1.5.427:
     resolution: {integrity: sha512-n14zb3FdsChZ2BNobqNHAJMcP3ifFv4paox2LvCrfVAQcqGiSURgbJl+PfMpHVCNFkStnNc+RRVtPBTVW5PDgw==}
     dev: true
+
+  /embla-carousel-autoplay@8.5.1(embla-carousel@8.5.1):
+    resolution: {integrity: sha512-FnZklFpePfp8wbj177UwVaGFehgs+ASVcJvYLWTtHuYKURynCc3IdDn2qrn0E5Qpa3g9yeGwCS4p8QkrZmO8xg==}
+    peerDependencies:
+      embla-carousel: 8.5.1
+    dependencies:
+      embla-carousel: 8.5.1
+    dev: false
 
   /embla-carousel-react@8.5.1(react@19.2.0):
     resolution: {integrity: sha512-z9Y0K84BJvhChXgqn2CFYbfEi6AwEr+FFVVKm/MqbTQ2zIzO1VQri6w67LcfpVF0AjbhwVMywDZqY4alYkjW5w==}

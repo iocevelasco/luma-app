@@ -59,6 +59,12 @@
   --color-foreground: #f2f2f2;
   --color-muted-foreground: #bdbdbd;
 
+  /* ─────────────── Velo sobre fotos ───────────────
+     Degradé de las tarjetas del equipo. Va igual en las dos bandas: la foto
+     es la que cambia de fondo, no el velo. */
+  --color-scrim: #101010;
+  --color-on-scrim: #f2f2f2;
+
   /* ─────────────── Filetes ─────────────── */
   --color-border: #3d3a39;
   --color-border-strong: #57534e;
@@ -110,6 +116,31 @@
     inset 0 1px 0 rgb(255 255 255 / 0.07), 0 1px 2px rgb(0 0 0 / 0.5),
     0 8px 20px -8px rgb(0 0 0 / 0.7);
   --shadow-cta-pressed: inset 0 2px 4px rgb(0 0 0 / 0.25), 0 1px 1px rgb(0 0 0 / 0.3);
+}
+
+/*
+  Banda clara de la landing. La página alterna bandas oscuras (el lienzo de
+  `:root`) y claras (esta clase): la clase redefine los mismos tokens, así que
+  Card, Badge o los bordes de una sección clara se pintan solos. El verde de
+  marca como tinta baja a esmeralda oscuro: sobre blanco el #00d992 no se lee
+  (1.7:1). Como relleno de CTA sigue igual, con texto #101010.
+*/
+.surface-light {
+  color-scheme: light;
+
+  --color-background: #f4f4f5;
+  --color-foreground: #18181b;
+  --color-card: #ffffff;
+  --color-card-foreground: #18181b;
+  --color-secondary: #ececef;
+  --color-secondary-foreground: #18181b;
+  --color-muted-foreground: #52525b;
+  --color-border: #e4e4e7;
+  --color-border-strong: #a1a1aa;
+  --color-brand: #047857;
+  --color-primary-soft: #047857;
+
+  --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.05), 0 8px 24px -14px rgb(0 0 0 / 0.14);
 }
 
 @layer base {
@@ -198,7 +229,7 @@
   .feature-num {
     font-family: var(--font-mono);
     font-size: 0.75rem;
-    color: var(--color-primary);
+    color: var(--color-brand);
     letter-spacing: 0.05em;
   }
 

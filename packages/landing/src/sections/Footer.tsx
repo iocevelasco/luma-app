@@ -8,7 +8,7 @@ export function Footer() {
   const { t } = useTranslation();
 
   return (
-    <footer className="border-t border-border bg-card px-6 py-10">
+    <footer className="border-t border-border bg-background px-6 py-10">
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex flex-col gap-1">
           <Logo />
@@ -31,6 +31,9 @@ export function Footer() {
         </div>
 
         <div className="flex items-center gap-6">
+          <a href="#contacto" className="nav-label text-sm text-muted-foreground hover:text-foreground">
+            {t('footer.contact')}
+          </a>
           <a href={LEGAL_URL} className="nav-label text-sm text-muted-foreground hover:text-foreground">
             {t('footer.legal')}
           </a>

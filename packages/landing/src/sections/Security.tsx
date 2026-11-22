@@ -12,7 +12,7 @@ export function Security() {
   }[];
 
   return (
-    <section id="security" className="scroll-mt-16 bg-card px-6 py-section-sm sm:py-section">
+    <section id="security" className="scroll-mt-16 px-6 py-section-sm sm:py-section">
       <div className="mx-auto max-w-6xl">
         <p className="section-label">{t('security.label')}</p>
         <h2 className="mt-6 max-w-2xl text-4xl leading-[1.1] tracking-tight text-foreground sm:text-5xl">
@@ -28,9 +28,9 @@ export function Security() {
             return (
               <article
                 key={item.title}
-                className="rounded-3xl border border-border bg-background p-8"
+                className="rounded-none border border-border bg-background p-8"
               >
-                <Icon aria-hidden="true" className="h-6 w-6 text-primary" />
+                <Icon aria-hidden="true" className="h-6 w-6 text-brand" />
                 <h3 className="mt-4 text-lg font-medium text-foreground">{item.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
               </article>
