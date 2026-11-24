@@ -42,6 +42,21 @@ function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : 'Error inesperado';
 }
 
+/**
+ * La app nativa no puede correr reCAPTCHA v3 ni leer la cookie httpOnly.
+ * Se identifica con `X-Luma-Client-Key`. Sin la variable, o si no coincide,
+ * el login sigue siendo el de la web.
+ */
+function isMobileClient(req: Request): boolean {
+  const expected = process.env.MOBILE_CLIENT_KEY;
+  const provided = req.get('x-luma-client-key');
+  if (!expected || !provided) return false;
+  const a = Buffer.from(expected);
+  const b = Buffer.from(provided);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 export async function login(req: Request, res: Response) {
   try {
     const parsed = loginCredentialsSchema.safeParse(req.body);
@@ -49,9 +64,12 @@ export async function login(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: 'Credenciales inválidas' });
     }
 
-    const recaptcha = await verifyRecaptchaFromRequest(req, 'login');
-    if (!recaptcha.success) {
-      return res.status(400).json({ success: false, error: 'Verificación de seguridad fallida' });
+    const mobile = isMobileClient(req);
+    if (!mobile) {
+      const recaptcha = await verifyRecaptchaFromRequest(req, 'login');
+      if (!recaptcha.success) {
+        return res.status(400).json({ success: false, error: 'Verificación de seguridad fallida' });
+      }
     }
 
     const { email, password } = parsed.data;
@@ -69,7 +87,10 @@ export async function login(req: Request, res: Response) {
       return res.status(403).json({ success: false, error: 'La cuenta está deshabilitada' });
     }
 
-    return res.json({ success: true, data: issueSession(res, user) });
+    return res.json({
+      success: true,
+      data: issueSession(res, user, mobile ? { exposeRefreshToken: true } : undefined),
+    });
   } catch (error) {
     console.error('❌ [AUTH] login:', error);
     return res.status(500).json({ success: false, error: errMsg(error) });

@@ -33,6 +33,7 @@ import { projectRouter } from './routes/project.js';
 import { subscriptionRouter } from './routes/subscription.js';
 import { adminRouter } from './routes/admin.js';
 import { publicRouter } from './routes/public.js';
+import { legalRouter } from './routes/legal.js';
 import { chatRouter } from './routes/chat.js';
 import { stripeWebhook } from './controllers/stripe.controller.js';
 
@@ -269,6 +270,7 @@ app.use('/api/feedback', feedbackRouter);
 app.use('/api/subscription', subscriptionRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/public', publicRouter);
+app.use('/api/legal', legalRouter);
 app.use('/api/calendar', calendarRouter);
 app.use('/api/config', configRouter);
 app.use('/api/chat', chatRouter);
@@ -283,6 +285,17 @@ if (isProduction) {
       target: SERVER_CONFIG.LANDING_URL,
       changeOrigin: true,
       pathRewrite: { '^': '/home' },
+    }),
+  );
+
+  // `/legal/terminos`, `/legal/privacidad` y `/legal/baja-servicio` son de la
+  // misma landing. Express saca el prefijo y el rewrite lo repone.
+  app.use(
+    '/legal',
+    createProxyMiddleware({
+      target: SERVER_CONFIG.LANDING_URL,
+      changeOrigin: true,
+      pathRewrite: { '^': '/legal' },
     }),
   );
 

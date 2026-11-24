@@ -10,7 +10,7 @@ import { authFile, canLogIn, e2eUsers, type E2EUser } from './helpers/users';
 import { E2E_LOCALE } from './helpers/locale';
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:6173';
-const API_URL = process.env.E2E_API_URL ?? 'http://localhost:8081';
+const API_URL = process.env.E2E_API_URL ?? 'http://localhost:6170';
 
 /**
  * Si la API responde. CI corre la tanda sin backend: ahí el login real no puede

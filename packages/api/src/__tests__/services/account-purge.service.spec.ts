@@ -45,6 +45,7 @@ const mock = vi.hoisted(() => {
     'Project',
     'ProjectClient',
     'ProjectMembership',
+    'ServiceCancellation',
     'Subscription',
     'SubscriptionPayment',
     'User',
@@ -70,6 +71,9 @@ vi.mock('../../models/Project.js', () => ({ Project: mock.models.Project }));
 vi.mock('../../models/ProjectClient.js', () => ({ ProjectClient: mock.models.ProjectClient }));
 vi.mock('../../models/ProjectMembership.js', () => ({
   ProjectMembership: mock.models.ProjectMembership,
+}));
+vi.mock('../../models/ServiceCancellation.js', () => ({
+  ServiceCancellation: mock.models.ServiceCancellation,
 }));
 vi.mock('../../models/Subscription.js', () => ({ Subscription: mock.models.Subscription }));
 vi.mock('../../models/SubscriptionPayment.js', () => ({
@@ -218,6 +222,7 @@ describe('purgeAccount', () => {
     for (const model of ['Notification', 'FeedbackResponse', 'ProjectMembership', 'ProjectClient'] as const) {
       expect(models[model].deleteMany).toHaveBeenCalledWith({ user: 'u1' });
     }
+    expect(models.ServiceCancellation.deleteMany).toHaveBeenCalledWith({ email: 'ana@estudio.com' });
   });
 
   it('pisa su nombre como responsable de tareas, por referencia y por nombre dentro de sus obras', async () => {

@@ -52,6 +52,12 @@ RUN printf 'server {\n\
     try_files $uri @spa;\n\
   }\n\
 \n\
+  # Términos, privacidad y baja. El HTML y los assets siguen en /home.\n\
+  location /legal {\n\
+    root /usr/share/nginx/html;\n\
+    try_files $uri @spa;\n\
+  }\n\
+\n\
   location @spa {\n\
     root /usr/share/nginx/html;\n\
     try_files /index.html =404;\n\

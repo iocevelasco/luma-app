@@ -56,8 +56,18 @@ export function clearRefreshTokenCookie(res: Response): void {
  * refresh en su cookie y devuelve lo que va en `data`. Un solo lugar para los
  * cuatro que abren sesión (login, refresh, activar, Google).
  */
-export function issueSession(res: Response, user: IUser): { accessToken: string; user: AuthUser } {
+export function issueSession(
+  res: Response,
+  user: IUser,
+  options?: { exposeRefreshToken?: boolean },
+): { accessToken: string; user: AuthUser; refreshToken?: string } {
   const tokens = generateTokens(String(user._id), user.email, user.role, user.tokenVersion ?? 0);
   setRefreshTokenCookie(res, tokens.refreshToken);
-  return { accessToken: tokens.accessToken, user: toAuthUser(user) };
+  return {
+    accessToken: tokens.accessToken,
+    user: toAuthUser(user),
+    // Sólo la app nativa lo pide: lo planta como cookie del WebView. La web
+    // sigue recibiéndolo únicamente por Set-Cookie.
+    ...(options?.exposeRefreshToken ? { refreshToken: tokens.refreshToken } : {}),
+  };
 }
