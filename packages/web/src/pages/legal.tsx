@@ -12,8 +12,8 @@ const LINKS: { page: LandingLegalPage; key: 'terms' | 'privacy' | 'cancellation'
 ];
 
 /**
- * El texto largo vive en la landing (`/home/terminos`, `/home/privacidad` y
- * `/home/baja-servicio`). Esta página sólo lleva hasta ahí, para que el enlace
+ * El texto largo vive en la landing (`/legal/terminos`, `/legal/privacidad` y
+ * `/legal/baja-servicio`). Esta página sólo lleva hasta ahí, para que el enlace
  * viejo `/legal` y el aviso del registro sigan teniendo a dónde ir.
  */
 export function LegalPage() {

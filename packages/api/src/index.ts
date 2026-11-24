@@ -288,6 +288,17 @@ if (isProduction) {
     }),
   );
 
+  // `/legal/terminos`, `/legal/privacidad` y `/legal/baja-servicio` son de la
+  // misma landing. Express saca el prefijo y el rewrite lo repone.
+  app.use(
+    '/legal',
+    createProxyMiddleware({
+      target: SERVER_CONFIG.LANDING_URL,
+      changeOrigin: true,
+      pathRewrite: { '^': '/legal' },
+    }),
+  );
+
   app.get('/', (_req, res) => res.redirect(301, '/home'));
 
   // El `public/` puede quedar en distintos lugares según desde dónde se arranque.
