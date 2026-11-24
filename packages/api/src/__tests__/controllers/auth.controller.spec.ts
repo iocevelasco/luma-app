@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import bcrypt from 'bcryptjs';
 import type { Response } from 'express';
 import { LEGAL_VERSION } from '@luma/shared';
 
@@ -28,10 +29,15 @@ vi.mock('../../services/session.service.js', () => ({
 vi.mock('../../services/organization.service.js', () => ({ createPersonalOrganization: vi.fn() }));
 vi.mock('../../services/subscription.service.js', () => ({ startTrialFor: vi.fn() }));
 vi.mock('../../services/recaptcha.service.js', () => ({ verifyRecaptchaFromRequest: vi.fn() }));
+vi.mock('bcryptjs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('bcryptjs')>();
+  return { default: { ...actual.default, compare: vi.fn(actual.default.compare) } };
+});
 
 const { User } = await import('../../models/User.js');
 const { EmailService } = await import('../../services/email.service.js');
-const { resendVerification, setPassword, resetPassword, verifyEmail } = await import(
+const { verifyRecaptchaFromRequest } = await import('../../services/recaptcha.service.js');
+const { login, resendVerification, setPassword, resetPassword, verifyEmail } = await import(
   '../../controllers/auth.controller.js'
 );
 
@@ -332,6 +338,77 @@ describe('cuentas activadas con un enlace que pasó por manos de quien invitó',
       expect(EmailService.sendEmailVerificationEmail).not.toHaveBeenCalled();
       expect(user.activationLinkHeldBy).toBeUndefined();
     });
+  });
+});
+
+describe('login de la app móvil', () => {
+  const CLIENT_KEY = 'clave-de-la-app';
+
+  function loginUser() {
+    return {
+      _id: 'user-1',
+      email: 'ana@estudio.com',
+      name: 'Ana Pérez',
+      role: 'user',
+      password: 'hash',
+      enabled: true,
+      account_status: 'active',
+      email_verified: true,
+      termsVersion: LEGAL_VERSION,
+    };
+  }
+
+  function loginReq(clientKey?: string) {
+    return {
+      body: { email: 'ana@estudio.com', password: 'secreta' },
+      get: (name: string) => (name.toLowerCase() === 'x-luma-client-key' ? clientKey : undefined),
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    delete process.env.MOBILE_CLIENT_KEY;
+    foundUser(loginUser());
+    vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    vi.mocked(verifyRecaptchaFromRequest).mockResolvedValue({ success: false, error: 'falta' });
+  });
+
+  it('con la clave correcta entra sin reCAPTCHA y devuelve el refresh token', async () => {
+    process.env.MOBILE_CLIENT_KEY = CLIENT_KEY;
+    const res = mockRes();
+
+    await login(loginReq(CLIENT_KEY) as never, res);
+
+    expect(verifyRecaptchaFromRequest).not.toHaveBeenCalled();
+    expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh', expect.any(Object));
+    expect(vi.mocked(res.json).mock.calls[0]![0]).toMatchObject({
+      success: true,
+      data: { accessToken: 'access', refreshToken: 'refresh' },
+    });
+  });
+
+  it('sin la clave sigue exigiendo reCAPTCHA y no entrega el refresh', async () => {
+    process.env.MOBILE_CLIENT_KEY = CLIENT_KEY;
+    vi.mocked(verifyRecaptchaFromRequest).mockResolvedValue({ success: true });
+    const res = mockRes();
+
+    await login(loginReq() as never, res);
+
+    expect(verifyRecaptchaFromRequest).toHaveBeenCalledWith(expect.anything(), 'login');
+    const body = vi.mocked(res.json).mock.calls[0]![0] as { data: Record<string, unknown> };
+    expect(body.data.refreshToken).toBeUndefined();
+    expect(body.data.accessToken).toBe('access');
+  });
+
+  it('una clave distinta no cuenta como la app', async () => {
+    process.env.MOBILE_CLIENT_KEY = CLIENT_KEY;
+    const res = mockRes();
+
+    await login(loginReq('otra') as never, res);
+
+    expect(verifyRecaptchaFromRequest).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).not.toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
 });
 

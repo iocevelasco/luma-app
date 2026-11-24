@@ -1,11 +1,13 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { Logo } from '../components/Logo';
-import { LEGAL_URL, LOGIN_URL } from '../lib/app-url';
+import { LOGIN_URL } from '../lib/app-url';
+import { landingHref, legalRoute } from '../lib/paths';
 
 const STUDIO_URL = 'https://www.instagram.com/ido.arquitectura/';
 
 export function Footer() {
   const { t } = useTranslation();
+  const onHome = legalRoute(window.location.pathname) === null;
 
   return (
     <footer className="border-t border-border bg-background px-6 py-10">
@@ -32,12 +34,18 @@ export function Footer() {
           </p>
         </div>
 
-        <div className="flex items-center gap-6">
-          <a href="#contacto" className="nav-label text-sm text-muted-foreground hover:text-foreground">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <a href={onHome ? '#contacto' : `${landingHref('home')}#contacto`} className="nav-label text-sm text-muted-foreground hover:text-foreground">
             {t('footer.contact')}
           </a>
-          <a href={LEGAL_URL} className="nav-label text-sm text-muted-foreground hover:text-foreground">
-            {t('footer.legal')}
+          <a href={landingHref('terminos')} className="nav-label text-sm text-muted-foreground hover:text-foreground">
+            {t('footer.terms')}
+          </a>
+          <a href={landingHref('privacidad')} className="nav-label text-sm text-muted-foreground hover:text-foreground">
+            {t('footer.privacy')}
+          </a>
+          <a href={landingHref('baja-servicio')} className="nav-label text-sm text-muted-foreground hover:text-foreground">
+            {t('footer.cancellation')}
           </a>
           <a href={LOGIN_URL} className="nav-label text-sm text-muted-foreground hover:text-foreground">
             {t('nav.login')}

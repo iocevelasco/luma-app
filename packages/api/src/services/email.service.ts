@@ -817,6 +817,45 @@ export class EmailService {
       'aviso de cobro fallido',
     );
   }
+
+  /** A un admin: alguien pidió la baja desde el formulario público. */
+  static async sendServiceCancellation(
+    to: string,
+    details: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+      nationalId: string;
+      reason: string;
+      additionalInfo: string;
+    },
+  ): Promise<boolean> {
+    return send(
+      {
+        from: FROM_EMAIL,
+        to,
+        subject: `Solicitud de baja: ${details.firstName} ${details.lastName}`,
+        html: layout({
+          heading: 'Hay una solicitud de baja',
+          preheader: `${details.email} pidió darse de baja.`,
+          bodyHtml:
+            '<p>Llegó una solicitud desde el formulario público. La cuenta no se borró: hay que procesarla a mano.</p>',
+          details: [
+            { label: 'Nombre', value: `${details.firstName} ${details.lastName}` },
+            { label: 'Correo', value: details.email },
+            { label: 'Teléfono', value: details.phone },
+            { label: 'Documento', value: details.nationalId },
+            { label: 'Motivo', value: details.reason },
+            ...(details.additionalInfo ? [{ label: 'Detalle', value: details.additionalInfo }] : []),
+          ],
+          note: 'La cuenta sigue activa. La purga de datos personales es a los 90 días de la baja.',
+        }),
+        text: `Solicitud de baja - ${APP_NAME}\n\n${details.firstName} ${details.lastName}\n${details.email}\n${details.phone}\n${details.nationalId}\n${details.reason}\n${details.additionalInfo}`,
+      },
+      'aviso de baja de servicio',
+    );
+  }
 }
 
 export interface CampaignEmail {

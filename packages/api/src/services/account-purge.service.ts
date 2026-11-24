@@ -7,6 +7,7 @@ import { OrganizationMember } from '../models/OrganizationMember.js';
 import { Project } from '../models/Project.js';
 import { ProjectClient } from '../models/ProjectClient.js';
 import { ProjectMembership } from '../models/ProjectMembership.js';
+import { ServiceCancellation } from '../models/ServiceCancellation.js';
 import { Subscription } from '../models/Subscription.js';
 import { SubscriptionPayment } from '../models/SubscriptionPayment.js';
 import { User } from '../models/User.js';
@@ -96,6 +97,9 @@ export const PERSONAL_FIELDS: Record<string, Record<string, 'purged' | 'third-pa
   Provider: { phone: 'third-party', email: 'third-party' },
   // Quien retira material del patio: un nombre de un tercero, parte del kardex.
   StockMovement: { receiver: 'third-party' },
+  // El formulario público de baja guarda el correo y el teléfono de quien lo
+  // pidió. Al purgar la cuenta con ese correo, el pedido se borra con ellos.
+  ServiceCancellation: { email: 'purged', phone: 'purged' },
   SubscriptionPayment: { bank: 'purged', reference: 'purged', payerId: 'purged' },
   User: { email: 'purged', picture: 'purged', googleEmail: 'purged' },
 };
@@ -260,6 +264,7 @@ export async function purgeAccount(
   await FeedbackResponse.deleteMany({ user: id });
   await ProjectMembership.deleteMany({ user: id });
   await ProjectClient.deleteMany({ user: id });
+  await ServiceCancellation.deleteMany({ email });
 
   // 5. Al final, la cuenta. Hasta acá, `purgedAt` sin poner = se reintenta.
   await User.updateOne(

@@ -33,3 +33,4 @@ export * from './stripe.controller.js';
 export * from './campaign.controller.js';
 export * from './chat.controller.js';
 export * from './feedback.controller.js';
+export * from './service-cancellation.controller.js';

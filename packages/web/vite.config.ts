@@ -93,16 +93,19 @@ export default defineConfig(() => ({
     exclude: ['@luma/shared'],
   },
   server: {
+    // El teléfono entra por la IP de la máquina. Sin esto Vite solo escucha
+    // en localhost y el login nativo no llega.
+    host: true,
     port: 6173,
     warmup: {
       clientFiles: ['./src/main.tsx', './src/pages/*.tsx'],
     },
     proxy: {
       '/api': {
-        // 8081: el puerto de la API en desarrollo. Tiene que coincidir con el
+        // 6170: el puerto de la API en desarrollo. Tiene que coincidir con el
         // default de `SERVER_CONFIG.PORT` — si se separan, la SPA habla con
         // un puerto donde no hay nadie (o peor, con otra app).
-        target: process.env.VITE_API_BASE_URL || 'http://localhost:8081',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:6170',
         changeOrigin: true,
       },
     },

@@ -227,7 +227,9 @@
   "footer": {
     "tagline": "Gestão de obra com controle compartilhado.",
     "credit": "Criado por <studio>Ido Arquitectura</studio> e Ioce Velasco.",
-    "legal": "Termos e Privacidade",
+    "terms": "Termos",
+    "privacy": "Privacidade",
+    "cancellation": "Baixa do serviço",
     "contact": "Contato",
     "appName": "Luma Gestión de Obra"
   },
@@ -288,5 +290,148 @@
     "subtitle": "Escreva para este e-mail e respondemos. Se preferir, copie e cole no seu aplicativo de e-mail.",
     "copy": "Copiar e-mail",
     "copied": "Copiado"
+  },
+  "legal": {
+    "back": "Voltar ao início",
+    "contact": "Para exercer os seus direitos ou tirar uma dúvida, escreva para {{email}}.",
+    "also": "Você também pode ler",
+    "and": "e",
+    "termsLink": "os Termos de uso",
+    "privacyLink": "a Política de Privacidade",
+    "cancellationLink": "o formulário de baixa",
+    "terms": {
+      "title": "Termos de uso",
+      "intro": "Estas regras explicam como se usa o Luma. A Política de Privacidade, numa página separada, explica como cuidamos das suas informações. Ao criar ou ativar a sua conta, e sempre que este texto mudar de forma relevante, pedimos que você o aceite de forma expressa.",
+      "sections": [
+        {
+          "title": "1. Quem somos e o que este documento cobre",
+          "paragraphs": [
+            "O Luma é um aplicativo para gerenciar obras de construção: atividades, materiais, orçamento, recebimentos, gastos, documentos e a equipe de cada obra. Neste texto, «Luma» e «nós» somos quem opera o serviço.",
+            "Estes Termos cobrem o uso do serviço. Quais dados tratamos, para quê, com quem os compartilhamos e por quanto tempo os guardamos está na Política de Privacidade."
+          ]
+        },
+        {
+          "title": "2. Regras de uso",
+          "paragraphs": [
+            "A sua conta é pessoal. Você é responsável pelo que for feito com as suas credenciais e por usar o Luma de forma lícita.",
+            "O que você carrega é seu e você é responsável por ter o direito de carregá-lo. Nós não revisamos o seu conteúdo, exceto se for necessário para dar suporte, cumprir a lei ou proteger o serviço.",
+            "Os planos e preços são exibidos no aplicativo antes da contratação. Se a assinatura vencer, as suas obras ficam somente para leitura e não se perdem."
+          ]
+        },
+        {
+          "title": "3. Alcance da nossa responsabilidade",
+          "paragraphs": [
+            "Temos o maior cuidado para que o Luma funcione e para proteger as suas informações, mas o serviço é prestado com meios razoáveis, não com resultados garantidos. Na medida em que a lei permitir, não respondemos por interrupções alheias ao nosso controle nem por danos indiretos.",
+            "Nada disto limita os direitos que a lei lhe reconhece nem o que nos comprometemos a não fazer com os seus dados."
+          ]
+        },
+        {
+          "title": "4. Mudanças neste documento",
+          "paragraphs": [
+            "Se mudarmos algo de forma relevante, publicamos uma nova versão com a sua data e pedimos que você a aceite ao voltar a entrar. Mudanças de redação que não afetam os seus direitos não exigem nova aceitação."
+          ]
+        },
+        {
+          "title": "5. Baixa do serviço",
+          "paragraphs": [
+            "Você pode pedir a baixa do serviço com o formulário público. A solicitação não apaga a conta na hora: a conta fica 90 dias e depois os dados pessoais são apagados, como explica a Política de Privacidade."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Política de Privacidade",
+      "intro": "Esta política explica quais dados tratamos e como os cuidamos. As regras de uso do serviço estão nos Termos.",
+      "sections": [
+        {
+          "title": "1. Que dados tratamos",
+          "paragraphs": [
+            "Dados da sua conta: nome, e-mail e senha (que guardamos criptografada, nunca em texto legível). Se você entra com o Google, guardamos o identificador da sua conta Google e o e-mail dela; nunca sua senha do Google nem acesso aos seus dados no Google.",
+            "Dados da sua obra: atividades, materiais, orçamentos, recebimentos, gastos, comprovantes, fotos, documentos e as pessoas que participam. São seus: nós os guardamos para que você possa usá-los.",
+            "Dados de pagamento da assinatura: banco, referência e documento de quem paga, quando você escolhe pagar em bolívares. Se pagar com cartão, os dados do cartão são processados pela Stripe e não passam pelos nossos servidores.",
+            "Dados técnicos da aceitação: quando você aceita os Termos, guardamos a versão, a data e a hora, o seu endereço IP e o navegador usado. Servem como comprovante de que a aceitação ocorreu.",
+            "Dados de terceiros que você carrega: se adicionar pessoal da equipe, fornecedores ou clientes, você é responsável por ter a autorização deles para isso."
+          ]
+        },
+        {
+          "title": "2. Para que os usamos",
+          "paragraphs": [
+            "Usamos os seus dados apenas para prestar o serviço: para você entrar, a sua obra funcionar, a sua equipe ver o que lhe cabe, cobrar a assinatura, enviar os avisos do aplicativo por e-mail, dar suporte e proteger as contas contra abusos.",
+            "Não usamos os seus dados para publicidade nem para montar perfis comerciais. Podemos calcular estatísticas agregadas e anonimizadas para manter e melhorar o Luma; elas não identificam ninguém e não são vendidas."
+          ]
+        },
+        {
+          "title": "3. O que nos comprometemos a não fazer",
+          "paragraphs": [
+            "Não vendemos nem alugamos os seus dados pessoais nem os da sua obra.",
+            "Não exibimos publicidade de terceiros nem compartilhamos os seus dados com anunciantes.",
+            "Não usamos os dados da sua obra para fins comerciais próprios nem alheios: são para que a sua obra funcione.",
+            "O uso que fazemos das informações recebidas das APIs do Google, e sua transferência para qualquer outro aplicativo, segue a Política de dados do usuário dos serviços de API do Google, incluindo os requisitos de Uso Limitado. Não usamos esses dados para publicidade nem para treinar modelos de inteligência artificial."
+          ]
+        },
+        {
+          "title": "4. Com quem os compartilhamos",
+          "paragraphs": [
+            "Com as pessoas da sua obra, conforme o papel de cada uma (gerente, supervisor, cliente): cada pessoa vê apenas o que o seu papel permite, e uma obra nunca fica visível para quem não foi convidado.",
+            "Com fornecedores que nos ajudam a operar o serviço, e apenas o necessário para a função deles: a hospedagem dos servidores, o envio de e-mails (Resend), a cobrança com cartão (Stripe), a verificação contra abusos no cadastro (Google reCAPTCHA), o Google quando você escolhe entrar com sua conta Google, o Google Maps quando você busca o endereço de uma obra ou abre o mapa dela (recebe o que você digita e seu endereço IP), o armazenamento de arquivos, o Google Drive quando você escolhe importar ou salvar arquivos com ele e, se você usar o Consultor IA, o fornecedor do modelo de inteligência artificial (Anthropic), para quem enviamos o necessário para responder à sua consulta.",
+            "Se você ativa o calendário, quem tiver o link, e o serviço de calendário onde você o adicionar, vê os nomes das suas obras, atividades e reuniões, e as datas de vencimento das parcelas, sem valores.",
+            "Com autoridades competentes, somente quando uma ordem ou norma válida nos exigir."
+          ]
+        },
+        {
+          "title": "5. Como protegemos as suas informações",
+          "paragraphs": [
+            "Aplicamos medidas razoáveis de segurança: senhas guardadas criptografadas, conexões criptografadas, sessões com validade, acesso a cada obra limitado por papel, isolamento entre obras e backups diários.",
+            "Nenhum sistema é invulnerável e por isso não prometemos segurança absoluta, e sim cuidar das suas informações com o melhor critério e os meios ao nosso alcance, e corrigir rapidamente o que falhar.",
+            "Se detectarmos um incidente que afete os seus dados pessoais, avisamos você por e-mail sem demora injustificada, com o que sabemos, quais dados foram atingidos e o que recomendamos fazer.",
+            "Você também cuida da conta: não compartilhe a sua senha e avise-nos se suspeitar que outra pessoa entrou."
+          ]
+        },
+        {
+          "title": "6. Por quanto tempo os guardamos e o que acontece se você sair",
+          "paragraphs": [
+            "Guardamos os seus dados enquanto a sua conta estiver ativa. Ao sair, mantemos a conta por 90 dias, caso você se arrependa, e depois apagamos os seus dados pessoais: e-mail, nome, foto, senha, telefone, os dados de pagamento da assinatura (banco, referência, documento e comprovante) e o registro técnico da sua aceitação. Também encerramos o seu cadastro no processador de pagamentos com cartão e eliminamos as suas notificações e os seus acessos às obras.",
+            "As obras que você exclui ficam 90 dias na lixeira e depois são apagadas com tudo o que tinham. Se a sua Empresa não tinha mais ninguém, ela fica sem nome nem contato. O que você salva no seu Google Drive a partir da Luma é uma cópia na sua conta do Google: nem a exclusão da sua conta nem a da obra na Luma a alcançam. Os valores e datas dos pagamentos, e o histórico de uma obra compartilhada com outras pessoas, são mantidos ligados a uma «Conta eliminada» e sem dados que identifiquem você. O que outras pessoas tenham escrito em texto livre numa obra compartilhada (por exemplo, uma nota) pode continuar mencionando você."
+          ]
+        },
+        {
+          "title": "7. Os seus direitos",
+          "paragraphs": [
+            "Você pode pedir para acessar os seus dados, corrigi-los, eliminá-los, opor-se a um uso ou retirar o seu consentimento. Respondemos em até 30 dias.",
+            "Estes direitos se apoiam na Constituição da República Bolivariana da Venezuela (arts. 28 e 60) e nas demais normas aplicáveis. A baixa do serviço se pede com o formulário público."
+          ]
+        }
+      ]
+    },
+    "cancellation": {
+      "title": "Baixa do serviço",
+      "intro": "Com este formulário você pede a baixa da sua conta no Luma. A solicitação não apaga a conta ao enviá-la: conservamos a conta por 90 dias e depois apagamos os dados pessoais, como diz a Política de Privacidade.",
+      "personal": "Os seus dados",
+      "firstName": "Nome",
+      "lastName": "Sobrenome",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "nationalId": "Documento de identidade",
+      "details": "A solicitação",
+      "reason": "Motivo da baixa",
+      "reasonPlaceholder": "Escolha um motivo",
+      "reasons": {
+        "noLongerUse": "Já não uso o serviço",
+        "privacy": "Privacidade",
+        "security": "Segurança",
+        "other": "Outro"
+      },
+      "additionalInfo": "Detalhe (opcional)",
+      "confirmTitle": "Confirmação",
+      "confirm": "Entendo que esta solicitação inicia a baixa do serviço e que a conta fica 90 dias antes de apagar os dados pessoais.",
+      "submit": "Enviar solicitação de baixa",
+      "submitting": "Enviando…",
+      "required": "Preencha este campo.",
+      "emailInvalid": "Escreva um e-mail válido.",
+      "network": "Não conseguimos enviar a solicitação. Verifique a conexão e tente de novo.",
+      "successTitle": "Recebemos a sua solicitação",
+      "successBody": "Guardamos o pedido e avisamos quem administra o Luma. A conta não é apagada neste momento: segue o prazo de 90 dias da Política de Privacidade.",
+      "backHome": "Voltar ao início"
+    }
   }
 }

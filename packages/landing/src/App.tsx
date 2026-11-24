@@ -17,6 +17,9 @@ import { Team } from './sections/Team';
 import { Testimonials } from './sections/Testimonials';
 import { WhatsAppButton } from './components/WhatsAppButton';
 import { Contact } from './sections/Contact';
+import { legalRoute } from './lib/paths';
+import { CancellationPage } from './pages/CancellationPage';
+import { LegalDocument } from './pages/LegalDocument';
 
 /**
  * Bandas alternadas: la página va claro → oscuro → claro, empezando en claro
@@ -41,6 +44,32 @@ function Band({ light, children }: { light: boolean; children: ReactNode }) {
 }
 
 export default function App() {
+  const legal = legalRoute(window.location.pathname);
+  if (legal === 'terminos') {
+    return (
+      <>
+        <LegalDocument kind="terms" />
+        <Footer />
+      </>
+    );
+  }
+  if (legal === 'privacidad') {
+    return (
+      <>
+        <LegalDocument kind="privacy" />
+        <Footer />
+      </>
+    );
+  }
+  if (legal === 'baja-servicio') {
+    return (
+      <>
+        <CancellationPage />
+        <Footer />
+      </>
+    );
+  }
+
   const bands: { key: string; node: ReactNode; hidden?: boolean }[] = [
     { key: 'problem', node: <Problem /> },
     { key: 'scene', node: <Scene /> },
