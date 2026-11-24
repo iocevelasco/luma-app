@@ -1,25 +1,23 @@
-import { LEGAL_CONTACT_EMAIL, LEGAL_VERSION } from '@luma/shared';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { AppLogo } from '@/components/app-logo';
+import { landingLegalUrl, type LandingLegalPage } from '@/lib/landing-url';
 import { ROUTES } from '@/lib/routes';
 
-interface LegalSection {
-  title: string;
-  paragraphs: string[];
-}
+const LINKS: { page: LandingLegalPage; key: 'terms' | 'privacy' | 'cancellation' }[] = [
+  { page: 'terminos', key: 'terms' },
+  { page: 'privacidad', key: 'privacy' },
+  { page: 'baja-servicio', key: 'cancellation' },
+];
 
 /**
- * Términos de uso y Política de Privacidad, un solo documento. Pública: se lee
- * antes de tener cuenta, y la landing enlaza acá para que el texto viva en un
- * solo lugar. El contenido está en i18n; la versión vigente, en `@luma/shared`.
+ * El texto largo vive en la landing (`/home/terminos`, `/home/privacidad` y
+ * `/home/baja-servicio`). Esta página sólo lleva hasta ahí, para que el enlace
+ * viejo `/legal` y el aviso del registro sigan teniendo a dónde ir.
  */
 export function LegalPage() {
   const { t } = useTranslation();
-  const contactEmail =
-    import.meta.env.VITE_LEGAL_CONTACT_EMAIL || LEGAL_CONTACT_EMAIL;
-  const sections = t('legal.page.sections', { returnObjects: true }) as LegalSection[];
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -31,36 +29,27 @@ export function LegalPage() {
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft aria-hidden="true" className="size-4" />
-            {t('legal.page.back')}
+            {t('legal.hub.back')}
           </Link>
         </div>
 
         <header className="flex flex-col gap-3">
-          <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">
-            {t('legal.page.title')}
-          </h1>
-          <p className="font-mono text-xs text-muted-foreground">
-            {t('legal.page.version', { version: LEGAL_VERSION })}
-          </p>
-          <p className="text-base leading-relaxed text-muted-foreground">
-            {t('legal.page.intro')}
-          </p>
+          <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">{t('legal.hub.title')}</h1>
+          <p className="text-base leading-relaxed text-muted-foreground">{t('legal.hub.intro')}</p>
         </header>
 
-        {sections.map((section) => (
-          <section key={section.title} className="flex flex-col gap-3">
-            <h2 className="text-xl font-medium">{section.title}</h2>
-            {section.paragraphs.map((paragraph) => (
-              <p key={paragraph} className="text-sm leading-relaxed text-muted-foreground">
-                {paragraph}
-              </p>
-            ))}
-          </section>
-        ))}
-
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          {t('legal.page.contact', { email: contactEmail })}
-        </p>
+        <ul className="flex flex-col gap-3">
+          {LINKS.map((link) => (
+            <li key={link.page}>
+              <a
+                href={landingLegalUrl(link.page)}
+                className="text-base text-brand underline underline-offset-4"
+              >
+                {t(`legal.hub.${link.key}`)}
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

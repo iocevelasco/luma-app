@@ -2567,7 +2567,9 @@
         "Si ocurre un incidente que afecte tus datos personales, te avisamos."
       ],
       "checkboxBefore": "He leído y acepto los",
-      "checkboxLink": "Términos y la Política de Privacidad",
+      "checkboxTerms": "Términos",
+      "checkboxJoin": " y la ",
+      "checkboxPrivacy": "Política de Privacidad",
       "checkboxAfter": ".",
       "confirmCreate": "Aceptar y crear cuenta",
       "confirmActivate": "Aceptar y activar",
@@ -2577,6 +2579,14 @@
       "title": "Tus datos, protegidos",
       "body": "La seguridad de la información es primordial para nuestro servicio. No vendemos ni alquilamos tus datos y los usamos solo para prestarte Luma.",
       "link": "Leer los Términos y la Política de Privacidad"
+    },
+    "hub": {
+      "title": "Términos y Privacidad",
+      "intro": "El texto completo está en la página pública de Luma.",
+      "terms": "Términos de uso",
+      "privacy": "Política de Privacidad",
+      "cancellation": "Baja de servicio",
+      "back": "Volver"
     },
     "page": {
       "title": "Términos y Política de Privacidad",

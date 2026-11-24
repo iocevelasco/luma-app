@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
-import { ROUTES } from '@/lib/routes';
+import { landingLegalUrl } from '@/lib/landing-url';
 
 interface TermsDialogProps {
   open: boolean;
@@ -79,12 +79,21 @@ export function TermsDialog({
           <span>
             {t('legal.dialog.checkboxBefore')}{' '}
             <a
-              href={ROUTES.LEGAL}
+              href={landingLegalUrl('terminos')}
               target="_blank"
               rel="noopener noreferrer"
               className="text-brand underline underline-offset-2"
             >
-              {t('legal.dialog.checkboxLink')}
+              {t('legal.dialog.checkboxTerms')}
+            </a>
+            {t('legal.dialog.checkboxJoin')}
+            <a
+              href={landingLegalUrl('privacidad')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand underline underline-offset-2"
+            >
+              {t('legal.dialog.checkboxPrivacy')}
             </a>
             {t('legal.dialog.checkboxAfter')}
           </span>
