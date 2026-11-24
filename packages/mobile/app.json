@@ -22,7 +22,7 @@
     "android": {
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
-        "backgroundColor": "#101010",
+        "backgroundColor": "#094738",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -35,7 +35,15 @@
     },
     "plugins": [
       "expo-secure-store",
-      "@preeternal/react-native-cookie-manager"
+      "@preeternal/react-native-cookie-manager",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#101010",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 168
+        }
+      ]
     ],
     "extra": {
       "eas": {
