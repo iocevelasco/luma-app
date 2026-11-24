@@ -14,8 +14,10 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true
-        }
-      }
+        },
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.erdesarrollo.luma"
     },
     "android": {
       "usesCleartextTraffic": true,
@@ -25,11 +27,20 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.erdesarrollo.luma"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-secure-store", "@preeternal/react-native-cookie-manager"]
+    "plugins": [
+      "expo-secure-store",
+      "@preeternal/react-native-cookie-manager"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "44ea793c-680c-434d-a5fd-733a3f619ae4"
+      }
+    }
   }
 }
