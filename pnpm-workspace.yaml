@@ -1,3 +1,9 @@
 packages:
   - 'packages/*'
 
+# Una sola copia de los tipos de React. Si conviven 19.0 y 19.3, los iconos de
+# la landing dejan de ser componentes JSX válidos.
+overrides:
+  '@types/react': 19.3.0
+  '@types/react-dom': 19.3.0
+
