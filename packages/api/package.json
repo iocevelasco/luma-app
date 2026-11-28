@@ -25,6 +25,7 @@
     "subscription:reminders": "tsx src/scripts/send-subscription-reminders.ts",
     "projects:purge": "tsx src/scripts/purge-deleted-projects.ts",
     "accounts:purge": "tsx src/scripts/purge-deactivated-accounts.ts",
+    "accounts:delete": "tsx src/scripts/delete-account.ts",
     "stock:backfill": "tsx src/scripts/backfill-stock-entries.ts",
     "transfers:repair": "tsx src/scripts/repair-incomplete-transfers.ts",
     "email:preview": "tsx src/scripts/email-preview.ts",
