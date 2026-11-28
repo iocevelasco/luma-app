@@ -88,9 +88,13 @@ export function renderGoogleButton(
     initializedFor = clientId;
   }
 
-  // Volver a dibujar reemplaza el iframe: se vacía antes para no apilarlos.
-  parent.replaceChildren();
-  id.renderButton(parent, {
+  // Cada dibujo va a un contenedor nuevo. Google inserta el iframe más tarde
+  // (asincrónico): si se dibujaba dos veces seguidas en el mismo nodo (cambia el
+  // ancho mientras carga), vaciarlo no alcanzaba y quedaban dos botones. Así, un
+  // dibujo viejo que llega tarde cae en un nodo que ya no está en la pantalla.
+  const target = document.createElement('div');
+  parent.replaceChildren(target);
+  id.renderButton(target, {
     type: 'standard',
     theme: 'outline',
     size: 'large',
