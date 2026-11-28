@@ -383,7 +383,7 @@
   },
   "auth": {
     "login": {
-      "title": "Entrar",
+      "title": "Entre na sua conta",
       "subtitle": "Entre com seu e-mail e senha.",
       "submit": "Entrar",
       "forgot": "Esqueceu sua senha?",
@@ -391,7 +391,8 @@
       "register": "Crie uma",
       "pendingHint": "Foi convidado e ainda não escolheu sua senha?",
       "pendingAction": "Peça um novo link de ativação",
-      "googleHint": "Você entrava com o Google? Use o botão do Google: se você o conectou com um Gmail, sua conta pode não ter senha."
+      "googleHint": "Você entrava com o Google? Use o botão do Google: se você o conectou com um Gmail, sua conta pode não ter senha.",
+      "orEmail": "ou com seu e-mail e senha"
     },
     "register": {
       "title": "Criar conta",
@@ -462,8 +463,6 @@
     },
     "or": "ou",
     "cta": {
-      "manageQuestion": "Você gerencia uma obra?",
-      "manageAction": "Crie uma conta grátis",
       "invitedQuestion": "Foi convidado para uma obra?",
       "invitedAction": "Confira seu e-mail de convite"
     },
