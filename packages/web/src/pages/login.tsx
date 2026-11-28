@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginCredentialsSchema } from '@luma/shared';
+import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -57,18 +58,7 @@ export function LoginPage() {
 
   return (
     <AuthSplitLayout width="sm">
-      <AuthHeader
-        align="start"
-        title={t('auth.login.title')}
-        description={
-          <p>
-            {t('auth.login.noAccount')}{' '}
-            <Link className="text-foreground underline-offset-4 hover:underline" to={ROUTES.REGISTER}>
-              {t('auth.login.register')}
-            </Link>
-          </p>
-        }
-      />
+      <AuthHeader align="start" title={t('auth.login.title')} />
 
       {/*
         Google primero: es la entrada más corta. Sin Google configurado no se
@@ -169,6 +159,17 @@ export function LoginPage() {
           {login.isPending ? t('common.loading') : t('auth.login.submit')}
         </Button>
       </form>
+
+      {/* Crear cuenta: un botón a la vista, no un enlace perdido en el encabezado. */}
+      <div className="flex flex-col gap-3 border-t border-border pt-6">
+        <p className="text-sm text-muted-foreground">{t('auth.cta.manageQuestion')}</p>
+        <Button asChild size="lg" className="w-full">
+          <Link to={ROUTES.REGISTER}>
+            <UserPlus aria-hidden="true" />
+            {t('auth.cta.manageAction')}
+          </Link>
+        </Button>
+      </div>
 
       <p className="text-sm text-muted-foreground">
         {t('auth.cta.invitedQuestion')}{' '}

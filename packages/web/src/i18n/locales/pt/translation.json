@@ -463,6 +463,8 @@
     },
     "or": "ou",
     "cta": {
+      "manageQuestion": "Você gerencia uma obra?",
+      "manageAction": "Crie uma conta grátis",
       "invitedQuestion": "Foi convidado para uma obra?",
       "invitedAction": "Confira seu e-mail de convite"
     },
@@ -514,6 +516,10 @@
       "disableTitle": "Desligar o calendário?",
       "disableBody": "O link vai parar de funcionar. O que seu calendário já copiou não é apagado: remova-o por lá.",
       "disabled": "Calendário desligado."
+    },
+    "footer": {
+      "rights": "© {{year}} Luma Gestión de Obra. Todos os direitos reservados.",
+      "legal": "Termos e Privacidade"
     }
   },
   "routeError": {

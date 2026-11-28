@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { AppLogo } from '@/components/app-logo';
+import { ROUTES } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 
 type AuthWidth = 'sm' | 'md' | 'lg';
@@ -68,6 +70,12 @@ export function AuthSplitLayout({ children, width = 'sm' }: AuthSplitLayoutProps
               )}
             >
               {children}
+              <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-border pt-4 text-xs text-muted-foreground">
+                <span>{t('auth.footer.rights', { year: new Date().getFullYear() })}</span>
+                <Link className="underline-offset-4 hover:text-foreground hover:underline" to={ROUTES.LEGAL}>
+                  {t('auth.footer.legal')}
+                </Link>
+              </footer>
             </div>
           </div>
         </main>
