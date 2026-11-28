@@ -54,7 +54,7 @@ describe('renderGoogleButton', () => {
 
     expect(initialize).toHaveBeenCalledTimes(1);
     expect(renderButton).toHaveBeenLastCalledWith(
-      parent,
+      parent.firstElementChild,
       expect.objectContaining({ theme: 'outline', size: 'large', width: 400 }),
     );
 
@@ -62,5 +62,21 @@ describe('renderGoogleButton', () => {
     setGoogleCredentialHandler(handler);
     callback?.({ credential: 'id-token' });
     expect(handler).toHaveBeenCalledWith('id-token');
+  });
+
+  it('un dibujo anterior que llega tarde no suma un segundo botón', () => {
+    // Google inserta el iframe después de `renderButton`, no en el momento.
+    const pending: Array<() => void> = [];
+    const renderButton = vi.fn((target: HTMLElement) => {
+      pending.push(() => target.append(document.createElement('iframe')));
+    });
+    window.google = { accounts: { id: { initialize: vi.fn(), renderButton } } } as never;
+
+    const parent = document.createElement('div');
+    renderGoogleButton('client-b', parent, { text: 'signin_with', width: 300, locale: 'es' });
+    renderGoogleButton('client-b', parent, { text: 'signin_with', width: 320, locale: 'es' });
+    pending.forEach((insert) => insert());
+
+    expect(parent.querySelectorAll('iframe')).toHaveLength(1);
   });
 });
