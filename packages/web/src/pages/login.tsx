@@ -148,14 +148,8 @@ export function LoginPage() {
           </div>
         )}
 
-        {/* Con Google arriba, la contraseña es el camino secundario. */}
-        <Button
-          type="submit"
-          size="lg"
-          variant={googleEnabled ? 'outline' : 'default'}
-          className="w-full"
-          disabled={login.isPending}
-        >
+        {/* Entrar es la acción de la pantalla: el único verde. Crear cuenta va de contorno. */}
+        <Button type="submit" size="lg" className="w-full" disabled={login.isPending}>
           {login.isPending ? t('common.loading') : t('auth.login.submit')}
         </Button>
       </form>
@@ -163,9 +157,9 @@ export function LoginPage() {
       {/* Crear cuenta: un botón a la vista, no un enlace perdido en el encabezado. */}
       <div className="flex flex-col gap-3 border-t border-border pt-6">
         <p className="text-sm text-muted-foreground">{t('auth.cta.manageQuestion')}</p>
-        <Button asChild size="lg" className="w-full">
+        <Button asChild variant="outline" size="lg" className="w-full">
           <Link to={ROUTES.REGISTER}>
-            <UserPlus aria-hidden="true" />
+            <UserPlus aria-hidden="true" className="text-primary" />
             {t('auth.cta.manageAction')}
           </Link>
         </Button>
