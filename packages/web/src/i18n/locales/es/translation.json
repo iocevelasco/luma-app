@@ -383,7 +383,7 @@
   },
   "auth": {
     "login": {
-      "title": "Entrar",
+      "title": "Entrá a tu cuenta",
       "subtitle": "Ingresá con tu correo y contraseña.",
       "submit": "Entrar",
       "forgot": "¿Olvidaste tu contraseña?",
@@ -391,7 +391,8 @@
       "register": "Creá una",
       "pendingHint": "¿Te invitaron y todavía no elegiste tu contraseña?",
       "pendingAction": "Pedí un enlace de activación nuevo",
-      "googleHint": "¿Entrabas con Google? Usá el botón de Google: si lo conectaste con un Gmail, tu cuenta puede no tener contraseña."
+      "googleHint": "¿Entrabas con Google? Usá el botón de Google: si lo conectaste con un Gmail, tu cuenta puede no tener contraseña.",
+      "orEmail": "o con tu correo y contraseña"
     },
     "register": {
       "title": "Crear cuenta",
@@ -515,6 +516,10 @@
       "disableTitle": "¿Apagar el calendario?",
       "disableBody": "El enlace va a dejar de funcionar. Lo que tu calendario ya copió no se borra: sacalo desde ahí.",
       "disabled": "Calendario apagado."
+    },
+    "footer": {
+      "rights": "© {{year}} Luma Gestión de Obra. Todos los derechos reservados.",
+      "legal": "Términos y Privacidad"
     }
   },
   "routeError": {

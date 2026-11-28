@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginCredentialsSchema } from '@luma/shared';
-import { ArrowRight, Building2, MailCheck } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -58,7 +58,22 @@ export function LoginPage() {
 
   return (
     <AuthSplitLayout width="sm">
-      <AuthHeader title={t('auth.login.title')} description={t('auth.login.subtitle')} />
+      <AuthHeader align="start" title={t('auth.login.title')} />
+
+      {/*
+        Google primero: es la entrada más corta. Sin Google configurado no se
+        dibuja ni el botón ni el divisor, y queda sólo la contraseña.
+      */}
+      {googleEnabled && (
+        <div className="flex flex-col gap-6">
+          <GoogleAuthSection text="signin_with" onLinkRequired={setPendingGoogle} />
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <Separator className="flex-1" />
+            <span>{t('auth.login.orEmail')}</span>
+            <Separator className="flex-1" />
+          </div>
+        </div>
+      )}
 
       <form
         className="flex flex-col gap-4"
@@ -133,50 +148,35 @@ export function LoginPage() {
           </div>
         )}
 
-        <Button type="submit" size="lg" className="w-full" disabled={login.isPending}>
+        {/* Con Google arriba, la contraseña es el camino secundario. */}
+        <Button
+          type="submit"
+          size="lg"
+          variant={googleEnabled ? 'outline' : 'default'}
+          className="w-full"
+          disabled={login.isPending}
+        >
           {login.isPending ? t('common.loading') : t('auth.login.submit')}
         </Button>
       </form>
 
-      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-        <Separator className="flex-1" />
-        <span>{t('auth.or')}</span>
-        <Separator className="flex-1" />
-      </div>
-
-      <GoogleAuthSection text="signin_with" onLinkRequired={setPendingGoogle} />
-
-      <div className="flex flex-col gap-3">
-        <Button
-          asChild
-          variant="secondary"
-          size="lg"
-          className="h-auto w-full justify-start bg-foreground py-3 text-background/70 hover:bg-foreground/90 hover:text-background/70"
-        >
+      {/* Crear cuenta: un botón a la vista, no un enlace perdido en el encabezado. */}
+      <div className="flex flex-col gap-3 border-t border-border pt-6">
+        <p className="text-sm text-muted-foreground">{t('auth.cta.manageQuestion')}</p>
+        <Button asChild size="lg" className="w-full">
           <Link to={ROUTES.REGISTER}>
-            <Building2 aria-hidden="true" />
-            <span className="flex flex-1 flex-col items-start text-left">
-              <span className="text-xs font-normal text-background/60">
-                {t('auth.cta.manageQuestion')}
-              </span>
-              <span className="font-semibold text-background/80">{t('auth.cta.manageAction')}</span>
-            </span>
-            <ArrowRight aria-hidden="true" />
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="lg" className="h-auto w-full justify-start py-3">
-          <Link to={ROUTES.CHECK_EMAIL}>
-            <MailCheck aria-hidden="true" />
-            <span className="flex flex-1 flex-col items-start text-left">
-              <span className="text-xs font-normal text-muted-foreground">
-                {t('auth.cta.invitedQuestion')}
-              </span>
-              <span className="font-semibold">{t('auth.cta.invitedAction')}</span>
-            </span>
-            <ArrowRight aria-hidden="true" />
+            <UserPlus aria-hidden="true" />
+            {t('auth.cta.manageAction')}
           </Link>
         </Button>
       </div>
+
+      <p className="text-sm text-muted-foreground">
+        {t('auth.cta.invitedQuestion')}{' '}
+        <Link className="text-foreground underline-offset-4 hover:underline" to={ROUTES.CHECK_EMAIL}>
+          {t('auth.cta.invitedAction')}
+        </Link>
+      </p>
     </AuthSplitLayout>
   );
 }
